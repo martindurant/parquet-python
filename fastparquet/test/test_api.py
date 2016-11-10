@@ -66,3 +66,15 @@ def test_empty_statistics(tempdir):
                                  'n_nationkey': [None],
                                  'n_regionkey': [None]}}
 
+
+def test_sorted_columns(tempdir):
+    df = pd.DataFrame({'x': [1, 2, 3],
+                       'y': [1.0, 2.0, 1.0],
+                       'z': ['a', 'b', 'c']})
+
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df, partitions=[0, 2])
+
+    p = ParquetFile(fn)
+
+    assert p.sorted_columns() == {'x', 'z'}

@@ -4,11 +4,13 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import numpy as np
+import operator
 import os
-import pandas as pd
 import re
 import struct
+
+import numpy as np
+import pandas as pd
 import thriftpy
 
 from .core import read_thrift
@@ -77,6 +79,31 @@ class ParquetFile(object):
     @property
     def columns(self):
         return [f.name for f in self.schema if f.num_children is None]
+
+    def sorted_columns(self):
+        """
+        The columns that are known to be sorted
+
+        Returns
+        -------
+        A set of column names
+
+        See Also
+        --------
+        statistics
+        """
+        s = statistics(self)
+        columns = self.columns
+        out = set()
+        for c in columns:
+            min, max = s['min'][c], s['max'][c]
+            if any(x is None for x in min + max):
+                continue
+            if (sorted(min) == min and
+                sorted(max) == max and
+                all(map(operator.ge, max, min))):
+                out.add(c)
+        return out
 
     def _read_partitions(self):
         cats = {}
@@ -205,6 +232,26 @@ def filter_out_stats(rg, filters, helper):
 
 
 def statistics(obj):
+    """
+    Return per-column statistics for a ParquerFile
+
+    Parameters
+    ----------
+    obj: ParquetFile
+
+    Returns
+    -------
+    dictionary mapping stats (min, max, distinct_count, null_count) to column
+    names to lists of values.  ``None``s used if no statistics found.
+
+    Examples
+    --------
+    >>> statistics(my_parquet_file)
+    {'min': {'x': [1, 4], 'y': [5, 3]},
+     'max': {'x': [2, 6], 'y': [8, 6]},
+     'distinct_count': {'x': [None, None], 'y': [None, None]},
+     'null_count': {'x': [0, 3], 'y': [0, 0]}}
+    """
     if isinstance(obj, parquet_thrift.ColumnChunk):
         md = obj.meta_data
         s = obj.meta_data.statistics
