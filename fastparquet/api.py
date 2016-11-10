@@ -80,31 +80,6 @@ class ParquetFile(object):
     def columns(self):
         return [f.name for f in self.schema if f.num_children is None]
 
-    def sorted_columns(self):
-        """
-        The columns that are known to be sorted
-
-        Returns
-        -------
-        A set of column names
-
-        See Also
-        --------
-        statistics
-        """
-        s = statistics(self)
-        columns = self.columns
-        out = dict()
-        for c in columns:
-            min, max = s['min'][c], s['max'][c]
-            if any(x is None for x in min + max):
-                continue
-            if (sorted(min) == min and
-                sorted(max) == max and
-                all(map(operator.ge, max, min))):
-                out[c] = {'min': min, 'max': max}
-        return out
-
     def _read_partitions(self):
         cats = {}
         for rg in self.row_groups:
@@ -287,6 +262,41 @@ def statistics(obj):
                     d[name][column] = [x if x is None else converted_types.convert(x, se)
                                        for x in d[name][column]]
         return d
+
+
+def sorted_partitioned_columns(pf):
+    """
+    The columns that are known to be sorted partition-by-partition
+
+    They may not be sorted within each partition, but all elements in one
+    row group are strictly greater than all elements in previous row groups.
+
+    Examples
+    --------
+    >>> sorted_partitioned_columns(pf)
+    {'id': {'min': [1, 5, 10], 'max': [4, 9, 20]}}
+
+    Returns
+    -------
+    A set of column names
+
+    See Also
+    --------
+    statistics
+    """
+    s = statistics(pf)
+    columns = pf.columns
+    out = dict()
+    for c in columns:
+        min, max = s['min'][c], s['max'][c]
+        if any(x is None for x in min + max):
+            continue
+        if (sorted(min) == min and
+            sorted(max) == max and
+            all(map(operator.ge, max, min))):
+            out[c] = {'min': min, 'max': max}
+    return out
+
 
 
 def filter_out_cats(rg, filters):

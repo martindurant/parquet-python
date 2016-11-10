@@ -6,7 +6,7 @@ import pandas as pd
 
 from fastparquet.util import tempdir
 from fastparquet import write, ParquetFile
-from fastparquet.api import statistics
+from fastparquet.api import statistics, sorted_partitioned_columns
 
 TEST_DATA = "test-data"
 
@@ -67,7 +67,7 @@ def test_empty_statistics(tempdir):
                                  'n_regionkey': [None]}}
 
 
-def test_sorted_columns(tempdir):
+def test_sorted_partitioned_columns(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1.0, 2.0, 1.0],
                        'z': ['a', 'b', 'c']})
@@ -75,7 +75,9 @@ def test_sorted_columns(tempdir):
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, partitions=[0, 2])
 
-    p = ParquetFile(fn)
+    pf = ParquetFile(fn)
 
-    assert p.sorted_columns() == {'x': {'min': [1, 3], 'max': [2, 3]},
-                                  'z': {'min': [b'a', b'c'], 'max': [b'b', b'c']}}
+    assert sorted_partitioned_columns(pf) == {
+            'x': {'min': [1, 3], 'max': [2, 3]},
+            'z': {'min': [b'a', b'c'], 'max': [b'b', b'c']}
+        }
