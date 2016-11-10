@@ -293,7 +293,7 @@ def sorted_partitioned_columns(pf):
             continue
         if (sorted(min) == min and
             sorted(max) == max and
-            all(map(operator.ge, max, min))):
+            all(mx < mn for mx, mn in zip(max[:-1], min[1:]))):
             out[c] = {'min': min, 'max': max}
     return out
 

@@ -68,16 +68,17 @@ def test_empty_statistics(tempdir):
 
 
 def test_sorted_partitioned_columns(tempdir):
-    df = pd.DataFrame({'x': [1, 2, 3],
-                       'y': [1.0, 2.0, 1.0],
-                       'z': ['a', 'b', 'c']})
+    df = pd.DataFrame({'x': [1, 2, 3, 4],
+                       'y': [1.0, 2.0, 1.0, 2.0],
+                       'z': ['a', 'b', 'c', 'd']})
 
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, partitions=[0, 2])
 
     pf = ParquetFile(fn)
 
-    assert sorted_partitioned_columns(pf) == {
-            'x': {'min': [1, 3], 'max': [2, 3]},
-            'z': {'min': [b'a', b'c'], 'max': [b'b', b'c']}
-        }
+    result = sorted_partitioned_columns(pf)
+    expected = {'x': {'min': [1, 3], 'max': [2, 4]},
+                'z': {'min': [b'a', b'c'], 'max': [b'b', b'd']}}
+
+    assert result == expected
