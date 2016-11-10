@@ -301,3 +301,31 @@ def test_write_compression_schema(tempdir):
     assert not any(c.meta_data.codec for row in r.row_groups
                                  for c in row.columns
                                  if c.meta_data.path_in_schema == ['y'])
+
+
+def test_index(tempdir):
+    fn = os.path.join(tempdir, 'tmp.parq')
+    df = pd.DataFrame({'x': [1, 2, 3],
+                       'y': [1., 2., 3.]},
+                       index=pd.Index([10, 20, 30], name='z'))
+
+    writer.write(fn, df)
+
+    r = ParquetFile(fn)
+    assert set(r.columns) == {'x', 'y', 'z'}
+
+
+def test_naive_index(tempdir):
+    fn = os.path.join(tempdir, 'tmp.parq')
+    df = pd.DataFrame({'x': [1, 2, 3],
+                       'y': [1., 2., 3.]})
+
+    writer.write(fn, df)
+    r = ParquetFile(fn)
+
+    assert set(r.columns) == {'x', 'y'}
+
+    writer.write(fn, df, write_index=True)
+    r = ParquetFile(fn)
+
+    assert set(r.columns) == {'x', 'y', 'index'}

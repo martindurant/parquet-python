@@ -501,7 +501,7 @@ def make_metadata(data, has_nulls=[]):
 
 def write(filename, data, partitions=[0], encoding="PLAIN",
           compression=None, file_scheme='simple', open_with=default_openw,
-          mkdirs=default_mkdirs, has_nulls=[]):
+          mkdirs=default_mkdirs, has_nulls=[], write_index=None):
     """ Write Pandas DataFrame to filename as Parquet Format
 
     Parameters
@@ -535,6 +535,9 @@ def write(filename, data, partitions=[0], encoding="PLAIN",
         The named columns can have nulls. Only applies to Object and Category
         columns, as pandas ints can't have NULLs, and NaN/NaT is equivalent
         to NULL in float and time-like columns.
+    write_index: boolean
+        Whether or not to write the index to a separate column.  By default we
+        write the index *if* it is not 0, 1, ..., n.
 
     Examples
     --------
@@ -571,6 +574,12 @@ def write(filename, data, partitions=[0], encoding="PLAIN",
                     fmd.row_groups.append(rg)
             fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
         else:
+            if write_index or write_index is None and not (
+                    isinstance(data.index, pd.RangeIndex) and
+                    data.index._start == 0 and
+                    data.index._stop == len(data.index) and
+                    data.index._step == 1 and data.index.name is None):
+                data = data.reset_index()
             fmd = make_metadata(data, has_nulls=has_nulls)
             for i, start in enumerate(partitions):
                 end = partitions[i+1] if i < (len(partitions) - 1) else None
