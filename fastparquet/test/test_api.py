@@ -77,4 +77,5 @@ def test_sorted_columns(tempdir):
 
     p = ParquetFile(fn)
 
-    assert p.sorted_columns() == {'x', 'z'}
+    assert p.sorted_columns() == {'x': {'min': [1, 3], 'max': [2, 3]},
+                                  'z': {'min': [b'a', b'c'], 'max': [b'b', b'c']}}

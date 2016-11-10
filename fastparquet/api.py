@@ -94,7 +94,7 @@ class ParquetFile(object):
         """
         s = statistics(self)
         columns = self.columns
-        out = set()
+        out = dict()
         for c in columns:
             min, max = s['min'][c], s['max'][c]
             if any(x is None for x in min + max):
@@ -102,7 +102,7 @@ class ParquetFile(object):
             if (sorted(min) == min and
                 sorted(max) == max and
                 all(map(operator.ge, max, min))):
-                out.add(c)
+                out[c] = {'min': min, 'max': max}
         return out
 
     def _read_partitions(self):
