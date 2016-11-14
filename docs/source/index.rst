@@ -42,8 +42,7 @@ Briefly, some features of interest:
 Caveats, Known Issues
 ---------------------
 
-Not all parts of the parquet-format have been implemented yet or tested
-e.g. see the Todos linked below.
+Not all parts of the parquet-format have been implemented yet or tested.
 fastparquet is, however, capable of reading all the data files from the
 `parquet-compatability <https://github.com/Parquet/parquet-compatibility>`_
 project.
@@ -55,11 +54,14 @@ A list of current issues can be found `here <https://github.com/dask/fastparquet
 Index
 -----
 
-**Getting Started**
+.. toctree::
 
-* :doc:`install`
-* :doc:`quickstart`
-* :doc:`api`
+    install
+    quickstart
+    details
+    api
+    filesystems
+    developer
 
 * :ref:`genindex`
 * :ref:`modindex`

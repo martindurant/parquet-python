@@ -62,6 +62,6 @@ Further options that may be of interest are:
 
 .. code-block:: python
 
-    write('outfile2.parq', df, partitions=[0, 10000, 20000],
+    write('outfile2.parq', df, row_group_offsets=[0, 10000, 20000],
           compression='GZIP', file_scheme='hive')
 
