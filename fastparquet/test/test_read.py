@@ -255,3 +255,18 @@ def test_cat_filters():
 
     filters = [('cat', '==', 'freda'), ('catnum', '!=', 2.5)]
     assert len(pf.to_pandas(filters=filters)) == 1000
+
+
+def test_statistics(tempdir):
+    s = pd.Series([b'a', b'b', b'c']*20)
+    df = pd.DataFrame({'a': s, 'b': s.astype('category'),
+                       'c': s.astype('category').cat.as_ordered()})
+    fastparquet.write(tempdir, df, file_scheme='hive')
+    pf = fastparquet.ParquetFile(tempdir)
+    stat = pf.statistics
+    assert stat['max']['a'] == [b'c']
+    assert stat['min']['a'] == [b'a']
+    assert stat['max']['b'] == [None]
+    assert stat['min']['b'] == [None]
+    assert stat['max']['c'] == [b'c']
+    assert stat['min']['c'] == [b'a']

@@ -389,6 +389,12 @@ def write_column(f, data, selement, encoding='PLAIN', compression=None):
         dict_start = f.tell()
         write_thrift(f, ph)
         f.write(bdata)
+        try:
+            max, min = data.max(), data.min()
+            max = encode['PLAIN'](pd.Series([max]), selement)
+            min = encode['PLAIN'](pd.Series([min]), selement)
+        except TypeError:
+            max, min = None, None
         data = data.cat.codes.astype(np.int32)
         cats = True
         encoding = "PLAIN_DICTIONARY"
@@ -396,9 +402,10 @@ def write_column(f, data, selement, encoding='PLAIN', compression=None):
     start = f.tell()
     bdata = definition_data + repetition_data + encode[encoding](data, selement)
     try:
-        max, min = data.max(), data.min()
-        max = encode['PLAIN'](pd.Series([max], dtype=data.dtype), selement)
-        min = encode['PLAIN'](pd.Series([min], dtype=data.dtype), selement)
+        if encoding != 'PLAIN_DICTIONARY':
+            max, min = data.max(), data.min()
+            max = encode['PLAIN'](pd.Series([max], dtype=data.dtype), selement)
+            min = encode['PLAIN'](pd.Series([min], dtype=data.dtype), selement)
     except TypeError:
         max, min = None, None
 
