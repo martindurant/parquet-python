@@ -156,6 +156,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
         data.
     """
     cmd = column.meta_data
+    se = schema_helper.schema_element(cmd.path_in_schema[-1])
     name = ".".join(cmd.path_in_schema)
     rows = cmd.num_values
     off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
@@ -169,7 +170,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
         dic = np.array(read_dictionary_page(infile, schema_helper, ph, cmd))
         ph = read_thrift(infile, parquet_thrift.PageHeader)
     if grab_dict:
-        return dic
+        return convert(pd.Series(dic), se)
 
     out = []
     num = 0
@@ -235,7 +236,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 final[start:start+l] = val
             start += l
 
-    se = schema_helper.schema_element(cmd.path_in_schema[-1])
     if all_dict:
         if se.converted_type is not None:
             dic = convert(pd.Series(dic), se)
