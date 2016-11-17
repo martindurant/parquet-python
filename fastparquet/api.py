@@ -112,6 +112,38 @@ class ParquetFile(object):
         with self.open(ofname, 'rb') as f:
             return self.read_row_group(rg, columns, categories, infile=f)
 
+    def grab_cats(self, columns, group=0):
+        """ Read dictionaries of first row_group
+
+        Used to correctly create metadata for categorical dask dataframes.
+        Could be used to check that the same dictionary is used throughout
+        the data.
+
+        Parameters
+        ----------
+        columns: list
+            Column names to load
+        group: int (0)
+            Row group to load
+
+        Returns
+        -------
+        {column: [list, of, values]}
+        """
+        rg = self.row_groups[group]
+        ofname = self.sep.join([os.path.dirname(self.fn),
+                                rg.columns[0].file_path])
+        out = {}
+
+        with self.open(ofname, 'rb') as f:
+            for column in rg.columns:
+                name = ".".join(column.meta_data.path_in_schema)
+                if name not in columns:
+                    continue
+                out[name] = core.read_col(column, self.helper, f,
+                                          grab_dict=True)
+        return out
+
     def read_row_group(self, rg, columns, categories, infile=None):
         """
         Access row-group in a file and read some columns into a data-frame.
@@ -120,8 +152,6 @@ class ParquetFile(object):
 
         for column in rg.columns:
             name = ".".join(column.meta_data.path_in_schema)
-            se = self.helper.schema_element(name)
-            use = name in categories if categories is not None else False
             if name not in columns:
                 continue
 
