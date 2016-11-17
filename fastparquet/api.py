@@ -112,7 +112,7 @@ class ParquetFile(object):
         with self.open(ofname, 'rb') as f:
             return self.read_row_group(rg, columns, categories, infile=f)
 
-    def grab_cats(self, columns, group=0):
+    def grab_cats(self, columns, row_group_index=0):
         """ Read dictionaries of first row_group
 
         Used to correctly create metadata for categorical dask dataframes.
@@ -123,14 +123,14 @@ class ParquetFile(object):
         ----------
         columns: list
             Column names to load
-        group: int (0)
-            Row group to load
+        row_group_index: int (0)
+            Row group to load from
 
         Returns
         -------
         {column: [list, of, values]}
         """
-        rg = self.row_groups[group]
+        rg = self.row_groups[row_group_index]
         ofname = self.sep.join([os.path.dirname(self.fn),
                                 rg.columns[0].file_path])
         out = {}
