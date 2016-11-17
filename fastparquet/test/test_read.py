@@ -270,3 +270,14 @@ def test_statistics(tempdir):
     assert stat['min']['b'] == [None]
     assert stat['max']['c'] == [b'c']
     assert stat['min']['c'] == [b'a']
+
+
+def test_grab_cats(tempdir):
+    s = pd.Series(['a', 'c', 'b']*20)
+    df = pd.DataFrame({'a': s, 'b': s.astype('category'),
+                       'c': s.astype('category').cat.as_ordered()})
+    fastparquet.write(tempdir, df, file_scheme='hive')
+    pf = fastparquet.ParquetFile(tempdir)
+    cats = pf.grab_cats(['b', 'c'])
+    assert (cats['b'] == df.b.cat.categories).all()
+    assert (cats['c'] == df.c.cat.categories).all()
