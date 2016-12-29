@@ -5,10 +5,30 @@ from .thrift_structures import parquet_thrift
 
 # TODO: enable ability to pass kwargs to compressor
 
-compressions = {'GZIP': gzip.compress,
+try:
+    gzip_compress = gzip.compress
+    gzip_decompress = gzip.decompress
+
+except AttributeError:
+    # Python < 3.2 doesn't have these functions; copy them here.
+    import io
+
+    def gzip_compress(data, compresslevel=9):
+        buf = io.BytesIO()
+        with gzip.GzipFile(
+                fileobj=buf, mode='wb', compresslevel=compresslevel) as f:
+            f.write(data)
+        return buf.getvalue()
+
+    def gzip_decompress(data):
+        with GzipFile(fileobj=io.BytesIO(data)) as f:
+            return f.read()
+
+
+compressions = {'GZIP': gzip_compress,
                 'UNCOMPRESSED': lambda x: x}
 
-decompressions = {'GZIP': gzip.decompress,
+decompressions = {'GZIP': gzip_decompress,
                   'UNCOMPRESSED': lambda x: x}
 try:
     import snappy
