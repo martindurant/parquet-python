@@ -139,6 +139,8 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
             values = values.data[:nval]
         else:
             values = np.zeros(nval, dtype=np.int8)
+    elif daph.encoding == parquet_thrift.Encoding.LOSSY_RICE:
+        values = encoding.read_lossy_rice(raw_bytes[io_obj.loc:])
     else:
         raise NotImplementedError('Encoding %s' % daph.encoding)
     return definition_levels, repetition_levels, values[:nval]

@@ -312,6 +312,10 @@ enum Encoding {
   /** Dictionary encoding: the ids are encoded using the RLE encoding
    */
   RLE_DICTIONARY = 8;
+
+  /** Custom lossy rice encoding
+   */
+  LOSSY_RICE = 9;
 }
 
 /**
@@ -571,4 +575,3 @@ struct FileMetaData {
    **/
   6: optional string created_by
 }
-

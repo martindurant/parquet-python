@@ -13,6 +13,7 @@ import os
 import struct
 import sys
 
+from . import quantize
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
 from .util import byte_buffer
@@ -52,6 +53,9 @@ def read_plain(raw_bytes, type_, count, width=0):
             return np.array([raw_bytes], dtype='O')
         else:
             raise
+
+
+read_lossy_rice = quantize.dequantize_and_decompress
 
 
 @numba.jit(nogil=True)

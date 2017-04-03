@@ -22,59 +22,65 @@ def time_column():
         fn = os.path.join(tempdir, 'temp.parq')
         n = 10000000
         r = np.random.randint(-1e10, 1e10, n)
-        d = pd.DataFrame({'w': pd.Categorical(np.random.choice(
-                ['hi', 'you', 'people'], size=n)),
-                          'x': r.view('timedelta64[ns]'),
-                          'y': r / np.random.randint(1, 1000, size=n),
-                          'z': np.random.randint(0, 127, size=n,
-                                                 dtype=np.uint8)})
+        d = pd.DataFrame({
+            'w': pd.Categorical(np.random.choice(['hi', 'you', 'people'], size=n)),
+            'x': r.view('timedelta64[ns]'),
+            'y': r / np.random.randint(1, 1000, size=n),
+            'z': np.random.randint(0, 127, size=n, dtype=np.uint8),
+            'v': np.random.normal(size=n).astype(np.float32)})
 
-        for col in d.columns:
-            df = d[[col]]
-            write(fn, df)
-            with measure('%s: write, no nulls' % d.dtypes[col], result):
-                write(fn, df, has_nulls=False)
+        for quantization_level in [None, 10]:
+            tail = ', quantized' if quantization_level is not None else ''
+            for col in d.columns:
+                # Skip benchmarking quantization for non-float data types.
+                if quantization_level is not None and 'float' not in str(d.dtypes[col]):
+                    continue
 
-            pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+                df = d[[col]]
+                write(fn, df, quantization_level=quantization_level)
+                with measure('%s: write, no nulls' % d.dtypes[col] + tail, result):
+                    write(fn, df, has_nulls=False, quantization_level=quantization_level)
 
-            with measure('%s: read, no nulls' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf = ParquetFile(fn)
+                pf.to_pandas(categories={'w': 3})  # warm-up
 
-            with measure('%s: write, no nulls, has_null=True' % d.dtypes[col], result):
-                write(fn, df, has_nulls=True)
+                with measure('%s: read, no nulls' % d.dtypes[col] + tail, result):
+                    pf.to_pandas(categories={'w': 3})
 
-            pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+                with measure('%s: write, no nulls, has_null=True' % d.dtypes[col] + tail, result):
+                    write(fn, df, has_nulls=True, quantization_level=quantization_level)
 
-            with measure('%s: read, no nulls, has_null=True' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf = ParquetFile(fn)
+                pf.to_pandas(categories={'w': 3})  # warm-up
 
-            if d.dtypes[col].kind == 'm':
-                d.loc[n//2, col] = pd.to_datetime('NaT')
-            elif d.dtypes[col].kind == 'f':
-                d.loc[n//2, col] = np.nan
-            elif d.dtypes[col].kind in ['i', 'u']:
-                continue
-            else:
-                d.loc[n//2, col] = None
-            with measure('%s: write, with null, has_null=True' % d.dtypes[col], result):
-                write(fn, df, has_nulls=True)
+                with measure('%s: read, no nulls, has_null=True' % d.dtypes[col] + tail, result):
+                    pf.to_pandas(categories={'w': 3})
 
-            pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+                if d.dtypes[col].kind == 'm':
+                    d.loc[n//2, col] = pd.to_datetime('NaT')
+                elif d.dtypes[col].kind == 'f':
+                    d.loc[n//2, col] = np.nan
+                elif d.dtypes[col].kind in ['i', 'u']:
+                    continue
+                else:
+                    d.loc[n//2, col] = None
+                with measure('%s: write, with null, has_null=True' % d.dtypes[col] + tail, result):
+                    write(fn, df, has_nulls=True, quantization_level=quantization_level)
 
-            with measure('%s: read, with null, has_null=True' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf = ParquetFile(fn)
+                pf.to_pandas(categories={'w': 3})  # warm-up
 
-            with measure('%s: write, with null, has_null=False' % d.dtypes[col], result):
-                write(fn, df, has_nulls=False)
+                with measure('%s: read, with null, has_null=True' % d.dtypes[col] + tail, result):
+                    pf.to_pandas(categories={'w': 3})
 
-            pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+                with measure('%s: write, with null, has_null=False' % d.dtypes[col] + tail, result):
+                    write(fn, df, has_nulls=False, quantization_level=quantization_level)
 
-            with measure('%s: read, with null, has_null=False' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf = ParquetFile(fn)
+                pf.to_pandas(categories={'w': 3})  # warm-up
+
+                with measure('%s: read, with null, has_null=False' % d.dtypes[col] + tail, result):
+                    pf.to_pandas(categories={'w': 3})
 
         return result
 
@@ -162,4 +168,3 @@ def run_find_nulls(df, res):
         df.x.notnull().all()
     with measure((df.x.dtype.kind, nvalid, 'count'), res):
         df.x.count()
-
