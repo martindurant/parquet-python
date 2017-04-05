@@ -10,7 +10,7 @@ def test_quantize_float32():
     std = np.std(data - check_data)
     assert std < 0.05, "RICE float quantization and compression for float 32 is broken!"
 
-def test_quantize_float32():
+def test_quantize_float64():
     seed = 2454389
     rng = np.random.RandomState(seed=seed)
     data = rng.normal(size=100000).astype(np.float64)
