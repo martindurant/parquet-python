@@ -315,7 +315,7 @@ enum Encoding {
 
   /** Custom lossy rice encoding
    */
-  LOSSY_RICE = 9;
+  LOSSY_RICE = 19850410;
 }
 
 /**
