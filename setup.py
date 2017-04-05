@@ -13,7 +13,11 @@ from Cython.Build import cythonize
 
 cython_modules = [Extension('fastparquet.speedups',
                             ['fastparquet/speedups.pyx'],
-                            include_dirs=[np.get_include()])]
+                            include_dirs=[np.get_include()]),
+                  Extension('fastparquet.quantize._quantize',
+                            ['fastparquet/quantize/_quantize.pyx', 'fastparquet/quantize/rice.c'],
+                            include_dirs=[np.get_include()]),
+                            ]
 
 ext_modules = cythonize(cython_modules)
 

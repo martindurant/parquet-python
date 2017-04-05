@@ -11,6 +11,7 @@ import struct
 import sys
 import thriftpy
 import warnings
+import time
 
 import numba
 
@@ -25,6 +26,7 @@ from .util import (default_open, default_mkdirs, sep_from_open,
                    ParquetException, thrift_copy, index_like, PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by)
 from .speedups import array_encode_utf8, pack_byte_array
+from . import quantize
 
 MARKER = b'PAR1'
 NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
@@ -369,11 +371,52 @@ def encode_dict(data, se):
     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
     return o.so_far().tostring() + data.values.tostring()
 
+
+# Cache the median absolute deviation of columns here per call to `write`.
+COLUMN_MADS = {}
+
+def encode_lossy_rice(data, se, quantization_level, quantization_random_state):
+    global COLUMN_MADS
+
+    if data.name not in COLUMN_MADS:
+        # Really good idea from J. Michelson to use every n-th value
+        # to speed up MAD computation.
+        # Using it here to keep just 10k values for MAD computation.
+        if data.shape[0] > 10000:
+            modval = data.shape[0] // 10000
+            vals = data.values[::modval]
+        else:
+            vals = data.values
+
+        # Use median abolsute deviation to estimate scale of distribution,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore', message='All-NaN', category=RuntimeWarning, append=True)
+            scale = (np.nanmedian(np.abs(vals - np.nanmedian(vals))) *
+                     1.4826 /
+                     quantization_level)
+            scale = scale if scale > 0.0 else 1.0
+
+        # Cache it to save time for later row groups.
+        COLUMN_MADS[data.name] = scale
+    else:
+        scale = COLUMN_MADS[data.name]
+    zero_point = np.nanmin(data.values) - scale * (-2147483647 + 10)
+    seed = quantization_random_state.randint(1, 100000000)
+
+    if 'float64' in str(data.values.dtype):
+        return quantize.quantize_and_compress_float64(
+            np.ascontiguousarray(data.values), scale, zero_point, seed)
+    else:
+        return quantize.quantize_and_compress_float32(
+            np.ascontiguousarray(data.values), scale, zero_point, seed)
+
 encode = {
     'PLAIN': encode_plain,
     'RLE': encode_rle,
     'PLAIN_DICTIONARY': encode_dict,
     # 'DELTA_BINARY_PACKED': encode_delta
+    'LOSSY_RICE': encode_lossy_rice,
 }
 
 
@@ -402,7 +445,8 @@ def make_definitions(data, no_nulls):
     return block, out
 
 
-def write_column(f, data, selement, compression=None):
+def write_column(f, data, selement, compression=None,
+                 quantization_level=None, quantization_random_state=None):
     """
     Write a single column of data to an open Parquet file
 
@@ -414,6 +458,12 @@ def write_column(f, data, selement, compression=None):
         produced by ``find_type``
     compression: str or None
         if not None, must be one of the keys in ``compression.compress``
+    quantization_level: int or None
+        If not None, floating point values are quantized in units of the median
+        absolute deviation divided by `quantization_level`. These integer values are then RICE
+        encoded.
+    quantization_random_state: `np.random.RandomState` or None
+        The RNG used to dither the floating point values.
 
     Returns
     -------
@@ -477,10 +527,14 @@ def write_column(f, data, selement, compression=None):
         encoding = "PLAIN_DICTIONARY"
     elif str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
         encoding = "RLE"
+    elif str(data.dtype) in ['float32', 'float64'] and quantization_level is not None:
+        encoding = "LOSSY_RICE"
 
     start = f.tell()
-    bdata = definition_data + repetition_data + encode[encoding](
-            data, selement)
+    encoding_args = [data, selement]
+    if encoding == 'LOSSY_RICE':
+        encoding_args.extend([quantization_level, quantization_random_state])
+    bdata = definition_data + repetition_data + encode[encoding](*encoding_args)
     bdata += 8 * b'\x00'
     try:
         if encoding != 'PLAIN_DICTIONARY' and num_nulls == 0:
@@ -547,7 +601,8 @@ def write_column(f, data, selement, compression=None):
     return chunk
 
 
-def make_row_group(f, data, schema, compression=None):
+def make_row_group(f, data, schema, compression=None,
+                   quantization_level=None, quantization_random_state=None):
     """ Make a single row group of a Parquet file """
     rows = len(data)
     if rows == 0:
@@ -564,8 +619,17 @@ def make_row_group(f, data, schema, compression=None):
                 comp = compression.get(column.name, None)
             else:
                 comp = compression
-            chunk = write_column(f, data[column.name], column,
-                                 compression=comp)
+
+            if isinstance(quantization_level, dict):
+                quant_level = quantization_level.get(column.name, None)
+            else:
+                quant_level = quantization_level
+
+            chunk = write_column(
+                f, data[column.name], column,
+                compression=comp,
+                quantization_level=quant_level,
+                quantization_random_state=quantization_random_state)
             rg.columns.append(chunk)
     rg.total_byte_size = sum([c.meta_data.total_uncompressed_size for c in
                               rg.columns])
@@ -637,7 +701,8 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
 
 
 def write_simple(fn, data, fmd, row_group_offsets, compression,
-                 open_with, has_nulls, append=False):
+                 open_with, has_nulls, append=False,
+                 quantization_level=None, quantization_random_state=None):
     """
     Write to one single file (for file_scheme='simple')
     """
@@ -661,7 +726,9 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
             end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
                    else None)
             rg = make_row_group(f, data[start:end], fmd.schema,
-                                compression=compression)
+                                compression=compression,
+                                quantization_level=quantization_level,
+                                quantization_random_state=quantization_random_state)
             if rg is not None:
                 fmd.row_groups.append(rg)
 
@@ -674,7 +741,8 @@ def write(filename, data, row_group_offsets=50000000,
           compression=None, file_scheme='simple', open_with=default_open,
           mkdirs=default_mkdirs, has_nulls=None, write_index=None,
           partition_on=[], fixed_text=None, append=False,
-          object_encoding='infer', times='int64'):
+          object_encoding='infer', times='int64',
+          quantization_level=None, quantization_random_seed=None):
     """ Write Pandas DataFrame to filename as Parquet Format
 
     Parameters
@@ -737,11 +805,24 @@ def write(filename, data, row_group_offsets=50000000,
         resolution; in "int96" mode, they are written as 12-byte blocks, with
         the first 8 bytes as ns within the day, the next 4 bytes the julian day.
         'int96' mode is included only for compatibility.
+    quantization_level: int, dict or None
+        If not None, then quantization_level floating point values in this many units of the
+        median absolute deviation of the column. Only works for the 'simple' file
+        scheme. To specify a different value per column, use a dictionary keyed on the
+        column names (i.e. `{col1: 10, col2: 5}`).
+    quantization_random_seed: int (greater than 0), `np.random.RandomState`, or None
+        The seed or RNG for the dithering of the quantized float values. If None, then the
+        a `np.random.RandomState` instance is instantiated using its default (non-deterministic)
+        seeding.
 
     Examples
     --------
     >>> fastparquet.write('myfile.parquet', df)  # doctest: +SKIP
     """
+
+    global COLUMN_MADS
+    COLUMN_MADS = {}
+
     sep = sep_from_open(open_with)
     if isinstance(row_group_offsets, int):
         l = len(data)
@@ -757,9 +838,19 @@ def write(filename, data, row_group_offsets=50000000,
                         fixed_text=fixed_text, object_encoding=object_encoding,
                         times=times)
 
+    if quantization_level:
+        if isinstance(quantization_random_seed, np.random.RandomState):
+            quantization_random_state = quantization_random_seed
+        else:
+            quantization_random_state = np.random.RandomState(seed=quantization_random_seed)
+    else:
+        quantization_random_state = None
+
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
-                     compression, open_with, has_nulls, append)
+                     compression, open_with, has_nulls, append,
+                     quantization_level=quantization_level,
+                     quantization_random_state=quantization_random_state)
     elif file_scheme == 'hive':
         if append:
             pf = api.ParquetFile(filename, open_with=open_with)

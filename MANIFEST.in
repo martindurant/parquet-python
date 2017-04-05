@@ -3,6 +3,9 @@ recursive-include fastparquet *.py
 recursive-include fastparquet *.pyx
 recursive-include docs *.rst
 
+include fastparquet/rice/rice.h
+include fastparquet/rice/rice.c
+
 include setup.py
 include README.rst
 include LICENSE

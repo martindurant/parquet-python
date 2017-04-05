@@ -2,6 +2,7 @@
 *.so
 *.dll
 fastparquet/speedups.c
+fastparquet/quantize/_quantize.c
 .coverage
 cover
 build
