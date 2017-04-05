@@ -619,10 +619,16 @@ def make_row_group(f, data, schema, compression=None,
                 comp = compression.get(column.name, None)
             else:
                 comp = compression
+
+            if isinstance(quantization_level, dict):
+                quant_level = quantization_level.get(column.name, None)
+            else:
+                quant_level = quantization_level
+
             chunk = write_column(
                 f, data[column.name], column,
                 compression=comp,
-                quantization_level=quantization_level,
+                quantization_level=quant_level,
                 quantization_random_state=quantization_random_state)
             rg.columns.append(chunk)
     rg.total_byte_size = sum([c.meta_data.total_uncompressed_size for c in
@@ -799,10 +805,11 @@ def write(filename, data, row_group_offsets=50000000,
         resolution; in "int96" mode, they are written as 12-byte blocks, with
         the first 8 bytes as ns within the day, the next 4 bytes the julian day.
         'int96' mode is included only for compatibility.
-    quantization_level: int or None
+    quantization_level: int, dict or None
         If not None, then quantization_level floating point values in this many units of the
         median absolute deviation of the column. Only works for the 'simple' file
-        scheme.
+        scheme. To specify a different value per column, use a dictionary keyed on the
+        column names (i.e. `{col1: 10, col2: 5}`).
     quantization_random_seed: int (greater than 0), `np.random.RandomState`, or None
         The seed or RNG for the dithering of the quantized float values. If None, then the
         a `np.random.RandomState` instance is instantiated using its default (non-deterministic)
