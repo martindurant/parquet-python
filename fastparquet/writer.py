@@ -478,8 +478,9 @@ def write_column(f, data, selement, compression=None):
     max, min = None, None
 
     if str(data.dtype) == 'category':
+        ncats = len(data.cat.categories)
         dph = parquet_thrift.DictionaryPageHeader(
-                num_values=len(data.cat.categories),
+                num_values=ncats,
                 encoding=parquet_thrift.Encoding.PLAIN)
         bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
         bdata += 8 * b'\x00'
@@ -570,6 +571,9 @@ def write_column(f, data, selement, compression=None):
             total_uncompressed_size=uncompressed_size,
             total_compressed_size=compressed_size)
     if cats:
+        # all chunks describe if they are categorical
+        cmd.key_value_metadata = [
+            parquet_thrift.KeyValue(key="fastparquet.cats", value=str(ncats))]
         p.append(parquet_thrift.PageEncodingStats(
                 page_type=parquet_thrift.PageType.DICTIONARY_PAGE,
                 encoding=parquet_thrift.Encoding.PLAIN, count=1))
@@ -617,6 +621,16 @@ def make_part_file(f, data, schema, compression=None, fmd=None):
                                               version=1,
                                               created_by=created_by,
                                               row_groups=[rg])
+            for chunk in rg.columns:
+                cats = {}
+                if chunk.meta_data.key_value_metadata:
+                    ncols = int(chunk.meta_data.key_value_metadata[0].value)
+                    cats[chunk.meta_data.path_in_schema[-1]] = ncols
+            if cats:
+                # ensure all files get category information
+                fmd.key_value_metadata = [
+                    parquet_thrift.KeyValue(key="fastparquet.cats",
+                                            value=json.dumps(cats))]
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<i", foot_size))
         else:
