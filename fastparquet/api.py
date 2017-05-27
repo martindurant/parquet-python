@@ -496,12 +496,12 @@ def filter_out_stats(rg, filters, schema):
                 if s.max is not None:
                     b = ensure_bytes(s.max)
                     vmax = encoding.read_plain(b, column.meta_data.type, 1)
-                    if se.converted_type:
+                    if se.converted_type is not None:
                         vmax = converted_types.convert(vmax, se)
                 if s.min is not None:
                     b = ensure_bytes(s.min)
                     vmin = encoding.read_plain(b, column.meta_data.type, 1)
-                    if se.converted_type:
+                    if se.converted_type is not None:
                         vmin = converted_types.convert(vmin, se)
                 out = filter_val(op, val, vmin, vmax)
                 if out is True:
@@ -632,12 +632,16 @@ def filter_out_cats(rg, filters, sep='/'):
         return False
     s = ex_from_sep(sep)
     partitions = s.findall(rg.columns[0].file_path)
-    pairs = [(p[0], val_to_num(p[1])) for p in partitions]
+    pairs = [(p[0], p[1]) for p in partitions]
     for cat, v in pairs:
 
         app_filters = [f[1:] for f in filters if f[0] == cat]
         for op, val in app_filters:
-            out = filter_val(op, val, v, v)
+            if isinstance(val, str):
+                v0 = v
+            else:
+                v0 = val_to_num(v)
+            out = filter_val(op, val, v0, v0)
             if out is True:
                 return True
     return False

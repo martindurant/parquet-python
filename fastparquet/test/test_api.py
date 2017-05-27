@@ -194,3 +194,15 @@ def test_filter_without_paths(tempdir):
     pd.util.testing.assert_frame_equal(out, df)
     out = pf.to_pandas(filters=[['x', '>', 30]])
     assert len(out) == 0
+
+
+def test_filter_special(tempdir):
+    df = pd.DataFrame({
+        'x': [1, 2, 3, 4, 5, 6, 7],
+        'symbol': ['NOW', 'OI', 'OI', 'OI', 'NOW', 'NOW', 'OI']
+    })
+    write(tempdir, df, file_scheme='hive', partition_on=['symbol'])
+    pf = ParquetFile(tempdir)
+    out = pf.to_pandas(filters=[('symbol', '==', 'NOW')])
+    assert out.x.tolist() == [1, 5, 6]
+    assert out.symbol.tolist() == ['NOW', 'NOW', 'NOW']
