@@ -802,6 +802,7 @@ def test_cats_in_part_files(tempdir):
     for f in files:
         pf = ParquetFile(f)
         assert pf.fmd.key_value_metadata == kv
+        assert pf.row_groups[0].columns[0].meta_data.key_value_metadata
         assert len(pf.row_groups) == 1
     out = pd.concat([ParquetFile(f).to_pandas() for f in files],
                     ignore_index=True)
