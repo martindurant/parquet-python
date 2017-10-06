@@ -79,19 +79,24 @@ class ParquetFile(object):
     """
     def __init__(self, fn, verify=False, open_with=default_open,
                  sep=os.sep, root=False):
-        self.sep = sep
+        self.sep = '/'
         if isinstance(fn, (tuple, list)):
+            if sep == '\\':  # Windows path
+                fn = ['/'.join(f.split(sep)) for f in fn]
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
                                                open_with=open_with, root=root)
             if basepath:
-                self.fn = sep.join([basepath, '_metadata'])  # effective file
+                # effective file
+                self.fn = self.sep.join([basepath, '_metadata'])
             else:
                 self.fn = '_metadata'
             self.fmd = fmd
             self._set_attrs()
         else:
+            if sep == '\\':  # Windows path
+                fn = '/'.join(fn.split(sep))
             try:
-                fn2 = sep.join([fn, '_metadata'])
+                fn2 = self.sep.join([fn, '_metadata'])
                 self.fn = fn2
                 with open_with(fn2, 'rb') as f:
                     self._parse_header(f, verify)

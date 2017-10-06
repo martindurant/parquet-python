@@ -972,6 +972,9 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     ParquetFile instance corresponding to the merged data.
     """
     sep = sep_from_open(open_with)
+    if sep == '\\':
+        file_list = ['/'.join(f.split('\\')) for f in file_list]
+        sep = '/'
     basepath, fmd = metadata_from_many(file_list, verify_schema, open_with,
                                        root=root)
 
