@@ -779,6 +779,9 @@ def write(filename, data, row_group_offsets=50000000,
     if str(has_nulls) == 'infer':
         has_nulls = None
     sep = sep_from_open(open_with)
+    if sep == '\\':
+        filename = '/'.join(filename.split('\\'))
+        sep = '/'
     if isinstance(row_group_offsets, int):
         l = len(data)
         nparts = max((l - 1) // row_group_offsets + 1, 1)
