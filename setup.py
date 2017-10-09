@@ -22,7 +22,7 @@ else:
 
 setup(
     name='fastparquet',
-    version='0.1.2',
+    version='0.1.3',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@continuum.io',
