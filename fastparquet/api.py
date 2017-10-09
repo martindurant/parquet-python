@@ -82,7 +82,10 @@ class ParquetFile(object):
         self.sep = '/'
         if isinstance(fn, (tuple, list)):
             if sep == '\\':  # Windows path
-                fn = ['/'.join(f.split(sep)) for f in fn]
+                fn = [f if isinstance(f, ParquetFile) else 
+                      '/'.join(f.split(sep)) for f in fn]
+                if root:
+                    root = '/'.join(root.split(sep))
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
                                                open_with=open_with, root=root)
             if basepath:

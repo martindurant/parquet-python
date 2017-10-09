@@ -118,10 +118,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
     fmd: metadata thrift structure
     """
     from fastparquet import api
-    sep = sep_from_open(open_with)
-    if sep == '\\':
-        file_list = ['/'.join(f.split('\\')) for f in file_list]
-        sep = '/'
+    sep = '/'
     if all(isinstance(pf, api.ParquetFile) for pf in file_list):
         pfs = file_list
         file_list = [pf.fn for pf in pfs]

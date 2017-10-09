@@ -9,6 +9,8 @@ from fastparquet.test.util import tempdir
 from fastparquet import write, ParquetFile
 import datetime as dt
 import string
+import sys
+import pytest
 
 def frame_symbol_dtTrade_type_strike(days=1 * 252,
                        start_date=dt.datetime(2005, 1, 1, hour=0, minute=0, second=0),
@@ -42,10 +44,15 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
                                                            [('dtTrade','==', Timestamp('2005-01-01 00:00:00'))]), 
            ]
         )
+@pytest.mark.skipif(sys.platform.startswith('win'), 
+                    reason='windows platforms are more brittle')
 def test_frame_write_read_verify(tempdir, input_symbols, input_days, file_scheme, 
 						    input_columns, partitions, filters):
     #Generate Temp Director for parquet Files
-    fdir = str(tempdir)
+    if hasattr(tempdir, '__call__'):
+        fdir = next(tempdir())
+    else:
+        fdir = str(tempdir)
     fname = os.path.join(fdir, 'test')
 
     #Generate Test Input Frame

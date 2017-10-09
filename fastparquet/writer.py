@@ -222,6 +222,8 @@ def infer_object_encoding(data):
         return 'bool'
     elif all(isinstance(i, int) for i in head):
         return 'int'
+    elif PY2 and all(isinstance(i, (int, long)) for i in head):
+        return 'int'
     elif all(isinstance(i, float) or isinstance(i, np.floating)
              for i in head):
         # You need np.floating here for pandas NaNs in object
@@ -868,6 +870,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd, sep,
     Each combination of column values (determined by pandas groupby) will
     be written in structured directories.
     """
+    sep = '/'
     gb = data.groupby(columns)
     remaining = list(data)
     for column in columns:
@@ -976,7 +979,8 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     """
     sep = sep_from_open(open_with)
     if sep == '\\':
-        file_list = ['/'.join(f.split('\\')) for f in file_list]
+        file_list = [f if isinstance(f, api.ParquetFile) else 
+                     '/'.join(f.split('\\')) for f in file_list]
         sep = '/'
     basepath, fmd = metadata_from_many(file_list, verify_schema, open_with,
                                        root=root)
