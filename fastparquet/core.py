@@ -277,11 +277,11 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
 def read_row_group_file(fn, rg, columns, categories, schema_helper, cats,
                         open=open, selfmade=False, index=None, assign=None,
-                        sep=os.sep, scheme='hive'):
+                        sep='/', scheme='hive'):
     with open(fn, mode='rb') as f:
         return read_row_group(f, rg, columns, categories, schema_helper, cats,
                               selfmade=selfmade, index=index, assign=assign,
-                              sep=sep, scheme=scheme)
+                              sep='/', scheme=scheme)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -324,10 +324,11 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
                    selfmade=False, index=None, assign=None,
-                   sep=os.sep, scheme='hive'):
+                   sep='/', scheme='hive'):
     """
     Access row-group in a file and read some columns into a data-frame.
     """
+    sep = '/'
     if assign is None:
         raise RuntimeError('Going with pre-allocation!')
     read_row_group_arrays(file, rg, columns, categories, schema_helper,

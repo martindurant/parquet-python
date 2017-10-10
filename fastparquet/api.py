@@ -147,7 +147,7 @@ class ParquetFile(object):
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
         self.file_scheme = get_file_scheme([rg.columns[0].file_path
-                                           for rg in self.row_groups], self.sep)
+                                           for rg in self.row_groups], '/')
         self._read_partitions()
         self._dtypes()
 
@@ -174,14 +174,14 @@ class ParquetFile(object):
         cats = OrderedDict()
         for rg in self.row_groups:
             for col in rg.columns:
-                s = ex_from_sep(self.sep)
+                s = ex_from_sep('/')
                 path = col.file_path or ""
                 if self.file_scheme == 'hive':
                     partitions = s.findall(path)
                     for key, val in partitions:
                         cats.setdefault(key, set()).add(val)
                 else:
-                    for i, val in enumerate(col.file_path.split(self.sep)[:-1]):
+                    for i, val in enumerate(col.file_path.split('/')[:-1]):
                         key = 'dir%i' % i
                         cats.setdefault(key, set()).add(val)
         self.cats = OrderedDict([(key, list([val_to_num(x) for x in v]))
@@ -189,9 +189,9 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns[0].file_path:
-            base = self.fn.replace('_metadata', '').rstrip(self.sep)
+            base = self.fn.replace('_metadata', '').rstrip('/')
             if base:
-                return self.sep.join([base, rg.columns[0].file_path])
+                return '/'.join([base, rg.columns[0].file_path])
             else:
                 return rg.columns[0].file_path
         else:
@@ -229,7 +229,7 @@ class ParquetFile(object):
             ret = True
         core.read_row_group(
                 infile, rg, columns, categories, self.schema, self.cats,
-                self.selfmade, index=index, assign=assign, sep=self.sep,
+                self.selfmade, index=index, assign=assign, sep='/',
                 scheme=self.file_scheme)
         if ret:
             return df
@@ -282,7 +282,7 @@ class ParquetFile(object):
         """
         return [rg for rg in self.row_groups if
                 not(filter_out_stats(rg, filters, self.schema)) and
-                not(filter_out_cats(rg, filters, self.sep))]
+                not(filter_out_cats(rg, filters, '/'))]
 
     def iter_row_groups(self, columns=None, categories=None, filters=[],
                         index=None):
@@ -703,7 +703,7 @@ def filter_out_cats(rg, filters, sep='/'):
     # TODO: fix for Drill
     if len(filters) == 0 or rg.columns[0].file_path is None:
         return False
-    s = ex_from_sep(sep)
+    s = ex_from_sep('/')
     partitions = s.findall(rg.columns[0].file_path)
     pairs = [(p[0], p[1]) for p in partitions]
     for cat, v in pairs:

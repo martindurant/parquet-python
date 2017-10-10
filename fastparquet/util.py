@@ -25,10 +25,7 @@ class ParquetException(Exception):
 
 
 def sep_from_open(opener):
-    if opener is default_open:
-        return os.sep
-    else:
-        return '/'
+    return '/'
 
 
 if PY2:
@@ -126,7 +123,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
         pfs = [api.ParquetFile(fn, open_with=open_with) for fn in file_list]
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
-    basepath, file_list = analyse_paths(file_list, sep, root=root)
+    basepath, file_list = analyse_paths(file_list, '/', root=root)
 
     if verify_schema:
         for pf in pfs[1:]:
@@ -157,16 +154,14 @@ seps = {}
 def ex_from_sep(sep):
     """Generate regex for category folder matching"""
     if sep not in seps:
-        if sep in r'\^$.|?*+()[]':
-            s = re.compile(r"([a-zA-Z_0-9]+)=([^\{}]+)".format(sep))
-        else:
-            s = re.compile("([a-zA-Z_0-9]+)=([^{}]+)".format(sep))
+        s = re.compile("([a-zA-Z_0-9]+)=([^{}]+)".format(sep))
         seps[sep] = s
     return seps[sep]
 
 
-def analyse_paths(file_list, sep=os.sep, root=False):
+def analyse_paths(file_list, sep='/', root=False):
     """Consolidate list of file-paths into  parquet relative paths"""
+    sep = '/'
     path_parts_list = [fn.split(sep) for fn in file_list]
     if root is False:
         basepath = path_parts_list[0][:-1]
@@ -269,6 +264,7 @@ def get_file_scheme(paths, sep='/'):
         form dir0, dir1; all files are at the same directory depth
     'other': none of the above, assume no partitioning
     """
+    sep = '/'
     if not paths:
         return 'empty'
     if set(paths) == {None}:
