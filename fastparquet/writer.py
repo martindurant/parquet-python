@@ -20,7 +20,7 @@ from .compression import compress_data, decompress_data
 from .converted_types import tobson
 from . import encoding, api
 from .util import (default_open, default_mkdirs, sep_from_open,
-                   ParquetException, thrift_copy, index_like, PY2, STR_TYPE,
+                   ParquetException, index_like, PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata)
 from .speedups import array_encode_utf8, pack_byte_array

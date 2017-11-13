@@ -73,27 +73,6 @@ def is_thrift_item(item):
     return hasattr(item, 'thrift_spec') and hasattr(item, 'read')
 
 
-def thrift_copy(structure):
-    """
-    Recursively copy a thriftpy structure
-    """
-    base = structure.__class__()
-    for key in dir(structure):
-        if key.startswith('_') or key in ['thrift_spec', 'read', 'write',
-                                          'default_spec', 'validate']:
-            continue
-        val = getattr(structure, key)
-        if isinstance(val, list):
-            setattr(base, key, [thrift_copy(item)
-                                if is_thrift_item(item)
-                                else item for item in val])
-        elif is_thrift_item(val):
-            setattr(base, key, thrift_copy(val))
-        else:
-            setattr(base, key, val)
-    return base
-
-
 def thrift_print(structure, offset=0):
     """
     Handy recursive text ouput for thrift structures
@@ -143,7 +122,9 @@ def setstate_method(self, state):
     self.__dict__ = out.__dict__
 
 
-for cls in [parquet_thrift.FileMetaData, parquet_thrift.RowGroup]:
+for cls in [parquet_thrift.FileMetaData,
+            parquet_thrift.RowGroup,
+            parquet_thrift.ColumnChunk]:
     bind_method(cls, '__getstate__', getstate_method)
     bind_method(cls, '__setstate__', setstate_method)
     bind_method(cls, '__copy__', copy_method)
