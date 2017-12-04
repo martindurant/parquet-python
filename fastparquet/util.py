@@ -1,11 +1,11 @@
 import ast
+import copy
 import os
 import os.path
 import pandas as pd
 import re
 import six
 
-from .thrift_structures import thrift_copy
 try:
     from pandas.api.types import is_categorical_dtype
 except ImportError:
@@ -133,7 +133,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             if pf._schema != pfs[0]._schema:
                 raise ValueError('Incompatible schemas')
 
-    fmd = thrift_copy(pfs[0].fmd)  # we inherit "created by" field
+    fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
     fmd.row_groups = []
 
     for pf, fn in zip(pfs, file_list):
@@ -142,7 +142,8 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             # anyway.
             raise ValueError('Cannot merge multi-file input', fn)
         for rg in pf.row_groups:
-            rg = thrift_copy(rg)
+            rg = copy.copy(rg)
+            rg.columns = [copy.copy(c) for c in rg.columns]
             for chunk in rg.columns:
                 chunk.file_path = fn
             fmd.row_groups.append(rg)

@@ -1,8 +1,6 @@
 import pytest
 
-from fastparquet.util import (thrift_copy, analyse_paths, get_file_scheme,
-                              val_to_num)
-from fastparquet import parquet_thrift
+from fastparquet.util import analyse_paths, get_file_scheme, val_to_num
 
 
 def test_analyse_paths():
@@ -25,23 +23,6 @@ def test_analyse_paths():
     file_list = ['c\\cat=1\\a', 'c\\cat=2\\b', 'c\\cat=1\\c']
     base, out = analyse_paths(file_list, '\\')
     assert (base, out) == ('c', ['cat=1\\a', 'cat=2\\b', 'cat=1\\c'])
-
-
-def test_thrift_copy():
-    fmd = parquet_thrift.FileMetaData()
-    rg0 = parquet_thrift.RowGroup()
-    rg0.num_rows = 5
-    rg1 = parquet_thrift.RowGroup()
-    rg1.num_rows = 15
-    fmd.row_groups = [rg0, rg1]
-
-    fmd2 = thrift_copy(fmd)
-
-    assert fmd is not fmd2
-    assert fmd == fmd2
-    assert fmd2.row_groups[0] is not rg0
-    rg0.num_rows = 25
-    assert fmd2.row_groups[0].num_rows == 5
 
 
 def test_file_scheme():
