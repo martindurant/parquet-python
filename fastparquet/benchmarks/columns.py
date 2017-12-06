@@ -92,6 +92,7 @@ def time_text():
                 df = d[[col]]
                 if isinstance(df.iloc[0, 0], bytes):
                     t = "bytes"
+                    continue
                 else:
                     t = 'utf8'
                 write(fn, df)

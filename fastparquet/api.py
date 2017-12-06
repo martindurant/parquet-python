@@ -541,12 +541,12 @@ def filter_out_stats(rg, filters, schema):
                 s = column.meta_data.statistics
                 if s.max is not None:
                     b = ensure_bytes(s.max)
-                    vmax = encoding.read_plain(b, column.meta_data.type, 1)
+                    vmax = encoding.read_plain(b, column.meta_data.type, 1, se)
                     if se.converted_type is not None:
                         vmax = converted_types.convert(vmax, se)
                 if s.min is not None:
                     b = ensure_bytes(s.min)
-                    vmin = encoding.read_plain(b, column.meta_data.type, 1)
+                    vmin = encoding.read_plain(b, column.meta_data.type, 1, se)
                     if se.converted_type is not None:
                         vmin = converted_types.convert(vmin, se)
                 out = filter_val(op, val, vmin, vmax)

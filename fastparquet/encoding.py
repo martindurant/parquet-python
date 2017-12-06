@@ -8,7 +8,7 @@ import array
 import numba
 import numpy as np
 
-from .speedups import unpack_byte_array
+from .speedups import decodebytes, decodeutf8
 from .thrift_structures import parquet_thrift
 from .util import byte_buffer
 
@@ -27,7 +27,7 @@ DECODE_TYPEMAP = {
 }
 
 
-def read_plain(raw_bytes, type_, count, width=0):
+def read_plain(raw_bytes, type_, count, width=0, se=None):
     if type_ in DECODE_TYPEMAP:
         dtype = DECODE_TYPEMAP[type_]
         return np.frombuffer(byte_buffer(raw_bytes), dtype=dtype, count=count)
@@ -38,13 +38,19 @@ def read_plain(raw_bytes, type_, count, width=0):
         return np.frombuffer(byte_buffer(raw_bytes), dtype=dtype, count=count)
     if type_ == parquet_thrift.Type.BOOLEAN:
         return read_plain_boolean(raw_bytes, count)
-    # variable byte arrays (rare)
     try:
-        return np.array(unpack_byte_array(raw_bytes, count), dtype='O')
+        if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                                 parquet_thrift.ConvertedType.JSON]:
+            return decodeutf8(raw_bytes, count)
+        else:
+            return decodebytes(raw_bytes, count)
     except RuntimeError:
         if count == 1:
-            # e.g., for statistics
-            return np.array([raw_bytes], dtype='O')
+            if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                                     parquet_thrift.ConvertedType.JSON]:
+                return np.array([raw_bytes.decode('utf8')], dtype='O')
+            else:
+                return np.array([raw_bytes], dtype='O')
         else:
             raise
 

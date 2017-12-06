@@ -14,7 +14,7 @@ from . import encoding
 from .compression import decompress_data
 from .converted_types import convert, typemap
 from .schema import _is_list_like, _is_map_like
-from .speedups import unpack_byte_array
+from .speedups import decodeutf8, decodebytes
 from .thrift_structures import parquet_thrift, read_thrift
 from .util import val_to_num, byte_buffer, ex_from_sep
 
@@ -101,6 +101,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
                                            dtype=np.uint8))
 
     repetition_levels = read_rep(io_obj, daph, helper, metadata)
+    se = helper.schema_element(metadata.path_in_schema)
 
     if skip_nulls and not helper.is_required(metadata.path_in_schema):
         num_nulls = 0
@@ -115,7 +116,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
         values = encoding.read_plain(raw_bytes[io_obj.loc:],
                                      metadata.type,
                                      int(daph.num_values - num_nulls),
-                                     width=width)
+                                     width=width, se=se)
     elif daph.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
                            parquet_thrift.Encoding.RLE]:
         # bit_width is stored as single byte.
@@ -155,15 +156,20 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata):
     Consumes data using the plain encoding and returns an array of values.
     """
     raw_bytes = _read_page(file_obj, page_header, column_metadata)
+    se = schema_helper.schema_element(column_metadata.path_in_schema)
     if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
-        values = unpack_byte_array(raw_bytes,
-                                   page_header.dictionary_page_header.num_values)
+        if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                                 parquet_thrift.ConvertedType.JSON]:
+            values = decodeutf8(raw_bytes,
+                                page_header.dictionary_page_header.num_values)
+        else:
+            values = decodebytes(raw_bytes,
+                                 page_header.dictionary_page_header.num_values)
     else:
-        width = schema_helper.schema_element(
-            column_metadata.path_in_schema).type_length
+        width = se.type_length
         values = encoding.read_plain(
                 raw_bytes, column_metadata.type,
-                page_header.dictionary_page_header.num_values, width)
+                page_header.dictionary_page_header.num_values, width, se=se)
     return values
 
 

@@ -20,7 +20,6 @@ import binascii
 
 from .thrift_structures import parquet_thrift
 from .util import PY2
-from .speedups import array_decode_utf8
 
 logger = logging.getLogger('parquet')  # pylint: disable=invalid-name
 
@@ -100,7 +99,7 @@ def convert(data, se, timestamp96=True):
     if ctype == parquet_thrift.ConvertedType.UTF8:
         if isinstance(data, list) or data.dtype != "O":
             data = np.asarray(data, dtype="O")
-        return array_decode_utf8(data)
+        return data
     if ctype == parquet_thrift.ConvertedType.DECIMAL:
         scale_factor = 10**-se.scale
         if data.dtype.kind in ['i', 'f']:

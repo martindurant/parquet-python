@@ -23,7 +23,7 @@ from .util import (default_open, default_mkdirs, sep_from_open,
                    ParquetException, index_like, PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata)
-from .speedups import array_encode_utf8, pack_byte_array
+from .speedups import encodebytes, encodeutf8
 
 MARKER = b'PAR1'
 NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
@@ -164,8 +164,10 @@ def convert(data, se):
         out = data.values
     elif dtype == "O":
         try:
+            # UTF8 and JSON now transformed to bytes in one go in speedups,
+            # see encode_plain()
             if converted_type == parquet_thrift.ConvertedType.UTF8:
-                out = array_encode_utf8(data)
+                return data
             elif converted_type is None:
                 if type in revmap:
                     out = data.values.astype(revmap[type], copy=False)
@@ -176,7 +178,7 @@ def convert(data, se):
                 else:
                     out = data.values
             elif converted_type == parquet_thrift.ConvertedType.JSON:
-                out = np.array([json.dumps(x).encode('utf8') for x in data],
+                out = np.array([json.dumps(x) for x in data],
                                dtype="O")
             elif converted_type == parquet_thrift.ConvertedType.BSON:
                 out = data.map(tobson).values
@@ -243,8 +245,11 @@ def time_shift(indata, outdata, factor=1000):  # pragma: no cover
 def encode_plain(data, se):
     """PLAIN encoding; returns byte representation"""
     out = convert(data, se)
-    if se.type == parquet_thrift.Type.BYTE_ARRAY:
-        return pack_byte_array(list(out))
+    if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                             parquet_thrift.ConvertedType.JSON]:
+        return encodeutf8(out)
+    elif se.type == parquet_thrift.Type.BYTE_ARRAY:
+        return encodebytes(out)
     else:
         return out.tobytes()
 
