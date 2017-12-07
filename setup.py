@@ -15,6 +15,8 @@ if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or sys.argv[1] in allowed):
 else:
     import numpy as np
     from Cython.Build import cythonize
+    import Cython.Compiler.Options
+    Cython.Compiler.Options.annotate = True
     cython_modules = [Extension('fastparquet.speedups',
                                 ['fastparquet/speedups.pyx'],
                                 include_dirs=[np.get_include()])]

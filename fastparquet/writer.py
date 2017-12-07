@@ -23,7 +23,7 @@ from .util import (default_open, default_mkdirs, sep_from_open,
                    ParquetException, index_like, PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata)
-from .speedups import encodebytes, encodeutf8
+from .speedups import encode as speedencode
 
 MARKER = b'PAR1'
 NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
@@ -167,7 +167,7 @@ def convert(data, se):
             # UTF8 and JSON now transformed to bytes in one go in speedups,
             # see encode_plain()
             if converted_type == parquet_thrift.ConvertedType.UTF8:
-                return data
+                out = data.values
             elif converted_type is None:
                 if type in revmap:
                     out = data.values.astype(revmap[type], copy=False)
@@ -245,11 +245,12 @@ def time_shift(indata, outdata, factor=1000):  # pragma: no cover
 def encode_plain(data, se):
     """PLAIN encoding; returns byte representation"""
     out = convert(data, se)
-    if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
-                             parquet_thrift.ConvertedType.JSON]:
-        return encodeutf8(out)
+    if (se.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                              parquet_thrift.ConvertedType.JSON]
+        and se.type == parquet_thrift.Type.BYTE_ARRAY):
+        return speedencode(out, utf8=True)
     elif se.type == parquet_thrift.Type.BYTE_ARRAY:
-        return encodebytes(out)
+        return speedencode(out, utf8=False)
     else:
         return out.tobytes()
 
@@ -339,7 +340,7 @@ def encode_rle_bp(data, width, o, withlength=False):
     if withlength:
         end = o.loc
         o.loc = start
-        write_length(wnd - start, o)
+        write_length(end - start, o)
         o.loc = end
 
 

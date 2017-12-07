@@ -8,7 +8,7 @@ import array
 import numba
 import numpy as np
 
-from .speedups import decodebytes, decodeutf8
+from .speedups import decode
 from .thrift_structures import parquet_thrift
 from .util import byte_buffer
 
@@ -41,9 +41,9 @@ def read_plain(raw_bytes, type_, count, width=0, se=None):
     try:
         if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
                                  parquet_thrift.ConvertedType.JSON]:
-            return decodeutf8(raw_bytes, count)
+            return decode(raw_bytes, count, utf8=True)
         else:
-            return decodebytes(raw_bytes, count)
+            return decode(raw_bytes, count, utf8=False)
     except RuntimeError:
         if count == 1:
             if se.converted_type in [parquet_thrift.ConvertedType.UTF8,

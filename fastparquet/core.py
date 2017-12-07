@@ -14,7 +14,7 @@ from . import encoding
 from .compression import decompress_data
 from .converted_types import convert, typemap
 from .schema import _is_list_like, _is_map_like
-from .speedups import decodeutf8, decodebytes
+from .speedups import decode
 from .thrift_structures import parquet_thrift, read_thrift
 from .util import val_to_num, byte_buffer, ex_from_sep
 
@@ -160,11 +160,13 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata):
     if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
         if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
                                  parquet_thrift.ConvertedType.JSON]:
-            values = decodeutf8(raw_bytes,
-                                page_header.dictionary_page_header.num_values)
+            values = decode(raw_bytes,
+                            page_header.dictionary_page_header.num_values,
+                            utf8=True)
         else:
-            values = decodebytes(raw_bytes,
-                                 page_header.dictionary_page_header.num_values)
+            values = decode(raw_bytes,
+                            page_header.dictionary_page_header.num_values,
+                            utf8=False)
     else:
         width = se.type_length
         values = encoding.read_plain(
