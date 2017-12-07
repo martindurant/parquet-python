@@ -40,7 +40,7 @@ def encode(buf, bint utf8=1):
         int[:] encoded_lengths
         char* encv
         char* b
-        bytearray out
+        bytes out
         char* data
         object u
 
@@ -51,44 +51,43 @@ def encode(buf, bint utf8=1):
     n_items = input_values.shape[0]
 
     # setup intermediates
-    encoded_values = <char **>malloc(n_items * sizeof(char *))
-    encoded_lengths = np.empty(n_items, dtype=np.intc)
+    try:
+        encoded_values = <char **>malloc(n_items * sizeof(char *))
+        encoded_lengths = np.empty(n_items, dtype=np.intc)
 
-    # first iteration to convert to bytes
-    data_length = 0
-    for i in range(n_items):
-        u = input_values[i]
-        if utf8:
-            if not PyUnicode_Check(u):
-                raise TypeError('expected unicode string, found %r' % u)
-            encoded_values[i] = PyUnicode_AsUTF8AndSize(u, &l)
-        else:
-            PyBytes_AsStringAndSize(u, &encv, &l)
-            encoded_values[i] = encv
-        data_length += l + 4  # 4 bytes to store item length
-        encoded_lengths[i] = l
+        # first iteration to convert to bytes
+        data_length = 0
+        for i in range(n_items):
+            u = input_values[i]
+            if utf8:
+                if not PyUnicode_Check(u):
+                    raise TypeError('expected unicode string, found %r' % u)
+                encoded_values[i] = PyUnicode_AsUTF8AndSize(u, &l)
+            else:
+                PyBytes_AsStringAndSize(u, &encv, &l)
+                encoded_values[i] = encv
+            data_length += l + 4  # 4 bytes to store item length
+            encoded_lengths[i] = l
 
-    # setup output
-    total_length = data_length
-    out = PyByteArray_FromStringAndSize(NULL, total_length)
+        # setup output
+        total_length = data_length
+        out = PyBytes_FromStringAndSize(NULL, total_length)
+        data = out
 
-    # write header
-    data = PyByteArray_AS_STRING(out)
-
-    # second iteration, store data
-    for i in range(n_items):
-        l = encoded_lengths[i]
-        data[0] = l & 0xff
-        data[1] = (l >> 8) & 0xff
-        data[2] = (l >> 16) & 0xff
-        data[3] = (l >> 24) & 0xff
-        data += 4
-        encv = encoded_values[i]
-        memcpy(data, encv, l)
-        data += l
-
-    free(encoded_values)
-    return bytes(out)
+        # second iteration, store data
+        for i in range(n_items):
+            l = encoded_lengths[i]
+            data[0] = l & 0xff
+            data[1] = (l >> 8) & 0xff
+            data[2] = (l >> 16) & 0xff
+            data[3] = (l >> 24) & 0xff
+            data += 4
+            encv = encoded_values[i]
+            memcpy(data, encv, l)
+            data += l
+    finally:
+        free(encoded_values)
+    return out
 
 
 @cython.wraparound(False)

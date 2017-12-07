@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import struct
+import pytest
 
 from fastparquet.speedups import encode, decode
 
@@ -17,6 +18,15 @@ def test_encode_bytes():
     expected = b''.join([(struct.pack('<i', len(s)) + s) for s in bytess])
     result = encode(bytess, utf8=False)
     assert expected == result
+
+
+def test_error():
+    with_bad = strings + [1]
+    with pytest.raises(TypeError):
+        encode(with_bad, utf8=True)
+    with_bad = bytess + [1]
+    with pytest.raises(TypeError):
+        encode(with_bad, utf8=False)
 
 
 def test_decode_bytes():

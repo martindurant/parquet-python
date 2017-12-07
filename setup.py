@@ -16,7 +16,7 @@ else:
     import numpy as np
     from Cython.Build import cythonize
     import Cython.Compiler.Options
-    Cython.Compiler.Options.annotate = True
+    Cython.Compiler.Options.annotate = False
     cython_modules = [Extension('fastparquet.speedups',
                                 ['fastparquet/speedups.pyx'],
                                 include_dirs=[np.get_include()])]
