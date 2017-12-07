@@ -27,6 +27,7 @@ cdef extern from "Python.h":
     int PyUnicode_Check(object text)
     int PyBytes_AsStringAndSize(bytes obj, char **buffer, Py_ssize_t *length)
     char* PyUnicode_AsUTF8AndSize(unicode unicode, Py_ssize_t *size)
+    unicode PyUnicode_DecodeUTF8(char *s, Py_ssize_t size, char *errors)
 
 
 @cython.wraparound(False)
@@ -121,4 +122,31 @@ def decode(bytes buf, int n_items, bint utf8=1):
             out[i] = PyBytes_FromStringAndSize(data, l)
         data += l
 
+    return out
+
+
+def array_encode(np.ndarray[object, ndim=1] data):
+    cdef:
+        Py_ssize_t i, n
+
+    n = len(data)
+    out = np.empty(n, dtype=object)
+    for i in range(n):
+        out[i] = PyUnicode_AsUTF8String(data[i])
+    return out
+
+
+def array_decode(np.ndarray data):
+    cdef:
+        Py_ssize_t i, n
+
+    n = len(data)
+    out = np.empty(n, dtype=object)
+    for i in range(n):
+        val = data[i]
+        out[i] = PyUnicode_DecodeUTF8(
+            PyBytes_AS_STRING(val),
+            PyBytes_GET_SIZE(val),
+            NULL,   # errors
+            )
     return out

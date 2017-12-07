@@ -99,6 +99,10 @@ def time_text():
                 with measure('%s: write, fixed: %s' % (t, fixed), result):
                     write(fn, df, has_nulls=False, write_index=False,
                           fixed_text={col: fixed}, object_encoding=t)
+                with measure('%s: write, fixed: %s, nostat' % (t, fixed), result):
+                    write(fn, df, has_nulls=False, write_index=False,
+                          fixed_text={col: fixed}, object_encoding=t,
+                          stats=False)
 
                 pf = ParquetFile(fn)
                 pf.to_pandas()  # warm-up
