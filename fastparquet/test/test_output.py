@@ -515,7 +515,7 @@ def test_auto_null(tempdir):
     test_cols = list(set(df) - set(object_cols)) + ['d']
     fn = os.path.join(tmp, "test.parq")
 
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, TypeError)):
         write(fn, df, has_nulls=False)
 
     write(fn, df, has_nulls=True)
@@ -799,9 +799,9 @@ def test_append_w_partitioning(tempdir):
 
 def test_bad_object_encoding(tempdir):
     df = pd.DataFrame({'x': ['a', 'ab']})
-    with pytest.raises(ValueError) as e:
+    with pytest.raises((ValueError, TypeError)) as e:
         write(str(tempdir), df, object_encoding='utf-8')
-    assert "utf-8" in str(e)
+    assert "unicode" in str(e)
 
 
 def test_empty_dataframe(tempdir):
@@ -879,14 +879,12 @@ def test_consolidate_cats(tempdir):
 
 def test_bad_object_encoding(tempdir):
     df = pd.DataFrame({'a': [b'00']})
-    with pytest.raises(ValueError) as e:
+    with pytest.raises((ValueError, TypeError)) as e:
         write(tempdir, df, file_scheme='hive', object_encoding='utf8')
-    assert "UTF8" in str(e)
-    assert "bytes" in str(e)
-    assert '"a"' in str(e)
+    assert "unicode" in str(e)
 
     df = pd.DataFrame({'a': [0, "hello", 0]})
-    with pytest.raises(ValueError) as e:
+    with pytest.raises((ValueError, TypeError)) as e:
         write(tempdir, df, file_scheme='hive', object_encoding='int')
     assert "INT64" in str(e)
     assert "primitive" in str(e)

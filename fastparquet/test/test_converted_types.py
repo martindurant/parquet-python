@@ -64,17 +64,6 @@ def test_timestamp_millis():
                 dtype='datetime64[ns]'))
 
 
-def test_utf8():
-    """Test bytes representing utf-8 string."""
-    schema = pt.SchemaElement(
-        type=pt.Type.BYTE_ARRAY,
-        name="test",
-        converted_type=pt.ConvertedType.UTF8
-    )
-    data = b'\xc3\x96rd\xc3\xb6g'
-    assert convert(pd.Series([data]), schema)[0] == u"Ördög"
-
-
 def test_json():
     """Test bytes representing json."""
     schema = pt.SchemaElement(
@@ -82,8 +71,8 @@ def test_json():
         name="test",
         converted_type=pt.ConvertedType.JSON
     )
-    assert convert(pd.Series([b'{"foo": ["bar", "\\ud83d\\udc7e"]}']),
-                          schema)[0] == {'foo': ['bar', u'👾']}
+    assert convert(pd.Series(['{"foo": ["bar", "\\ud83d\\udc7e"]}']),
+                   schema)[0] == {'foo': ['bar', u'👾']}
 
 
 @pytest.mark.skipif(PY2,reason='BSON unicode may not be supported in Python 2')

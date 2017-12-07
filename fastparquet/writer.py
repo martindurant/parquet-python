@@ -183,6 +183,8 @@ def convert(data, se):
             elif converted_type == parquet_thrift.ConvertedType.BSON:
                 out = data.map(tobson).values
             if type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                if converted_type == parquet_thrift.ConvertedType.UTF8:
+                    out = np.char.encode(out.astype("U"), 'utf8')
                 out = out.astype('S%i' % se.type_length)
         except Exception as e:
             ct = parquet_thrift.ConvertedType._VALUES_TO_NAMES[

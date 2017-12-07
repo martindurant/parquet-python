@@ -35,7 +35,12 @@ def read_plain(raw_bytes, type_, count, width=0, se=None):
         if count == 1:
             width = len(raw_bytes)
         dtype = np.dtype('S%i' % width)
-        return np.frombuffer(byte_buffer(raw_bytes), dtype=dtype, count=count)
+        out = np.frombuffer(byte_buffer(raw_bytes), dtype=dtype, count=count)
+        if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                                 parquet_thrift.ConvertedType.JSON]:
+            return np.char.decode(out, 'utf8')
+        else:
+            return out
     if type_ == parquet_thrift.Type.BOOLEAN:
         return read_plain_boolean(raw_bytes, count)
     try:

@@ -97,8 +97,6 @@ def convert(data, se, timestamp96=True):
     if ctype is None:
         return data
     if ctype == parquet_thrift.ConvertedType.UTF8:
-        if isinstance(data, list) or data.dtype != "O":
-            data = np.asarray(data, dtype="O")
         return data
     if ctype == parquet_thrift.ConvertedType.DECIMAL:
         scale_factor = 10**-se.scale
@@ -154,7 +152,7 @@ def convert(data, se, timestamp96=True):
             out = np.empty(len(data), dtype="O")
         else:
             out = data
-        out[:] = [json.loads(d.decode('utf8')) for d in data]
+        out[:] = [json.loads(d) for d in data]
         return out
     elif ctype == parquet_thrift.ConvertedType.BSON:
         if isinstance(data, list) or data.dtype != "O":

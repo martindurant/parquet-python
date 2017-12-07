@@ -41,10 +41,11 @@ def test_double():
 def test_fixed():
     """Test reading bytes containing fixed bytes data."""
     data = b"foobar"
+    se = parquet_thrift.SchemaElement(converted_type=None)
     assert data[:3] == fastparquet.encoding.read_plain(
-            data, parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY, -1, 3)[0]
+            data, parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY, -1, 3, se)[0]
     assert data[3:] == fastparquet.encoding.read_plain(
-            data, parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY, -1, 3)[1]
+            data, parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY, -1, 3, se)[1]
 
 def test_boolean():
     """Test reading bytes containing boolean data."""

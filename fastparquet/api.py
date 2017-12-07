@@ -555,13 +555,14 @@ def filter_out_stats(rg, filters, schema):
     return False
 
 
-def statistics(obj):
+def statistics(obj, s=None):
     """
     Return per-column statistics for a ParquerFile
 
     Parameters
     ----------
     obj: ParquetFile
+    se: schema or element, passed down
 
     Returns
     -------
@@ -578,46 +579,55 @@ def statistics(obj):
     """
     if isinstance(obj, parquet_thrift.ColumnChunk):
         md = obj.meta_data
-        s = obj.meta_data.statistics
+        st = obj.meta_data.statistics
         rv = {}
-        if not s:
+        if not st:
             return rv
-        if s.max is not None:
+        if st.max is not None:
             try:
-                if md.type == parquet_thrift.Type.BYTE_ARRAY:
-                    rv['max'] = ensure_bytes(s.max)
+                if md.type in [parquet_thrift.Type.BYTE_ARRAY,
+                               parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY] :
+                    rv['max'] = ensure_bytes(st.max)
+                    if s.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                                            parquet_thrift.ConvertedType.JSON]:
+                        rv['max'] = rv['max'].decode('utf8')
                 else:
-                    rv['max'] = encoding.read_plain(ensure_bytes(s.max),
+                    rv['max'] = encoding.read_plain(ensure_bytes(st.max),
                                                     md.type, 1)[0]
             except:
                 rv['max'] = None
-        if s.min is not None:
+        if st.min is not None:
             try:
-                if md.type == parquet_thrift.Type.BYTE_ARRAY:
-                    rv['min'] = ensure_bytes(s.min)
+                if md.type in [parquet_thrift.Type.BYTE_ARRAY,
+                               parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY]:
+                    rv['min'] = ensure_bytes(st.min)
+                    if s.converted_type in [parquet_thrift.ConvertedType.UTF8,
+                                            parquet_thrift.ConvertedType.JSON]:
+                        rv['min'] = rv['min'].decode('utf8')
                 else:
-                    rv['min'] = encoding.read_plain(ensure_bytes(s.min),
+                    rv['min'] = encoding.read_plain(ensure_bytes(st.min),
                                                     md.type, 1)[0]
             except:
                 rv['min'] = None
-        if s.null_count is not None:
-            rv['null_count'] = s.null_count
-        if s.distinct_count is not None:
-            rv['distinct_count'] = s.distinct_count
+        if st.null_count is not None:
+            rv['null_count'] = st.null_count
+        if st.distinct_count is not None:
+            rv['distinct_count'] = st.distinct_count
         return rv
 
     if isinstance(obj, parquet_thrift.RowGroup):
-        return {'.'.join(c.meta_data.path_in_schema): statistics(c)
+        return {'.'.join(c.meta_data.path_in_schema):
+                statistics(c, s=s.schema_element(c.meta_data.path_in_schema))
                 for c in obj.columns}
 
     if isinstance(obj, ParquetFile):
-        L = list(map(statistics, obj.row_groups))
+        schema = obj.schema
+        L = [statistics(rg, s=schema) for rg in obj.row_groups]
         d = {n: {col: [item.get(col, {}).get(n, None) for item in L]
                  for col in obj.columns}
              for n in ['min', 'max', 'null_count', 'distinct_count']}
         if not L:
             return d
-        schema = obj.schema
         for col in obj.row_groups[0].columns:
             column = '.'.join(col.meta_data.path_in_schema)
             se = schema.schema_element(col.meta_data.path_in_schema)
