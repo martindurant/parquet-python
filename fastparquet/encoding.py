@@ -8,7 +8,7 @@ import array
 import numba
 import numpy as np
 
-from .speedups import decode
+from .speedups import decode, array_decode
 from .thrift_structures import parquet_thrift
 from .util import byte_buffer
 
@@ -38,7 +38,7 @@ def read_plain(raw_bytes, type_, count, width=0, se=None):
         out = np.frombuffer(byte_buffer(raw_bytes), dtype=dtype, count=count)
         if se.converted_type in [parquet_thrift.ConvertedType.UTF8,
                                  parquet_thrift.ConvertedType.JSON]:
-            return np.char.decode(out, 'utf8')
+            return array_decode(out)
         else:
             return out
     if type_ == parquet_thrift.Type.BOOLEAN:
