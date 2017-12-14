@@ -873,7 +873,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd, sep,
     if not remaining:
         raise ValueError("Cannot include all columns in partition_on")
     rgs = []
-    for key in gb.indices:
+    for key in sorted(gb.indices):
         df = gb.get_group(key)[remaining]
         if not isinstance(key, tuple):
             key = (key,)
