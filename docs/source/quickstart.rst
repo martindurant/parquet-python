@@ -44,7 +44,7 @@ meeting the specified requirements will be skipped.
 
 .. code-block:: python
 
-    df3 = pf.to_pandas(['col1', 'col2'], filters=[('col3', 'in' [1, 2, 3, 4])])
+    df3 = pf.to_pandas(['col1', 'col2'], filters=[('col3', 'in', [1, 2, 3, 4])])
 
 
 Writing

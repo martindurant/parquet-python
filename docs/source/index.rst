@@ -33,7 +33,7 @@ The original outline plan for this project can be found `here <https://github.co
 
 Briefly, some features of interest:
 
-- read and write Parquet files, in single- or multiple-file format. The latter is common found in hive/Spark usage.
+- read and write Parquet files, in single- or multiple-file format. The latter is commonly found in hive/Spark usage.
 - choice of compression per-column and various optimized encoding schemes; ability to choose row divisions and partitioning on write.
 - acceleration of both reading and writing using `numba <http://numba.pydata.org/>`_
 - ability to read and write to arbitrary file-like objects, allowing interoperability with `s3fs <http://s3fs.readthedocs.io/>`_, `hdfs3 <http://hdfs3.readthedocs.io/>`_, `adlfs <https://github.com/Azure/azure-data-lake-store-python>`_ and possibly others.
@@ -75,7 +75,7 @@ engine, interfaces Python commands with a Java/Scala execution core, and thereby
 gives Python programmers access to the Parquet format. fastparquet has no
 defined relationship to PySpark, but can provide an alternative path to providing
 data to Spark or reading data produced by Spark without invoking a PySpark client
-or interacting directly with the  scheduler.
+or interacting directly with the scheduler.
 
 - fastparquet lives within the `dask <http://dask.pydata.org>`_ ecosystem, and
 although it is useful by itself, it is designed to work well with dask for parallel
