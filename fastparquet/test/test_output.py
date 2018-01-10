@@ -891,3 +891,11 @@ def test_bad_object_encoding(tempdir):
     assert "INT64" in str(e)
     assert "primitive" in str(e)
     assert '"a"' in str(e)
+
+def test_object_encoding_int32(tempdir):
+    df = pd.DataFrame({'a': ['15', None, '2']})
+    fn = os.path.join(tempdir, 'temp.parq')
+    write(fn, df, object_encoding={'a': 'int32'})
+    pf = ParquetFile(fn)
+    assert pf._schema[1].type == parquet_thrift.Type.INT32
+    assert not pf.schema.is_required('a')
