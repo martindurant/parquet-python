@@ -123,8 +123,9 @@ def test_attributes(tempdir):
     assert pf.columns == ['x', 'y', 'z']
     assert len(pf.row_groups) == 2
     assert pf.count == 4
-    assert fn == pf.info['name']
-    assert fn in str(pf)
+    fn2 = fn.replace('\\', '/')
+    assert fn2 == pf.info['name']
+    assert fn2 in str(pf)
     for col in df:
         assert pf.dtypes[col] == df.dtypes[col]
 
@@ -215,7 +216,8 @@ def test_single_upper_directory(tempdir):
     import glob
     flist = list(sorted(glob.glob(os.path.join(tempdir, '*/*'))))
     pf = ParquetFile(flist, root=tempdir)
-    assert pf.fn == os.path.join(tempdir, '_metadata')
+    
+    assert pf.fn == os.path.join(tempdir, '_metadata').replace('\\', '/')
     out = pf.to_pandas()
     assert (out.y == 'aa').all()
 
