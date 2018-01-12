@@ -24,13 +24,6 @@ class ParquetException(Exception):
     pass
 
 
-def sep_from_open(opener):
-    if opener is default_open:
-        return '/'
-    else:
-        return '/'
-
-
 if PY2:
     def default_mkdirs(f):
         if not os.path.exists(f):

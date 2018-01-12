@@ -22,7 +22,7 @@ from .thrift_structures import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api
-from .util import (default_open, default_mkdirs, sep_from_open,
+from .util import (default_open, default_mkdirs,
                    index_like, PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata)
