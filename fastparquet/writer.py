@@ -1,27 +1,29 @@
 from __future__ import print_function
 
 import json
-import numpy as np
-import pandas as pd
 import re
 import struct
 import warnings
 
 import numba
-from fastparquet.util import join_path
+import numpy as np
+import pandas as pd
+from six import integer_types
 
-from .thrift_structures import parquet_thrift, write_thrift
+from fastparquet.util import join_path
+from .thrift_structures import write_thrift
+
 try:
     from pandas.api.types import is_categorical_dtype
 except ImportError:
     # Pandas <= 0.18.1
     from pandas.core.common import is_categorical_dtype
 from .thrift_structures import parquet_thrift
-from .compression import compress_data, decompress_data
+from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api
 from .util import (default_open, default_mkdirs, sep_from_open,
-                   ParquetException, index_like, PY2, STR_TYPE,
+                   index_like, PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata)
 from .speedups import array_encode_utf8, pack_byte_array
@@ -224,7 +226,7 @@ def infer_object_encoding(data):
         return 'json'
     elif all(isinstance(i, bool) for i in head):
         return 'bool'
-    elif all(isinstance(i, (int, long)) for i in head):
+    elif all(isinstance(i, integer_types) for i in head):
         return 'int'
     elif all(isinstance(i, float) or isinstance(i, np.floating)
              for i in head):
