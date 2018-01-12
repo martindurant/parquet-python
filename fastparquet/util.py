@@ -297,6 +297,7 @@ def join_path(*path):
 
     if path and path[0] and path[0][0] == '/':
         is_abs = True
+        path = list(path)
         path[0] = path[0][1:]
     else:
         is_abs = False
@@ -314,6 +315,8 @@ def join_path(*path):
                     simpler.append(s)
                 else:
                     simpler.pop()
+            elif is_abs:
+                raise Exception("can not get parent of root")
             else:
                 simpler.append(s)
         else:
