@@ -19,8 +19,8 @@ def s3():
     s3.mkdir(TEST_DATA)
     paths = []
     for cat, catnum in product(('fred', 'freda'), ('1', '2', '3')):
-        path = '/'.join([TEST_DATA, 'split', 'cat=' + cat,
-                            'catnum=' + catnum])
+        path = join_path(TEST_DATA, 'split', 'cat=' + cat,
+                            'catnum=' + catnum)
         files = os.listdir(path)
         for fn in files:
             full_path = join_path(path, fn)

@@ -638,12 +638,12 @@ def test_merge(tempdir, dirs, row_groups):
 
     default_mkdirs(join_path(fn, dirs[0]))
     df0 = pd.DataFrame({'a': [1, 2, 3, 4]})
-    fn0 = '/'.join([fn, dirs[0], 'out0.parq'])
+    fn0 = join_path(fn, dirs[0], 'out0.parq')
     write(fn0, df0, row_group_offsets=row_groups)
 
     default_mkdirs(join_path(fn, dirs[1]))
     df1 = pd.DataFrame({'a': [5, 6, 7, 8]})
-    fn1 = '/'.join([fn, dirs[1], 'out1.parq'])
+    fn1 = join_path(fn, dirs[1], 'out1.parq')
     write(fn1, df1, row_group_offsets=row_groups)
 
     # with file-names
@@ -685,11 +685,11 @@ def test_merge_fail(tempdir):
     fn = str(tempdir)
 
     df0 = pd.DataFrame({'a': [1, 2, 3, 4]})
-    fn0 = '/'.join([fn, 'out0.parq'])
+    fn0 = join_path(fn, 'out0.parq')
     write(fn0, df0)
 
     df1 = pd.DataFrame({'a': ['a', 'b', 'c']})
-    fn1 = '/'.join([fn, 'out1.parq'])
+    fn1 = join_path(fn, 'out1.parq')
     write(fn1, df1)
 
     with pytest.raises(ValueError) as e:
