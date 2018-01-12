@@ -95,7 +95,7 @@ class ParquetFile(object):
                     self._parse_header(f, verify)
                 fn = fn2
             except (IOError, OSError):
-                self.fn = fn
+                self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:
                     self._parse_header(f, verify)
         self.open = open_with
@@ -178,14 +178,18 @@ class ParquetFile(object):
                                 for key, v in cats.items()])
 
     def row_group_filename(self, rg):
-        if rg.columns[0].file_path:
-            base = self.fn.replace('_metadata', '').rstrip('/')
-            if base:
-                return join_path(base, rg.columns[0].file_path)
+        def _internal():
+            if rg.columns[0].file_path:
+                base = self.fn.replace('_metadata', '').rstrip('/')
+                if base:
+                    return join_path(base, rg.columns[0].file_path)
+                else:
+                    return rg.columns[0].file_path
             else:
-                return rg.columns[0].file_path
-        else:
-            return self.fn
+                return self.fn
+        output = _internal()
+        print("row_group_filename: " + output + " self.fn=" + self.fn + " rg.columns[0].file_path=" + rg.columns[0].file_path)
+        return output
 
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None):
