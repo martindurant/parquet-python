@@ -784,7 +784,6 @@ def write(filename, data, row_group_offsets=50000000,
     """
     if str(has_nulls) == 'infer':
         has_nulls = None
-    sep = sep_from_open(open_with)
     if isinstance(row_group_offsets, int):
         l = len(data)
         nparts = max((l - 1) // row_group_offsets + 1, 1)
@@ -828,7 +827,7 @@ def write(filename, data, row_group_offsets=50000000,
             if partition_on:
                 rgs = partition_on_columns(
                     data[start:end], partition_on, filename, part, fmd,
-                    sep, compression, open_with, mkdirs,
+                    compression, open_with, mkdirs,
                     with_field=file_scheme == 'hive'
                 )
                 fmd.row_groups.extend(rgs)
@@ -863,7 +862,7 @@ def find_max_part(row_groups):
         return 0
 
 
-def partition_on_columns(data, columns, root_path, partname, fmd, sep,
+def partition_on_columns(data, columns, root_path, partname, fmd,
                          compression, open_with, mkdirs, with_field=True):
     """
     Split each row-group by the given columns
@@ -872,7 +871,6 @@ def partition_on_columns(data, columns, root_path, partname, fmd, sep,
     be written in structured directories.
     """
     gb = data.groupby(columns)
-    sep = '/'  # internal paths
     remaining = list(data)
     for column in columns:
         remaining.remove(column)
@@ -884,12 +882,14 @@ def partition_on_columns(data, columns, root_path, partname, fmd, sep,
         if not isinstance(key, tuple):
             key = (key,)
         if with_field:
-            path = sep.join(["%s=%s" % (name, val)
-                             for name, val in zip(columns, key)])
+            path = join_path(*(
+                "%s=%s" % (name, val)
+                for name, val in zip(columns, key)
+            ))
         else:
             path = join_path(*("%s" % val for val in key))
         relname = join_path(path, partname)
-        mkdirs(root_path + sep + path)
+        mkdirs(join_path(root_path, path))
         fullname = join_path(root_path, path, partname)
         with open_with(fullname, 'wb') as f2:
             rg = make_part_file(f2, df, fmd.schema,
@@ -978,7 +978,6 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     -------
     ParquetFile instance corresponding to the merged data.
     """
-    sep = sep_from_open(open_with)
     basepath, fmd = metadata_from_many(file_list, verify_schema, open_with,
                                        root=root)
 

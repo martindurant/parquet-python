@@ -118,7 +118,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
     fmd: metadata thrift structure
     """
     from fastparquet import api
-    sep = sep_from_open(open_with)
+
     if all(isinstance(pf, api.ParquetFile) for pf in file_list):
         pfs = file_list
         file_list = [pf.fn for pf in pfs]
@@ -126,7 +126,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
         pfs = [api.ParquetFile(fn, open_with=open_with) for fn in file_list]
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
-    basepath, file_list = analyse_paths(file_list, sep, root=root)
+    basepath, file_list = analyse_paths(file_list, root=root)
 
     if verify_schema:
         for pf in pfs[1:]:
@@ -166,9 +166,9 @@ def ex_from_sep(sep):
     return seps[sep]
 
 
-def analyse_paths(file_list, sep='/', root=False):
+def analyse_paths(file_list, root=False):
     """Consolidate list of file-paths into  parquet relative paths"""
-    path_parts_list = [fn.split(sep) for fn in file_list]
+    path_parts_list = [fn.split('/') for fn in file_list]
     if root is False:
         basepath = path_parts_list[0][:-1]
         for i, path_parts in enumerate(path_parts_list):
@@ -182,16 +182,16 @@ def analyse_paths(file_list, sep='/', root=False):
         l = len(basepath)
 
     else:
-        basepath = root.rstrip(sep).split(sep)
+        basepath = join_path(root).split('/')
         l = len(basepath)
         assert all(p[:l] == basepath for p in path_parts_list
                    ), "All paths must begin with the given root"
     l = len(basepath)
     out_list = []
     for path_parts in path_parts_list:
-        out_list.append(sep.join(path_parts[l:]))
+        out_list.append(join_path(*path_parts[l:]))
 
-    return sep.join(basepath), out_list
+    return join_path(*basepath), out_list
 
 
 def infer_dtype(column):
@@ -249,15 +249,13 @@ def get_numpy_type(dtype):
         return str(dtype)
 
 
-def get_file_scheme(paths, sep='/'):
+def get_file_scheme(paths):
     """For the given row groups, figure out if the partitioning scheme
 
     Parameters
     ----------
     paths: list of str
         normally from row_group.columns[0].file_path
-    sep: str
-        path separator such as '/'
 
     Returns
     -------
@@ -276,14 +274,14 @@ def get_file_scheme(paths, sep='/'):
         return 'simple'
     if None in paths:
         return 'other'
-    parts = [p.split(sep) for p in paths]
+    parts = [p.split('/') for p in paths]
     lens = [len(p) for p in parts]
     if len(set(lens)) > 1:
         return 'other'
     if set(lens) == {1}:
         return 'flat'
-    s = ex_from_sep(sep)
-    dirs = [p.rsplit(sep, 1)[0] for p in paths]
+    s = ex_from_sep('/')
+    dirs = [p.rsplit('/', 1)[0] for p in paths]
     matches = [s.findall(d) for d in dirs]
     if all(len(m) == (l - 1) for (m, l) in
            zip(matches, lens)):
@@ -298,11 +296,17 @@ def join_path(*path):
         p = p.replace(os.sep, "/")
         if p == "":
             return "."
-        if p[-1] == b'/':
+        if p[-1] == '/':
             p = p[:-1]
-        if i > 0 and p[0] == b'/':
+        if i > 0 and p[0] == '/':
             p = p[1:]
         return p
+
+    if path and path[0] and path[0][0] == '/':
+        is_abs = True
+        path[0] = path[0][1:]
+    else:
+        is_abs = False
 
     scrubbed = []
     for i, p in enumerate(path):
@@ -321,8 +325,15 @@ def join_path(*path):
                 simpler.append(s)
         else:
             simpler.append(s)
-    if not simpler:
-        joined = "."
+
+    if is_abs:
+        if not simpler:
+            joined = "/"
+        else:
+            joined = '/' + ('/'.join(simpler))
     else:
-        joined = '/'.join(simpler)
+        if not simpler:
+            joined = "."
+        else:
+            joined = '/'.join(simpler)
     return joined

@@ -277,11 +277,11 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
 def read_row_group_file(fn, rg, columns, categories, schema_helper, cats,
                         open=open, selfmade=False, index=None, assign=None,
-                        sep='/', scheme='hive'):
+                        scheme='hive'):
     with open(fn, mode='rb') as f:
         return read_row_group(f, rg, columns, categories, schema_helper, cats,
                               selfmade=selfmade, index=index, assign=assign,
-                              sep=sep, scheme=scheme)
+                              scheme=scheme)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -324,7 +324,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
                    selfmade=False, index=None, assign=None,
-                   sep='/', scheme='hive'):
+                   scheme='hive'):
     """
     Access row-group in a file and read some columns into a data-frame.
     """
@@ -335,10 +335,10 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
 
     for cat in cats:
         if scheme == 'hive':
-            s = ex_from_sep(sep)
+            s = ex_from_sep('/')
             partitions = s.findall(rg.columns[0].file_path)
         else:
             partitions = [('dir%i' % i, v) for (i, v) in enumerate(
-                rg.columns[0].file_path.split(sep)[:-1])]
+                rg.columns[0].file_path.split('/')[:-1])]
         val = val_to_num([p[1] for p in partitions if p[0] == cat][0])
         assign[cat][:] = cats[cat].index(val)

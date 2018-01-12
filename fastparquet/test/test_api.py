@@ -197,7 +197,7 @@ def test_read_multiple_no_metadata(tempdir):
     os.unlink(join_path(tempdir, '_metadata'))
     os.unlink(join_path(tempdir, '_common_metadata'))
     import glob
-    flist = list(sorted(glob.glob(join_path(tempdir, '*'))))
+    flist = list(sorted(map(join_path, glob.glob(join_path(tempdir, '*')))))
     pf = ParquetFile(flist)
     assert len(pf.row_groups) == 2
     out = pf.to_pandas()
