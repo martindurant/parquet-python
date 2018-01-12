@@ -14,6 +14,19 @@ from fastparquet.api import statistics, sorted_partitioned_columns
 TEST_DATA = "test-data"
 
 
+def test_os_specific_path_is_fixed(tempdir):
+    df = pd.DataFrame({'x': [1, 2, 3],
+                       'y': [1.0, 2.0, 1.0],
+                       'z': ['a', 'b', 'c']})
+
+    # Provide os-specific path
+    fn = tempdir + os.sep + 'foo.parquet'
+    write(fn, df, row_group_offsets=[0, 2])
+    p = ParquetFile(fn)
+
+    assert p.fn == join_path(fn)
+
+
 def test_statistics(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1.0, 2.0, 1.0],
@@ -214,7 +227,7 @@ def test_single_upper_directory(tempdir):
     os.unlink(join_path(tempdir, '_metadata'))
     os.unlink(join_path(tempdir, '_common_metadata'))
     import glob
-    flist = list(sorted(join_path(p) for p in glob.glob(join_path(tempdir, '*/*'))))
+    flist = list(sorted(map(join_path, glob.glob(join_path(tempdir, '*/*')))))
     pf = ParquetFile(flist, root=tempdir)
     assert pf.fn == join_path(tempdir, '_metadata')
     out = pf.to_pandas()

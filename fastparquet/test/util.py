@@ -49,8 +49,7 @@ def sql():
 
 @pytest.yield_fixture()
 def tempdir():
-    d = join_path(tempfile.mkdtemp())
+    d = tempfile.mkdtemp()
     yield d
     if os.path.exists(d):
         shutil.rmtree(d, ignore_errors=True)
-
