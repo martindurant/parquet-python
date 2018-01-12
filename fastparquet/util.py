@@ -26,7 +26,7 @@ class ParquetException(Exception):
 
 def sep_from_open(opener):
     if opener is default_open:
-        return os.sep
+        return '/'
     else:
         return '/'
 
@@ -166,7 +166,7 @@ def ex_from_sep(sep):
     return seps[sep]
 
 
-def analyse_paths(file_list, sep=os.sep, root=False):
+def analyse_paths(file_list, sep='/', root=False):
     """Consolidate list of file-paths into  parquet relative paths"""
     path_parts_list = [fn.split(sep) for fn in file_list]
     if root is False:
@@ -291,3 +291,38 @@ def get_file_scheme(paths, sep='/'):
         if len(set(keys)) == 1:
             return 'hive'
     return 'drill'
+
+
+def join_path(*path):
+    def scrub(i, p):
+        p = p.replace(os.sep, "/")
+        if p == "":
+            return "."
+        if p[-1] == b'/':
+            p = p[:-1]
+        if i > 0 and p[0] == b'/':
+            p = p[1:]
+        return p
+
+    scrubbed = []
+    for i, p in enumerate(path):
+        scrubbed.extend(scrub(i, p).split("/"))
+    simpler = []
+    for s in scrubbed:
+        if s == ".":
+            pass
+        elif s == "..":
+            if simpler:
+                if simpler[-1] == '..':
+                    simpler.append(s)
+                else:
+                    simpler.pop()
+            else:
+                simpler.append(s)
+        else:
+            simpler.append(s)
+    if not simpler:
+        joined = "."
+    else:
+        joined = '/'.join(simpler)
+    return joined

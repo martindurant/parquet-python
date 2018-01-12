@@ -8,6 +8,7 @@ import struct
 import warnings
 
 import numba
+from fastparquet.util import join_path
 
 from .thrift_structures import parquet_thrift, write_thrift
 try:
@@ -223,7 +224,7 @@ def infer_object_encoding(data):
         return 'json'
     elif all(isinstance(i, bool) for i in head):
         return 'bool'
-    elif all(isinstance(i, int) for i in head):
+    elif all(isinstance(i, (int, long)) for i in head):
         return 'int'
     elif all(isinstance(i, float) or isinstance(i, np.floating)
              for i in head):
@@ -816,7 +817,7 @@ def write(filename, data, row_group_offsets=50000000,
                                  ' match existing data')
         else:
             i_offset = 0
-        fn = sep.join([filename, '_metadata'])
+        fn = join_path(filename, '_metadata')
         mkdirs(filename)
         for i, start in enumerate(row_group_offsets):
             end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
@@ -830,7 +831,7 @@ def write(filename, data, row_group_offsets=50000000,
                 )
                 fmd.row_groups.extend(rgs)
             else:
-                partname = sep.join([filename, part])
+                partname = join_path(filename, part)
                 with open_with(partname, 'wb') as f2:
                     rg = make_part_file(f2, data[start:end], fmd.schema,
                                         compression=compression, fmd=fmd)
@@ -840,7 +841,7 @@ def write(filename, data, row_group_offsets=50000000,
                 fmd.row_groups.append(rg)
 
         write_common_metadata(fn, fmd, open_with, no_row_groups=False)
-        write_common_metadata(sep.join([filename, '_common_metadata']), fmd,
+        write_common_metadata(join_path(filename, '_common_metadata'), fmd,
                               open_with)
     else:
         raise ValueError('File scheme should be simple|hive, not', file_scheme)
@@ -884,10 +885,10 @@ def partition_on_columns(data, columns, root_path, partname, fmd, sep,
             path = sep.join(["%s=%s" % (name, val)
                              for name, val in zip(columns, key)])
         else:
-            path = sep.join(["%s" % val for val in key])
-        relname = sep.join([path, partname])
+            path = join_path(*("%s" % val for val in key))
+        relname = join_path(path, partname)
         mkdirs(root_path + sep + path)
-        fullname = sep.join([root_path, path, partname])
+        fullname = join_path(root_path, path, partname)
         with open_with(fullname, 'wb') as f2:
             rg = make_part_file(f2, df, fmd.schema,
                                 compression=compression, fmd=fmd)
@@ -979,10 +980,10 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     basepath, fmd = metadata_from_many(file_list, verify_schema, open_with,
                                        root=root)
 
-    out_file = sep.join([basepath, '_metadata'])
+    out_file = join_path(basepath, '_metadata')
     write_common_metadata(out_file, fmd, open_with, no_row_groups=False)
     out = api.ParquetFile(out_file, open_with=open_with)
 
-    out_file = sep.join([basepath, '_common_metadata'])
+    out_file = join_path(basepath, '_common_metadata')
     write_common_metadata(out_file, fmd, open_with)
     return out

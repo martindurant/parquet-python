@@ -2,11 +2,13 @@ import copy
 import os
 import pickle
 
+from fastparquet.util import join_path
+
 from fastparquet import ParquetFile
 from fastparquet.test.util import TEST_DATA
 from fastparquet.schema import schema_tree
 
-fn = os.path.join(TEST_DATA, "nation.impala.parquet")
+fn = join_path(TEST_DATA, "nation.impala.parquet")
 pf = ParquetFile(fn)
 
 

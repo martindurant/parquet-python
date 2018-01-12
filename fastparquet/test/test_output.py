@@ -6,6 +6,8 @@ import numpy as np
 import os
 import pandas as pd
 import pandas.util.testing as tm
+from fastparquet.util import join_path
+
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding
@@ -108,7 +110,7 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
     data['hello'] = data.bhello.str.decode('utf8')
     data['bcat'] = data.bhello.astype('category')
     data['cat'] = data.hello.astype('category')
-    fname = os.path.join(tempdir, 'test.parquet')
+    fname = join_path(tempdir, 'test.parquet')
     write(fname, data, file_scheme=scheme, row_group_offsets=row_groups,
           compression=comp)
 
@@ -124,7 +126,7 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
 
 def test_bad_coltype(tempdir):
     df = pd.DataFrame({'0': [1, 2], (0, 1): [3, 4]})
-    fn = os.path.join(tempdir, 'temp.parq')
+    fn = join_path(tempdir, 'temp.parq')
     with pytest.raises((ValueError, TypeError)) as e:
         write(fn, df)
         assert "tuple" in str(e)
@@ -132,7 +134,7 @@ def test_bad_coltype(tempdir):
 
 def test_bad_col(tempdir):
     df = pd.DataFrame({'x': [1, 2]})
-    fn = os.path.join(tempdir, 'temp.parq')
+    fn = join_path(tempdir, 'temp.parq')
     with pytest.raises(ValueError) as e:
         write(fn, df, has_nulls=['y'])
 
@@ -151,7 +153,7 @@ def test_roundtrip_complex(tempdir, scheme,):
                          })
     data.loc[100, 't'] = None
 
-    fname = os.path.join(tempdir, 'test.parquet')
+    fname = join_path(tempdir, 'test.parquet')
     write(fname, data, file_scheme=scheme)
 
     r = ParquetFile(fname)
@@ -171,7 +173,7 @@ def test_roundtrip_complex(tempdir, scheme,):
                   periods=10, freq='H', tz='UTC')})
     ])
 def test_datetime_roundtrip(tempdir, df, capsys):
-    fname = os.path.join(tempdir, 'test.parquet')
+    fname = join_path(tempdir, 'test.parquet')
     w = False
     if 'x' in df and 'Europe/' in str(df.x.dtype.tz):
         with pytest.warns(UserWarning) as w:
@@ -191,7 +193,7 @@ def test_datetime_roundtrip(tempdir, df, capsys):
 
 
 def test_nulls_roundtrip(tempdir):
-    fname = os.path.join(tempdir, 'temp.parq')
+    fname = join_path(tempdir, 'temp.parq')
     data = pd.DataFrame({'o': np.random.choice(['hello', 'world', None],
                                                size=1000)})
     data['cat'] = data['o'].astype('category')
@@ -247,7 +249,7 @@ def test_make_definitions_without_nulls():
 
 
 def test_empty_row_group(tempdir):
-    fname = os.path.join(tempdir, 'temp.parq')
+    fname = join_path(tempdir, 'temp.parq')
     data = pd.DataFrame({'o': np.random.choice(['hello', 'world'],
                                                size=1000)})
     writer.write(fname, data, row_group_offsets=[0, 900, 1800])
@@ -257,7 +259,7 @@ def test_empty_row_group(tempdir):
 
 @pytest.mark.skip()
 def test_write_delta(tempdir):
-    fname = os.path.join(tempdir, 'temp.parq')
+    fname = join_path(tempdir, 'temp.parq')
     data = pd.DataFrame({'i1': np.arange(10, dtype=np.int32) + 2,
                          'i2': np.cumsum(np.random.randint(
                                  0, 5, size=10)).astype(np.int32) + 2})
@@ -271,7 +273,7 @@ def test_write_delta(tempdir):
 
 def test_int_rowgroups(tempdir):
     df = pd.DataFrame({'a': [1]*100})
-    fname = os.path.join(tempdir, 'test.parq')
+    fname = join_path(tempdir, 'test.parq')
     writer.write(fname, df, row_group_offsets=30)
     r = ParquetFile(fname)
     assert [rg.num_rows for rg in r.row_groups] == [25, 25, 25, 25]
@@ -366,7 +368,7 @@ def test_too_many_partition_columns(tempdir):
 def test_write_compression_dict(tempdir, compression):
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1., 2., 3.]})
-    fn = os.path.join(tempdir, 'tmp.parq')
+    fn = join_path(tempdir, 'tmp.parq')
     writer.write(fn, df, compression=compression)
     r = ParquetFile(fn)
     df2 = r.to_pandas()
@@ -377,7 +379,7 @@ def test_write_compression_dict(tempdir, compression):
 def test_write_compression_schema(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1., 2., 3.]})
-    fn = os.path.join(tempdir, 'tmp.parq')
+    fn = join_path(tempdir, 'tmp.parq')
     writer.write(fn, df, compression={'x': 'gzip'})
     r = ParquetFile(fn)
 
@@ -391,7 +393,7 @@ def test_write_compression_schema(tempdir):
 
 def test_index(tempdir):
     import json
-    fn = os.path.join(tempdir, 'tmp.parq')
+    fn = join_path(tempdir, 'tmp.parq')
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1., 2., 3.]},
                        index=pd.Index([10, 20, 30], name='z'))
@@ -412,7 +414,7 @@ def test_index(tempdir):
 
 
 def test_duplicate_columns(tempdir):
-    fn = os.path.join(tempdir, 'tmp.parq')
+    fn = join_path(tempdir, 'tmp.parq')
     df = pd.DataFrame(np.arange(12).reshape(4, 3), columns=list('aaa'))
     with pytest.raises(ValueError) as e:
         write(fn, df)
@@ -420,7 +422,7 @@ def test_duplicate_columns(tempdir):
 
 
 def test_dotted_column(tempdir):
-    fn = os.path.join(tempdir, 'tmp.parq')
+    fn = join_path(tempdir, 'tmp.parq')
     df = pd.DataFrame({'x.y': [1, 2, 3],
                        'y': [1., 2., 3.]})
 
@@ -431,7 +433,7 @@ def test_dotted_column(tempdir):
 
 
 def test_naive_index(tempdir):
-    fn = os.path.join(tempdir, 'tmp.parq')
+    fn = join_path(tempdir, 'tmp.parq')
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1., 2., 3.]})
 
@@ -449,7 +451,7 @@ def test_naive_index(tempdir):
 def test_text_convert(tempdir):
     df = pd.DataFrame({'a': [u'π'] * 100,
                        'b': [b'a'] * 100})
-    fn = os.path.join(tempdir, 'tmp.parq')
+    fn = join_path(tempdir, 'tmp.parq')
 
     write(fn, df, fixed_text={'a': 2, 'b': 1})
     pf = ParquetFile(fn)
@@ -482,7 +484,7 @@ def test_null_time(tempdir):
     """Test reading a file that contains null records."""
     tmp = str(tempdir)
     expected = pd.DataFrame({"t": [np.timedelta64(), np.timedelta64('NaT')]})
-    fn = os.path.join(tmp, "test-time-null.parquet")
+    fn = join_path(tmp, "test-time-null.parquet")
 
     # with NaT
     write(fn, expected, has_nulls=False)
@@ -513,7 +515,7 @@ def test_auto_null(tempdir):
     df['aaa'] = df['a'].astype('object')
     object_cols = ['d', 'ff', 'bb', 'aaa']
     test_cols = list(set(df) - set(object_cols)) + ['d']
-    fn = os.path.join(tmp, "test.parq")
+    fn = join_path(tmp, "test.parq")
 
     with pytest.raises(ValueError):
         write(fn, df, has_nulls=False)
@@ -576,7 +578,7 @@ def test_many_categories(tempdir, n):
     cats = np.arange(n)
     codes = np.random.randint(0, n, size=1000000)
     df = pd.DataFrame({'x': pd.Categorical.from_codes(codes, cats), 'y': 1})
-    fn = os.path.join(tmp, "test.parq")
+    fn = join_path(tmp, "test.parq")
 
     write(fn, df, has_nulls=False)
     pf = ParquetFile(fn)
@@ -595,7 +597,7 @@ def test_many_categories(tempdir, n):
 
 def test_autocat(tempdir):
     tmp = str(tempdir)
-    fn = os.path.join(tmp, "test.parq")
+    fn = join_path(tmp, "test.parq")
     data = pd.DataFrame({'o': pd.Categorical(
         np.random.choice(['hello', 'world'], size=1000))})
     write(fn, data)
@@ -634,14 +636,14 @@ def test_autocat(tempdir):
 def test_merge(tempdir, dirs, row_groups):
     fn = str(tempdir)
 
-    default_mkdirs(os.path.join(fn, dirs[0]))
+    default_mkdirs(join_path(fn, dirs[0]))
     df0 = pd.DataFrame({'a': [1, 2, 3, 4]})
-    fn0 = os.sep.join([fn, dirs[0], 'out0.parq'])
+    fn0 = '/'.join([fn, dirs[0], 'out0.parq'])
     write(fn0, df0, row_group_offsets=row_groups)
 
-    default_mkdirs(os.path.join(fn, dirs[1]))
+    default_mkdirs(join_path(fn, dirs[1]))
     df1 = pd.DataFrame({'a': [5, 6, 7, 8]})
-    fn1 = os.sep.join([fn, dirs[1], 'out1.parq'])
+    fn1 = '/'.join([fn, dirs[1], 'out1.parq'])
     write(fn1, df1, row_group_offsets=row_groups)
 
     # with file-names
@@ -683,11 +685,11 @@ def test_merge_fail(tempdir):
     fn = str(tempdir)
 
     df0 = pd.DataFrame({'a': [1, 2, 3, 4]})
-    fn0 = os.sep.join([fn, 'out0.parq'])
+    fn0 = '/'.join([fn, 'out0.parq'])
     write(fn0, df0)
 
     df1 = pd.DataFrame({'a': ['a', 'b', 'c']})
-    fn1 = os.sep.join([fn, 'out1.parq'])
+    fn1 = '/'.join([fn, 'out1.parq'])
     write(fn1, df1)
 
     with pytest.raises(ValueError) as e:
@@ -702,7 +704,7 @@ def test_merge_fail(tempdir):
 
 
 def test_append_simple(tempdir):
-    fn = os.path.join(str(tempdir), 'test.parq')
+    fn = join_path(str(tempdir), 'test.parq')
     df = pd.DataFrame({'a': [1, 2, 3, 0],
                        'b': ['a', 'a', 'b', 'b']})
     write(fn, df, write_index=False)
@@ -716,7 +718,7 @@ def test_append_simple(tempdir):
 
 @pytest.mark.parametrize('scheme', ('hive', 'simple'))
 def test_append_empty(tempdir, scheme):
-    fn = os.path.join(str(tempdir), 'test.parq')
+    fn = join_path(str(tempdir), 'test.parq')
     df = pd.DataFrame({'a': [1, 2, 3, 0],
                        'b': ['a', 'a', 'b', 'b']})
     write(fn, df.head(0), write_index=False, file_scheme=scheme)
@@ -771,7 +773,7 @@ def test_append_fail(tempdir):
         write(fn, df1, file_scheme='simple', append=True)
     assert 'existing file scheme' in str(e)
 
-    fn2 = os.path.join(fn, 'temp.parq')
+    fn2 = join_path(fn, 'temp.parq')
     write(fn2, df0, file_scheme='simple')
     with pytest.raises(ValueError) as e:
         write(fn2, df1, file_scheme='hive', append=True)
@@ -806,7 +808,7 @@ def test_bad_object_encoding(tempdir):
 
 def test_empty_dataframe(tempdir):
     df = pd.DataFrame({'a': [], 'b': []}, dtype=int)
-    fn = os.path.join(str(tempdir), 'test.parquet')
+    fn = join_path(str(tempdir), 'test.parquet')
     write(fn, df)
     pf = ParquetFile(fn)
     out = pf.to_pandas()
@@ -817,7 +819,7 @@ def test_empty_dataframe(tempdir):
 
 
 def test_hasnulls_ordering(tempdir):
-    fname = os.path.join(tempdir, 'temp.parq')
+    fname = join_path(tempdir, 'temp.parq')
     data = pd.DataFrame({'a': np.random.rand(100),
                          'b': np.random.rand(100),
                          'c': np.random.rand(100)})
@@ -836,7 +838,7 @@ def test_cats_in_part_files(tempdir):
     df = pd.DataFrame({'a': pd.Categorical(['a', 'b'] * 100)})
     writer.write(tempdir, df, file_scheme='hive', row_group_offsets=50)
     import glob
-    files = glob.glob(os.path.join(tempdir, 'part*'))
+    files = glob.glob(join_path(tempdir, 'part*'))
     pf = ParquetFile(tempdir)
     assert len(pf.row_groups) == 4
     kv = pf.fmd.key_value_metadata
@@ -852,7 +854,7 @@ def test_cats_in_part_files(tempdir):
 
 def test_cats_and_nulls(tempdir):
     df = pd.DataFrame({'x': pd.Categorical([1, 2, 1])})
-    fn = os.path.join(tempdir, 'temp.parq')
+    fn = join_path(tempdir, 'temp.parq')
     write(fn, df)
     pf = ParquetFile(fn)
     assert not pf.schema.is_required('x')
@@ -864,7 +866,7 @@ def test_cats_and_nulls(tempdir):
 def test_consolidate_cats(tempdir):
     import json
     df = pd.DataFrame({'x': pd.Categorical([1, 2, 1])})
-    fn = os.path.join(tempdir, 'temp.parq')
+    fn = join_path(tempdir, 'temp.parq')
     write(fn, df)
     pf = ParquetFile(fn)
     assert 2 == json.loads(pf.fmd.key_value_metadata[0].value)['columns'][0][
@@ -894,7 +896,7 @@ def test_bad_object_encoding(tempdir):
 
 def test_object_encoding_int32(tempdir):
     df = pd.DataFrame({'a': ['15', None, '2']})
-    fn = os.path.join(tempdir, 'temp.parq')
+    fn = join_path(tempdir, 'temp.parq')
     write(fn, df, object_encoding={'a': 'int32'})
     pf = ParquetFile(fn)
     assert pf._schema[1].type == parquet_thrift.Type.INT32

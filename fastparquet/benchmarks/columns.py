@@ -3,6 +3,9 @@ import os
 import numpy as np
 import pandas as pd
 import time
+
+from fastparquet.util import join_path
+
 from fastparquet import write, ParquetFile
 from dask.utils import tmpdir
 
@@ -18,7 +21,7 @@ def measure(name, result):
 def time_column():
     with tmpdir() as tempdir:
         result = {}
-        fn = os.path.join(tempdir, 'temp.parq')
+        fn = join_path(tempdir, 'temp.parq')
         n = 10000000
         r = np.random.randint(-1e10, 1e10, n)
         d = pd.DataFrame({'w': pd.Categorical(np.random.choice(
@@ -81,7 +84,7 @@ def time_column():
 def time_text():
     with tmpdir() as tempdir:
         result = {}
-        fn = os.path.join(tempdir, 'temp.parq')
+        fn = join_path(tempdir, 'temp.parq')
         n = 1000000
         d = pd.DataFrame({
             'a': np.random.choice(['hi', 'you', 'people'], size=n),

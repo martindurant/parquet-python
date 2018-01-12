@@ -1,6 +1,9 @@
 import io
 import numpy as np
 import os
+
+from fastparquet.util import join_path
+
 from fastparquet import encoding, core, ParquetFile, schema, util
 
 TEST_DATA = 'test-data'
@@ -10,7 +13,7 @@ count = 1000
 
 def test_read_bitpacked():
     results = np.empty(1000000, dtype=np.int32)
-    with open(os.path.join(here, 'bitpack')) as f:
+    with open(join_path(here, 'bitpack')) as f:
         for i, l in enumerate(f):
             if i > count:
                 break
@@ -23,7 +26,7 @@ def test_read_bitpacked():
 
 def test_rle():
     results = np.empty(1000000, dtype=np.int32)
-    with open(os.path.join(here, 'rle')) as f:
+    with open(join_path(here, 'rle')) as f:
         for i, l in enumerate(f):
             if i > count:
                 break
@@ -35,7 +38,7 @@ def test_rle():
 
 
 def test_uvarint():
-    with open(os.path.join(here, 'uvarint')) as f:
+    with open(join_path(here, 'uvarint')) as f:
         for i, l in enumerate(f):
             if i > count:
                 break
@@ -47,7 +50,7 @@ def test_uvarint():
 
 def test_hybrid():
     results = np.empty(1000000, dtype=np.int32)
-    with open(os.path.join(here, 'hybrid')) as f:
+    with open(join_path(here, 'hybrid')) as f:
         for i, l in enumerate(f):
             if i > count // 20:
                 break
@@ -60,7 +63,7 @@ def test_hybrid():
 
 def test_hybrid_extra_bytes():
     results = np.empty(1000000, dtype=np.int32)
-    with open(os.path.join(here, 'hybrid')) as f:
+    with open(join_path(here, 'hybrid')) as f:
         for i, l in enumerate(f):
             if i > count // 20:
                 break
@@ -78,7 +81,7 @@ def test_hybrid_extra_bytes():
 
 
 def test_read_data():
-    with open(os.path.join(here, 'read_data')) as f:
+    with open(join_path(here, 'read_data')) as f:
         for i, l in enumerate(f):
             (data, fo_encoding, value_count, bit_width, res) = eval(l)
             i = encoding.Numpy8(np.frombuffer(util.byte_buffer(data), dtype=np.uint8))
