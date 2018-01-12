@@ -178,18 +178,14 @@ class ParquetFile(object):
                                 for key, v in cats.items()])
 
     def row_group_filename(self, rg):
-        def _internal():
-            if rg.columns[0].file_path:
-                base = self.fn.replace('_metadata', '').rstrip('/')
-                if base:
-                    return join_path(base, rg.columns[0].file_path)
-                else:
-                    return rg.columns[0].file_path
+        if rg.columns[0].file_path:
+            base = self.fn.replace('_metadata', '').rstrip('/')
+            if base:
+                return join_path(base, rg.columns[0].file_path)
             else:
-                return self.fn
-        output = _internal()
-        print("row_group_filename: " + output + " self.fn=" + self.fn + " rg.columns[0].file_path=" + rg.columns[0].file_path)
-        return output
+                return rg.columns[0].file_path
+        else:
+            return self.fn
 
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None):

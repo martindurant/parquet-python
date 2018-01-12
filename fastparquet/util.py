@@ -182,9 +182,9 @@ def analyse_paths(file_list, root=False):
     l = len(basepath)
     out_list = []
     for path_parts in path_parts_list:
-        out_list.append(join_path(*path_parts[l:]))
+        out_list.append('/'.join(path_parts[l:]))  # use '/'.join() instead of join_path to be consistent with split('/')
 
-    return join_path(*basepath), out_list
+    return '/'.join(basepath), out_list  # use '/'.join() instead of join_path to be consistent with split('/')
 
 
 def infer_dtype(column):
