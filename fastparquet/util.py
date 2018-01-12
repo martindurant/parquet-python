@@ -295,12 +295,17 @@ def join_path(*path):
             p = p[1:]
         return p
 
-    if path and path[0] and path[0][0] == '/':
-        is_abs = True
-        path = list(path)
-        path[0] = path[0][1:]
-    else:
-        is_abs = False
+    abs_prefix = ''
+    if path and path[0]:
+        if path[0][0] == '/':
+            abs_prefix = '/'
+            path = list(path)
+            path[0] = path[0][1:]
+        elif os.sep == '\\' and path[0][1:].startswith(':/'):
+            # If windows, then look for the "c:/" prefix
+            abs_prefix = path[0][0:3]
+            path = list(path)
+            path[0] = path[0][3:]
 
     scrubbed = []
     for i, p in enumerate(path):
@@ -322,14 +327,11 @@ def join_path(*path):
         else:
             simpler.append(s)
 
-    if is_abs:
-        if not simpler:
-            joined = "/"
+    if not simpler:
+        if abs_prefix:
+            joined = abs_prefix
         else:
-            joined = '/' + ('/'.join(simpler))
-    else:
-        if not simpler:
             joined = "."
-        else:
-            joined = '/'.join(simpler)
+    else:
+        joined = abs_prefix + ('/'.join(simpler))
     return joined
