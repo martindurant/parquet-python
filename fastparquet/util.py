@@ -320,7 +320,7 @@ def join_path(*path):
                     simpler.append(s)
                 else:
                     simpler.pop()
-            elif is_abs:
+            elif abs_prefix:
                 raise Exception("can not get parent of root")
             else:
                 simpler.append(s)
