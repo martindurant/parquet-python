@@ -1,3 +1,4 @@
+import os
 import pytest
 
 from fastparquet.util import analyse_paths, get_file_scheme, val_to_num, join_path
@@ -25,7 +26,9 @@ def test_analyse_paths():
     assert (base, out) == ('c', ['cat=1/a', 'cat=2/b', 'cat=1/c'])
 
     file_list = ['c\\cat=1\\a', 'c\\cat=2\\b', 'c\\cat=1\\c']
+    temp, os.sep = os.sep, '\\'  # We must trick linux into thinking this is windows for this test to work
     base, out = analyse_paths(file_list)
+    os.sep = temp
     assert (base, out) == ('c', ['cat=1/a', 'cat=2/b', 'cat=1/c'])
 
 
