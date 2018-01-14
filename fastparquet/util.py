@@ -286,12 +286,14 @@ def get_file_scheme(paths):
 
 def join_path(*path):
     def scrub(i, p):
+        # Convert path to standard form
+        # this means windows path separators are converted to linux
         p = p.replace(os.sep, "/")
-        if p == "":
+        if p == "":  # empty path is assumed to be a relative path
             return "."
-        if p[-1] == '/':
+        if p[-1] == '/':  # trailing slashes are not allowed
             p = p[:-1]
-        if i > 0 and p[0] == '/':
+        if i > 0 and p[0] == '/':  # only the first path can start with /
             p = p[1:]
         return p
 

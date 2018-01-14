@@ -27,7 +27,7 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
                       index=index, columns=[x for x in string.ascii_uppercase[0:numbercolumns]])
     return df
 
-@pytest.mark.skip("should use `tempdir().next()` not tempdir")
+
 @pytest.mark.parametrize('tempdir,input_symbols,input_days,file_scheme,input_columns,partitions,filters',
            [
            (tempdir, ['NOW', 'SPY', 'VIX'], 2*252, 'hive', 2, ['symbol', 'year'], [('symbol', '==', 'SPY')]),
