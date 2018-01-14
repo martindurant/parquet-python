@@ -161,7 +161,7 @@ def ex_from_sep(sep):
 
 def analyse_paths(file_list, root=False):
     """Consolidate list of file-paths into  parquet relative paths"""
-    path_parts_list = [fn.split('/') for fn in file_list]
+    path_parts_list = [join_path(fn).split('/') for fn in file_list]
     if root is False:
         basepath = path_parts_list[0][:-1]
         for i, path_parts in enumerate(path_parts_list):
