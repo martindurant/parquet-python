@@ -1,14 +1,19 @@
 
+import datetime as dt
 import os
 import shutil
-import pytest
+import string
+import sys
+
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.tslib import Timestamp
-from fastparquet.test.util import tempdir
+from six import PY2
+
 from fastparquet import write, ParquetFile
-import datetime as dt
-import string
+from fastparquet.test.util import tempdir
+
 
 def frame_symbol_dtTrade_type_strike(days=1 * 252,
                        start_date=dt.datetime(2005, 1, 1, hour=0, minute=0, second=0),
@@ -42,6 +47,8 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
                                                            [('dtTrade','==', Timestamp('2005-01-01 00:00:00'))]),
            ]
         )
+
+@pytest.mark.skipif(sys.platform=='win32' and PY2, reason='does not work on windows 32 py2.7')
 def test_frame_write_read_verify(tempdir, input_symbols, input_days, file_scheme,
 						    input_columns, partitions, filters):
     #Generate Temp Director for parquet Files
