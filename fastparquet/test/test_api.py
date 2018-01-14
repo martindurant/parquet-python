@@ -5,26 +5,13 @@ import os
 import numpy as np
 import pandas as pd
 import pytest
-from fastparquet.util import join_path
 
 from fastparquet.test.util import tempdir
 from fastparquet import write, ParquetFile
 from fastparquet.api import statistics, sorted_partitioned_columns
+from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
-
-
-def test_os_specific_path_is_fixed(tempdir):
-    df = pd.DataFrame({'x': [1, 2, 3],
-                       'y': [1.0, 2.0, 1.0],
-                       'z': ['a', 'b', 'c']})
-
-    # Provide os-specific path
-    fn = tempdir + os.sep + 'foo.parquet'
-    write(fn, df, row_group_offsets=[0, 2])
-    p = ParquetFile(fn)
-
-    assert p.fn == join_path(fn)
 
 
 def test_statistics(tempdir):
@@ -32,7 +19,7 @@ def test_statistics(tempdir):
                        'y': [1.0, 2.0, 1.0],
                        'z': ['a', 'b', 'c']})
 
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2])
 
     p = ParquetFile(fn)
@@ -51,7 +38,7 @@ def test_statistics(tempdir):
 def test_logical_types(tempdir):
     df = pd.util.testing.makeMixedDataFrame()
 
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2])
 
     p = ParquetFile(fn)
@@ -62,7 +49,7 @@ def test_logical_types(tempdir):
 
 
 def test_empty_statistics(tempdir):
-    p = ParquetFile(join_path(TEST_DATA, "nation.impala.parquet"))
+    p = ParquetFile(os.path.join(TEST_DATA, "nation.impala.parquet"))
 
     s = statistics(p)
     assert s == {'distinct_count': {'n_comment': [None],
@@ -89,7 +76,7 @@ def test_sorted_row_group_columns(tempdir):
                        'y': [1.0, 2.0, 1.0, 2.0],
                        'z': ['a', 'b', 'c', 'd']})
 
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2], object_encoding={'v': 'json',
                                                              'z': 'utf8'})
 
@@ -114,7 +101,7 @@ def test_iter(tempdir):
                        'z': ['a', 'b', 'c', 'd']})
     df.index.name = 'index'
 
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2], write_index=True)
     pf = ParquetFile(fn)
     out = iter(pf.iter_row_groups(index='index'))
@@ -131,14 +118,14 @@ def test_attributes(tempdir):
                        'y': [1.0, 2.0, 1.0, 2.0],
                        'z': ['a', 'b', 'c', 'd']})
 
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2])
     pf = ParquetFile(fn)
     assert pf.columns == ['x', 'y', 'z']
     assert len(pf.row_groups) == 2
     assert pf.count == 4
-    assert fn == pf.info['name']
-    assert fn in str(pf)
+    assert join_path(fn) == pf.info['name']
+    assert join_path(fn) in str(pf)
     for col in df:
         assert pf.dtypes[col] == df.dtypes[col]
 
@@ -147,7 +134,7 @@ def test_open_standard(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3, 4],
                        'y': [1.0, 2.0, 1.0, 2.0],
                        'z': ['a', 'b', 'c', 'd']})
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2], file_scheme='hive',
           open_with=open)
     pf = ParquetFile(fn, open_with=open)
@@ -164,7 +151,7 @@ def test_cast_index(tempdir):
                        'f32': np.array([1, 2, 3, 4], dtype='float32'),
                        'f64': np.array([1, 2, 3, 4], dtype='float64'),
                        })
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df)
     pf = ParquetFile(fn)
     for col in list(df):
@@ -183,7 +170,7 @@ def test_cast_index(tempdir):
 def test_zero_child_leaf(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3]})
 
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df)
 
     pf = ParquetFile(fn)
@@ -196,7 +183,7 @@ def test_zero_child_leaf(tempdir):
 def test_request_nonexistent_column(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3]})
 
-    fn = join_path(tempdir, 'foo.parquet')
+    fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df)
 
     pf = ParquetFile(fn)
@@ -207,10 +194,10 @@ def test_request_nonexistent_column(tempdir):
 def test_read_multiple_no_metadata(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5]})
     write(tempdir, df, file_scheme='hive', row_group_offsets=[0, 2])
-    os.unlink(join_path(tempdir, '_metadata'))
-    os.unlink(join_path(tempdir, '_common_metadata'))
+    os.unlink(os.path.join(tempdir, '_metadata'))
+    os.unlink(os.path.join(tempdir, '_common_metadata'))
     import glob
-    flist = list(sorted(map(join_path, glob.glob(join_path(tempdir, '*')))))
+    flist = list(sorted(glob.glob(os.path.join(tempdir, '*'))))
     pf = ParquetFile(flist)
     assert len(pf.row_groups) == 2
     out = pf.to_pandas()
@@ -224,12 +211,12 @@ def test_single_upper_directory(tempdir):
     out = pf.to_pandas()
     assert (out.y == 'aa').all()
 
-    os.unlink(join_path(tempdir, '_metadata'))
-    os.unlink(join_path(tempdir, '_common_metadata'))
+    os.unlink(os.path.join(tempdir, '_metadata'))
+    os.unlink(os.path.join(tempdir, '_common_metadata'))
     import glob
-    flist = list(sorted(map(join_path, glob.glob(join_path(tempdir, '*/*')))))
+    flist = list(sorted(glob.glob(os.path.join(tempdir, '*/*'))))
     pf = ParquetFile(flist, root=tempdir)
-    assert pf.fn == join_path(tempdir, '_metadata')
+    assert pf.fn == join_path(os.path.join(tempdir, '_metadata'))
     out = pf.to_pandas()
     assert (out.y == 'aa').all()
 
@@ -244,7 +231,7 @@ def test_numerical_partition_name(tempdir):
 
 
 def test_filter_without_paths(tempdir):
-    fn = join_path(tempdir, 'test.parq')
+    fn = os.path.join(tempdir, 'test.parq')
     df = pd.DataFrame({
         'x': [1, 2, 3, 4, 5, 6, 7],
         'letter': ['a', 'b', 'c', 'd', 'e', 'f', 'g']
@@ -337,12 +324,12 @@ def test_no_index_name(tempdir):
 
 def test_drill_list(tempdir):
     df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]})
-    dir1 = join_path(tempdir, 'x')
-    fn1 = join_path(dir1, 'part.0.parquet')
+    dir1 = os.path.join(tempdir, 'x')
+    fn1 = os.path.join(dir1, 'part.0.parquet')
     os.makedirs(dir1)
     write(fn1, df)
-    dir2 = join_path(tempdir, 'y')
-    fn2 = join_path(dir2, 'part.0.parquet')
+    dir2 = os.path.join(tempdir, 'y')
+    fn2 = os.path.join(dir2, 'part.0.parquet')
     os.makedirs(dir2)
     write(fn2, df)
 
@@ -354,12 +341,12 @@ def test_drill_list(tempdir):
 
 def test_hive_and_drill_list(tempdir):
     df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]})
-    dir1 = join_path(tempdir, 'x=0')
-    fn1 = join_path(dir1, 'part.0.parquet')
+    dir1 = os.path.join(tempdir, 'x=0')
+    fn1 = os.path.join(dir1, 'part.0.parquet')
     os.makedirs(dir1)
     write(fn1, df)
-    dir2 = join_path(tempdir, 'y')
-    fn2 = join_path(dir2, 'part.0.parquet')
+    dir2 = os.path.join(tempdir, 'y')
+    fn2 = os.path.join(dir2, 'part.0.parquet')
     os.makedirs(dir2)
     write(fn2, df)
 
@@ -371,12 +358,12 @@ def test_hive_and_drill_list(tempdir):
 
 def test_bad_file_paths(tempdir):
     df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]})
-    dir1 = join_path(tempdir, 'x=0')
-    fn1 = join_path(dir1, 'part.=.parquet')
+    dir1 = os.path.join(tempdir, 'x=0')
+    fn1 = os.path.join(dir1, 'part.=.parquet')
     os.makedirs(dir1)
     write(fn1, df)
-    dir2 = join_path(tempdir, 'y/z')
-    fn2 = join_path(dir2, 'part.0.parquet')
+    dir2 = os.path.join(tempdir, 'y/z')
+    fn2 = os.path.join(dir2, 'part.0.parquet')
     os.makedirs(dir2)
     write(fn2, df)
 
@@ -386,12 +373,12 @@ def test_bad_file_paths(tempdir):
     assert out.a.tolist() == ['x', 'y', 'z'] * 2
     assert 'dir0' not in out
 
-    path1 = join_path(tempdir, 'data')
-    fn1 = join_path(path1, 'out.parq')
+    path1 = os.path.join(tempdir, 'data')
+    fn1 = os.path.join(path1, 'out.parq')
     os.makedirs(path1)
     write(fn1, df)
-    path2 = join_path(tempdir, 'data2')
-    fn2 = join_path(path2, 'out.parq')
+    path2 = os.path.join(tempdir, 'data2')
+    fn2 = os.path.join(path2, 'out.parq')
     os.makedirs(path2)
     write(fn2, df)
     pf = ParquetFile([fn1, fn2])

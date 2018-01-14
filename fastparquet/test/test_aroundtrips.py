@@ -9,7 +9,6 @@ import numpy as np
 import os
 import pandas as pd
 import pytest
-from fastparquet.util import join_path
 
 import fastparquet
 from fastparquet import write
@@ -50,7 +49,7 @@ for i in range(1000):
     out.append(part)
 df = sql.createDataFrame(out, df_schema)
     """
-    fn = join_path(TEST_DATA, 'map_array.parq')
+    fn = os.path.join(TEST_DATA, 'map_array.parq')
     expected = sql.read.parquet(fn).toPandas()
     pf = fastparquet.ParquetFile(fn)
     data = pf.to_pandas()
@@ -63,7 +62,7 @@ j = {'nest': {'thing': ['hi', 'world']}}
 open('temp.json', 'w').write('\n'.join([json.dumps(j)] * 10))
 df = sql.read.json('temp.json')
     """
-    fn = join_path(TEST_DATA, 'nested.parq')
+    fn = os.path.join(TEST_DATA, 'nested.parq')
     pf = fastparquet.ParquetFile(fn)
     assert pf.columns == ['nest.thing']  # NOT contain 'nest'
     out = pf.to_pandas(columns=['nest.thing'])
@@ -91,7 +90,7 @@ def test_pyspark_roundtrip(tempdir, scheme, row_groups, comp, sql):
     data['bcat'] = data.bhello.astype('category')
     data['cat'] = data.hello.astype('category')
 
-    fname = join_path(tempdir, 'test.parquet')
+    fname = os.path.join(tempdir, 'test.parquet')
     write(fname, data, file_scheme=scheme, row_group_offsets=row_groups,
           compression=comp, times='int96', write_index=True)
 
@@ -108,12 +107,12 @@ def test_pyspark_roundtrip(tempdir, scheme, row_groups, comp, sql):
 
 
 def test_empty_row_groups(tempdir, sql):
-    fn = join_path(tempdir, 'output.parquet')
+    fn = os.path.join(tempdir, 'output.parquet')
     d0 = pd.DataFrame({'name': ['alice'], 'age': [20]})
     df = sql.createDataFrame(d0)
     df.write.parquet(fn)
     import glob
-    files = glob.glob(join_path(fn, '*.parquet'))
+    files = glob.glob(os.path.join(fn, '*.parquet'))
     sizes = [os.stat(p).st_size for p in files]
     msize = max(sizes)
     pf = fastparquet.ParquetFile(files)  # don't necessarily have metadata

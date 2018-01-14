@@ -40,6 +40,7 @@ def test_date():
     assert (convert(pd.Series([days]), schema)[0] ==
             pd.to_datetime([datetime.date(2004, 11, 3)]))
 
+
 def test_time_millis():
     """Test int32 encoding a timedelta in millis."""
     schema = pt.SchemaElement(

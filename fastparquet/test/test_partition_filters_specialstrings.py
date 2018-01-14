@@ -4,7 +4,6 @@ import shutil
 import pytest
 import numpy as np
 import pandas as pd
-from fastparquet.util import join_path
 from pandas.tslib import Timestamp
 from fastparquet.test.util import tempdir
 from fastparquet import write, ParquetFile
@@ -27,7 +26,6 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
                       index=index, columns=[x for x in string.ascii_uppercase[0:numbercolumns]])
     return df
 
-
 @pytest.mark.parametrize('tempdir,input_symbols,input_days,file_scheme,input_columns,partitions,filters',
            [
            (tempdir, ['NOW', 'SPY', 'VIX'], 2*252, 'hive', 2, ['symbol', 'year'], [('symbol', '==', 'SPY')]),
@@ -48,7 +46,7 @@ def test_frame_write_read_verify(tempdir, input_symbols, input_days, file_scheme
 						    input_columns, partitions, filters):
     #Generate Temp Director for parquet Files
     fdir = str(tempdir)
-    fname = join_path(fdir, 'test')
+    fname = os.path.join(fdir, 'test')
 
     #Generate Test Input Frame
     input_df = frame_symbol_dtTrade_type_strike(days=input_days,

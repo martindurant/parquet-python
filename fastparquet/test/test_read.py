@@ -11,7 +11,6 @@ import os
 
 import pandas as pd
 import pytest
-from fastparquet.util import join_path
 
 import fastparquet
 from fastparquet import writer, core
@@ -21,7 +20,7 @@ from fastparquet.test.util import TEST_DATA, s3, tempdir
 
 def test_header_magic_bytes(tempdir):
     """Test reading the header magic bytes."""
-    fn = join_path(tempdir, 'temp.parq')
+    fn = os.path.join(tempdir, 'temp.parq')
     with open(fn, 'wb') as f:
         f.write(b"PAR1_some_bogus_data")
     with pytest.raises(fastparquet.ParquetException):
@@ -32,8 +31,8 @@ def test_header_magic_bytes(tempdir):
 def test_read_footer_fail(tempdir, size):
     """Test reading the footer."""
     import struct
-    fn = join_path(TEST_DATA, "nation.impala.parquet")
-    fout = join_path(tempdir, "temp.parquet")
+    fn = os.path.join(TEST_DATA, "nation.impala.parquet")
+    fout = os.path.join(tempdir, "temp.parquet")
     with open(fn, 'rb') as f1:
         with open(fout, 'wb') as f2:
             f1.seek(-8, 2)
@@ -49,16 +48,16 @@ def test_read_footer_fail(tempdir, size):
 
 def test_read_footer():
     """Test reading the footer."""
-    p = fastparquet.ParquetFile(join_path(TEST_DATA, "nation.impala.parquet"))
+    p = fastparquet.ParquetFile(os.path.join(TEST_DATA, "nation.impala.parquet"))
     snames = {"schema", "n_regionkey", "n_name", "n_nationkey", "n_comment"}
     assert {s.name for s in p._schema} == snames
     assert set(p.columns) == snames - {"schema"}
 
-files = [join_path(TEST_DATA, p) for p in
+files = [os.path.join(TEST_DATA, p) for p in
          ["gzip-nation.impala.parquet", "nation.dict.parquet",
           "nation.impala.parquet", "nation.plain.parquet",
           "snappy-nation.impala.parquet"]]
-csvfile = join_path(TEST_DATA, "nation.csv")
+csvfile = os.path.join(TEST_DATA, "nation.csv")
 cols = ["n_nationkey", "n_name", "n_regionkey", "n_comment"]
 expected = pd.read_csv(csvfile, delimiter="|", index_col=0, names=cols)
 
@@ -93,7 +92,7 @@ def test_file_csv(parquet_file):
 
 def test_null_int():
     """Test reading a file that contains null records."""
-    p = fastparquet.ParquetFile(join_path(TEST_DATA, "test-null.parquet"))
+    p = fastparquet.ParquetFile(os.path.join(TEST_DATA, "test-null.parquet"))
     data = p.to_pandas()
     expected = pd.DataFrame([{"foo": 1, "bar": 2}, {"foo": 1, "bar": None}])
     for col in data:
@@ -104,7 +103,7 @@ def test_null_int():
 def test_converted_type_null():
     """Test reading a file that contains null records for a plain column that
      is converted to utf-8."""
-    p = fastparquet.ParquetFile(join_path(TEST_DATA,
+    p = fastparquet.ParquetFile(os.path.join(TEST_DATA,
                                          "test-converted-type-null.parquet"))
     data = p.to_pandas()
     expected = pd.DataFrame([{"foo": "bar"}, {"foo": None}])
@@ -119,7 +118,7 @@ def test_converted_type_null():
 def test_null_plain_dictionary():
     """Test reading a file that contains null records for a plain dictionary
      column."""
-    p = fastparquet.ParquetFile(join_path(TEST_DATA,
+    p = fastparquet.ParquetFile(os.path.join(TEST_DATA,
                                          "test-null-dictionary.parquet"))
     data = p.to_pandas()
     expected = pd.DataFrame([{"foo": None}] + [{"foo": "bar"},
@@ -139,7 +138,7 @@ def test_dir_partition():
         'num': x,
         'cat': pd.Series(np.array(['fred', 'freda'])[x%2], dtype='category'),
         'catnum': pd.Series(np.array([1, 2, 3])[x%3], dtype='category')})
-    pf = fastparquet.ParquetFile(join_path(TEST_DATA, "split"))
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "split"))
     out = pf.to_pandas()
     for cat, catnum in product(['fred', 'freda'], [1, 2, 3]):
         assert (df.num[(df.cat == cat) & (df.catnum == catnum)].tolist()) ==\
@@ -150,7 +149,7 @@ def test_dir_partition():
 
 
 def test_stat_filters():
-    path = join_path(TEST_DATA, 'split')
+    path = os.path.join(TEST_DATA, 'split')
     pf = fastparquet.ParquetFile(path)
     base_shape = len(pf.to_pandas())
 
@@ -193,7 +192,7 @@ def test_stat_filters():
 
 
 def test_cat_filters():
-    path = join_path(TEST_DATA, 'split')
+    path = os.path.join(TEST_DATA, 'split')
     pf = fastparquet.ParquetFile(path)
     base_shape = len(pf.to_pandas())
 
@@ -281,7 +280,7 @@ def test_skip_length():
 
 
 def test_timestamp96():
-    pf = fastparquet.ParquetFile(join_path(TEST_DATA, 'mr_times.parq'))
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, 'mr_times.parq'))
     out = pf.to_pandas()
     expected = pd.to_datetime(
             ["2016-08-01 23:08:01", "2016-08-02 23:08:02",

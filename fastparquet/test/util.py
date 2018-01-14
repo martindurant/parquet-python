@@ -4,8 +4,6 @@ import pytest
 import tempfile
 import shutil
 
-from fastparquet.util import join_path
-
 TEST_DATA = "test-data"
 
 
@@ -19,17 +17,17 @@ def s3():
     s3.mkdir(TEST_DATA)
     paths = []
     for cat, catnum in product(('fred', 'freda'), ('1', '2', '3')):
-        path = join_path(TEST_DATA, 'split', 'cat=' + cat,
-                            'catnum=' + catnum)
+        path = os.sep.join([TEST_DATA, 'split', 'cat=' + cat,
+                            'catnum=' + catnum])
         files = os.listdir(path)
         for fn in files:
-            full_path = join_path(path, fn)
+            full_path = os.path.join(path, fn)
             s3.put(full_path, full_path)
             paths.append(full_path)
-    path = join_path(TEST_DATA, 'split')
+    path = os.path.join(TEST_DATA, 'split')
     files = os.listdir(path)
     for fn in files:
-        full_path = join_path(path, fn)
+        full_path = os.path.join(path, fn)
         if os.path.isdir(full_path):
             continue
         s3.put(full_path, full_path)
