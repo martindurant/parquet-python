@@ -119,21 +119,13 @@ def convert(data, se, timestamp96=True):
     elif ctype == parquet_thrift.ConvertedType.DATE:
         return (data * DAYS_TO_MILLIS).view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
-        out = np.empty(len(data), dtype='int64')
-        time_shift(data, out, 1000000)
-        return out.view('timedelta64[ns]')
+        return time_shift(data, 1000000).view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MILLIS:
-        out = np.empty_like(data)
-        time_shift(data, out, 1000000)
-        return out.view('datetime64[ns]')
+        return time_shift(data, 1000000).view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MICROS:
-        out = np.empty_like(data)
-        time_shift(data, out)
-        return out.view('timedelta64[ns]')
+        return time_shift(data).view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MICROS:
-        out = np.empty_like(data)
-        time_shift(data, out)
-        return out.view('datetime64[ns]')
+        return time_shift(data).view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.UINT_8:
         return data.astype(np.uint8)
     elif ctype == parquet_thrift.ConvertedType.UINT_16:
@@ -174,10 +166,7 @@ def convert(data, se, timestamp96=True):
     return data
 
 
-@numba.njit(nogil=True)
-def time_shift(indata, outdata, factor=1000):  # pragma: no cover
-    for i in range(len(indata)):
-        if indata[i] == nat:
-            outdata[i] = nat
-        else:
-            outdata[i] = indata[i] * factor
+def time_shift(indata, factor=1000):
+    temp = indata.astype('int64')
+    return (temp==nat)*nat | temp * factor
+
