@@ -1,13 +1,17 @@
-from contextlib import contextmanager
 import os
+import tempfile
+import time
+from contextlib import contextmanager
+
 import numpy as np
 import pandas as pd
-import time
+import shutil
 
-from fastparquet.util import join_path
+import sys
+from six import PY2
 
 from fastparquet import write, ParquetFile
-from dask.utils import tmpdir
+from fastparquet.util import join_path
 
 
 @contextmanager
@@ -19,11 +23,11 @@ def measure(name, result):
 
 
 def time_column():
-    with tmpdir() as tempdir:
+    with Tmpdir() as tempdir:
         result = {}
-        fn = join_path(tempdir, 'temp.parq')
+        fn = join_path(tempdir.name, 'temp.parq')
         n = 10000000
-        r = np.random.randint(-1e10, 1e10, n)
+        r = np.random.randint(-1e10, 1e10, n, dtype='int64')
         d = pd.DataFrame({'w': pd.Categorical(np.random.choice(
                 ['hi', 'you', 'people'], size=n)),
                           'x': r.view('timedelta64[ns]'),
@@ -82,9 +86,9 @@ def time_column():
 
 
 def time_text():
-    with tmpdir() as tempdir:
+    with Tmpdir() as tempdir:
         result = {}
-        fn = join_path(tempdir, 'temp.parq')
+        fn = join_path(tempdir.name, 'temp.parq')
         n = 1000000
         d = pd.DataFrame({
             'a': np.random.choice(['hi', 'you', 'people'], size=n),
@@ -108,14 +112,6 @@ def time_text():
                 with measure('%s: read, fixed: %s' % (t, fixed), result):
                     pf.to_pandas()
         return result
-
-
-if __name__ == '__main__':
-    result = {}
-    for f in [time_column, time_text]:
-        result.update(f())
-    for k in sorted(result):
-        print(k, result[k])
 
 
 def time_find_nulls(N=10000000):
@@ -164,4 +160,34 @@ def run_find_nulls(df, res):
         df.x.notnull().all()
     with measure((df.x.dtype.kind, nvalid, 'count'), res):
         df.x.count()
+
+
+class Tmpdir(object):
+
+    def __init__(self):
+        self.name = None
+
+    def __enter__(self):
+        self.name = tempfile.mkdtemp()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if os.path.exists(self.name):
+            shutil.rmtree(self.name, ignore_errors=True)
+
+    def __str__(self):
+        return self.name
+
+
+if __name__ == '__main__':
+    result = {}
+
+    print("sys.version = " + sys.version)
+    print("sys.platform = " + sys.platform)
+
+    for f in [time_column, time_text]:
+        result.update(f())
+    for k in sorted(result):
+        print(k, result[k])
+
 
