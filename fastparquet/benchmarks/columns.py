@@ -1,14 +1,11 @@
+import numpy as np
 import os
+import pandas as pd
+import shutil
+import sys
 import tempfile
 import time
 from contextlib import contextmanager
-
-import numpy as np
-import pandas as pd
-import shutil
-
-import sys
-from six import PY2
 
 from fastparquet import write, ParquetFile
 from fastparquet.util import join_path
@@ -23,9 +20,9 @@ def measure(name, result):
 
 
 def time_column():
-    with Tmpdir() as tempdir:
+    with tmpdir() as tempdir:
         result = {}
-        fn = join_path(tempdir.name, 'temp.parq')
+        fn = join_path(tempdir, 'temp.parq')
         n = 10000000
         r = np.random.randint(-1e10, 1e10, n, dtype='int64')
         d = pd.DataFrame({'w': pd.Categorical(np.random.choice(
@@ -86,9 +83,9 @@ def time_column():
 
 
 def time_text():
-    with Tmpdir() as tempdir:
+    with tmpdir() as tempdir:
         result = {}
-        fn = join_path(tempdir.name, 'temp.parq')
+        fn = join_path(tempdir, 'temp.parq')
         n = 1000000
         d = pd.DataFrame({
             'a': np.random.choice(['hi', 'you', 'people'], size=n),
@@ -162,21 +159,30 @@ def run_find_nulls(df, res):
         df.x.count()
 
 
-class Tmpdir(object):
 
-    def __init__(self):
-        self.name = None
+# from https://github.com/dask/dask/blob/6cbcf0813af48597a427a1fe6c71cce2a79086b0/dask/utils.py#L78
+@contextmanager
+def ignoring(*exceptions):
+    try:
+        yield
+    except exceptions:
+        pass
 
-    def __enter__(self):
-        self.name = tempfile.mkdtemp()
-        return self
+# from https://github.com/dask/dask/blob/6cbcf0813af48597a427a1fe6c71cce2a79086b0/dask/utils.py#L116
+@contextmanager
+def tmpdir(dir=None):
+    dirname = tempfile.mkdtemp(dir=dir)
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if os.path.exists(self.name):
-            shutil.rmtree(self.name, ignore_errors=True)
-
-    def __str__(self):
-        return self.name
+    try:
+        yield dirname
+    finally:
+        if os.path.exists(dirname):
+            if os.path.isdir(dirname):
+                with ignoring(OSError):
+                    shutil.rmtree(dirname)
+            else:
+                with ignoring(OSError):
+                    os.remove(dirname)
 
 
 if __name__ == '__main__':
