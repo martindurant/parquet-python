@@ -42,7 +42,6 @@ def test_date():
             pd.to_datetime([datetime.date(2004, 11, 3)]))
 
 
-# @pytest.mark.skipif(sys.platform == 'win32' and PY2, reason='does not work on windows 32 py2.7')
 def test_time_millis():
     """Test int32 encoding a timedelta in millis."""
     schema = pt.SchemaElement(
