@@ -60,30 +60,31 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
                                 Timestamp('2005-01-01 00:00:00'))]),
                          ]
                          )
-@pytest.mark.skipif(sys.platform=='win32' and PY2, reason='does not work on windows 32 py2.7')
-def test_frame_write_read_verify(tempdir, input_symbols, input_days, file_scheme,
-						    input_columns, partitions, filters):
-    #Generate Temp Director for parquet Files
+def test_frame_write_read_verify(tempdir, input_symbols, input_days,
+                                 file_scheme,
+                                 input_columns, partitions, filters):
+    # Generate Temp Director for parquet Files
     fdir = str(tempdir)
     fname = os.path.join(fdir, 'test')
 
-    #Generate Test Input Frame
+    # Generate Test Input Frame
     input_df = frame_symbol_dtTrade_type_strike(days=input_days,
-												symbols=input_symbols,
-												numbercolumns=input_columns)
+                                                symbols=input_symbols,
+                                                numbercolumns=input_columns)
     input_df.reset_index(inplace=True)
-    write(fname, input_df, partition_on=partitions, file_scheme=file_scheme, compression='SNAPPY')
+    write(fname, input_df, partition_on=partitions, file_scheme=file_scheme,
+          compression='SNAPPY')
 
-    #Read Back Whole Parquet Structure
+    # Read Back Whole Parquet Structure
     output_df = ParquetFile(fname).to_pandas()
     for col in output_df.columns:
         assert col in input_df.columns.values
     assert len(input_df) == len(output_df)
 
-    #Read with filters
+    # Read with filters
     filtered_output_df = ParquetFile(fname).to_pandas(filters=filters)
 
-    #Filter Input Frame to Match What Should Be Expected from parquet read
+    # Filter Input Frame to Match What Should Be Expected from parquet read
     # Handle either string or non-string inputs / works for timestamps
     filterStrings = []
     for name, operator, value in filters:
