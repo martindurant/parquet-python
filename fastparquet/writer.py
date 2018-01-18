@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from copy import copy
 import json
 import re
 import struct
@@ -621,11 +622,10 @@ def make_part_file(f, data, schema, compression=None, fmd=None):
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<i", foot_size))
         else:
-            prev = fmd.row_groups
+            fmd = copy(fmd)
             fmd.row_groups = [rg]
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<i", foot_size))
-            fmd.row_groups = prev
         f.write(MARKER)
     return rg
 
@@ -924,10 +924,9 @@ def write_common_metadata(fn, fmd, open_with=default_open,
     with open_with(fn, 'wb') as f:
         f.write(MARKER)
         if no_row_groups:
-            rgs = fmd.row_groups
+            fmd = copy(fmd)
             fmd.row_groups = []
             foot_size = write_thrift(f, fmd)
-            fmd.row_groups = rgs
         else:
             foot_size = write_thrift(f, fmd)
         f.write(struct.pack(b"<i", foot_size))
