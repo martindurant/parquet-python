@@ -9,6 +9,7 @@ import pandas.util.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding
+from pandas.testing import assert_frame_equal
 import pytest
 
 from fastparquet.util import default_mkdirs
@@ -120,6 +121,8 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
 
     for col in r.columns:
         assert (df[col] == data[col]).all()
+        # tests https://github.com/dask/fastparquet/issues/250
+        assert isinstance(data[col][0], type(df[col][0]))
 
 
 def test_bad_coltype(tempdir):

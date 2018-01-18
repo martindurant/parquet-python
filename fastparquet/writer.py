@@ -218,7 +218,7 @@ def infer_object_encoding(data):
         return "utf8"
     elif PY2 and all(isinstance(i, unicode) for i in head):
         return "utf8"
-    elif all(isinstance(i, STR_TYPE) for i in head) and PY2:
+    elif PY2 and all(isinstance(i, (str, bytes)) for i in head):
         return "bytes"
     elif all(isinstance(i, bytes) for i in head):
         return 'bytes'
