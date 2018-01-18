@@ -499,7 +499,9 @@ def write_column(f, data, selement, compression=None):
         cats = True
         encoding = "PLAIN_DICTIONARY"
     elif str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
-        encoding = "RLE"
+        # encoding = "RLE"
+        # disallow bitpacking for compatability
+        data = data.astype('int32')
 
     start = f.tell()
     bdata = definition_data + repetition_data + encode[encoding](
