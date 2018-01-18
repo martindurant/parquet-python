@@ -9,6 +9,7 @@ import pytest
 from fastparquet.test.util import tempdir
 from fastparquet import write, ParquetFile
 from fastparquet.api import statistics, sorted_partitioned_columns
+from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
 
@@ -123,8 +124,8 @@ def test_attributes(tempdir):
     assert pf.columns == ['x', 'y', 'z']
     assert len(pf.row_groups) == 2
     assert pf.count == 4
-    assert fn == pf.info['name']
-    assert fn in str(pf)
+    assert join_path(fn) == pf.info['name']
+    assert join_path(fn) in str(pf)
     for col in df:
         assert pf.dtypes[col] == df.dtypes[col]
 
@@ -215,7 +216,7 @@ def test_single_upper_directory(tempdir):
     import glob
     flist = list(sorted(glob.glob(os.path.join(tempdir, '*/*'))))
     pf = ParquetFile(flist, root=tempdir)
-    assert pf.fn == os.path.join(tempdir, '_metadata')
+    assert pf.fn == join_path(os.path.join(tempdir, '_metadata'))
     out = pf.to_pandas()
     assert (out.y == 'aa').all()
 

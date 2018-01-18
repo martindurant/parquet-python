@@ -9,6 +9,7 @@ import pandas.util.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding
+from pandas.testing import assert_frame_equal
 import pytest
 
 from fastparquet.util import default_mkdirs
@@ -120,6 +121,8 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
 
     for col in r.columns:
         assert (df[col] == data[col]).all()
+        # tests https://github.com/dask/fastparquet/issues/250
+        assert isinstance(data[col][0], type(df[col][0]))
 
 
 def test_bad_coltype(tempdir):
@@ -889,3 +892,11 @@ def test_bad_object_encoding(tempdir):
     assert "INT64" in str(e)
     assert "primitive" in str(e)
     assert '"a"' in str(e)
+
+def test_object_encoding_int32(tempdir):
+    df = pd.DataFrame({'a': ['15', None, '2']})
+    fn = os.path.join(tempdir, 'temp.parq')
+    write(fn, df, object_encoding={'a': 'int32'})
+    pf = ParquetFile(fn)
+    assert pf._schema[1].type == parquet_thrift.Type.INT32
+    assert not pf.schema.is_required('a')

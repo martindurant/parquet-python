@@ -3,7 +3,7 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:package_prefix=fastparquet.
+#  options string: py:package_prefix=fastparquet
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException

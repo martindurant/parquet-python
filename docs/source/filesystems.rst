@@ -1,7 +1,7 @@
 Backend File-systems
 ====================
 
-Fastparquet can use alternatives to the local disc for reading and writing parquet.
+Fastparquet can use alternatives to the local disk for reading and writing parquet.
 
 One example of such a backend file-system is `s3fs <http://s3fs.readthedocs.io>`_, to connect to
 AWS's S3 storage. In the following, the login credentials are automatically inferred from the system

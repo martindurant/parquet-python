@@ -18,6 +18,8 @@ import numba
 import numpy as np
 import binascii
 
+import sys
+
 from .thrift_structures import parquet_thrift
 from .util import PY2
 
@@ -117,6 +119,8 @@ def convert(data, se, timestamp96=True):
         return (data * DAYS_TO_MILLIS).view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
         out = np.empty(len(data), dtype='int64')
+        if sys.platform == 'win32':
+            data = data.astype('int64')
         time_shift(data, out, 1000000)
         return out.view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MILLIS:

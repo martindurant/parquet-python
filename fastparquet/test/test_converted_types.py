@@ -6,7 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-from decimal import Decimal
+import sys
+
 import numpy as np
 import pandas as pd
 import pytest

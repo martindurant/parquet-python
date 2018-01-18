@@ -3,7 +3,7 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:package_prefix=fastparquet.
+#  options string: py:package_prefix=fastparquet
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
@@ -19,6 +19,17 @@ class Type(object):
     with the encodings to control the on disk storage format.
     For example INT16 is not included as a type since a good encoding of INT32
     would handle this.
+
+    When a logical type is not present, the type-defined sort order of these
+    physical types are:
+    * BOOLEAN - false, true
+    * INT32 - signed comparison
+    * INT64 - signed comparison
+    * INT96 - signed comparison
+    * FLOAT - signed comparison
+    * DOUBLE - signed comparison
+    * BYTE_ARRAY - unsigned byte-wise comparison
+    * FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
     """
     BOOLEAN = 0
     INT32 = 1
@@ -80,6 +91,7 @@ class ConvertedType(object):
     JSON = 19
     BSON = 20
     INTERVAL = 21
+    NA = 25
 
     _VALUES_TO_NAMES = {
         0: "UTF8",
@@ -104,6 +116,7 @@ class ConvertedType(object):
         19: "JSON",
         20: "BSON",
         21: "INTERVAL",
+        25: "NA",
     }
 
     _NAMES_TO_VALUES = {
@@ -129,6 +142,7 @@ class ConvertedType(object):
         "JSON": 19,
         "BSON": 20,
         "INTERVAL": 21,
+        "NA": 25,
     }
 
 
@@ -200,6 +214,8 @@ class CompressionCodec(object):
     GZIP = 2
     LZO = 3
     BROTLI = 4
+    LZ4 = 5
+    ZSTD = 6
 
     _VALUES_TO_NAMES = {
         0: "UNCOMPRESSED",
@@ -207,6 +223,8 @@ class CompressionCodec(object):
         2: "GZIP",
         3: "LZO",
         4: "BROTLI",
+        5: "LZ4",
+        6: "ZSTD",
     }
 
     _NAMES_TO_VALUES = {
@@ -215,6 +233,8 @@ class CompressionCodec(object):
         "GZIP": 2,
         "LZO": 3,
         "BROTLI": 4,
+        "LZ4": 5,
+        "ZSTD": 6,
     }
 
 
@@ -245,10 +265,25 @@ class Statistics(object):
     All fields are optional.
 
     Attributes:
-     - max: min and max value of the column, encoded in PLAIN encoding
+     - max: DEPRECATED: min and max value of the column. Use min_value and max_value.
+
+    Values are encoded using PLAIN encoding, except that variable-length byte
+    arrays do not include a length prefix.
+
+    These fields encode min and max values determined by SIGNED comparison
+    only. New files should use the correct order for a column's logical type
+    and store the values in the min_value and max_value fields.
+
+    To support older readers, these may be set when the column order is
+    SIGNED.
      - min
      - null_count: count of null value in the column
      - distinct_count: count of distinct values occurring
+     - max_value: Min and max values for the column, determined by its ColumnOrder.
+
+    Values are encoded using PLAIN encoding, except that variable-length byte
+    arrays do not include a length prefix.
+     - min_value
     """
 
     thrift_spec = (
@@ -257,13 +292,17 @@ class Statistics(object):
         (2, TType.STRING, 'min', 'BINARY', None, ),  # 2
         (3, TType.I64, 'null_count', None, None, ),  # 3
         (4, TType.I64, 'distinct_count', None, None, ),  # 4
+        (5, TType.STRING, 'max_value', 'BINARY', None, ),  # 5
+        (6, TType.STRING, 'min_value', 'BINARY', None, ),  # 6
     )
 
-    def __init__(self, max=None, min=None, null_count=None, distinct_count=None,):
+    def __init__(self, max=None, min=None, null_count=None, distinct_count=None, max_value=None, min_value=None,):
         self.max = max
         self.min = min
         self.null_count = null_count
         self.distinct_count = distinct_count
+        self.max_value = max_value
+        self.min_value = min_value
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -294,6 +333,16 @@ class Statistics(object):
                     self.distinct_count = iprot.readI64()
                 else:
                     iprot.skip(ftype)
+            elif fid == 5:
+                if ftype == TType.STRING:
+                    self.max_value = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 6:
+                if ftype == TType.STRING:
+                    self.min_value = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -319,6 +368,14 @@ class Statistics(object):
         if self.distinct_count is not None:
             oprot.writeFieldBegin('distinct_count', TType.I64, 4)
             oprot.writeI64(self.distinct_count)
+            oprot.writeFieldEnd()
+        if self.max_value is not None:
+            oprot.writeFieldBegin('max_value', TType.STRING, 5)
+            oprot.writeBinary(self.max_value)
+            oprot.writeFieldEnd()
+        if self.min_value is not None:
+            oprot.writeFieldBegin('min_value', TType.STRING, 6)
+            oprot.writeBinary(self.min_value)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1821,6 +1878,121 @@ class RowGroup(object):
         return not (self == other)
 
 
+class TypeDefinedOrder(object):
+    """
+    Empty struct to signal the order defined by the physical or logical type
+    """
+
+    thrift_spec = (
+    )
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, (self.__class__, self.thrift_spec))
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, (self.__class__, self.thrift_spec)))
+            return
+        oprot.writeStructBegin('TypeDefinedOrder')
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class ColumnOrder(object):
+    """
+    Union to specify the order used for min, max, and sorting values in a column.
+
+    Possible values are:
+    * TypeDefinedOrder - the column uses the order defined by its logical or
+                         physical type (if there is no logical type).
+
+    If the reader does not support the value of this union, min and max stats
+    for this column should be ignored.
+
+    Attributes:
+     - TYPE_ORDER
+    """
+
+    thrift_spec = (
+        None,  # 0
+        (1, TType.STRUCT, 'TYPE_ORDER', (TypeDefinedOrder, TypeDefinedOrder.thrift_spec), None, ),  # 1
+    )
+
+    def __init__(self, TYPE_ORDER=None,):
+        self.TYPE_ORDER = TYPE_ORDER
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, (self.__class__, self.thrift_spec))
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.TYPE_ORDER = TypeDefinedOrder()
+                    self.TYPE_ORDER.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, (self.__class__, self.thrift_spec)))
+            return
+        oprot.writeStructBegin('ColumnOrder')
+        if self.TYPE_ORDER is not None:
+            oprot.writeFieldBegin('TYPE_ORDER', TType.STRUCT, 1)
+            self.TYPE_ORDER.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
 class FileMetaData(object):
     """
     Description for file metadata
@@ -1840,6 +2012,11 @@ class FileMetaData(object):
     <Application> version <App Version> (build <App Build Hash>).
     e.g. impala version 1.0 (build 6cf94d29b2b7115df4de2c06e2ab4326d721eb55)
 
+     - column_orders: Sort order used for each column in this file.
+
+    If this list is not present, then the order for each column is assumed to
+    be Signed. In addition, min and max values for INTERVAL or DECIMAL stored
+    as fixed or bytes should be ignored.
     """
 
     thrift_spec = (
@@ -1850,15 +2027,17 @@ class FileMetaData(object):
         (4, TType.LIST, 'row_groups', (TType.STRUCT, (RowGroup, RowGroup.thrift_spec), False), None, ),  # 4
         (5, TType.LIST, 'key_value_metadata', (TType.STRUCT, (KeyValue, KeyValue.thrift_spec), False), None, ),  # 5
         (6, TType.STRING, 'created_by', 'UTF8', None, ),  # 6
+        (7, TType.LIST, 'column_orders', (TType.STRUCT, (ColumnOrder, ColumnOrder.thrift_spec), False), None, ),  # 7
     )
 
-    def __init__(self, version=None, schema=None, num_rows=None, row_groups=None, key_value_metadata=None, created_by=None,):
+    def __init__(self, version=None, schema=None, num_rows=None, row_groups=None, key_value_metadata=None, created_by=None, column_orders=None,):
         self.version = version
         self.schema = schema
         self.num_rows = num_rows
         self.row_groups = row_groups
         self.key_value_metadata = key_value_metadata
         self.created_by = created_by
+        self.column_orders = column_orders
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -1917,6 +2096,17 @@ class FileMetaData(object):
                     self.created_by = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 7:
+                if ftype == TType.LIST:
+                    self.column_orders = []
+                    (_etype63, _size60) = iprot.readListBegin()
+                    for _i64 in range(_size60):
+                        _elem65 = ColumnOrder()
+                        _elem65.read(iprot)
+                        self.column_orders.append(_elem65)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -1934,8 +2124,8 @@ class FileMetaData(object):
         if self.schema is not None:
             oprot.writeFieldBegin('schema', TType.LIST, 2)
             oprot.writeListBegin(TType.STRUCT, len(self.schema))
-            for iter60 in self.schema:
-                iter60.write(oprot)
+            for iter66 in self.schema:
+                iter66.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.num_rows is not None:
@@ -1945,20 +2135,27 @@ class FileMetaData(object):
         if self.row_groups is not None:
             oprot.writeFieldBegin('row_groups', TType.LIST, 4)
             oprot.writeListBegin(TType.STRUCT, len(self.row_groups))
-            for iter61 in self.row_groups:
-                iter61.write(oprot)
+            for iter67 in self.row_groups:
+                iter67.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.key_value_metadata is not None:
             oprot.writeFieldBegin('key_value_metadata', TType.LIST, 5)
             oprot.writeListBegin(TType.STRUCT, len(self.key_value_metadata))
-            for iter62 in self.key_value_metadata:
-                iter62.write(oprot)
+            for iter68 in self.key_value_metadata:
+                iter68.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.created_by is not None:
             oprot.writeFieldBegin('created_by', TType.STRING, 6)
             oprot.writeString(self.created_by.encode('utf-8') if sys.version_info[0] == 2 else self.created_by)
+            oprot.writeFieldEnd()
+        if self.column_orders is not None:
+            oprot.writeFieldBegin('column_orders', TType.LIST, 7)
+            oprot.writeListBegin(TType.STRUCT, len(self.column_orders))
+            for iter69 in self.column_orders:
+                iter69.write(oprot)
+            oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()

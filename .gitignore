@@ -9,3 +9,4 @@ dist
 parquet.egg-info
 .idea
 .cached
+/.cache

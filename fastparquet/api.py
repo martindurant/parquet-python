@@ -12,6 +12,7 @@ import six
 import struct
 
 import numpy as np
+from fastparquet.util import join_path
 
 from .core import read_thrift
 from .thrift_structures import parquet_thrift
@@ -38,20 +39,18 @@ class ParquetFile(object):
     open_with: function
         With the signature `func(path, mode)`, returns a context which
         evaluated to a file open for reading. Defaults to the built-in `open`.
-    sep: string [`os.sep`]
-        Path separator to use, if data is in multiple files.
     root: str
         If passing a list of files, the top directory of the data-set may
         be ambiguous for partitioning where the upmost field has only one
         value. Use this to specify the data'set root directory, if required.
-        
+
     Attributes
     ----------
     cats: dict
         Columns derived from hive/drill directory information, with known
         values for each column.
     categories: list
-        Columns marked as categorical in the extra metadata (meaning the 
+        Columns marked as categorical in the extra metadata (meaning the
         data must have come from pandas).
     columns: list of str
         The data columns available
@@ -78,29 +77,29 @@ class ParquetFile(object):
         Max/min/count of each column chunk
     """
     def __init__(self, fn, verify=False, open_with=default_open,
-                 sep=os.sep, root=False):
-        self.sep = sep
+                 root=False, sep=None):
         if isinstance(fn, (tuple, list)):
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
                                                open_with=open_with, root=root)
             if basepath:
-                self.fn = sep.join([basepath, '_metadata'])  # effective file
+                self.fn = join_path(basepath, '_metadata')  # effective file
             else:
                 self.fn = '_metadata'
             self.fmd = fmd
             self._set_attrs()
         else:
             try:
-                fn2 = sep.join([fn, '_metadata'])
+                fn2 = join_path(fn, '_metadata')
                 self.fn = fn2
                 with open_with(fn2, 'rb') as f:
                     self._parse_header(f, verify)
                 fn = fn2
             except (IOError, OSError):
-                self.fn = fn
+                self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:
                     self._parse_header(f, verify)
         self.open = open_with
+        self.sep = sep
 
     def _parse_header(self, f, verify=True):
         try:
@@ -139,7 +138,7 @@ class ParquetFile(object):
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
         self.file_scheme = get_file_scheme([rg.columns[0].file_path
-                                           for rg in self.row_groups], self.sep)
+                                           for rg in self.row_groups])
         self._read_partitions()
         self._dtypes()
 
@@ -166,14 +165,14 @@ class ParquetFile(object):
         cats = OrderedDict()
         for rg in self.row_groups:
             for col in rg.columns:
-                s = ex_from_sep(self.sep)
+                s = ex_from_sep('/')
                 path = col.file_path or ""
                 if self.file_scheme == 'hive':
                     partitions = s.findall(path)
                     for key, val in partitions:
                         cats.setdefault(key, set()).add(val)
                 else:
-                    for i, val in enumerate(col.file_path.split(self.sep)[:-1]):
+                    for i, val in enumerate(col.file_path.split('/')[:-1]):
                         key = 'dir%i' % i
                         cats.setdefault(key, set()).add(val)
         self.cats = OrderedDict([(key, list([val_to_num(x) for x in v]))
@@ -181,9 +180,9 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns[0].file_path:
-            base = self.fn.replace('_metadata', '').rstrip(self.sep)
+            base = self.fn.replace('_metadata', '').rstrip('/')
             if base:
-                return self.sep.join([base, rg.columns[0].file_path])
+                return join_path(base, rg.columns[0].file_path)
             else:
                 return rg.columns[0].file_path
         else:
@@ -221,7 +220,7 @@ class ParquetFile(object):
             ret = True
         core.read_row_group(
                 infile, rg, columns, categories, self.schema, self.cats,
-                self.selfmade, index=index, assign=assign, sep=self.sep,
+                self.selfmade, index=index, assign=assign,
                 scheme=self.file_scheme)
         if ret:
             return df
@@ -274,7 +273,7 @@ class ParquetFile(object):
         """
         return [rg for rg in self.row_groups if
                 not(filter_out_stats(rg, filters, self.schema)) and
-                not(filter_out_cats(rg, filters, self.sep))]
+                not(filter_out_cats(rg, filters))]
 
     def iter_row_groups(self, columns=None, categories=None, filters=[],
                         index=None):
@@ -684,7 +683,7 @@ def sorted_partitioned_columns(pf):
     return out
 
 
-def filter_out_cats(rg, filters, sep='/'):
+def filter_out_cats(rg, filters):
     """
     According to the filters, should this row-group be excluded
 
@@ -705,7 +704,7 @@ def filter_out_cats(rg, filters, sep='/'):
     # TODO: fix for Drill
     if len(filters) == 0 or rg.columns[0].file_path is None:
         return False
-    s = ex_from_sep(sep)
+    s = ex_from_sep('/')
     partitions = s.findall(rg.columns[0].file_path)
     pairs = [(p[0], p[1]) for p in partitions]
     for cat, v in pairs:
