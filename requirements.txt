@@ -1,5 +1,5 @@
 pandas>=0.19
 numba>=0.28
 numpy>=1.11
-thrift>=0.10.0
+thrift>=0.11.0
 six
