@@ -1,36 +1,30 @@
 from __future__ import print_function
 
 import json
-import re
 import struct
-import warnings
 
-import numba
 import numpy as np
 import pandas as pd
 from six import integer_types, text_type
 
-from fastparquet.encoding import width_from_max_int, rle_bit_packed_hybrid
+from fastparquet.encoding import width_from_max_int, Encoder
 from fastparquet.parquet_thrift.parquet.ttypes import FieldRepetitionType, Type
-from fastparquet.writer import is_categorical_dtype
 from fastparquet.util import join_path
+from fastparquet.writer import is_categorical_dtype, encode, make_metadata, find_max_part, partition_on_columns, make_part_file, write_common_metadata, typemap, revmap, time_shift, MARKER
 from jx_base import STRING, OBJECT, NESTED, python_type_to_json_type
 from mo_dots import concat_field, split_field, startswith_field, coalesce
 from mo_future import sort_using_key
 from mo_json.typed_encoder import NESTED_TYPE
 from pyLibrary.env.typed_inserter import json_type_to_inserter_type
-from .thrift_structures import write_thrift
-
-from .thrift_structures import parquet_thrift
+from . import api
 from .compression import compress_data
 from .converted_types import tobson
-from . import encoding, api
+from .speedups import array_encode_utf8
+from .thrift_structures import parquet_thrift
+from .thrift_structures import write_thrift
 from .util import (default_open, default_mkdirs,
                    index_like, PY2, STR_TYPE,
-                   check_column_names, metadata_from_many, created_by,
-                   get_column_metadata)
-from .speedups import array_encode_utf8, pack_byte_array
-
+                   check_column_names)
 
 
 def convert(data, se):
@@ -147,10 +141,6 @@ def write_column(f, data, selement, compression=None):
     else:
         num_nulls = len(data) - data.values.count()
 
-    bit_width = width_from_max_int(data.max_definition_level)
-    definition_data = rle_bit_packed_hybrid(data.def_levels, bit_width)
-    repetition_data = rle_bit_packed_hybrid(data.rep_levels, bit_width)
-
     if data.values.dtype.kind == "O" and not is_categorical_dtype(data.values.dtype):
         try:
             if selement.type == parquet_thrift.Type.INT64:
@@ -209,9 +199,13 @@ def write_column(f, data, selement, compression=None):
         encoding = "RLE"
 
     start = f.tell()
-    bdata = definition_data + repetition_data + encode[encoding](
-            data.values, selement)
-    bdata += 8 * b'\x00'
+    bdata = Encoder()
+    bit_width = width_from_max_int(data.max_definition_level)
+    bdata.rle_bit_packed_hybrid(data.def_levels, bit_width)
+    bdata.rle_bit_packed_hybrid(data.rep_levels, bit_width)
+    bdata.bytes(encode[encoding](data.values, selement))
+    bdata.zeros(8)
+
     try:
         if encoding != 'PLAIN_DICTIONARY' and num_nulls == 0:
             max, min = data.values.values.max(), data.values.values.min()
@@ -246,7 +240,7 @@ def write_column(f, data, selement, compression=None):
                                    data_page_header=dph, crc=None)
 
     write_thrift(f, ph)
-    f.write(bdata)
+    f.write(bdata.to_bytearay())
 
     compressed_size = f.tell() - start
     uncompressed_size = compressed_size + diff
@@ -287,6 +281,7 @@ def write_column(f, data, selement, compression=None):
     return chunk
 
 
+
 def make_row_group(f, data, schema, compression=None):
     """ Make a single row group of a Parquet file """
     rows = len(data)
@@ -310,6 +305,40 @@ def make_row_group(f, data, schema, compression=None):
     rg.total_byte_size = sum([c.meta_data.total_uncompressed_size for c in
                               rg.columns])
     return rg
+
+
+def write_simple(fn, data, fmd, row_group_offsets, compression,
+                 open_with, has_nulls, append=False):
+    """
+    Write to one single file (for file_scheme='simple')
+    """
+    if append:
+        pf = api.ParquetFile(fn, open_with=open_with)
+        if pf.file_scheme not in ['simple', 'empty']:
+            raise ValueError('File scheme requested is simple, but '
+                             'existing file scheme is not')
+        fmd = pf.fmd
+        mode = 'rb+'
+    else:
+        mode = 'wb'
+    with open_with(fn, mode) as f:
+        if append:
+            f.seek(-8, 2)
+            head_size = struct.unpack('<i', f.read(4))[0]
+            f.seek(-(head_size+8), 2)
+        else:
+            f.write(MARKER)
+        for i, start in enumerate(row_group_offsets):
+            end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
+                   else None)
+            rg = make_row_group(f, data[start:end], fmd.schema,
+                                compression=compression)
+            if rg is not None:
+                fmd.row_groups.append(rg)
+
+        foot_size = write_thrift(f, fmd)
+        f.write(struct.pack(b"<i", foot_size))
+        f.write(MARKER)
 
 
 def write(filename, data, row_group_offsets=50000000,

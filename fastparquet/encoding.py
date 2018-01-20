@@ -10,7 +10,7 @@ from itertools import izip
 import numba
 import numpy as np
 
-from fastparquet.writer import encode_unsigned_varint
+from mo_logs import Log
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
 from .util import byte_buffer
@@ -155,102 +155,15 @@ def read_rle_bit_packed_hybrid(io_obj, width, length=None, o=None):  # pragma: n
     return o.so_far()
 
 
-def rle_bit_packed_hybrid(values, bit_width):
-    output = []
-
-    rle_byte_width = (bit_width + 7) // 8
-    rle_minimum_bytes = rle_byte_width + 1 + 1  # round up to closest whole byte, plus 1 for rle header, plus another for subsequent bit-packed header
-    rle_threshhold = ceiling(rle_minimum_bytes * 8, bit_width) // bit_width  # the number of values we could encode in the minimum bytes (round up to be conservative)
-
-    # find runs that are good for rle
-    long_runs = []  # store (index, length) pairs
-    last_value = None
-    count = 1
-    for i, v in reverse_enumerate(values):
-        if v != last_value:
-            if count > rle_threshhold:
-                long_runs.append((last_value, i + 1, count))
-            count = 1
-        else:
-            count += 1
-        last_value = v
-    if count > rle_threshhold or count == len(values):
-        long_runs.append((last_value, 0, count))
-
-    index = 0
-    for value, start, run_length in reversed(long_runs):
-        if start > index:
-            # bit packing before we do rle
-            num = ceiling(start - index, 8)
-            output.append(unsigned_var_int(num >> 2 | 1))  # (num/8)<<1 same as (num>>2) (when num is already divisible by 8)
-            output.append(bit_packed(values[index:index + num]))
-            index += num
-
-        # now we do rle
-        num = run_length - index + start
-        output.append(unsigned_var_int(num << 1))
-        output.append(fixed_int(value, rle_byte_width))
-        index += num
-
-    # any remaining bit_packing?
-    if index < len(values):
-        # bit packing the rest of the values
-        num = ceiling(len(values) - index, 8)
-        output.append(unsigned_var_int(num >> 2 | 1))
-        output.append(bit_packed(values[index:index + num], bit_width))
-
-    content = bytearray().join(output)
-    return fixed_int(len(content), 4) + content
 
 
-def unsigned_var_int(value):
-    output = []
-    b = value & 0x7F
-    v = value >> 7
-    while v:
-        output.append(b)
-        b = v & 0x7F
-        v = v >> 7
-    output.append(b | 0x80)  # msb marks end of value
-    output = bytearray(output)
+@numba.njit(nogil=True)
+def encode_unsigned_varint(x, o):  # pragma: no cover
+    while x > 127:
+        o.write_byte((x & 0x7F) | 0x80)
+        x >>= 7
+    o.write_byte(x)
 
-
-    encode_unsigned_varint(x, o)
-
-
-
-def fixed_int(value, byte_width):
-    output = []
-    v = value
-    while byte_width:
-        b = v & 0x7F
-        v = v >> 8
-        output.append(b)
-        byte_width -= 1
-
-    return bytearray(output)
-
-
-def bit_packed(values, bit_width):
-    # assume there are len(values) % 8 == 0
-    offset = 0
-    output = []
-    acc = 0
-    mask = _mask_for_bits(bit_width)
-    for v in values:
-        acc |= (v & mask) << offset
-        offset += bit_width
-        while offset >= 8:
-            output.append(acc & 0xFF)
-            acc >> 8
-            offset -= 8
-    if acc:
-        output.append(acc)
-    remain = remainder(len(output), bit_width)
-    while remain:
-        output.append(0)
-        remain -= 1
-    return bytearray(output)
 
 
 def remainder(value, mod):
@@ -389,3 +302,113 @@ def value_maker(val):
         yield val
 
 reverse_enumerate = lambda l: izip(xrange(len(l)-1, -1, -1), reversed(l))
+
+
+
+class Encoder(object):
+
+    def __init__(self):
+        self.data = []
+
+    def __len__(self):
+        return len(self.data)
+
+    def to_bytearay(self):
+        return bytearray(self.data)
+
+    def bytes(self, data):
+        self.data.extend(data)
+
+    def byte(self, value):
+        self.data.append(value)
+
+    def zeros(self, num):
+        self.data.extend([0]*num)
+
+    def unsigned_var_int(self, value):
+        while value > 127:
+            self.byte((value & 0x7F) | 0x80)
+            value >>= 7
+        self.byte(value)  # msb marks end of value
+
+    def fixed_int(self, value, byte_width):
+        while byte_width:
+            self.byte(value & 0x7F)
+            value = value >> 8
+            byte_width -= 1
+
+    def set_fixed_int(self, value, byte_width, index):
+        while byte_width:
+            self.data[index] = (value & 0x7F)
+            value >>= 8
+            index += 1
+            byte_width -= 1
+
+    def bit_packed(self, values, bit_width):
+        # assume there are len(values) % 8 == 0
+        start = len(self)
+        offset = 0
+        acc = 0
+        mask = _mask_for_bits(bit_width)
+        for v in values:
+            acc |= (v & mask) << offset
+            offset += bit_width
+            while offset >= 8:
+                self.byte(acc & 0xFF)
+                acc >> 8
+                offset -= 8
+        if acc:
+            self.byte(acc)
+
+        end = len(self)
+        remain = remainder(end-start, bit_width)
+        while remain:
+            self.byte(0)
+            remain -= 1
+
+    def rle_bit_packed_hybrid(self, values, bit_width):
+        self.zeros(4)
+        all_start = len(self)
+
+        rle_byte_width = (bit_width + 7) // 8
+        rle_minimum_bytes = rle_byte_width + 1 + 1  # round up to closest whole byte, plus 1 for rle header, plus another for subsequent bit-packed header
+        rle_threshhold = ceiling(rle_minimum_bytes * 8, bit_width) // bit_width  # the number of values we could encode in the minimum bytes (round up to be conservative)
+
+        # find runs that are good for rle
+        long_runs = []  # store (index, length) pairs
+        last_value = None
+        count = 1
+        for i, v in reverse_enumerate(values):
+            if v != last_value:
+                if count > rle_threshhold:
+                    long_runs.append((last_value, i + 1, count))
+                count = 1
+            else:
+                count += 1
+            last_value = v
+        if count > rle_threshhold or count == len(values):
+            long_runs.append((last_value, 0, count))
+
+        index = 0
+        for value, start, run_length in reversed(long_runs):
+            if start > index:
+                # bit packing before we do rle
+                num = ceiling(start - index, 8)
+                self.unsigned_var_int(num >> 2 | 1)  # (num/8)<<1 same as (num>>2) (when num is already divisible by 8)
+                self.bit_packed(values[index:index + num])
+                index += num
+
+            # now we do rle
+            num = run_length - index + start
+            self.unsigned_var_int(num << 1)
+            self.fixed_int(value, rle_byte_width)
+            index += num
+
+        # any remaining bit_packing?
+        if index < len(values):
+            # bit packing the rest of the values
+            num = ceiling(len(values) - index, 8)
+            self.unsigned_var_int(num >> 2 | 1)
+            self.bit_packed(values[index:index + num], bit_width)
+
+        self.set_fixed_int(len(self) - all_start, 4, all_start - 4)
