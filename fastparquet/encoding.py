@@ -10,6 +10,7 @@ from itertools import izip
 import numba
 import numpy as np
 
+from fastparquet.writer import encode_unsigned_varint
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
 from .util import byte_buffer
@@ -210,8 +211,12 @@ def unsigned_var_int(value):
         output.append(b)
         b = v & 0x7F
         v = v >> 7
-    output.append( b | 0x80)  # msb marks end of value
-    return bytearray(output)
+    output.append(b | 0x80)  # msb marks end of value
+    output = bytearray(output)
+
+
+    encode_unsigned_varint(x, o)
+
 
 
 def fixed_int(value, byte_width):
