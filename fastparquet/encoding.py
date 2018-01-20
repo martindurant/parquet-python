@@ -152,6 +152,55 @@ def read_rle_bit_packed_hybrid(io_obj, width, length=None, o=None):  # pragma: n
     return o.so_far()
 
 
+def rle_bit_packed_hybrid(values, bit_width):
+    output = []
+
+    rle_byte_width = (bit_width + 7) // 8
+    rle_minimum_bytes = rle_byte_width + 1 + 1  # round up to closest whole byte, plus 1 for rle header, plus another for subsequent bit-packed header
+    rle_threshhold = ceiling(rle_minimum_bytes * 8, bit_width) // bit_width  # the number of values we could encode in the minimum bytes (round up to be conservative)
+
+    # find runs that are good for rle
+    long_runs = []  # store (index, length) pairs
+    last_value = None
+    count = 1
+    for i, v in reverse_enumerate(values):
+        if v != last_value:
+            if count > rle_threshhold:
+                long_runs.append((last_value, i + 1, count))
+            count = 1
+        else:
+            count += 1
+        last_value = v
+    if count > rle_threshhold or count == len(values):
+        long_runs.append((last_value, 0, count))
+
+    index = 0
+    for value, start, run_length in reversed(long_runs):
+        if start > index:
+            # bit packing before we do rle
+            num = ceiling(start - index, 8)
+            output.append(unsigned_var_int(num >> 2 | 1))  # (num/8)<<1 same as (num>>2) (when num is already divisible by 8)
+            output.append(bit_packed(values[index:index + num]))
+            index += num
+
+        # now we do rle
+        num = run_length - index + start
+        output.append(unsigned_var_int(num << 1))
+        output.append(fixed_int(value, rle_byte_width))
+        index += num
+
+    # any remaining bit_packing?
+    if index < len(values):
+        # bit packing the rest of the values
+        num = ceiling(len(values) - index, 8)
+        output.append(unsigned_var_int(num >> 2 | 1))
+        output.append(bit_packed(values[index:index + num], bit_width))
+
+    content = bytearray().join(output)
+    return fixed_int(len(content), 4) + content
+
+
+
 @numba.njit(nogil=True)
 def read_length(file_obj):  # pragma: no cover
     """ Numpy trick to get a 32-bit length from four bytes
