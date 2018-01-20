@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 import os
 
-from fastparquet import ParquetFile, json_writer, json_writer2
+from fastparquet import json_writer, ParquetFile
 from fastparquet.test.util import tempdir
 
 TEST_DATA = "test-data"
@@ -17,5 +17,9 @@ def test_write(tempdir):
         {"a": [{"b": 1}, {"b": 2}]}
     ]
 
-    json_writer2.write(filename, data)
+    json_writer.write(filename, data)
+
+    new_data = ParquetFile(filename).to_pandas().to_dict()
+    pass
+
 

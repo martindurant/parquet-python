@@ -202,6 +202,67 @@ def rle_bit_packed_hybrid(values, bit_width):
     return fixed_int(len(content), 4) + content
 
 
+def unsigned_var_int(value):
+    output = []
+    b = value & 0x7F
+    v = value >> 7
+    while v:
+        output.append(b)
+        b = v & 0x7F
+        v = v >> 7
+    output.append( b | 0x80)  # msb marks end of value
+    return bytearray(output)
+
+
+def fixed_int(value, byte_width):
+    output = []
+    v = value
+    while byte_width:
+        b = v & 0x7F
+        v = v >> 8
+        output.append(b)
+        byte_width -= 1
+
+    return bytearray(output)
+
+
+def bit_packed(values, bit_width):
+    # assume there are len(values) % 8 == 0
+    offset = 0
+    output = []
+    acc = 0
+    mask = _mask_for_bits(bit_width)
+    for v in values:
+        acc |= (v & mask) << offset
+        offset += bit_width
+        while offset >= 8:
+            output.append(acc & 0xFF)
+            acc >> 8
+            offset -= 8
+    if acc:
+        output.append(acc)
+    remain = remainder(len(output), bit_width)
+    while remain:
+        output.append(0)
+        remain -= 1
+    return bytearray(output)
+
+
+def remainder(value, mod):
+    m = value % mod
+    if m:
+        return mod - m
+    else:
+        return 0
+
+
+def ceiling(value, mod):
+    m = value % mod
+    if m:
+        return value + mod - m
+    else:
+        return value
+
 
 @numba.njit(nogil=True)
 def read_length(file_obj):  # pragma: no cover
