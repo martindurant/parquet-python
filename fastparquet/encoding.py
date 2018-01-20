@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 
 import array
+from itertools import izip
+
 import numba
 import numpy as np
 
@@ -319,3 +321,5 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi):
 def value_maker(val):
     while True:
         yield val
+
+reverse_enumerate = lambda l: izip(xrange(len(l)-1, -1, -1), reversed(l))
