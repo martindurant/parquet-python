@@ -1,4 +1,4 @@
-pandas>=0.19
+pandas>=0.21
 numba>=0.28
 numpy>=1.11
 thrift>=0.10.0
