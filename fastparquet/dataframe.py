@@ -1,14 +1,10 @@
 import numpy as np
 from pandas.core.index import _ensure_index, CategoricalIndex, Index
 from pandas.core.internals import BlockManager, _block_shape
-from pandas.core.generic import NDFrame
+from pandas import Categorical
 from pandas.core.frame import DataFrame
 from pandas.core.index import RangeIndex, Index
-try:
-    from pandas.api.types import is_categorical_dtype, Categorical, CategoricalDtype
-except ImportError:
-    # Pandas <= 0.18.1
-    from pandas.core.common import is_categorical_dtype
+from pandas.api.types import is_categorical_dtype
 from .util import STR_TYPE
 
 
