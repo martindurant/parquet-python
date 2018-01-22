@@ -20,6 +20,6 @@ def test_empty():
     assert df.c[:2].tolist() == ['two', 'one']
 
     df, views = empty('i4,i8,f8,f8,O', size=n,
-                      cols=['i4', 'i8', 'f8_1', 'f8_2', 'O'])
+                      cols=['i4', 'i8', 'f8_1', 'f8_2', NUMPY_OBJECT])
     assert df.shape == (n, 5)
     assert len(views) == 5

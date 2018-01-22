@@ -7,24 +7,20 @@ import numpy as np
 import pandas as pd
 from six import integer_types, text_type
 
+from fastparquet import ParquetFile
+from fastparquet.compression import compress_data
+from fastparquet.converted_types import tobson
 from fastparquet.encoding import width_from_max_int, Encoder
 from fastparquet.parquet_thrift.parquet.ttypes import FieldRepetitionType, Type
-from fastparquet.util import join_path
-from fastparquet.writer import is_categorical_dtype, encode, make_metadata, find_max_part, partition_on_columns, make_part_file, write_common_metadata, typemap, revmap, time_shift, MARKER
+from fastparquet.schema import SchemaTree, NUMPY_OBJECT, NUMPY_INTEGER, NUMPY_BOOLEAN
+from fastparquet.speedups import array_encode_utf8
+from fastparquet.thrift_structures import parquet_thrift, write_thrift
+from fastparquet.util import default_open, default_mkdirs, index_like, PY2, STR_TYPE, check_column_names, join_path, created_by
+from fastparquet.writer import is_categorical_dtype, encode, find_max_part, partition_on_columns, make_part_file, write_common_metadata, typemap, revmap, time_shift, MARKER
 from jx_base import STRING, OBJECT, NESTED, python_type_to_json_type
 from mo_dots import concat_field, split_field, startswith_field, coalesce
-from mo_future import sort_using_key
 from mo_json.typed_encoder import NESTED_TYPE
 from pyLibrary.env.typed_inserter import json_type_to_inserter_type
-from . import api
-from .compression import compress_data
-from .converted_types import tobson
-from .speedups import array_encode_utf8
-from .thrift_structures import parquet_thrift
-from .thrift_structures import write_thrift
-from .util import (default_open, default_mkdirs,
-                   index_like, PY2, STR_TYPE,
-                   check_column_names)
 
 
 def convert(data, se):
@@ -43,7 +39,7 @@ def convert(data, se):
             out = data.values
     elif "S" in str(dtype)[:2] or "U" in str(dtype)[:2]:
         out = data.values
-    elif dtype == "O":
+    elif dtype == NUMPY_OBJECT:
         try:
             if converted_type == parquet_thrift.ConvertedType.UTF8:
                 out = array_encode_utf8(data)
@@ -58,7 +54,7 @@ def convert(data, se):
                     out = data.values
             elif converted_type == parquet_thrift.ConvertedType.JSON:
                 out = np.array([json.dumps(x).encode('utf8') for x in data],
-                               dtype="O")
+                               dtype=NUMPY_OBJECT)
             elif converted_type == parquet_thrift.ConvertedType.BSON:
                 out = data.map(tobson).values
             if type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
@@ -75,10 +71,10 @@ def convert(data, se):
     elif converted_type == parquet_thrift.ConvertedType.TIME_MICROS:
         out = np.empty(len(data), 'int64')
         time_shift(data.values.view('int64'), out)
-    elif type == parquet_thrift.Type.INT96 and dtype.kind == 'M':
+    elif type == parquet_thrift.Type.INT96 and dtype.kind == NUMPY_DATETIME:
         ns_per_day = (24 * 3600 * 1000000000)
         day = data.values.view('int64') // ns_per_day + 2440588
-        ns = (data.values.view('int64') % ns_per_day)# - ns_per_day // 2
+        ns = (data.values.view('int64') % ns_per_day)  # - ns_per_day // 2
         out = np.empty(len(data), dtype=[('ns', 'i8'), ('day', 'i4')])
         out['ns'] = ns
         out['day'] = day
@@ -136,12 +132,12 @@ def write_column(f, data, selement, compression=None):
 
     if is_categorical_dtype(data.values.dtype):
         num_nulls = (data.cat.codes == -1).sum()
-    elif data.values.dtype.kind in ['i', 'b']:
+    elif data.values.dtype.kind in [NUMPY_INTEGER, NUMPY_BOOLEAN]:
         num_nulls = 0
     else:
         num_nulls = len(data) - data.values.count()
 
-    if data.values.dtype.kind == "O" and not is_categorical_dtype(data.values.dtype):
+    if data.values.dtype.kind == NUMPY_OBJECT and not is_categorical_dtype(data.values.dtype):
         try:
             if selement.type == parquet_thrift.Type.INT64:
                 data = data.values.astype(int)
@@ -160,8 +156,8 @@ def write_column(f, data, selement, compression=None):
 
     if is_categorical_dtype(data.values.dtype):
         dph = parquet_thrift.DictionaryPageHeader(
-                num_values=len(data.values.cat.categories),
-                encoding=parquet_thrift.Encoding.PLAIN)
+            num_values=len(data.values.cat.categories),
+            encoding=parquet_thrift.Encoding.PLAIN)
         bdata = encode['PLAIN'](pd.Series(data.values.cat.categories), selement)
         bdata += 8 * b'\x00'
         l0 = len(bdata)
@@ -172,9 +168,9 @@ def write_column(f, data, selement, compression=None):
             l1 = l0
         diff += l0 - l1
         ph = parquet_thrift.PageHeader(
-                type=parquet_thrift.PageType.DICTIONARY_PAGE,
-                uncompressed_page_size=l0, compressed_page_size=l1,
-                dictionary_page_header=dph, crc=None)
+            type=parquet_thrift.PageType.DICTIONARY_PAGE,
+            uncompressed_page_size=l0, compressed_page_size=l1,
+            dictionary_page_header=dph, crc=None)
 
         dict_start = f.tell()
         write_thrift(f, ph)
@@ -249,27 +245,33 @@ def write_column(f, data, selement, compression=None):
     s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls)
 
     p = [parquet_thrift.PageEncodingStats(
-            page_type=parquet_thrift.PageType.DATA_PAGE,
-            encoding=parquet_thrift.Encoding.PLAIN, count=1)]
+        page_type=parquet_thrift.PageType.DATA_PAGE,
+        encoding=parquet_thrift.Encoding.PLAIN, count=1)]
 
     cmd = parquet_thrift.ColumnMetaData(
-            type=selement.type, path_in_schema=[name],
-            encodings=[parquet_thrift.Encoding.RLE,
-                       parquet_thrift.Encoding.BIT_PACKED,
-                       parquet_thrift.Encoding.PLAIN],
-            codec=(getattr(parquet_thrift.CompressionCodec, compression.upper())
-                   if compression else 0),
-            num_values=tot_rows,
-            statistics=s,
-            data_page_offset=start,
-            encoding_stats=p,
-            key_value_metadata=[],
-            total_uncompressed_size=uncompressed_size,
-            total_compressed_size=compressed_size)
+        type=selement.type,
+        path_in_schema=split_field(name),
+        encodings=[
+            parquet_thrift.Encoding.RLE,
+            parquet_thrift.Encoding.BIT_PACKED,
+            parquet_thrift.Encoding.PLAIN
+        ],
+        codec=(
+            getattr(parquet_thrift.CompressionCodec, compression.upper())
+            if compression else 0
+        ),
+        num_values=tot_rows,
+        statistics=s,
+        data_page_offset=start,
+        encoding_stats=p,
+        key_value_metadata=[],
+        total_uncompressed_size=uncompressed_size,
+        total_compressed_size=compressed_size
+    )
     if cats:
         p.append(parquet_thrift.PageEncodingStats(
-                page_type=parquet_thrift.PageType.DICTIONARY_PAGE,
-                encoding=parquet_thrift.Encoding.PLAIN, count=1))
+            page_type=parquet_thrift.PageType.DICTIONARY_PAGE,
+            encoding=parquet_thrift.Encoding.PLAIN, count=1))
         cmd.dictionary_page_offset = dict_start
         cmd.key_value_metadata.append(
             parquet_thrift.KeyValue(key='num_categories', value=str(ncats)))
@@ -279,7 +281,6 @@ def write_column(f, data, selement, compression=None):
                                        meta_data=cmd)
     write_thrift(f, chunk)
     return chunk
-
 
 
 def make_row_group(f, data, schema, compression=None):
@@ -299,8 +300,12 @@ def make_row_group(f, data, schema, compression=None):
                 comp = compression.get(column.name, None)
             else:
                 comp = compression
-            chunk = write_column(f, data.get_column(column.name), column,
-                                 compression=comp)
+            chunk = write_column(
+                f,
+                data.get_column(column.name),
+                column,
+                compression=comp
+            )
             rg.columns.append(chunk)
     rg.total_byte_size = sum([c.meta_data.total_uncompressed_size for c in
                               rg.columns])
@@ -313,7 +318,7 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
     Write to one single file (for file_scheme='simple')
     """
     if append:
-        pf = api.ParquetFile(fn, open_with=open_with)
+        pf = ParquetFile(fn, open_with=open_with)
         if pf.file_scheme not in ['simple', 'empty']:
             raise ValueError('File scheme requested is simple, but '
                              'existing file scheme is not')
@@ -325,14 +330,18 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         if append:
             f.seek(-8, 2)
             head_size = struct.unpack('<i', f.read(4))[0]
-            f.seek(-(head_size+8), 2)
+            f.seek(-(head_size + 8), 2)
         else:
             f.write(MARKER)
         for i, start in enumerate(row_group_offsets):
-            end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
+            end = (row_group_offsets[i + 1] if i < (len(row_group_offsets) - 1)
                    else None)
-            rg = make_row_group(f, data[start:end], fmd.schema,
-                                compression=compression)
+            rg = make_row_group(
+                f,
+                data[start:end],
+                fmd.schema,
+                compression=compression
+            )
             if rg is not None:
                 fmd.row_groups.append(rg)
 
@@ -432,16 +441,22 @@ def write(filename, data, row_group_offsets=50000000,
     check_column_names(data.values.columns, partition_on, fixed_text, object_encoding,
                        has_nulls)
     ignore = partition_on if file_scheme != 'simple' else []
-    fmd = make_metadata(data.values, has_nulls=has_nulls, ignore_columns=ignore,
-                        fixed_text=fixed_text, object_encoding=object_encoding,
-                        times=times, index_cols=index_cols)
+
+    fmd = parquet_thrift.FileMetaData(
+        num_rows=len(data),
+        schema=data.schema.get_parquet_metadata(),
+        version=1,
+        created_by=created_by,
+        row_groups=[],
+        key_value_metadata=[]
+    )
 
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
                      compression, open_with, has_nulls, append)
     elif file_scheme in ['hive', 'drill']:
         if append:
-            pf = api.ParquetFile(filename, open_with=open_with)
+            pf = ParquetFile(filename, open_with=open_with)
             if pf.file_scheme not in ['hive', 'empty', 'flat']:
                 raise ValueError('Requested file scheme is %s, but '
                                  'existing file scheme is not.' % file_scheme)
@@ -455,7 +470,7 @@ def write(filename, data, row_group_offsets=50000000,
         fn = join_path(filename, '_metadata')
         mkdirs(filename)
         for i, start in enumerate(row_group_offsets):
-            end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
+            end = (row_group_offsets[i + 1] if i < (len(row_group_offsets) - 1)
                    else None)
             part = 'part.%i.parquet' % (i + i_offset)
             if partition_on:
@@ -480,284 +495,5 @@ def write(filename, data, row_group_offsets=50000000,
                               open_with)
     else:
         raise ValueError('File scheme should be simple|hive, not', file_scheme)
-
-
-def rows_to_columns(data, schema):
-    """
-    REPETITION LEVELS DO NOT REQUIRE MORE THAN A LIST OF COLUMNS TO FILL
-    :param data: array of objects
-    :param schema: Known schema
-    :return: values, repetition levels, new schema
-    """
-
-    new_schema = []
-
-    all_leaves = schema.leaves
-    values = {full_name: [] for full_name in all_leaves}
-    rep_levels = {full_name: [] for full_name in all_leaves}
-    def_levels = {full_name: [] for full_name in all_leaves}
-
-    def _none_to_column(schema, path, rep_level, counters):
-        if schema:
-            for name, sub_schema in schema.items():
-                new_path = concat_field(path, name)
-                _none_to_column(sub_schema, new_path, rep_level, counters)
-        else:
-            values[path].append(None)
-            rep_levels[path].append(rep_level)
-            def_levels[path].append(len(counters)-1)
-
-    def _value_to_column(value, schema, path, counters):
-        ptype = type(value)
-        dtype, jtype, itype = python_type_to_all_types[ptype]
-        if jtype is NESTED:
-            new_path = concat_field(path, NESTED_TYPE)
-            sub_schema = schema.more.get(NESTED_TYPE)
-            if not sub_schema:
-                sub_schema = schema.more[NESTED_TYPE] = SchemaTree()
-
-            if not value:
-                _none_to_column(sub_schema, new_path, get_rep_level(counters), counters)
-            else:
-                for k, new_value in enumerate(value):
-                    new_counters = counters + (k,)
-                    _value_to_column(new_value, sub_schema, new_path, new_counters)
-        elif jtype is OBJECT:
-            if not value:
-                _none_to_column(schema, path, get_rep_level(counters), counters)
-            else:
-                for name, sub_schema in schema.more.items():
-                    new_path = concat_field(path, name)
-                    new_value = value.get(name, None)
-                    _value_to_column(new_value, sub_schema, new_path, counters)
-
-                for name in set(value.keys())-set(schema.more.keys()):
-                    new_path = concat_field(path, name)
-                    new_value = value.get(name, None)
-                    sub_schema = schema.more[name] = SchemaTree()
-                    _value_to_column(new_value, sub_schema, new_path, counters)
-        else:
-            typed_name = concat_field(path, itype)
-            if jtype is STRING:
-                value = value.encode('utf8')
-            element, is_new = merge_schema_element(schema.values.get(itype), typed_name, value, ptype, dtype, jtype, itype)
-            if is_new:
-                schema.values[itype] = element
-                new_schema.append(element)
-                values[typed_name] = [None] * counters[0]
-                rep_levels[typed_name] = [0] * counters[0]
-                def_levels[typed_name] = [0] * counters[0]
-            values[typed_name].append(value)
-            rep_levels[typed_name].append(get_rep_level(counters))
-            def_levels[typed_name].append(len(counters) - 1)
-
-    for rownum, new_value in enumerate(data):
-        _value_to_column(new_value, schema, '.', (rownum,))
-
-    return Table(values, rep_levels, def_levels, len(data), schema), new_schema
-
-
-def get_rep_level(counters):
-    for rep_level, c in reversed(list(enumerate(counters))):
-        if c > 0:
-            return rep_level
-    return 0  # SHOULD BE -1 FOR MISSING RECORD, BUT WE WILL ASSUME THE RECORD EXISTS
-
-
-def merge_schema_element(element, name, value, ptype, dtype, jtype, ittype):
-    if not element:
-        output = parquet_thrift.SchemaElement(
-            type=dtype,
-            type_length=get_length(value, dtype),
-            repetition_type=get_repetition_type(jtype),
-            name=name
-        )
-        return output, True
-    else:
-        element.type_length = max(element.type_length, get_length(value, dtype))
-
-        return element, False
-
-
-def get_length(value, dtype):
-    if dtype is Type.BYTE_ARRAY:
-        return len(value)
-    elif dtype is None:
-        return 0
-    else:
-        return 8
-
-
-def get_repetition_type(jtype):
-    return FieldRepetitionType.REPEATED if jtype is NESTED else FieldRepetitionType.OPTIONAL
-
-
-class Table(object):
-    """
-    REPRESENT A DATA CUBE
-    """
-
-    def __init__(self, values, rep_levels, def_levels, num_rows, schema):
-        """
-        :param values: dict from full name to list of values
-        :param rep_levels:  dict from full name to list of values
-        :param def_levels: dict from full name to list of values
-        :param num_rows: number of rows in the dataset
-        :param schema: The complete SchemaTree
-        """
-        self.values = pd.DataFrame.from_dict(values)
-        self.rep_levels = pd.DataFrame.from_dict(rep_levels)
-        self.def_levels = pd.DataFrame.from_dict(def_levels)
-        self.num_rows = num_rows
-        self.schema = schema
-        self.max_definition_level = schema.max_definition_level()
-
-    def __getattr__(self, item):
-        return getattr(self.values, item)
-
-    def get_column(self, item):
-        sub_schema=self.schema
-        for n in split_field(item):
-            if n in sub_schema.more:
-                sub_schema = sub_schema.more.get(n)
-            else:
-                sub_schema = sub_schema.values.get(n)
-
-        return Column(
-            item,
-            self.values[item],
-            self.rep_levels[item],
-            self.def_levels[item],
-            self.num_rows,
-            sub_schema,
-            self.max_definition_level
-        )
-
-    def __getitem__(self, item):
-        if isinstance(item, text_type):
-            sub_schema=self.schema
-            for n in split_field(item):
-                if n in sub_schema.more:
-                    sub_schema = sub_schema.more.get(n)
-                else:
-                    sub_schema =sub_schema.values.get(n)
-
-            return Table(
-                {k: v for k, v in self.values.items() if startswith_field(k, item)},
-                {k: v for k, v in self.rep_levels.items() if startswith_field(k, item)},
-                {k: v for k, v in self.def_levels.items() if startswith_field(k, item)},
-                self.num_rows,
-                sub_schema
-            )
-        elif isinstance(item, slice):
-            start = coalesce(item.start, 0)
-            stop = coalesce(item.stop, self.num_rows)
-
-            if start == 0 and stop == self.num_rows:
-                return self
-
-            first = 0
-            last = 0
-            counter = 0
-            for i, r in enumerate(self.rep_levels):
-                if counter == start:
-                    first = i
-                elif counter == stop:
-                    last = i
-                    break
-                if r == 0:
-                    counter += 1
-
-            return Table(
-                {k: v[first:last] for k, v in self.values.items()},
-                {k: v[first:last] for k, v in self.rep_levels.items()},
-                {k: v[first:last] for k, v in self.def_levels.items()},
-                stop-start,
-                self.schema
-            )
-
-    def __len__(self):
-        return self.num_rows
-
-
-class Column(object):
-    """
-    REPRESENT A DATA FRAME
-    """
-
-    def __init__(self, name, values, rep_levels, def_levels, num_rows, schema, max_definition_level):
-        """
-        :param values: MAP FROM NAME TO LIST OF PARQUET VALUES
-        :param schema:
-        """
-        self.name = name
-        self.values = values
-        self.rep_levels = rep_levels
-        self.def_levels = def_levels
-        self.num_rows = num_rows
-        self.schema = schema
-        self.max_definition_level = max_definition_level
-
-    def __len__(self):
-        return self.num_rows
-
-
-class SchemaTree(object):
-
-    def __init__(self):
-        self.more = {}  # MAP FROM NAME TO MORE SchemaTree
-        self.values = {}  # MAP FROM JSON TYPE TO SchemaElement
-
-    @property
-    def leaves(self):
-        return [
-            json_type_to_inserter_type[jtype]
-            for jtype in self.values.keys()
-        ]+[
-            concat_field(name, leaf)
-            for name, child_schema in self.more.items()
-            for leaf in child_schema.leaves
-        ]
-
-    def get_parquet_metadata(self, path='.'):
-        """
-        OUTPUT PARQUET METADATA COLUMNS
-        :param path: FOR INTERNAL USE
-        :return: LIST OF SchemaElement
-        """
-        children = []
-        for name, child_schema in sort_using_key(self.more.items(), lambda p: p[0]):
-            children.extend(child_schema.get_parquet_metadata(concat_field(path, name)))
-        children.extend(v for k, v in sort_using_key(self.values.items(), lambda p: p[0]))
-        return [parquet_thrift.SchemaElement(
-            name=path,
-            num_children=sum(coalesce(c.num_children, 0) + 1 for c in children)
-        )] + children
-
-    def max_definition_level(self):
-        if not self.more:
-            return 1
-        else:
-            max_child = [m.max_definition_level() for m in self.more.values()]
-            return max(max_child) + 1
-
-
-python_type_to_parquet_type = {
-    bool: Type.BOOLEAN,
-    text_type: Type.BYTE_ARRAY,
-    int: Type.INT64,
-    float: Type.DOUBLE,
-    dict: None,
-    list: None
-}
-
-if PY2:
-    python_type_to_parquet_type[long] = Type.INT64
-
-# MAP FROM PYTHON TYPE TO (parquet_type, json_type, inserter_type)
-python_type_to_all_types = {
-    ptype: (dtype, python_type_to_json_type[ptype], json_type_to_inserter_type.get(python_type_to_json_type[ptype]))
-    for ptype, dtype in python_type_to_parquet_type.items()
-}
 
 

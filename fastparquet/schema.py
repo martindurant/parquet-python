@@ -5,12 +5,22 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from collections import OrderedDict
-from six import text_type
 
-from .thrift_structures import parquet_thrift
+import numpy as np
+
+from fastparquet.thrift_structures import parquet_thrift
+from mo_dots import concat_field, split_field, join_field
+from mo_future import sort_using_key, text_type
+from pyLibrary.env.typed_inserter import json_type_to_inserter_type
 
 
 def schema_tree(schema, i=0):
+    """
+    MARKUP SchemaElement OBJECTS WITH .children THAT MAPS NAME TO CHILD ELEMENT
+    :param schema:
+    :param i:
+    :return:
+    """
     root = schema[i]
     root.children = OrderedDict()
     while len(root.children) < root.num_children:
@@ -178,3 +188,15 @@ def _is_map_like(helper, column):
     if se3.repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
         return False
     return True
+
+
+
+NUMPY_OBJECT = "O"
+NUMPY_OBJECT_TYPE = np.dtype("O")
+
+
+NUMPY_FLOAT = "f"
+NUMPY_INTEGER = "i"
+NUMPY_BOOLEAN = "b"
+NUMPY_DATETIME = "M"
+NUMPY_TIMEDELTA = "m"

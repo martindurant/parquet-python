@@ -14,6 +14,7 @@ import struct
 import numpy as np
 from fastparquet.util import join_path
 
+from fastparquet.schema import SchemaTree, NUMPY_OBJECT_TYPE, NUMPY_INTEGER, NUMPY_BOOLEAN
 from .core import read_thrift
 from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
@@ -135,7 +136,7 @@ class ParquetFile(object):
         for i, rg in enumerate(self.row_groups):
             for chunk in rg.columns:
                 self.group_files.setdefault(i, set()).add(chunk.file_path)
-        self.schema = schema.SchemaHelper(self._schema)
+        self.schema = SchemaTree.new_instance(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
         self.file_scheme = get_file_scheme([rg.columns[0].file_path
                                            for rg in self.row_groups])
@@ -149,10 +150,11 @@ class ParquetFile(object):
     @property
     def columns(self):
         """ Column names """
-        return [c for c, i in self._schema[0].children.items()
-                if len(getattr(i, 'children', [])) == 0
-                or i.converted_type in [parquet_thrift.ConvertedType.LIST,
-                                        parquet_thrift.ConvertedType.MAP]]
+        return [
+            i.name
+            for i in self.schema.get_parquet_metadata()
+            if not i.num_children
+        ]
 
     @property
     def statistics(self):
@@ -444,11 +446,13 @@ class ParquetFile(object):
         """ Implied types of the columns in the schema """
         if categories is None:
             categories = self.categories
-        dtype = {name: (converted_types.typemap(f)
-                          if f.num_children in [None, 0] else np.dtype("O"))
-                 for name, f in self.schema.root.children.items()}
+        dtype = {
+            f.name: converted_types.typemap(f)
+            for f in self.schema.get_parquet_metadata()
+            if not f.num_children
+        }
         for col, dt in dtype.copy().items():
-            if dt.kind in ['i', 'b']:
+            if dt.kind in [NUMPY_INTEGER, NUMPY_BOOLEAN]:
                 # int/bool columns that may have nulls become float columns
                 num_nulls = 0
                 for rg in self.row_groups:

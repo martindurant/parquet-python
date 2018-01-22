@@ -53,11 +53,11 @@ def time_column():
             with measure('%s: read, no nulls, has_null=True' % d.dtypes[col], result):
                 pf.to_pandas(categories={'w': 3})
 
-            if d.dtypes[col].kind == 'm':
+            if d.dtypes[col].kind == NUMPY_DATETIME:
                 d.loc[n//2, col] = pd.to_datetime('NaT')
-            elif d.dtypes[col].kind == 'f':
+            elif d.dtypes[col].kind == NUMPY_FLOAT:
                 d.loc[n//2, col] = np.nan
-            elif d.dtypes[col].kind in ['i', 'u']:
+            elif d.dtypes[col].kind in [NUMPY_INTEGER, 'u']:
                 continue
             else:
                 d.loc[n//2, col] = None

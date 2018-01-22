@@ -5,6 +5,9 @@ import struct
 
 import numpy as np
 import pandas as pd
+
+from mo_dots import join_field
+
 try:
     from thrift.protocol.TCompactProtocol import TCompactProtocolAccelerated as TCompactProtocol
 except ImportError:
@@ -13,7 +16,7 @@ except ImportError:
 from . import encoding
 from .compression import decompress_data
 from .converted_types import convert, typemap
-from .schema import _is_list_like, _is_map_like
+from .schema import _is_list_like, _is_map_like, NUMPY_INTEGER, NUMPY_FLOAT, NUMPY_OBJECT, NUMPY_DATETIME
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift, read_thrift
 from .util import val_to_num, byte_buffer, ex_from_sep
@@ -51,41 +54,38 @@ def read_def(io_obj, daph, helper, metadata):
     """
     Read the definition levels from this page, if any.
     """
-    definition_levels = None
-    num_nulls = 0
-    if not helper.is_required(metadata.path_in_schema):
-        max_definition_level = helper.max_definition_level(
-            metadata.path_in_schema)
-        bit_width = encoding.width_from_max_int(max_definition_level)
-        if bit_width:
-            definition_levels = read_data(
-                    io_obj, daph.definition_level_encoding,
-                    daph.num_values, bit_width)[:daph.num_values]
-            num_nulls = daph.num_values - (definition_levels ==
-                                           max_definition_level).sum()
-        if num_nulls == 0:
-            definition_levels = None
-    return definition_levels, num_nulls
+    if helper[join_field(metadata.path_in_schema)].repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED:
+        return None
+
+    max_definition_level = helper.max_definition_level()
+    if not max_definition_level:
+        return None
+
+    bit_width = encoding.width_from_max_int(max_definition_level)
+    definition_levels = read_data(
+        io_obj,
+        daph.definition_level_encoding,
+        daph.num_values,
+        bit_width
+    )[:daph.num_values]
+    return definition_levels
 
 
 def read_rep(io_obj, daph, helper, metadata):
     """
     Read the repetition levels from this page, if any.
     """
-    repetition_levels = None
-    if len(metadata.path_in_schema) > 1:
-        max_repetition_level = helper.max_repetition_level(
-            metadata.path_in_schema)
-        if max_repetition_level == 0:
-            repetition_levels = None
-        else:
-            bit_width = encoding.width_from_max_int(max_repetition_level)
-            repetition_levels = read_data(io_obj, daph.repetition_level_encoding,
-                                          daph.num_values,
-                                          bit_width)[:daph.num_values]
-            # if repetition_levels.max() == 0:
-            #     repetition_levels = None
-    return repetition_levels
+    max_repetition_level = helper.max_definition_level()
+    if max_repetition_level == 0:
+        return None
+    else:
+        bit_width = encoding.width_from_max_int(max_repetition_level)
+        return read_data(
+            io_obj,
+            daph.repetition_level_encoding,
+            daph.num_values,
+            bit_width
+        )[:daph.num_values]
 
 
 def read_data_page(f, helper, header, metadata, skip_nulls=False,
@@ -102,20 +102,21 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
 
     repetition_levels = read_rep(io_obj, daph, helper, metadata)
 
-    if skip_nulls and not helper.is_required(metadata.path_in_schema):
-        num_nulls = 0
+    if skip_nulls and not helper[join_field(metadata.path_in_schema)].repetition_type != parquet_thrift.FieldRepetitionType.REQUIRED:
         definition_levels = None
         skip_definition_bytes(io_obj, daph.num_values)
     else:
-        definition_levels, num_nulls = read_def(io_obj, daph, helper, metadata)
+        definition_levels = read_def(io_obj, daph, helper, metadata)
 
-    nval = daph.num_values - num_nulls
+    nval = daph.num_values
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
-        width = helper.schema_element(metadata.path_in_schema).type_length
-        values = encoding.read_plain(raw_bytes[io_obj.loc:],
-                                     metadata.type,
-                                     int(daph.num_values - num_nulls),
-                                     width=width)
+        width = helper[join_field(metadata.path_in_schema)].type_length
+        values = encoding.read_plain(
+            raw_bytes[io_obj.loc:],
+            metadata.type,
+            nval,
+            width=width
+        )
     elif daph.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
                            parquet_thrift.Encoding.RLE]:
         # bit_width is stored as single byte.
@@ -187,7 +188,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
         data.
     """
     cmd = column.meta_data
-    se = schema_helper.schema_element(cmd.path_in_schema)
+    se = schema_helper[join_field(cmd.path_in_schema)]
     off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
                cmd.data_page_offset))
 
@@ -217,9 +218,9 @@ def read_col(column, schema_helper, infile, use_cat=False,
         my_nan = -1
         do_convert = False
     else:
-        if assign.dtype.kind in ['f', 'i']:
+        if assign.dtype.kind in [NUMPY_FLOAT, NUMPY_INTEGER]:
             my_nan = np.nan
-        elif assign.dtype.kind in ["M", 'm']:
+        elif assign.dtype.kind in [NUMPY_DATETIME, NUMPY_DATETIME]:
             my_nan = -9223372036854775808  # int64 version of NaT
         else:
             my_nan = None
@@ -233,23 +234,15 @@ def read_col(column, schema_helper, infile, use_cat=False,
             skip_nulls = False
         defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
                                         skip_nulls, selfmade=selfmade)
-        if rep is not None and assign.dtype.kind != 'O':  # pragma: no cover
-            # this should never get called
-            raise ValueError('Column contains repeated value, must use object'
-                             'type, but has assumed type: %s' % assign.dtype)
         d = ph.data_page_header.encoding == parquet_thrift.Encoding.PLAIN_DICTIONARY
         if use_cat and not d:
             raise ValueError('Returning category type requires all chunks to'
                              'use dictionary encoding; column: %s',
                              cmd.path_in_schema)
 
-        max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
+        max_defi = schema_helper.max_definition_level()
         if rep is not None:
-            null = not schema_helper.is_required(cmd.path_in_schema[0])
-            null_val = (se.repetition_type !=
-                        parquet_thrift.FieldRepetitionType.REQUIRED)
-            num = encoding._assemble_objects(assign, defi, rep, val, dic, d,
-                                             null, null_val, max_defi)
+            num = encoding._assemble_objects(assign, defi, rep, val, dic, d, True, True, max_defi)
         elif defi is not None:
             max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
             part = assign[num:num+len(defi)]
@@ -297,29 +290,20 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     maps = {}
 
     for column in rg.columns:
-        if (_is_list_like(schema_helper, column) or
-                _is_map_like(schema_helper, column)):
-            name = ".".join(column.meta_data.path_in_schema[:-2])
-        else:
-            name = ".".join(column.meta_data.path_in_schema)
+        name = join_field(column.meta_data.path_in_schema)
         if name not in columns:
             continue
 
         use = name in categories if categories is not None else False
-        read_col(column, schema_helper, file, use_cat=use,
-                 selfmade=selfmade, assign=out[name],
-                 catdef=out[name+'-catdef'] if use else None)
-
-        if _is_map_like(schema_helper, column):
-            if name not in maps:
-                maps[name] = out[name].copy()
-            else:
-                if column.meta_data.path_in_schema[0] == 'key':
-                    key, value = out[name], maps[name]
-                else:
-                    value, key = out[name], maps[name]
-                out[name][:] = [dict(zip(k, v)) if k is not None else None
-                                for k, v in zip(key, value)]
+        read_col(
+            column,
+            schema_helper,
+            file,
+            use_cat=use,
+            selfmade=selfmade,
+            assign=out[name],
+            catdef=out[name + '-catdef'] if use else None
+        )
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,

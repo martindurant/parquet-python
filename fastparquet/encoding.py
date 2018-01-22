@@ -10,7 +10,6 @@ from itertools import izip
 import numba
 import numpy as np
 
-from mo_logs import Log
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
 from .util import byte_buffer
@@ -43,11 +42,11 @@ def read_plain(raw_bytes, type_, count, width=0):
         return read_plain_boolean(raw_bytes, count)
     # variable byte arrays (rare)
     try:
-        return np.array(unpack_byte_array(raw_bytes, count), dtype='O')
+        return np.array(unpack_byte_array(raw_bytes, count), dtype=NUMPY_OBJECT)
     except RuntimeError:
         if count == 1:
             # e.g., for statistics
-            return np.array([raw_bytes], dtype='O')
+            return np.array([raw_bytes], dtype=NUMPY_OBJECT)
         else:
             raise
 
@@ -163,7 +162,6 @@ def encode_unsigned_varint(x, o):  # pragma: no cover
         o.write_byte((x & 0x7F) | 0x80)
         x >>= 7
     o.write_byte(x)
-
 
 
 def remainder(value, mod):
@@ -412,3 +410,26 @@ class Encoder(object):
             self.bit_packed(values[index:index + num], bit_width)
 
         self.set_fixed_int(len(self) - all_start, 4, all_start - 4)
+
+
+def assemble(values, rep_levels, def_levels, schema):
+    max = schema.max_definition_level()+1
+
+    def _add(value, rep_level, def_level, parents):
+        if def_level == len(parents):
+            new_parents = parents[0:rep_level + 1]
+            for _ in range(rep_level, max):
+                new_child = []
+                new_parents[-1].append(new_child)
+                new_parents.append(new_child)
+            new_parents[-1].append(value)
+        else:
+            new_parents = parents[0:def_level + 1]
+            new_parents.append(None)
+
+    rows = []
+    parents = [rows]
+    for value, rep_level, def_level in zip(values, def_levels, rep_levels):
+        _add(parents, value, rep_level, def_level)
+
+

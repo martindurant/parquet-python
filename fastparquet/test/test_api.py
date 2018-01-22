@@ -156,7 +156,7 @@ def test_cast_index(tempdir):
     pf = ParquetFile(fn)
     for col in list(df):
         d = pf.to_pandas(index=col)
-        if d.index.dtype.kind == 'i':
+        if d.index.dtype.kind == NUMPY_INTEGER:
             assert d.index.dtype == 'int64'
         elif d.index.dtype.kind == 'u':
             # new UInt64Index

@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from six import integer_types
 
+from fastparquet.schema import NUMPY_OBJECT, NUMPY_BOOLEAN, NUMPY_INTEGER, NUMPY_DATETIME
 from fastparquet.util import join_path
 from .thrift_structures import write_thrift
 
@@ -90,7 +91,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     elif "S" in str(dtype)[:2] or "U" in str(dtype)[:2]:
         type, converted_type, width = (parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY,
                                        None, dtype.itemsize)
-    elif dtype == "O":
+    elif dtype == NUMPY_OBJECT:
         if object_encoding == 'infer':
             object_encoding = infer_object_encoding(data)
 
@@ -128,7 +129,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
         if fixed_text:
             width = fixed_text
             type = parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY
-    elif dtype.kind == "M":
+    elif dtype.kind == NUMPY_DATETIME:
         if times == 'int64':
             type, converted_type, width = (
                 parquet_thrift.Type.INT64,
@@ -141,7 +142,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
                     "Parameter times must be [int64|int96], not %s" % times)
         if hasattr(dtype, 'tz') and str(dtype.tz) != 'UTC':
             warnings.warn('Coercing datetimes to UTC')
-    elif dtype.kind == "m":
+    elif dtype.kind == NUMPY_DATETIME:
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
     else:
@@ -169,7 +170,7 @@ def convert(data, se):
             out = data.values
     elif "S" in str(dtype)[:2] or "U" in str(dtype)[:2]:
         out = data.values
-    elif dtype == "O":
+    elif dtype == NUMPY_OBJECT:
         try:
             if converted_type == parquet_thrift.ConvertedType.UTF8:
                 out = array_encode_utf8(data)
@@ -184,7 +185,7 @@ def convert(data, se):
                     out = data.values
             elif converted_type == parquet_thrift.ConvertedType.JSON:
                 out = np.array([json.dumps(x).encode('utf8') for x in data],
-                               dtype="O")
+                               dtype=NUMPY_OBJECT)
             elif converted_type == parquet_thrift.ConvertedType.BSON:
                 out = data.map(tobson).values
             if type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
@@ -201,7 +202,7 @@ def convert(data, se):
     elif converted_type == parquet_thrift.ConvertedType.TIME_MICROS:
         out = np.empty(len(data), 'int64')
         time_shift(data.values.view('int64'), out)
-    elif type == parquet_thrift.Type.INT96 and dtype.kind == 'M':
+    elif type == parquet_thrift.Type.INT96 and dtype.kind == NUMPY_DATETIME:
         ns_per_day = (24 * 3600 * 1000000000)
         day = data.values.view('int64') // ns_per_day + 2440588
         ns = (data.values.view('int64') % ns_per_day)# - ns_per_day // 2
@@ -346,7 +347,7 @@ def encode_rle_bp(data, width, o, withlength=False):
 
 
 def encode_rle(data, se, fixed_text=None):
-    if data.dtype.kind not in ['i', 'u']:
+    if data.dtype.kind not in [NUMPY_INTEGER, 'u']:
         raise ValueError('RLE/bitpack encoding only works for integers')
     if se.type_length in [8, 16]:
         o = encoding.Numpy8(np.empty(10, dtype=np.uint8))
@@ -433,12 +434,12 @@ def write_column(f, data, selement, compression=None):
     if has_nulls:
         if is_categorical_dtype(data.dtype):
             num_nulls = (data.cat.codes == -1).sum()
-        elif data.dtype.kind in ['i', 'b']:
+        elif data.dtype.kind in [NUMPY_INTEGER, NUMPY_BOOLEAN]:
             num_nulls = 0
         else:
             num_nulls = len(data) - data.count()
         definition_data, data = make_definitions(data, num_nulls == 0)
-        if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
+        if data.dtype.kind == NUMPY_OBJECT and not is_categorical_dtype(data.dtype):
             try:
                 if selement.type == parquet_thrift.Type.INT64:
                     data = data.astype(int)
@@ -667,7 +668,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
                                  object_encoding=oencoding, times=times)
         col_has_nulls = has_nulls
         if has_nulls is None:
-            se.repetition_type = data[column].dtype == "O"
+            se.repetition_type = data[column].dtype == NUMPY_OBJECT
         elif has_nulls is not True and has_nulls is not False:
             col_has_nulls = column in has_nulls
         if col_has_nulls:

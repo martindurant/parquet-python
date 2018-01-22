@@ -14,6 +14,7 @@ import pytest
 
 import fastparquet
 from fastparquet import writer, core
+from fastparquet.schema import NUMPY_OBJECT
 
 from fastparquet.test.util import TEST_DATA, s3, tempdir
 
@@ -301,7 +302,7 @@ def test_bad_catsize(tempdir):
 
 
 def test_null_sizes(tempdir):
-    df = pd.DataFrame({'a': [True, None], 'b': [3000, np.nan]}, dtype="O")
+    df = pd.DataFrame({'a': [True, None], 'b': [3000, np.nan]}, dtype=NUMPY_OBJECT)
     fastparquet.write(tempdir, df, has_nulls=True, file_scheme='hive')
     pf = fastparquet.ParquetFile(tempdir)
     assert pf.dtypes['a'] == 'float16'
