@@ -10,73 +10,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
 
-
 from jx_base import OBJECT, NESTED, STRING
-from mo_dots import Data, startswith_field, concat_field
+from mo_dots import concat_field
 from mo_json.typed_encoder import NESTED_TYPE
-from mo_parquet.schema import SchemaTree, get_length, get_repetition_type, merge_schema_element
+from mo_parquet.schema import SchemaTree, get_length, get_repetition_type, merge_schema_element, python_type_to_all_types
 from mo_parquet.table import Table
 
 REQUIRED = 'required'
 OPTIONAL = 'optional'
 REPEATED = 'repeated'
-
-
-def rows_to_columns(data, all_leaves):
-    """
-    CONVERT ARRAY OF JSON OBJECTS INTO SET OF COLUMNS, EACH A MULTIDIMENSIONAL ARRAY
-    :param data: The array of objects
-    :param all_leaves: list of all leaf columns
-    :return:
-    """
-
-    # organize schema along property paths
-    new_schema = Data()
-    for full_name in all_leaves:
-        new_schema[full_name] = {}
-    output = {n: [] for n in all_leaves}
-
-    names = {}
-
-    def _pre_calculate_the_names(schema, path):
-        names[path] = [n for n in all_leaves if startswith_field(n, path)]
-        for name, sub_schema in schema.items():
-            new_path = concat_field(path, name)
-            _pre_calculate_the_names(sub_schema, new_path)
-    _pre_calculate_the_names(new_schema, '.')
-
-    def _rows_to_columns(value, schema, path, counters, destination):
-        if isinstance(value, list):
-           for i, new_value in enumerate(value):
-                new_counters = counters+(i,)
-                if isinstance(new_value, list):
-                    # multi-dimensional
-                    new_destination = {k: [] for k in names[path]}
-                    _rows_to_columns(new_value, schema, path, new_counters, new_destination)
-                    for k, v in new_destination.items():
-                        destination[k].append(v)
-                else:
-                    _rows_to_columns(new_value, schema, path, counters, destination)
-        elif value == None:
-            if schema:
-                for name, sub_schema in schema.items():
-                    _rows_to_columns(value, sub_schema, concat_field(path, name), counters, destination)
-            else:
-                destination[path].append(None)
-        elif schema:
-            for name, sub_schema in schema.items():
-                new_path = concat_field(path, name)
-                new_value = value.get(name)
-                new_counters = counters+(0,)
-                new_destination = {k: [] for k in names[new_path]}
-                _rows_to_columns(new_value, sub_schema, new_path, new_counters, new_destination)
-                for k, v in new_destination.items():
-                    destination[k].append(v)
-        else:
-            destination[path].append(value)
-
-    _rows_to_columns(data, new_schema, '.', tuple(), output)
-    return output
 
 
 def rows_to_columns(data, schema):
