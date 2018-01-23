@@ -1,14 +1,13 @@
 import numpy as np
-from pandas.core.index import _ensure_index, CategoricalIndex, Index
-from pandas.core.internals import BlockManager, _block_shape
-from pandas import Categorical
-from pandas.core.frame import DataFrame
-from pandas.core.index import RangeIndex, Index
+from pandas.core.index import CategoricalIndex, RangeIndex, Index
+from pandas.core.internals import BlockManager
+from pandas import Categorical, DataFrame
 from pandas.api.types import is_categorical_dtype
 from .util import STR_TYPE
 
 
-def empty(types, size, cats=None, cols=None, index_type=None, index_name=None):
+def empty(types, size, cats=None, cols=None, index_type=None, index_name=None,
+          timezones=None):
     """
     Create empty DataFrame to assign into
 
@@ -27,6 +26,9 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None):
         is missing, will assume 16-bit integers (a reasonable default).
     cols: list of labels
         assigned column names, including categorical ones.
+    timezones: dict {col: timezone_str}
+        for timestamp type columns, apply this timezone to the pandas series;
+        the numpy view will be UTC.
 
     Returns
     -------
@@ -36,6 +38,7 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None):
     """
     df = DataFrame()
     views = {}
+    timezones = timezones or {}
 
     cols = cols if cols is not None else range(cols)
     if isinstance(types, STR_TYPE):
@@ -55,6 +58,8 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None):
                                            fastpath=True)
         else:
             df[str(col)] = np.empty(0, dtype=t)
+            if df[str(col)].dtype.kind == "M" and str(col) in timezones:
+                df[str(col)] = df[str(col)].dt.tz_localize(timezones[str(col)])
 
     if index_type is not None and index_type is not False:
         if index_name is None:
@@ -70,7 +75,7 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None):
                         fastpath=True)
             else:  # explicit labels list
                 c = Categorical([], categories=cats[index_name],
-                                           fastpath=True)
+                                fastpath=True)
             print(cats, index_name, c)
             vals = np.empty(size, dtype=c.codes.dtype)
             index = CategoricalIndex(c)
@@ -92,11 +97,17 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None):
             code = np.zeros(shape=size, dtype=block.values.codes.dtype)
             values = Categorical(values=code, categories=categories,
                                  fastpath=True)
+            new_block = block.make_block_same_class(values=values)
+        elif getattr(block.dtype, 'tz', None):
+            new_shape = (size, )
+            values = np.empty(shape=new_shape, dtype=block.values.values.dtype)
+            new_block = block.make_block_same_class(
+                    values=values, dtype=block.values.dtype)
         else:
             new_shape = (block.values.shape[0], size)
             values = np.empty(shape=new_shape, dtype=block.values.dtype)
+            new_block = block.make_block_same_class(values=values)
 
-        new_block = block.make_block_same_class(values=values)
         blocks.append(new_block)
 
     # create block manager
@@ -113,6 +124,8 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None):
             if is_categorical_dtype(dtype):
                 views[col] = block.values._codes
                 views[col+'-catdef'] = block.values
+            elif getattr(block.dtype, 'tz', None):
+                views[col] = block.values.values
             else:
                 views[col] = block.values[i]
 

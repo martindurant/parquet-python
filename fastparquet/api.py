@@ -409,8 +409,12 @@ class ParquetFile(object):
     def pre_allocate(self, size, columns, categories, index):
         if categories is None:
             categories = self.categories
+        if 'pandas' in self.key_value_metadata:
+            md = json.loads(self.key_value_metadata['pandas'])['columns']
+            tz = {c['name']: c['metadata']['timezone'] for c in md
+                  if c.get('metadata', {}).get('timezone', None)}
         return _pre_allocate(size, columns, categories, index, self.cats,
-                             self._dtypes(categories))
+                             self._dtypes(categories), tz)
 
     @property
     def count(self):
@@ -484,7 +488,7 @@ class ParquetFile(object):
     __repr__ = __str__
 
 
-def _pre_allocate(size, columns, categories, index, cs, dt):
+def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     cols = [c for c in columns if index != c]
     categories = categories or {}
     cats = cs.copy()
@@ -501,7 +505,7 @@ def _pre_allocate(size, columns, categories, index, cs, dt):
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
     df, views = dataframe.empty(dtypes, size, cols=cols, index_name=index,
-                                index_type=index_type, cats=cats)
+                                index_type=index_type, cats=cats, timezones=tz)
     if index and re.match(r'__index_level_\d+__', index):
         df.index.name = None
     return df, views
