@@ -409,10 +409,11 @@ class ParquetFile(object):
     def pre_allocate(self, size, columns, categories, index):
         if categories is None:
             categories = self.categories
+        tz = None
         if 'pandas' in self.key_value_metadata:
             md = json.loads(self.key_value_metadata['pandas'])['columns']
             tz = {c['name']: c['metadata']['timezone'] for c in md
-                  if c.get('metadata', {}).get('timezone', None)}
+                  if (c.get('metadata', {}) or {}).get('timezone', None)}
         return _pre_allocate(size, columns, categories, index, self.cats,
                              self._dtypes(categories), tz)
 
