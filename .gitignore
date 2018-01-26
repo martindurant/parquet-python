@@ -3,10 +3,11 @@
 *.dll
 fastparquet/speedups.c
 .coverage
+.eggs
 cover
 build
 dist
-parquet.egg-info
+fastparquet.egg-info
 .idea
 .cached
 /.cache
