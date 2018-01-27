@@ -568,7 +568,7 @@ def write_column(f, data, selement, compression=None):
                        parquet_thrift.Encoding.BIT_PACKED,
                        parquet_thrift.Encoding.PLAIN],
             codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
-                   if compression else 0),
+                   if algorithm else 0),
             num_values=tot_rows,
             statistics=s,
             data_page_offset=start,
