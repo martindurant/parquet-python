@@ -76,7 +76,7 @@ setup(
     tests_require=[
         'pytest',
         'python-snappy',
-        'lz4',
+        'lz4 >= 0.19.1',
     ],
     long_description=(open('README.rst').read() if os.path.exists('README.rst')
                       else ''),
