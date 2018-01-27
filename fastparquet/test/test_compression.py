@@ -33,6 +33,26 @@ def test_compress_decompress_roundtrip_args_gzip():
     decompressed = decompress_data(compressed, algorithm="gzip")
     assert data == decompressed
 
+def test_compress_decompress_roundtrip_args_lz4():
+    data = b'123' * 1000
+    compressed = compress_data(
+        data,
+        compression={
+            "type": "lz4",
+            "args": {
+                "compression_level": 5,
+                "content_checksum": True,
+                "block_size": 0,
+                "block_checksum": True,
+                "block_linked": True,
+                "store_size": True,
+            }
+        }
+    )
+    assert len(compressed) < len(data)
+
+    decompressed = decompress_data(compressed, algorithm="lz4")
+    assert data == decompressed
 
 def test_errors():
     with pytest.raises(RuntimeError) as e:
