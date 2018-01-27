@@ -418,8 +418,12 @@ def write_column(f, data, selement, compression=None):
     data: pandas Series or numpy (1d) array
     selement: thrift SchemaElement
         produced by ``find_type``
-    compression: str or None
-        if not None, must be one of the keys in ``compression.compress``
+    compression: str, dict, or None
+        if ``str``, must be one of the keys in ``compression.compress``
+        if ``dict``, must have key ``"type"`` which specifies the compression
+        type to use, which must be one of the keys in ``compression.compress``,
+        and may optionally have key ``"args`` which should be a dictionary of
+        options to pass to the underlying compression engine.
 
     Returns
     -------
@@ -553,12 +557,17 @@ def write_column(f, data, selement, compression=None):
             page_type=parquet_thrift.PageType.DATA_PAGE,
             encoding=parquet_thrift.Encoding.PLAIN, count=1)]
 
+    if isinstance(compression, dict):
+        algorithm = compression.get("type", None)
+    else:
+        algorithm = compression
+
     cmd = parquet_thrift.ColumnMetaData(
             type=selement.type, path_in_schema=[name],
             encodings=[parquet_thrift.Encoding.RLE,
                        parquet_thrift.Encoding.BIT_PACKED,
                        parquet_thrift.Encoding.PLAIN],
-            codec=(getattr(parquet_thrift.CompressionCodec, compression.upper())
+            codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
                    if compression else 0),
             num_values=tot_rows,
             statistics=s,
@@ -597,6 +606,8 @@ def make_row_group(f, data, schema, compression=None):
         if column.type is not None:
             if isinstance(compression, dict):
                 comp = compression.get(column.name, None)
+                if comp is None:
+                    comp = compression.get('_default', None)
             else:
                 comp = compression
             chunk = write_column(f, data[column.name], column,
@@ -732,6 +743,32 @@ def write(filename, data, row_group_offsets=50000000,
         values to start new row groups.
     compression: str, dict
         compression to apply to each column, e.g. GZIP or SNAPPY or
+        {col1: "SNAPPY", col2: None} to specify per column compression types.
+        In both cases, the compressor settings would be the underlying
+        compressor defaults. To pass arguments to the underlying compressor,
+        each ``dict`` entry should itself be a dictionary::
+
+            {
+                col1: {
+                    "type": "LZ4",
+                    "args": {
+                        "compression_level": 6,
+                        "content_checksum": True
+                     }
+                },
+                col2: {
+                    "type": "SNAPPY",
+                    "args": None
+                }
+                "_default": {
+                    "type": "GZIP",
+                    "args": None
+                }
+            }
+
+        If the dictionary contains a "_default" entry, this will be used for any
+        columns not explicitly specified in the dictionary.
+    GZIP or SNAPPY or
         {col1: "SNAPPY", col2: None} to specify per column.
     file_scheme: 'simple'|'hive'
         If simple: all goes in a single file

@@ -7,7 +7,7 @@ import pytest
 @pytest.mark.parametrize('fmt', compressions)
 def test_compress_decompress_roundtrip(fmt):
     data = b'123' * 1000
-    compressed = compress_data(data, algorithm=fmt)
+    compressed = compress_data(data, compression=fmt)
     if fmt.lower() == 'uncompressed':
         assert compressed is data
     else:
@@ -19,7 +19,7 @@ def test_compress_decompress_roundtrip(fmt):
 
 def test_errors():
     with pytest.raises(RuntimeError) as e:
-        compress_data(b'123', algorithm='not-an-algorithm')
+        compress_data(b'123', compression='not-an-algorithm')
 
     assert 'not-an-algorithm' in str(e)
     assert 'gzip' in str(e).lower()
@@ -28,5 +28,5 @@ def test_errors():
 def test_not_installed():
     compressions.pop('BROTLI', None)
     with pytest.raises(RuntimeError) as e:
-        compress_data(b'123', algorithm=4)
+        compress_data(b'123', compression=4)
     assert 'brotli' in str(e.value).lower()

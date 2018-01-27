@@ -5,8 +5,6 @@ from .util import PY2
 
 # TODO: use stream/direct-to-buffer conversions instead of memcopy
 
-# TODO: enable ability to pass kwargs to compressor
-
 compressions = {
     'UNCOMPRESSED': lambda x: x
 }
@@ -71,14 +69,29 @@ rev_map = {getattr(parquet_thrift.CompressionCodec, key): key for key in
            ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4']}
 
 
-def compress_data(data, algorithm='gzip'):
+#def compress_data(data, algorithm='gzip'):
+def compress_data(data, compression='gzip'):
+    if isinstance(compression, dict):
+        algorithm = compression.get('type', 'gzip')
+        if isinstance(algorithm, int):
+            algorithm = rev_map[compression]
+        args = compression.get('args', None)
+    else:
+        algorithm = compression
+        args = None
+
     if isinstance(algorithm, int):
-        algorithm = rev_map[algorithm]
+        algorithm = rev_map[compression]
+
     if algorithm.upper() not in compressions:
         raise RuntimeError("Compression '%s' not available.  Options: %s" %
                 (algorithm, sorted(compressions)))
-    return compressions[algorithm.upper()](data)
-
+    if args is None:
+        return compressions[algorithm.upper()](data)
+    else:
+        if not isinstance(args, dict):
+            raise ValueError("args dict entry is not a dict")
+        return compressions[algorithm.upper()](data, **args)
 
 def decompress_data(data, algorithm='gzip'):
     if isinstance(algorithm, int):
