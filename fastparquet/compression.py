@@ -56,13 +56,19 @@ try:
     decompressions['BROTLI'] = brotli.decompress
 except ImportError:
     pass
+try:
+    import lz4.frame
+    compressions['LZ4'] = lz4.frame.compress
+    decompressions['LZ4'] = lz4.frame.decompress
+except ImportError:
+    pass
 
 compressions = {k.upper(): v for k, v in compressions.items()}
 decompressions = {k.upper(): v for k, v in decompressions.items()}
 
 rev_map = {getattr(parquet_thrift.CompressionCodec, key): key for key in
            dir(parquet_thrift.CompressionCodec) if key in
-           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI']}
+           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4']}
 
 
 def compress_data(data, algorithm='gzip'):
