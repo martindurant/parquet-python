@@ -69,7 +69,6 @@ rev_map = {getattr(parquet_thrift.CompressionCodec, key): key for key in
            ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4']}
 
 
-#def compress_data(data, algorithm='gzip'):
 def compress_data(data, compression='gzip'):
     if isinstance(compression, dict):
         algorithm = compression.get('type', 'gzip')
