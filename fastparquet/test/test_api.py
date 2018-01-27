@@ -386,6 +386,7 @@ def test_bad_file_paths(tempdir):
     assert out.a.tolist() == ['x', 'y', 'z'] * 2
 
 def test_compression(tempdir):
+    pytest.importorskip('lz4')
     df = pd.DataFrame(
         {
             'x': np.arange(1000),
