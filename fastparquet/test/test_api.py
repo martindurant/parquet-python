@@ -384,3 +384,48 @@ def test_bad_file_paths(tempdir):
     pf = ParquetFile([fn1, fn2])
     out = pf.to_pandas()
     assert out.a.tolist() == ['x', 'y', 'z'] * 2
+
+def test_compression(tempdir):
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "lz4",
+            "args": {
+                "compression_level": 5,
+                "content_checksum": True,
+                "block_size": 0,
+                "block_checksum": True,
+                "block_linked": True,
+                "store_size": True,
+            }
+        },
+        "_default": {
+            "type": "snappy",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    assert (False in set(df2["x"] == df["x"])) is False
+    assert (False in set(df2["y"] == df["y"])) is False
+    assert (False in set(df2["z"] == df["z"])) is False
+
