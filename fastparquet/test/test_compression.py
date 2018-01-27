@@ -17,6 +17,23 @@ def test_compress_decompress_roundtrip(fmt):
     assert data == decompressed
 
 
+def test_compress_decompress_roundtrip_args_gzip():
+    data = b'123' * 1000
+    compressed = compress_data(
+        data,
+        compression={
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        }
+    )
+    assert len(compressed) < len(data)
+
+    decompressed = decompress_data(compressed, algorithm="gzip")
+    assert data == decompressed
+
+
 def test_errors():
     with pytest.raises(RuntimeError) as e:
         compress_data(b'123', compression='not-an-algorithm')
