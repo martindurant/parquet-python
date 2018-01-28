@@ -386,8 +386,53 @@ def test_bad_file_paths(tempdir):
     assert out.a.tolist() == ['x', 'y', 'z'] * 2
 
 
-def test_compression(tempdir):
+def test_compression_zstandard(tempdir):
+    pytest.importorskip('zstd')
+
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "zstd",
+            "args": {
+                "level": 5,
+                "write_dict_id": True,
+                "threads": 0,
+                "write_checksum": True,
+                "write_dict_id": True,
+                "write_content_size": True,
+            }
+        },
+        "_default": {
+            "type": "gzip",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    pd.util.testing.assert_frame_equal(df, df2)
+
+def test_compression_lz4(tempdir):
     pytest.importorskip('lz4')
+
     df = pd.DataFrame(
         {
             'x': np.arange(1000),
@@ -417,7 +462,7 @@ def test_compression(tempdir):
             }
         },
         "_default": {
-            "type": "snappy",
+            "type": "gzip",
             "args": None
         }
     }
@@ -427,7 +472,42 @@ def test_compression(tempdir):
 
     df2 = p.to_pandas()
 
-    assert (False in set(df2["x"] == df["x"])) is False
-    assert (False in set(df2["y"] == df["y"])) is False
-    assert (False in set(df2["z"] == df["z"])) is False
+    pd.util.testing.assert_frame_equal(df, df2)
+
+def test_compression_snappy(tempdir):
+    pytest.importorskip('snappy')
+
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "snappy",
+            "args": None
+        },
+        "_default": {
+            "type": "gzip",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    pd.util.testing.assert_frame_equal(df, df2)
 

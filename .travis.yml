@@ -23,7 +23,8 @@ install:
   - conda install numpy pandas numba cython setuptools
   - pip install bson
   - pip install lz4
-  
+  - pip install zstandard
+
 script:
   - python setup.py install
   - python setup.py test

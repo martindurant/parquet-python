@@ -60,13 +60,34 @@ try:
     decompressions['LZ4'] = lz4.frame.decompress
 except ImportError:
     pass
+try:
+    import zstd
+    def zstd_compress(data, **kwargs):
+        # For the ZstdDecompressor to work, the compressed data must include
+        # the uncompressed size, so we raise an exception if the user tries to
+        # set this to False. We also set it to True if it's not specified
+        # (since the default is False, weirdly).
+        try:
+            if kwargs['write_content_size'] == False:
+                raise RuntimeError('write_content_size cannot be false for the ZSTD compressor')
+        except KeyError:
+            kwargs['write_content_size'] = True
+        cctx = zstd.ZstdCompressor(**kwargs)
+        return cctx.compress(data, allow_empty=True)
+    def zstd_decompress(data):
+        dctx = zstd.ZstdDecompressor()
+        return dctx.decompress(data)
+    compressions['ZSTD'] = zstd_compress
+    decompressions['ZSTD'] = zstd_decompress
+except ImportError:
+    pass
 
 compressions = {k.upper(): v for k, v in compressions.items()}
 decompressions = {k.upper(): v for k, v in decompressions.items()}
 
 rev_map = {getattr(parquet_thrift.CompressionCodec, key): key for key in
            dir(parquet_thrift.CompressionCodec) if key in
-           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4']}
+           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4', 'ZSTD']}
 
 
 def compress_data(data, compression='gzip'):

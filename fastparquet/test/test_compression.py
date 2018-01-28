@@ -55,6 +55,27 @@ def test_compress_decompress_roundtrip_args_lz4():
     decompressed = decompress_data(compressed, algorithm="lz4")
     assert data == decompressed
 
+def test_compress_decompress_roundtrip_args_zstd():
+    pytest.importorskip('zstd')
+    data = b'123' * 1000
+    compressed = compress_data(
+        data,
+        compression={
+            "type": "zstd",
+            "args": {
+                "level": 5,
+                "threads": 0,
+                "write_checksum": True,
+                "write_dict_id": True,
+                "write_content_size": True,
+            }
+        }
+    )
+    assert len(compressed) < len(data)
+
+    decompressed = decompress_data(compressed, algorithm="zstd")
+    assert data == decompressed
+
 def test_errors():
     with pytest.raises(RuntimeError) as e:
         compress_data(b'123', compression='not-an-algorithm')

@@ -742,8 +742,9 @@ def write(filename, data, row_group_offsets=50000000,
         to make row groups about the same size; if a list, the explicit index
         values to start new row groups.
     compression: str, dict
-        compression to apply to each column, e.g. GZIP or SNAPPY or
-        {col1: "SNAPPY", col2: None} to specify per column compression types.
+        compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
+        ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
+        column compression types.
         In both cases, the compressor settings would be the underlying
         compressor defaults. To pass arguments to the underlying compressor,
         each ``dict`` entry should itself be a dictionary::
@@ -766,10 +767,11 @@ def write(filename, data, row_group_offsets=50000000,
                 }
             }
 
+        where ``"type"`` specifies the compression type to use, and ``"args"``
+        specifies a ``dict`` that will be turned into keyword arguments for
+        the compressor.
         If the dictionary contains a "_default" entry, this will be used for any
         columns not explicitly specified in the dictionary.
-    GZIP or SNAPPY or
-        {col1: "SNAPPY", col2: None} to specify per column.
     file_scheme: 'simple'|'hive'
         If simple: all goes in a single file
         If hive: each row group is in a separate file, and a separate file
