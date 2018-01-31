@@ -386,6 +386,7 @@ def test_bad_file_paths(tempdir):
     assert out.a.tolist() == ['x', 'y', 'z'] * 2
 
 
+<<<<<<< Updated upstream
 def test_compression(tempdir):
     pytest.importorskip('lz4')
     df = pd.DataFrame(
@@ -431,3 +432,16 @@ def test_compression(tempdir):
     assert (False in set(df2["y"] == df["y"])) is False
     assert (False in set(df2["z"] == df["z"])) is False
 
+=======
+def test_int96_stats(tempdir):
+    df = pd.util.testing.makeMixedDataFrame()
+
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df, row_group_offsets=[0, 2], times='int96')
+
+    p = ParquetFile(fn)
+
+    s = statistics(p)
+    assert isinstance(s['min']['D'][0], (np.datetime64, pd.tslib.Timestamp))
+    assert 'D' in sorted_partitioned_columns(p)
+>>>>>>> Stashed changes

@@ -625,14 +625,16 @@ def statistics(obj):
         for col in obj.row_groups[0].columns:
             column = '.'.join(col.meta_data.path_in_schema)
             se = schema.schema_element(col.meta_data.path_in_schema)
-            if se.converted_type is not None:
+            if (se.converted_type is not None
+                    or se.type == parquet_thrift.Type.INT96):
+                dtype = 'S12' if se.type == parquet_thrift.Type.INT96 else None
                 for name in ['min', 'max']:
                     try:
                         d[name][column] = (
                             [None] if d[name][column] is None
                             or None in d[name][column]
                             else list(converted_types.convert(
-                                np.array(d[name][column]), se))
+                                np.array(d[name][column], dtype), se))
                         )
                     except (KeyError, ValueError):
                         # catch no stat and bad conversions
