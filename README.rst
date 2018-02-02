@@ -50,6 +50,9 @@ Optional (compression algorithms; gzip is always available):
 - snappy (aka python-snappy)
 - lzo
 - brotli
+- lz4
+- zstandard
+
 
 Installation
 ------------

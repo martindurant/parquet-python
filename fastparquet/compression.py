@@ -5,8 +5,6 @@ from .util import PY2
 
 # TODO: use stream/direct-to-buffer conversions instead of memcopy
 
-# TODO: enable ability to pass kwargs to compressor
-
 compressions = {
     'UNCOMPRESSED': lambda x: x
 }
@@ -56,23 +54,64 @@ try:
     decompressions['BROTLI'] = brotli.decompress
 except ImportError:
     pass
+try:
+    import lz4.frame
+    compressions['LZ4'] = lz4.frame.compress
+    decompressions['LZ4'] = lz4.frame.decompress
+except ImportError:
+    pass
+try:
+    import zstd
+    def zstd_compress(data, **kwargs):
+        # For the ZstdDecompressor to work, the compressed data must include
+        # the uncompressed size, so we raise an exception if the user tries to
+        # set this to False. We also set it to True if it's not specified
+        # (since the default is False, weirdly).
+        try:
+            if kwargs['write_content_size'] == False:
+                raise RuntimeError('write_content_size cannot be false for the ZSTD compressor')
+        except KeyError:
+            kwargs['write_content_size'] = True
+        cctx = zstd.ZstdCompressor(**kwargs)
+        return cctx.compress(data, allow_empty=True)
+    def zstd_decompress(data):
+        dctx = zstd.ZstdDecompressor()
+        return dctx.decompress(data)
+    compressions['ZSTD'] = zstd_compress
+    decompressions['ZSTD'] = zstd_decompress
+except ImportError:
+    pass
 
 compressions = {k.upper(): v for k, v in compressions.items()}
 decompressions = {k.upper(): v for k, v in decompressions.items()}
 
 rev_map = {getattr(parquet_thrift.CompressionCodec, key): key for key in
            dir(parquet_thrift.CompressionCodec) if key in
-           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI']}
+           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4', 'ZSTD']}
 
 
-def compress_data(data, algorithm='gzip'):
+def compress_data(data, compression='gzip'):
+    if isinstance(compression, dict):
+        algorithm = compression.get('type', 'gzip')
+        if isinstance(algorithm, int):
+            algorithm = rev_map[compression]
+        args = compression.get('args', None)
+    else:
+        algorithm = compression
+        args = None
+
     if isinstance(algorithm, int):
-        algorithm = rev_map[algorithm]
+        algorithm = rev_map[compression]
+
     if algorithm.upper() not in compressions:
         raise RuntimeError("Compression '%s' not available.  Options: %s" %
                 (algorithm, sorted(compressions)))
-    return compressions[algorithm.upper()](data)
-
+    if args is None:
+        return compressions[algorithm.upper()](data)
+    else:
+        if not isinstance(args, dict):
+            raise ValueError("args dict entry is not a dict")
+        return compressions[algorithm.upper()](data, **args)
 
 def decompress_data(data, algorithm='gzip'):
     if isinstance(algorithm, int):

@@ -384,3 +384,142 @@ def test_bad_file_paths(tempdir):
     pf = ParquetFile([fn1, fn2])
     out = pf.to_pandas()
     assert out.a.tolist() == ['x', 'y', 'z'] * 2
+
+
+def test_compression_zstandard(tempdir):
+    pytest.importorskip('zstd')
+
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "zstd",
+            "args": {
+                "level": 5,
+                "write_dict_id": True,
+                "threads": 0,
+                "write_checksum": True,
+                "write_dict_id": True,
+                "write_content_size": True,
+            }
+        },
+        "_default": {
+            "type": "gzip",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    pd.util.testing.assert_frame_equal(df, df2)
+
+def test_compression_lz4(tempdir):
+    pytest.importorskip('lz4')
+
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "lz4",
+            "args": {
+                "compression_level": 5,
+                "content_checksum": True,
+                "block_size": 0,
+                "block_checksum": True,
+                "block_linked": True,
+                "store_size": True,
+            }
+        },
+        "_default": {
+            "type": "gzip",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    pd.util.testing.assert_frame_equal(df, df2)
+
+def test_compression_snappy(tempdir):
+    pytest.importorskip('snappy')
+
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "snappy",
+            "args": None
+        },
+        "_default": {
+            "type": "gzip",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    pd.util.testing.assert_frame_equal(df, df2)
+
+
+def test_int96_stats(tempdir):
+    df = pd.util.testing.makeMixedDataFrame()
+
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df, row_group_offsets=[0, 2], times='int96')
+
+    p = ParquetFile(fn)
+
+    s = statistics(p)
+    assert isinstance(s['min']['D'][0], (np.datetime64, pd.tslib.Timestamp))
+    assert 'D' in sorted_partitioned_columns(p)

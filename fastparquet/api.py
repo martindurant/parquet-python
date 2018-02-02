@@ -417,8 +417,13 @@ class ParquetFile(object):
     def pre_allocate(self, size, columns, categories, index):
         if categories is None:
             categories = self.categories
+        tz = None
+        if 'pandas' in self.key_value_metadata:
+            md = json.loads(self.key_value_metadata['pandas'])['columns']
+            tz = {c['name']: c['metadata']['timezone'] for c in md
+                  if (c.get('metadata', {}) or {}).get('timezone', None)}
         return _pre_allocate(size, columns, categories, index, self.cats,
-                             self._dtypes(categories))
+                             self._dtypes(categories), tz)
 
     @property
     def count(self):
@@ -494,7 +499,7 @@ class ParquetFile(object):
     __repr__ = __str__
 
 
-def _pre_allocate(size, columns, categories, index, cs, dt):
+def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     cols = [c for c in columns if index != c]
     categories = categories or {}
     cats = cs.copy()
@@ -511,7 +516,7 @@ def _pre_allocate(size, columns, categories, index, cs, dt):
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
     df, views = dataframe.empty(dtypes, size, cols=cols, index_name=index,
-                                index_type=index_type, cats=cats)
+                                index_type=index_type, cats=cats, timezones=tz)
     if index and re.match(r'__index_level_\d+__', index):
         df.index.name = None
     return df, views
@@ -630,14 +635,16 @@ def statistics(obj):
         for col in obj.row_groups[0].columns:
             column = '.'.join(col.meta_data.path_in_schema)
             se = schema.schema_element(col.meta_data.path_in_schema)
-            if se.converted_type is not None:
+            if (se.converted_type is not None
+                    or se.type == parquet_thrift.Type.INT96):
+                dtype = 'S12' if se.type == parquet_thrift.Type.INT96 else None
                 for name in ['min', 'max']:
                     try:
                         d[name][column] = (
                             [None] if d[name][column] is None
                             or None in d[name][column]
                             else list(converted_types.convert(
-                                np.array(d[name][column]), se))
+                                np.array(d[name][column], dtype), se))
                         )
                     except (KeyError, ValueError):
                         # catch no stat and bad conversions

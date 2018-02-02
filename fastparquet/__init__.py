@@ -11,4 +11,4 @@ from . import core, schema, converted_types, api
 from .api import ParquetFile
 from .util import ParquetException
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"

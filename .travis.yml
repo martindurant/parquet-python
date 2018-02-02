@@ -22,10 +22,12 @@ install:
   - conda install -c conda-forge thrift python-snappy
   - conda install numpy pandas numba cython setuptools
   - pip install bson
+  - pip install lz4
+  - pip install zstandard
 
 script:
-  - pip install -e .
-  - py.test -x -vv --pyargs fastparquet
+  - python setup.py install
+  - python setup.py test
 
 notifications:
   email: false

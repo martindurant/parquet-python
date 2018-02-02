@@ -188,8 +188,6 @@ def test_datetime_roundtrip(tempdir, df, capsys):
         assert "UTC" in str(w.list[0].message)
 
     df2 = r.to_pandas()
-    if 'x' in df:
-        df['x'] = df.x.dt.tz_convert(None)
 
     pd.util.testing.assert_frame_equal(df, df2, check_categorical=False)
 
