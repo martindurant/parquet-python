@@ -20,7 +20,6 @@ import binascii
 
 import sys
 
-from fastparquet.schema import NUMPY_OBJECT, NUMPY_OBJECT_TYPE
 from .thrift_structures import parquet_thrift
 from .util import PY2
 from .speedups import array_decode_utf8
@@ -46,17 +45,15 @@ DAYS_TO_MILLIS = 86400000000000
 """Number of millis in a day. Used to convert a Date to a date"""
 nat = np.datetime64('NaT').view('int64')
 
-simple = {
-    parquet_thrift.Type.INT32: np.dtype('int32'),
+simple = {parquet_thrift.Type.INT32: np.dtype('int32'),
     parquet_thrift.Type.INT64: np.dtype('int64'),
     parquet_thrift.Type.FLOAT: np.dtype('float32'),
     parquet_thrift.Type.DOUBLE: np.dtype('float64'),
     parquet_thrift.Type.BOOLEAN: np.dtype('bool'),
     parquet_thrift.Type.INT96: np.dtype('S12'),
-    parquet_thrift.Type.BYTE_ARRAY: NUMPY_OBJECT_TYPE,
-    parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY: NUMPY_OBJECT_TYPE
-}
-complex = {parquet_thrift.ConvertedType.UTF8: NUMPY_OBJECT_TYPE,
+          parquet_thrift.Type.BYTE_ARRAY: np.dtype("O"),
+          parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY: np.dtype("O")}
+complex = {parquet_thrift.ConvertedType.UTF8: np.dtype("O"),
            parquet_thrift.ConvertedType.DECIMAL: np.dtype('float64'),
            parquet_thrift.ConvertedType.UINT_8: np.dtype('uint8'),
            parquet_thrift.ConvertedType.UINT_16: np.dtype('uint16'),
@@ -83,7 +80,7 @@ def typemap(se):
             return np.dtype("S%i" % se.type_length)
     if se.converted_type in complex:
         return complex[se.converted_type]
-    return NUMPY_OBJECT_TYPE
+    return np.dtype("O")
 
 
 def convert(data, se, timestamp96=True):
@@ -103,12 +100,12 @@ def convert(data, se, timestamp96=True):
     if ctype is None:
         return data
     if ctype == parquet_thrift.ConvertedType.UTF8:
-        if isinstance(data, list) or data.dtype != NUMPY_OBJECT:
-            data = np.asarray(data, dtype=NUMPY_OBJECT)
+        if isinstance(data, list) or data.dtype != "O":
+            data = np.asarray(data, dtype="O")
         return array_decode_utf8(data)
     if ctype == parquet_thrift.ConvertedType.DECIMAL:
         scale_factor = 10**-se.scale
-        if data.dtype.kind in [NUMPY_INTEGER, NUMPY_FLOAT]:
+        if data.dtype.kind in ['i', 'f']:
             return data * scale_factor
         else:  # byte-string
             # NB: general but slow method
@@ -158,15 +155,15 @@ def convert(data, se, timestamp96=True):
     elif ctype == parquet_thrift.ConvertedType.INT_64:
         return data.astype(np.int64)
     elif ctype == parquet_thrift.ConvertedType.JSON:
-        if isinstance(data, list) or data.dtype != NUMPY_OBJECT:
-            out = np.empty(len(data), dtype=NUMPY_OBJECT)
+        if isinstance(data, list) or data.dtype != "O":
+            out = np.empty(len(data), dtype="O")
         else:
             out = data
         out[:] = [json.loads(d.decode('utf8')) for d in data]
         return out
     elif ctype == parquet_thrift.ConvertedType.BSON:
-        if isinstance(data, list) or data.dtype != NUMPY_OBJECT:
-            out = np.empty(len(data), dtype=NUMPY_OBJECT)
+        if isinstance(data, list) or data.dtype != "O":
+            out = np.empty(len(data), dtype="O")
         else:
             out = data
         out[:] = [unbson(d) for d in data]
