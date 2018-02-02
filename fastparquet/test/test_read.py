@@ -49,9 +49,9 @@ def test_read_footer_fail(tempdir, size):
 def test_read_footer():
     """Test reading the footer."""
     p = fastparquet.ParquetFile(os.path.join(TEST_DATA, "nation.impala.parquet"))
-    snames = {"schema", "n_regionkey", "n_name", "n_nationkey", "n_comment"}
-    assert {s.name for s in p._schema} == snames
-    assert set(p.columns) == snames - {"schema"}
+    snames = {"n_regionkey", "n_name", "n_nationkey", "n_comment"}
+    assert not (snames - {s.name for s in p._schema})
+    assert set(p.columns) == snames
 
 files = [os.path.join(TEST_DATA, p) for p in
          ["gzip-nation.impala.parquet", "nation.dict.parquet",

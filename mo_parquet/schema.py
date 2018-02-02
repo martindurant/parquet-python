@@ -117,22 +117,19 @@ class SchemaTree(object):
             max = start + coalesce(root.num_children, 0)
 
             if index[0] == 0:
-                if root.name not in ['.', 'schema']:  # some known root name used by fastparquet
+                if root.name not in ['.', 'schema', 'spark_schema', 'm', 'hive_schema', 'root']:  # some known root names
                     Log.warning("first SchemaElement is given name {{name|quote}}, name is ignored", name=root.name)
                 root.name = '.'
+                root.repetition_type = REQUIRED
 
             while index[0] < max:
                 index[0] += 1
                 child = _worker(index[0])
-                name = split_field(child.element.name)[-1]
+                name = relative_field(child.element.name, root.name)
                 output.more[name] = child
             return output
 
         output = _worker(0)
-        output.element = SchemaElement(
-            name='.',
-            repetition_type=REQUIRED
-        )
         return output
 
     @property
@@ -142,18 +139,21 @@ class SchemaTree(object):
             for name, child_schema in self.more.items()
             for leaf in child_schema.leaves
         )
-        output.add(self.element.name)
+        if self.element.type is not None:
+            output.add(self.element.name)
 
         return output
 
     def schema_element(self, path):
         if isinstance(path, text_type):
-            path = path.split('.')
+            path = split_field(path)
         output = self
         for p in path:
             output = output.more.get(p)
             if output is None:
                 return None
+        while '.' in output.more:
+            output = output.more['.']
         return output.element
 
     def is_required(self, path):
@@ -161,7 +161,7 @@ class SchemaTree(object):
 
     def max_definition_level(self, path):
         if isinstance(path, text_type):
-            path = path.split('.')
+            path = split_field(path)
         sub_schema = self
         max_def = 0 if sub_schema.element.repetition_type==REQUIRED else 1
         for p in path:
@@ -170,13 +170,16 @@ class SchemaTree(object):
                 max_def += 1
         return max_def
 
-    # def max_definition_level(self):
-    #     self_level = 1 if self.element and self.element.repetition_type != REQUIRED else 0
-    #     if self.more:
-    #         max_child = [m.max_definition_level() for m in self.more.values()]
-    #         return max(max_child) + self_level
-    #     else:
-    #         return self_level
+    def max_repetition_level(self, path):
+        if isinstance(path, text_type):
+            path = split_field(path)
+        sub_schema = self
+        max_rep = 0
+        for p in path:
+            sub_schema = sub_schema.more.get(p)
+            if sub_schema.element.repetition_type == REPEATED:
+                max_rep += 1
+        return max_rep
 
 
 
@@ -192,7 +195,7 @@ class SchemaTree(object):
         children = []
         for name, child_schema in sort_using_key(self.more.items(), lambda p: p[0]):
             children.extend(child_schema.get_parquet_metadata(concat_field(path, name)))
-        if self.element.type:
+        if self.element.type is not None:
             children.append(self.element)
 
         if path == '.':

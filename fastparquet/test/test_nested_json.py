@@ -24,8 +24,6 @@ def test_deep_write(tempdir):
     new_data = ParquetFile(filename).to_pandas().to_dict()
 
 
-
-@pytest.mark.skip()
 def test_simple_write(tempdir):
 
     filename = os.sep.join([tempdir, TEST_DATA])
@@ -34,11 +32,13 @@ def test_simple_write(tempdir):
     ]
     json_writer.write(filename, data)
 
-    new_data = ParquetFile(filename).to_pandas().to_dict()
-    assert new_data == data
+    new_data = ParquetFile(filename).to_pandas()
+
+    assert set(new_data.columns) == {"a.b"}
+    assert all(new_data['a.b'] == [1])
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_write_w_nulls(tempdir):
 
     filename = os.sep.join([tempdir, TEST_DATA])

@@ -123,28 +123,10 @@ def write_column(f, data, selement, compression=None):
     chunk: ColumnChunk structure
 
     """
-    has_nulls = selement.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     tot_rows = len(data)
     encoding = "PLAIN"
 
-    if is_categorical_dtype(data.dtype):
-        num_nulls = (data.cat.codes == -1).sum()
-    elif data.dtype.kind in [NUMPY_INTEGER, NUMPY_BOOLEAN]:
-        num_nulls = 0
-    else:
-        num_nulls = len(data) - data.values.count()
-
-    if data.dtype.kind == NUMPY_OBJECT and not is_categorical_dtype(data.dtype):
-        try:
-            if selement.type == parquet_thrift.Type.INT64:
-                data = data.values.astype(int)
-            elif selement.type == parquet_thrift.Type.BOOLEAN:
-                data = data.values.astype(bool)
-        except ValueError as e:
-            t = parquet_thrift.Type._VALUES_TO_NAMES[selement.type]
-            raise ValueError('Error converting column "%s" to primitive '
-                             'type %s. Original error: '
-                             '%s' % (data.values.name, t, e))
+    num_nulls = sum(1 for d in data.defs if d != data.max_definition_level)
 
     cats = False
     name = data.name
@@ -193,9 +175,12 @@ def write_column(f, data, selement, compression=None):
 
     start = f.tell()
     bdata = Encoder()
-    bit_width = width_from_max_int(data.max_definition_level)
-    bdata.rle_bit_packed_hybrid(data.reps, bit_width)
-    bdata.rle_bit_packed_hybrid(data.defs, bit_width)
+    rep_bit_width = width_from_max_int(data.max_repetition_level)
+    if rep_bit_width:
+        bdata.rle_bit_packed_hybrid(data.reps, rep_bit_width)
+    def_bit_width = width_from_max_int(data.max_definition_level)
+    if def_bit_width:
+        bdata.rle_bit_packed_hybrid(data.defs, def_bit_width)
     bdata.bytes(encode[encoding](data, selement))
     bdata.zeros(8)
 
