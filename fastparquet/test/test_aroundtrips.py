@@ -13,7 +13,6 @@ import pytest
 import fastparquet
 from fastparquet import write
 from fastparquet.compression import compressions
-from fastparquet.schema import NUMPY_OBJECT
 from fastparquet.test.util import sql, s3, tempdir, TEST_DATA
 
 
@@ -82,7 +81,7 @@ def test_pyspark_roundtrip(tempdir, scheme, row_groups, comp, sql):
                                                   dtype=np.int64),
                          'f': np.random.randn(1001),
                          'bhello': np.random.choice([b'hello', b'you',
-                            b'people'], size=1001).astype(NUMPY_OBJECT),
+                            b'people'], size=1001).astype("O"),
                          't': [datetime.datetime.now()]*1001})
 
     data['t'] += pd.to_timedelta('1ns')
@@ -98,7 +97,7 @@ def test_pyspark_roundtrip(tempdir, scheme, row_groups, comp, sql):
     df = sql.read.parquet(fname)
     ddf = df.sort('index').toPandas()
     for col in data:
-        if data[col].dtype.kind == NUMPY_DATETIME:
+        if data[col].dtype.kind == "M":
             # pyspark auto-converts timezones
             offset = round((datetime.datetime.utcnow() -
                             datetime.datetime.now()).seconds / 3600)

@@ -12,7 +12,6 @@ from fastparquet import writer, encoding
 from pandas.testing import assert_frame_equal
 import pytest
 
-from fastparquet.schema import NUMPY_OBJECT
 from fastparquet.util import default_mkdirs
 from fastparquet.test.util import s3, tempdir, sql
 
@@ -79,7 +78,7 @@ def test_roundtrip_s3(s3):
                          'i64': np.arange(1000, dtype=np.int64),
                          'f': np.arange(1000, dtype=np.float64),
                          'bhello': np.random.choice([b'hello', b'you',
-                            b'people'], size=1000).astype(NUMPY_OBJECT)})
+                            b'people'], size=1000).astype("O")})
     data['hello'] = data.bhello.str.decode('utf8')
     data['bcat'] = data.bhello.astype('category')
     data.loc[100, 'f'] = np.nan
@@ -104,7 +103,7 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
                          'u64': np.arange(1000, dtype=np.uint64),
                          'f': np.arange(1000, dtype=np.float64),
                          'bhello': np.random.choice([b'hello', b'you',
-                            b'people'], size=1000).astype(NUMPY_OBJECT)})
+                            b'people'], size=1000).astype("O")})
     data['a'] = np.array([b'a', b'b', b'c', b'd', b'e']*200, dtype="S1")
     data['aa'] = data['a'].map(lambda x: 2*x).astype("S2")
     data['hello'] = data.bhello.str.decode('utf8')
