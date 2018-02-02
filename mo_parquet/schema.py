@@ -15,7 +15,6 @@ from collections import Mapping
 import numpy
 
 from fastparquet.parquet_thrift.parquet.ttypes import Type, FieldRepetitionType, SchemaElement, ConvertedType
-from fastparquet.schema import NUMPY_FLOAT, NUMPY_INTEGER, NUMPY_BOOLEAN
 from fastparquet.thrift_structures import parquet_thrift
 
 from jx_base import NESTED, python_type_to_json_type
@@ -118,9 +117,8 @@ class SchemaTree(object):
             max = start + coalesce(root.num_children, 0)
 
             if index[0] == 0:
-                name = split_field(root.name)[-1]
-                if name not in ['.', 'schema']:  # name used by fastparquet
-                    Log.warning("first SchemaElement is given name {{name|quote}}, name is ignored", name=name)
+                if root.name not in ['.', 'schema']:  # some known root name used by fastparquet
+                    Log.warning("first SchemaElement is given name {{name|quote}}, name is ignored", name=root.name)
                 root.name = '.'
 
             while index[0] < max:
@@ -149,12 +147,38 @@ class SchemaTree(object):
         return output
 
     def schema_element(self, path):
+        if isinstance(path, text_type):
+            path = path.split('.')
         output = self
         for p in path:
             output = output.more.get(p)
             if output is None:
                 return None
         return output.element
+
+    def is_required(self, path):
+        return self.schema_element(path).repetition_type == REQUIRED
+
+    def max_definition_level(self, path):
+        if isinstance(path, text_type):
+            path = path.split('.')
+        sub_schema = self
+        max_def = 0 if sub_schema.element.repetition_type==REQUIRED else 1
+        for p in path:
+            sub_schema = sub_schema.more.get(p)
+            if sub_schema.element.repetition_type != REQUIRED:
+                max_def += 1
+        return max_def
+
+    # def max_definition_level(self):
+    #     self_level = 1 if self.element and self.element.repetition_type != REQUIRED else 0
+    #     if self.more:
+    #         max_child = [m.max_definition_level() for m in self.more.values()]
+    #         return max(max_child) + self_level
+    #     else:
+    #         return self_level
+
+
 
     def get_parquet_metadata(
         self,
@@ -178,14 +202,6 @@ class SchemaTree(object):
                 name=path,
                 num_children=len(children)
             )] + children
-
-    def max_definition_level(self):
-        self_level = 1 if self.element and self.element.repetition_type != REQUIRED else 0
-        if self.more:
-            max_child = [m.max_definition_level() for m in self.more.values()]
-            return max(max_child) + self_level
-        else:
-            return self_level
 
 
 def get_length(dtype, value=None):

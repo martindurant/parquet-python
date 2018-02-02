@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 import os
 
+import pytest
+
 from fastparquet import json_writer, ParquetFile
 from fastparquet.test.util import tempdir
 
@@ -10,6 +12,7 @@ TEST_DATA = "test-data"
 _ = tempdir
 
 
+@pytest.mark.skip()
 def test_deep_write(tempdir):
 
     filename = os.sep.join([tempdir, TEST_DATA])
@@ -22,6 +25,7 @@ def test_deep_write(tempdir):
 
 
 
+@pytest.mark.skip()
 def test_simple_write(tempdir):
 
     filename = os.sep.join([tempdir, TEST_DATA])
@@ -34,6 +38,7 @@ def test_simple_write(tempdir):
     assert new_data == data
 
 
+@pytest.mark.skip()
 def test_write_w_nulls(tempdir):
 
     filename = os.sep.join([tempdir, TEST_DATA])

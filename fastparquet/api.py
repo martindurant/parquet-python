@@ -13,6 +13,7 @@ import struct
 
 import numpy as np
 from fastparquet.util import join_path
+from mo_parquet import SchemaTree
 
 from .core import read_thrift
 from .thrift_structures import parquet_thrift
@@ -454,7 +455,6 @@ class ParquetFile(object):
         dtype = {
             f.name: converted_types.typemap(f) if not f.num_children else np.dtype("O")
             for f in self.schema.get_parquet_metadata()
-
         }
         for col, dt in dtype.copy().items():
             if dt.kind in ['i', 'b']:

@@ -5,16 +5,16 @@ import struct
 
 import numpy as np
 import pandas as pd
+from mo_parquet.encoding import Encoder
 from six import integer_types
 
 from fastparquet import ParquetFile
 from fastparquet.compression import compress_data
 from fastparquet.converted_types import tobson
-from fastparquet.encoding import width_from_max_int, Encoder
-from fastparquet.schema import NUMPY_OBJECT, NUMPY_INTEGER, NUMPY_BOOLEAN, NUMPY_DATETIME
+from fastparquet.encoding import width_from_max_int
 from fastparquet.speedups import array_encode_utf8
 from fastparquet.thrift_structures import parquet_thrift, write_thrift
-from fastparquet.util import default_open, default_mkdirs, index_like, PY2, STR_TYPE, check_column_names, join_path, created_by
+from fastparquet.util import default_open, default_mkdirs, PY2, STR_TYPE, check_column_names, join_path, created_by
 from fastparquet.writer import is_categorical_dtype, encode, find_max_part, partition_on_columns, make_part_file, write_common_metadata, typemap, revmap, time_shift, MARKER
 from mo_dots import split_field
 from mo_parquet import SchemaTree, rows_to_columns
