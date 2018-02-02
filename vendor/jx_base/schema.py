@@ -29,7 +29,7 @@ def _indexer(columns, query_path):
             nfp = unnest_path(cname)
             if (
                 startswith_field(nfp, full_name) and
-                c.type not in [EXISTS, OBJECT] and
+                c.type not in [EXISTS, OBJECT, NESTED] and
                 (c.es_column != "_id" or full_name == "_id") and
                 startswith_field(nfp, full_name)
             ):

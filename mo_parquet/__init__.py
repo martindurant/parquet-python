@@ -10,89 +10,106 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
 
-from jx_base import OBJECT, NESTED, STRING
+from jx_base import OBJECT, NESTED, STRING, PRIMITIVE, python_type_to_json_type
 from mo_dots import concat_field
-from mo_json.typed_encoder import NESTED_TYPE
-from mo_parquet.schema import SchemaTree, get_length, get_repetition_type, merge_schema_element, python_type_to_all_types
+from mo_logs import Log
+from mo_parquet.schema import SchemaTree, get_length, get_repetition_type, merge_schema_element, python_type_to_all_types, OPTIONAL, REQUIRED, REPEATED
 from mo_parquet.table import Table
 
-REQUIRED = 'required'
-OPTIONAL = 'optional'
-REPEATED = 'repeated'
 
-
-def rows_to_columns(data, schema):
+def rows_to_columns(data, schema=None):
     """
     :param data: array of objects
     :param schema: Known schema, will be extended to include all properties found in data
     :return: Table
     """
-
+    if not schema:
+        schema = SchemaTree()
     new_schema = []
 
     all_leaves = schema.leaves
     values = {full_name: [] for full_name in all_leaves}
-    rep_levels = {full_name: [] for full_name in all_leaves}
-    def_levels = {full_name: [] for full_name in all_leaves}
+    reps = {full_name: [] for full_name in all_leaves}
+    defs = {full_name: [] for full_name in all_leaves}
 
-    def _none_to_column(schema, path, rep_level, counters):
-        if schema:
-            for name, sub_schema in schema.items():
-                new_path = concat_field(path, name)
-                _none_to_column(sub_schema, new_path, rep_level, counters)
-        else:
-            values[path].append(None)
-            rep_levels[path].append(rep_level)
-            def_levels[path].append(len(counters) - 1)
+    def _none_to_column(schema, path, rep_level, def_level):
+        for full_path in schema.leaves:
+            reps[full_path].append(rep_level)
+            defs[full_path].append(def_level)
 
-    def _value_to_column(value, schema, path, counters):
+    def _value_to_column(value, schema, path, counters, def_level):
         ptype = type(value)
-        dtype, jtype, itype = python_type_to_all_types[ptype]
-        if jtype is NESTED:
-            new_path = concat_field(path, NESTED_TYPE)
-            sub_schema = schema.more.get(NESTED_TYPE)
-            if not sub_schema:
-                sub_schema = schema.more[NESTED_TYPE] = SchemaTree()
+        ntype, dtype, ltype, jtype, itype, byte_width = python_type_to_all_types[ptype]
 
+        if jtype is NESTED:
+            if schema.element.repetition_type != REPEATED:
+                Log.error("Expecting {{path|quote}} to be repeated", path=path)
+
+            new_path = path
             if not value:
-                _none_to_column(sub_schema, new_path, get_rep_level(counters), counters)
+                _none_to_column(schema, new_path, get_rep_level(counters), def_level)
             else:
+                sub_schema = schema.more.get('.')
+                if not sub_schema:
+                    sub_schema = SchemaTree()  # ALL VALUES IN REPEATED MUST EXIST
+                    sub_schema.more = schema.more
+
                 for k, new_value in enumerate(value):
                     new_counters = counters + (k,)
-                    _value_to_column(new_value, sub_schema, new_path, new_counters)
+                    _value_to_column(new_value, sub_schema, new_path, new_counters, def_level+1)
         elif jtype is OBJECT:
-            if not value:
-                _none_to_column(schema, path, get_rep_level(counters), counters)
+            if value is None:
+                if schema.element.repetition_type == REQUIRED:
+                    Log.error("{{path|quote}} is required", path=path)
+                _none_to_column(schema, path, get_rep_level(counters), def_level)
             else:
+                if schema.element.repetition_type == REPEATED:
+                    Log.error("Expecting {{path|quote}} to be repeated", path=path)
+
+                if schema.element.repetition_type == REQUIRED:
+                    new_def_level = def_level
+                else:
+                    new_def_level = def_level+1
+
                 for name, sub_schema in schema.more.items():
                     new_path = concat_field(path, name)
                     new_value = value.get(name, None)
-                    _value_to_column(new_value, sub_schema, new_path, counters)
+                    _value_to_column(new_value, sub_schema, new_path, counters, new_def_level)
 
                 for name in set(value.keys()) - set(schema.more.keys()):
+                    if schema.locked:
+                        Log.error("{{path}} is not allowed in the schema", path=path)
                     new_path = concat_field(path, name)
                     new_value = value.get(name, None)
-                    sub_schema = schema.more[name] = SchemaTree()
-                    _value_to_column(new_value, sub_schema, new_path, counters)
+                    sub_schema = schema.add(
+                        new_path,
+                        REPEATED if isinstance(new_value, list) else OPTIONAL,
+                        type(new_value)
+                    )
+                    if python_type_to_json_type[type(new_value)] in PRIMITIVE:
+                        values[new_path] = []
+                        reps[new_path] = [0] * counters[0]
+                        defs[new_path] = [0] * counters[0]
+                    _value_to_column(new_value, sub_schema, new_path, counters, new_def_level)
         else:
-            typed_name = concat_field(path, itype)
             if jtype is STRING:
                 value = value.encode('utf8')
-            element, is_new = merge_schema_element(schema.values.get(itype), typed_name, value, ptype, dtype, jtype, itype)
-            if is_new:
-                schema.values[itype] = element
-                new_schema.append(element)
-                values[typed_name] = [None] * counters[0]
-                rep_levels[typed_name] = [0] * counters[0]
-                def_levels[typed_name] = [0] * counters[0]
-            values[typed_name].append(value)
-            rep_levels[typed_name].append(get_rep_level(counters))
-            def_levels[typed_name].append(len(counters) - 1)
+            merge_schema_element(schema.element, path, value, ptype, ltype, dtype, jtype, itype, byte_width)
+            values[path].append(value)
+            if schema.element.repetition_type == REQUIRED:
+                reps[path].append(get_rep_level(counters))
+                defs[path].append(def_level)
+            else:
+                reps[path].append(get_rep_level(counters))
+                defs[path].append(def_level+1)
 
     for rownum, new_value in enumerate(data):
-        _value_to_column(new_value, schema, '.', (rownum,))
+        try:
+            _value_to_column(new_value, schema, '.', (rownum,), 0)
+        except Exception as e:
+            Log.error("can not encode {{row|json}}", row=new_value, cause=e)
 
-    return Table(values, rep_levels, def_levels, len(data), schema), new_schema
+    return Table(values, reps, defs, len(data), schema)
 
 
 def get_rep_level(counters):
@@ -102,7 +119,7 @@ def get_rep_level(counters):
     return 0  # SHOULD BE -1 FOR MISSING RECORD, BUT WE WILL ASSUME THE RECORD EXISTS
 
 
-def assemble(values, rep_levels, def_levels, schema):
+def assemble(values, reps, defs, schema):
     max = schema.max_definition_level()+1
 
     def _add(value, rep_level, def_level, parents):
@@ -119,7 +136,7 @@ def assemble(values, rep_levels, def_levels, schema):
 
     rows = []
     parents = [rows]
-    for value, rep_level, def_level in zip(values, def_levels, rep_levels):
+    for value, rep_level, def_level in zip(values, defs, reps):
         _add(parents, value, rep_level, def_level)
 
 

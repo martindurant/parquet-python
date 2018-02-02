@@ -218,6 +218,6 @@ class ModifiedGenericConsumer(GenericConsumer):
                 Log.warning("timeout! Restarting {{name}} pulse consumer.", name=self.exchange, cause=e)
                 try:
                     self.disconnect()
-                except Exception, f:
+                except Exception as f:
                     Log.warning("Problem with disconnect()", cause=f)
                 break

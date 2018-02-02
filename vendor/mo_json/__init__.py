@@ -25,7 +25,9 @@ from mo_logs.strings import expand_template
 from mo_times import Date, Duration
 
 FIND_LOOPS = False
+SNAP_TO_BASE_10 = True  # Identify floats near a round base10 value (has 000 or 999) and shorten
 CAN_NOT_DECODE_JSON = "Can not decode JSON"
+
 
 _get = object.__getattribute__
 
@@ -61,19 +63,33 @@ def float2json(value):
         sign = "-" if value < 0 else ""
         value = abs(value)
         sci = value.__format__(".15e")
-        mantissa, exp = sci.split("e")
-        exp = int(exp)
-        if 0 <= exp:
-            digits = u"".join(mantissa.split("."))
-            return sign+(digits[:1+exp]+u"."+digits[1+exp:].rstrip('0')).rstrip(".")
-        elif -4 < exp:
-            digits = ("0"*(-exp))+u"".join(mantissa.split("."))
-            return sign+(digits[:1]+u"."+digits[1:].rstrip('0')).rstrip(".")
+        mantissa, str_exp = sci.split("e")
+        int_exp = int(str_exp)
+        digits = _snap_to_base_10(mantissa)
+        if int_exp > 15:
+            return sign + digits[0] + '.' + digits[1:].rstrip('0') + u"e" + text_type(int_exp)
+        elif int_exp >= 0:
+            return sign + (digits[:1 + int_exp] + '.' + digits[1 + int_exp:].rstrip('0')).rstrip('.')
+        elif -4 < int_exp:
+            digits = ("0" * (-int_exp)) + digits
+            return sign + (digits[:1] + '.' + digits[1:].rstrip('0')).rstrip('.')
         else:
-            return sign+mantissa.rstrip("0")+u"e"+text_type(exp)
+            return sign + digits[0] + '.' + digits[1:].rstrip('0') + u"e" + text_type(int_exp)
     except Exception as e:
         from mo_logs import Log
         Log.error("not expected", e)
+
+
+def _snap_to_base_10(mantissa):
+    digits = ''.join(mantissa.split('.'))
+    if SNAP_TO_BASE_10:
+        f9 = strings.find(digits, '999', start=1)
+        f0 = strings.find(digits, '000')
+        if f9 < f0:
+            digits = digits[:f9 - 1] + text_type(int(digits[f9 - 1]) + 1) + ('0' * (16 - f9))  # we know the last digit is not 9
+        else:
+            digits = digits[:f0]+('0'*(16-f0))
+    return digits
 
 
 def _scrub_number(value):

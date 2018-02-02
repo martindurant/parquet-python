@@ -14,7 +14,8 @@ import struct
 import numpy as np
 from fastparquet.util import join_path
 
-from fastparquet.schema import SchemaTree, NUMPY_OBJECT_TYPE, NUMPY_INTEGER, NUMPY_BOOLEAN
+from fastparquet.schema import NUMPY_OBJECT_TYPE, NUMPY_INTEGER, NUMPY_BOOLEAN
+from mo_parquet import SchemaTree
 from .core import read_thrift
 from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
@@ -392,9 +393,14 @@ class ParquetFile(object):
         if self.file_scheme == 'simple':
             with self.open(self.fn, 'rb') as f:
                 for rg in rgs:
-                    parts = {name: (v if name.endswith('-catdef')
-                                    else v[start:start + rg.num_rows])
-                             for (name, v) in views.items()}
+                    parts = {
+                        name: (
+                            v
+                            if name.endswith('-catdef')
+                            else v[start:start + rg.num_rows]
+                        )
+                        for (name, v) in views.items()
+                    }
                     self.read_row_group(rg, columns, categories, infile=f,
                                         index=index, assign=parts)
                     start += rg.num_rows

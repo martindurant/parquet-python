@@ -79,7 +79,7 @@ class MySQL(object):
 
 
     def _subquery(self, query, isolate=True, stacked=False):
-        if isinstance(query, basestring):
+        if isinstance(query, text_type):
             return self.db.quote_column(query), None
         if query.name:  # IT WOULD BE SAFER TO WRAP TABLE REFERENCES IN A TYPED OBJECT (Cube, MAYBE?)
             return self.db.quote_column(query.name), None
@@ -413,12 +413,12 @@ def _esfilter2sqlwhere(db, esfilter):
         output = _isolate("AND", [single(col, ranges) for col, ranges in esfilter.range.items()])
         return output
     elif esfilter.missing:
-        if isinstance(esfilter.missing, basestring):
+        if isinstance(esfilter.missing, text_type):
             return "(" + db.quote_column(esfilter.missing) + " IS Null)"
         else:
             return "(" + db.quote_column(esfilter.missing.field) + " IS Null)"
     elif esfilter.exists:
-        if isinstance(esfilter.exists, basestring):
+        if isinstance(esfilter.exists, text_type):
             return "(" + db.quote_column(esfilter.exists) + " IS NOT Null)"
         else:
             return "(" + db.quote_column(esfilter.exists.field) + " IS NOT Null)"
@@ -434,7 +434,7 @@ def expand_json(rows):
     # CONVERT JSON TO VALUES
     for r in rows:
         for k, json in list(r.items()):
-            if isinstance(json, basestring) and json[0:1] in ("[", "{"):
+            if isinstance(json, text_type) and json[0:1] in ("[", "{"):
                 with suppress_exception:
                     value = mo_json.json2value(json)
                     r[k] = value

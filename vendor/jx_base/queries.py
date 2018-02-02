@@ -21,7 +21,7 @@ def is_variable_name(value):
         Log.warning("not expected")
         return True
 
-    if not value or not isinstance(value, basestring):
+    if not value or not isinstance(value, text_type):
         return False  # _a._b
     value = value.lstrip(".")
     if not value:

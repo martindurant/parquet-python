@@ -243,7 +243,7 @@ def quote_value(value):
         return text_type(value.unix)
     elif isinstance(value, Duration):
         return text_type(value.seconds)
-    elif isinstance(value, basestring):
+    elif isinstance(value, text_type):
         return "'" + value.replace("'", "''") + "'"
     elif value == None:
         return "NULL"

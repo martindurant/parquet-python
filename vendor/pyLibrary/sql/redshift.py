@@ -135,7 +135,7 @@ class Redshift(object):
         return output
 
     def quote_column(self, name):
-        if isinstance(name, basestring):
+        if isinstance(name, text_type):
             return SQL('"' + name.replace('"', '""') + '"')
         return SQL("(" + (", ".join(self.quote_value(v) for v in name)) + ")")
 
@@ -146,7 +146,7 @@ class Redshift(object):
             json = value2json(value)
             return self.quote_value(json)
 
-        if isinstance(value, basestring) and len(value) > 256:
+        if isinstance(value, text_type) and len(value) > 256:
             value = value[:256]
         return SQL(adapt(value))
 

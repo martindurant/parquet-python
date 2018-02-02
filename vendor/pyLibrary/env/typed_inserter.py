@@ -61,7 +61,7 @@ class TypedInserter(object):
         if es:
             _schema = Data()
             for c in parse_properties(es.settings.alias, ".", es.get_properties()):
-                if c.type != OBJECT:
+                if c.type not in (OBJECT, NESTED):
                     _schema[c.names["."]] = c
             self.schema = unwrap(_schema)
         else:
@@ -138,18 +138,6 @@ class TypedInserter(object):
                     Log.error("Can not store {{value}} in {{column|quote}}", value=value, column=sub_schema.names['.'])
 
                 sub_schema = {json_type_to_inserter_type[value_json_type]: sub_schema}
-
-                # if isinstance(sub_schema, Column):
-                #     # WE WILL NOT COMPLAIN IF ELASTICSEARCH HAS A PROPERTY FOR THIS ALREADY
-                #     if sub_schema.type not in ["keyword", "text", "string"]:
-                #         from mo_logs import Log
-                #         Log.warning("this is going to fail!")
-                #     append(_buffer, '"')
-                #     for c in utf82unicode(value):
-                #         append(_buffer, ESCAPE_DCT.get(c, c))
-                #     append(_buffer, '"')
-
-
 
             if value is None:
                 append(_buffer, '{}')

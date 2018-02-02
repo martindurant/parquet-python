@@ -94,7 +94,7 @@ class Normal(Namespace):
         return output
 
     def _convert_from(self, frum):
-        if isinstance(frum, basestring):
+        if isinstance(frum, text_type):
             return Data(name=frum)
         elif isinstance(frum, (Container, QueryOp)):
             return frum
@@ -102,7 +102,7 @@ class Normal(Namespace):
             Log.error("Expecting from clause to be a name, or a container")
 
     def _convert_select(self, select):
-        if isinstance(select, basestring):
+        if isinstance(select, text_type):
             return Data(
                 name=select.rstrip("."),  # TRAILING DOT INDICATES THE VALUE, BUT IS INVALID FOR THE NAME
                 value=select,
@@ -111,7 +111,7 @@ class Normal(Namespace):
         else:
             select = wrap(select)
             output = copy(select)
-            if not select.value or isinstance(select.value, basestring):
+            if not select.value or isinstance(select.value, text_type):
                 if select.value == ".":
                     output.name = coalesce(select.name, select.aggregate)
                 else:
@@ -126,7 +126,7 @@ class Normal(Namespace):
             return output
 
     def _convert_edge(self, edge):
-        if isinstance(edge, basestring):
+        if isinstance(edge, text_type):
             return Data(
                 name=edge,
                 value=edge,
@@ -134,7 +134,7 @@ class Normal(Namespace):
             )
         else:
             edge = wrap(edge)
-            if not edge.name and not isinstance(edge.value, basestring):
+            if not edge.name and not isinstance(edge.value, text_type):
                 Log.error("You must name compound edges: {{edge}}",  edge= edge)
 
             if isinstance(edge.value, (Mapping, list)) and not edge.domain:
@@ -158,7 +158,7 @@ class Normal(Namespace):
             )
 
     def _convert_group(self, column):
-        if isinstance(column, basestring):
+        if isinstance(column, text_type):
             return wrap({
                 "name": column,
                 "value": column,
@@ -169,7 +169,7 @@ class Normal(Namespace):
             if (column.domain and column.domain.type != "default") or column.allowNulls != None:
                 Log.error("groupby does not accept complicated domains")
 
-            if not column.name and not isinstance(column.value, basestring):
+            if not column.name and not isinstance(column.value, text_type):
                 Log.error("You must name compound edges: {{edge}}",  edge= column)
 
             return wrap({
@@ -237,7 +237,7 @@ def normalize_sort(sort=None):
 
     output = FlatList()
     for s in listwrap(sort):
-        if isinstance(s, basestring) or Math.is_integer(s):
+        if isinstance(s, text_type) or Math.is_integer(s):
             output.append({"value": s, "sort": 1})
         elif not s.field and not s.value and s.sort==None:
             #ASSUME {name: sort} FORM

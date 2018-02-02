@@ -55,7 +55,7 @@ class PartFlatList(list):
         if isinstance(fields, Mapping):
             fields=fields.value
 
-        if isinstance(fields, basestring):
+        if isinstance(fields, text_type):
             # RETURN LIST OF VALUES
             if len(split_field(fields)) == 1:
                 if self.path[0] == fields:

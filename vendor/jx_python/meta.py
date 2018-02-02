@@ -15,7 +15,7 @@ from copy import copy
 from datetime import date
 from datetime import datetime
 
-from mo_future import text_type, long
+from mo_future import text_type, long, PY2
 from jx_base import STRUCT
 
 from jx_python import jx
@@ -332,7 +332,6 @@ _type_to_name = {
     str: "string",
     text_type: "string",
     int: "integer",
-    long: "integer",
     float: "double",
     Data: "object",
     dict: "object",
@@ -343,6 +342,9 @@ _type_to_name = {
     datetime: "double",
     date: "double"
 }
+
+if PY2:
+    _type_to_name[long] = "integer"
 
 _merge_type = {
     "undefined": {

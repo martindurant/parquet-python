@@ -13,12 +13,11 @@ import types
 import unittest
 from collections import Mapping
 
-from future.moves.itertools import zip_longest
-
 import mo_dots
 from mo_collections.unique_index import UniqueIndex
 from mo_dots import coalesce, literal_field, unwrap, wrap
 from mo_future import text_type
+from mo_future import zip_longest
 from mo_logs import Log
 from mo_logs.exceptions import suppress_exception, Except
 from mo_logs.strings import expand_template
@@ -78,6 +77,7 @@ class FuzzyTestCase(unittest.TestCase):
 
         Log.error("Expecting an exception to be raised")
 
+
 def assertAlmostEqual(test, expected, digits=None, places=None, msg=None, delta=None):
     show_detail = True
     test = unwrap(test)
@@ -133,7 +133,7 @@ def assertAlmostEqual(test, expected, digits=None, places=None, msg=None, delta=
             assertAlmostEqualValue(test, expected, msg=msg, digits=digits, places=places, delta=delta)
     except Exception as e:
         Log.error(
-            "{{test|json}} does not match expected {{expected|json}}",
+            "{{test|json|limit(10000)}} does not match expected {{expected|json|limit(10000)}}",
             test=test if show_detail else "[can not show]",
             expected=expected if show_detail else "[can not show]",
             cause=e

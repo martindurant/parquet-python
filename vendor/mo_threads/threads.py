@@ -423,5 +423,5 @@ ALL_LOCK = Lock("threads ALL_LOCK")
 ALL = dict()
 ALL[get_ident()] = MAIN_THREAD
 
-MAIN_THREAD.timers = Thread.run("timers", till.daemon)
+MAIN_THREAD.timers = Thread.run("timers daemon", till.daemon)
 MAIN_THREAD.children.remove(MAIN_THREAD.timers)

@@ -24,6 +24,7 @@ if PY3:
     import collections
     from functools import cmp_to_key
     from configparser import ConfigParser
+    from itertools import zip_longest
 
     text_type = str
     string_types = str
@@ -75,7 +76,7 @@ else:
     import __builtin__
     from types import GeneratorType
     from ConfigParser import ConfigParser
-
+    from itertools import izip_longest as zip_longest
 
     text_type = __builtin__.unicode
     string_types = (str, unicode)

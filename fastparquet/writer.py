@@ -161,7 +161,7 @@ def convert(data, se):
     converted_type = se.converted_type
     if dtype.name in typemap:
         if type in revmap:
-            out = data.values.astype(revmap[type], copy=False)
+            out = np.array(data.values, revmap[type])
         elif type == parquet_thrift.Type.BOOLEAN:
             padded = np.lib.pad(data.values, (0, 8 - (len(data) % 8)),
                                 'constant', constant_values=(0, 0))

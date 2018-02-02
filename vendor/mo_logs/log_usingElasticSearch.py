@@ -13,11 +13,10 @@ from __future__ import unicode_literals
 
 from collections import Mapping
 
-from mo_future import text_type, binary_type
-
 import mo_json
 from jx_python import jx
 from mo_dots import wrap, coalesce, FlatList
+from mo_future import text_type, binary_type, number_types
 from mo_json import value2json
 from mo_kwargs import override
 from mo_logs import Log, strings
@@ -116,7 +115,7 @@ def _deep_json_to_string(value, depth):
         return {k: _deep_json_to_string(v, depth - 1) for k, v in value.items()}
     elif isinstance(value, (list, FlatList)):
         return strings.limit(value2json(value), LOG_STRING_LENGTH)
-    elif isinstance(value, (float, int, long)):
+    elif isinstance(value, number_types):
         return value
     elif isinstance(value, text_type):
         return strings.limit(value, LOG_STRING_LENGTH)

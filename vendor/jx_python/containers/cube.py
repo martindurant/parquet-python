@@ -231,7 +231,7 @@ class Cube(Container):
                     data={k: Matrix(values=c.__getitem__(coordinates)) for k, c in self.data.items()}
                 )
                 return output
-        elif isinstance(item, basestring):
+        elif isinstance(item, text_type):
             # RETURN A VALUE CUBE
             if self.is_value:
                 if item != self.select.name:

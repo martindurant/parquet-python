@@ -290,20 +290,29 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     maps = {}
 
     for column in rg.columns:
-        name = join_field(column.meta_data.path_in_schema)
+        if (_is_list_like(schema_helper, column) or
+                _is_map_like(schema_helper, column)):
+            name = ".".join(column.meta_data.path_in_schema[:-2])
+        else:
+            name = ".".join(column.meta_data.path_in_schema)
         if name not in columns:
             continue
 
         use = name in categories if categories is not None else False
-        read_col(
-            column,
-            schema_helper,
-            file,
-            use_cat=use,
-            selfmade=selfmade,
-            assign=out[name],
-            catdef=out[name + '-catdef'] if use else None
-        )
+        read_col(column, schema_helper, file, use_cat=use,
+                 selfmade=selfmade, assign=out[name],
+                 catdef=out[name+'-catdef'] if use else None)
+
+        if _is_map_like(schema_helper, column):
+            if name not in maps:
+                maps[name] = out[name].copy()
+            else:
+                if column.meta_data.path_in_schema[0] == 'key':
+                    key, value = out[name], maps[name]
+                else:
+                    value, key = out[name], maps[name]
+                out[name][:] = [dict(zip(k, v)) if k is not None else None
+                                for k, v in zip(key, value)]
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,

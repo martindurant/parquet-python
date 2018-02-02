@@ -1,10 +1,11 @@
 import io
 import sys
 import types
+
 from thrift.protocol.TCompactProtocol import TCompactProtocolAccelerated as TCompactProtocol
 from thrift.protocol.TProtocol import TProtocolException
 
-from .parquet_thrift.parquet import ttypes as parquet_thrift
+from parquet_thrift.parquet import ttypes as parquet_thrift
 
 
 def read_thrift(file_obj, ttype):

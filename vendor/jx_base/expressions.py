@@ -519,6 +519,8 @@ class Literal(Expression):
     def missing(self):
         if self.term in [None, Null]:
             return TRUE
+        if self.value == '':
+            return TRUE
         return FALSE
 
     def __call__(self, row=None, rownum=None, rows=None):

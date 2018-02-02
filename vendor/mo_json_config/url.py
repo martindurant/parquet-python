@@ -163,7 +163,7 @@ def value2url_param(value):
     if isinstance(value, Mapping):
         value_ = wrap(value)
         output = b"&".join([
-            value2url_param(k) + b"=" + (value2url_param(v) if isinstance(v, basestring) else value2url_param(value2json(v)))
+            value2url_param(k) + b"=" + (value2url_param(v) if isinstance(v, text_type) else value2url_param(value2json(v)))
             for k, v in value_.leaves()
             ])
     elif isinstance(value, text_type):

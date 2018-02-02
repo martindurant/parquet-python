@@ -23,7 +23,7 @@ from jx_python import expressions as _expressions
 from jx_python import flat_list, group_by
 from mo_dots import listwrap, wrap, unwrap, FlatList, NullType
 from mo_dots import set_default, Null, Data, split_field, coalesce, join_field
-from mo_future import text_type, boolean_type, none_type, long, generator_types, sort_using_cmp
+from mo_future import text_type, boolean_type, none_type, long, generator_types, sort_using_cmp, PY2
 from mo_logs import Log
 from mo_math import Math
 from mo_math import UNION, MIN
@@ -620,7 +620,6 @@ def value_compare(left, right, ordering=1):
 TYPE_ORDER = {
     boolean_type: 0,
     int: 1,
-    long: 1,
     float: 1,
     Date: 1,
     text_type: 2,
@@ -633,9 +632,8 @@ TYPE_ORDER = {
     NullOp: 9
 }
 
-
-
-
+if PY2:
+    TYPE_ORDER[long] = 1
 
 
 def pairwise(values):

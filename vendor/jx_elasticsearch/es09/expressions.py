@@ -15,6 +15,7 @@ from collections import Mapping
 from datetime import datetime
 import re
 
+from mo_future import text_type
 from pyLibrary import convert
 from mo_collections import reverse
 from mo_logs import Log
@@ -48,7 +49,7 @@ class _MVEL(object):
         body = "var output = \"\";\n" + \
                code.replace(
                    "<CODE>",
-                   "if (" + _where(whereClause, lambda(v): self._translate(v)) + "){\n" +
+                   "if (" + _where(whereClause, lambda v: self._translate(v)) + "){\n" +
                    select.body +
                    "}\n"
                ) + \
@@ -496,7 +497,7 @@ def isKeyword(value):
     """
     RETURN TRUE IF THE value IS JUST A NAME OF A FIELD, A LIST OF FIELDS, (OR A VALUE)
     """
-    if not value or not isinstance(value, basestring):
+    if not value or not isinstance(value, text_type):
         Log.error("Expecting a string")
 
     if keyword_pattern.match(value):

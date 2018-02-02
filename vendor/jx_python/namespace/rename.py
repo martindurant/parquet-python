@@ -50,7 +50,7 @@ class Rename(Namespace):
             return "."
         elif is_variable_name(expr):
             return coalesce(self.dimensions[expr], expr)
-        elif isinstance(expr, basestring):
+        elif isinstance(expr, text_type):
             Log.error("{{name|quote}} is not a valid variable name", name=expr)
         elif isinstance(expr, Date):
             return expr

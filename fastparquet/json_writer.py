@@ -5,22 +5,19 @@ import struct
 
 import numpy as np
 import pandas as pd
-from six import integer_types, text_type
+from six import integer_types
 
 from fastparquet import ParquetFile
 from fastparquet.compression import compress_data
 from fastparquet.converted_types import tobson
 from fastparquet.encoding import width_from_max_int, Encoder
-from fastparquet.parquet_thrift.parquet.ttypes import FieldRepetitionType, Type
-from fastparquet.schema import SchemaTree, NUMPY_OBJECT, NUMPY_INTEGER, NUMPY_BOOLEAN
+from fastparquet.schema import NUMPY_OBJECT, NUMPY_INTEGER, NUMPY_BOOLEAN, NUMPY_DATETIME
 from fastparquet.speedups import array_encode_utf8
 from fastparquet.thrift_structures import parquet_thrift, write_thrift
 from fastparquet.util import default_open, default_mkdirs, index_like, PY2, STR_TYPE, check_column_names, join_path, created_by
 from fastparquet.writer import is_categorical_dtype, encode, find_max_part, partition_on_columns, make_part_file, write_common_metadata, typemap, revmap, time_shift, MARKER
-from jx_base import STRING, OBJECT, NESTED, python_type_to_json_type
-from mo_dots import concat_field, split_field, startswith_field, coalesce
-from mo_json.typed_encoder import NESTED_TYPE
-from pyLibrary.env.typed_inserter import json_type_to_inserter_type
+from mo_dots import split_field
+from mo_parquet import SchemaTree, rows_to_columns
 
 
 def convert(data, se):
@@ -130,14 +127,14 @@ def write_column(f, data, selement, compression=None):
     tot_rows = len(data)
     encoding = "PLAIN"
 
-    if is_categorical_dtype(data.values.dtype):
+    if is_categorical_dtype(data.dtype):
         num_nulls = (data.cat.codes == -1).sum()
-    elif data.values.dtype.kind in [NUMPY_INTEGER, NUMPY_BOOLEAN]:
+    elif data.dtype.kind in [NUMPY_INTEGER, NUMPY_BOOLEAN]:
         num_nulls = 0
     else:
         num_nulls = len(data) - data.values.count()
 
-    if data.values.dtype.kind == NUMPY_OBJECT and not is_categorical_dtype(data.values.dtype):
+    if data.dtype.kind == NUMPY_OBJECT and not is_categorical_dtype(data.dtype):
         try:
             if selement.type == parquet_thrift.Type.INT64:
                 data = data.values.astype(int)
@@ -150,11 +147,11 @@ def write_column(f, data, selement, compression=None):
                              '%s' % (data.values.name, t, e))
 
     cats = False
-    name = data.values.name
+    name = data.name
     diff = 0
     max, min = None, None
 
-    if is_categorical_dtype(data.values.dtype):
+    if is_categorical_dtype(data.dtype):
         dph = parquet_thrift.DictionaryPageHeader(
             num_values=len(data.values.cat.categories),
             encoding=parquet_thrift.Encoding.PLAIN)
@@ -191,20 +188,20 @@ def write_column(f, data, selement, compression=None):
         data = data.values.cat.codes
         cats = True
         encoding = "PLAIN_DICTIONARY"
-    elif str(data.values.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
+    elif str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
         encoding = "RLE"
 
     start = f.tell()
     bdata = Encoder()
     bit_width = width_from_max_int(data.max_definition_level)
-    bdata.rle_bit_packed_hybrid(data.def_levels, bit_width)
-    bdata.rle_bit_packed_hybrid(data.rep_levels, bit_width)
-    bdata.bytes(encode[encoding](data.values, selement))
+    bdata.rle_bit_packed_hybrid(data.reps, bit_width)
+    bdata.rle_bit_packed_hybrid(data.defs, bit_width)
+    bdata.bytes(encode[encoding](data, selement))
     bdata.zeros(8)
 
     try:
         if encoding != 'PLAIN_DICTIONARY' and num_nulls == 0:
-            max, min = data.values.values.max(), data.values.values.min()
+            max, min = np.max(data.values), np.min(data.values)
             if selement.type == parquet_thrift.Type.BYTE_ARRAY:
                 if selement.converted_type is not None:
                     max = encode['PLAIN'](pd.Series([max]), selement)[4:]
@@ -350,7 +347,7 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         f.write(MARKER)
 
 
-def write(filename, data, row_group_offsets=50000000,
+def write(filename, rows, row_group_offsets=50000000,
           compression=None, file_scheme='simple', open_with=default_open,
           mkdirs=default_mkdirs, has_nulls=True, write_index=None,
           partition_on=[], fixed_text=None, append=False,
@@ -423,7 +420,7 @@ def write(filename, data, row_group_offsets=50000000,
     >>> fastparquet.write('myfile.parquet', df)  # doctest: +SKIP
     """
     schema = SchemaTree()
-    data, new_schama = rows_to_columns(data, schema)
+    data = rows_to_columns(rows, schema)
 
     if str(has_nulls) == 'infer':
         has_nulls = None
@@ -432,19 +429,15 @@ def write(filename, data, row_group_offsets=50000000,
         nparts = max((l - 1) // row_group_offsets + 1, 1)
         chunksize = max(min((l - 1) // nparts + 1, l), 1)
         row_group_offsets = list(range(0, l, chunksize))
-    if write_index or write_index is None and index_like(data.values.index):
-        cols = set(data.values)
-        data = data.reset_index()
-        index_cols = [c for c in data if c not in cols]
-    else:
-        index_cols = []
-    check_column_names(data.values.columns, partition_on, fixed_text, object_encoding,
+    index_cols = []
+    check_column_names(data.columns, partition_on, fixed_text, object_encoding,
                        has_nulls)
     ignore = partition_on if file_scheme != 'simple' else []
 
+    children = data.schema.get_parquet_metadata()
     fmd = parquet_thrift.FileMetaData(
         num_rows=len(data),
-        schema=data.schema.get_parquet_metadata(),
+        schema=[parquet_thrift.SchemaElement(name='.', num_children=len(children))] + children,
         version=1,
         created_by=created_by,
         row_groups=[],
