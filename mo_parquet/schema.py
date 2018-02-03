@@ -195,16 +195,12 @@ class SchemaTree(object):
         children = []
         for name, child_schema in sort_using_key(self.more.items(), lambda p: p[0]):
             children.extend(child_schema.get_parquet_metadata(concat_field(path, name)))
-        if self.element.type is not None:
-            children.append(self.element)
 
         if path == '.':
             return children
         else:
-            return [parquet_thrift.SchemaElement(
-                name=path,
-                num_children=len(children)
-            )] + children
+            self.element.num_children = len(children)
+            return [self.element] + children
 
 
 def get_length(dtype, value=None):

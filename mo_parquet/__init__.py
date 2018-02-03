@@ -49,14 +49,13 @@ def rows_to_columns(data, schema=None):
             if not value:
                 _none_to_column(schema, new_path, get_rep_level(counters), def_level)
             else:
-                sub_schema = schema.more.get('.')
-                if not sub_schema:
-                    sub_schema = SchemaTree()  # ALL VALUES IN REPEATED MUST EXIST
-                    sub_schema.more = schema.more
-
-                for k, new_value in enumerate(value):
-                    new_counters = counters + (k,)
-                    _value_to_column(new_value, sub_schema, new_path, new_counters, def_level+1)
+                try:
+                    schema.element.repetition_type = REQUIRED
+                    for k, new_value in enumerate(value):
+                        new_counters = counters + (k,)
+                        _value_to_column(new_value, schema, new_path, new_counters, def_level+1)
+                finally:
+                    schema.element.repetition_type = REPEATED
         elif jtype is OBJECT:
             if value is None:
                 if schema.element.repetition_type == REQUIRED:

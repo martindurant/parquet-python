@@ -123,9 +123,9 @@ def write_column(f, data, selement, compression=None):
     chunk: ColumnChunk structure
 
     """
-    tot_rows = len(data)
     encoding = "PLAIN"
 
+    num_values = sum(1 for d in data.defs if d == data.max_definition_level)
     num_nulls = sum(1 for d in data.defs if d != data.max_definition_level)
 
     cats = False
@@ -198,7 +198,7 @@ def write_column(f, data, selement, compression=None):
         pass
 
     dph = parquet_thrift.DataPageHeader(
-        num_values=tot_rows,
+        num_values=num_values,
         encoding=getattr(parquet_thrift.Encoding, encoding),
         definition_level_encoding=parquet_thrift.Encoding.RLE,
         repetition_level_encoding=parquet_thrift.Encoding.RLE
@@ -242,7 +242,7 @@ def write_column(f, data, selement, compression=None):
             getattr(parquet_thrift.CompressionCodec, compression.upper())
             if compression else 0
         ),
-        num_values=tot_rows,
+        num_values=num_values,
         statistics=s,
         data_page_offset=start,
         encoding_stats=p,

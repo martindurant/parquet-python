@@ -13,6 +13,7 @@ import struct
 
 import numpy as np
 from fastparquet.util import join_path
+from mo_dots import listwrap
 from mo_parquet import SchemaTree
 
 from .core import read_thrift
@@ -417,7 +418,7 @@ class ParquetFile(object):
             md = json.loads(self.key_value_metadata['pandas'])['columns']
             tz = {c['name']: c['metadata']['timezone'] for c in md
                   if (c.get('metadata', {}) or {}).get('timezone', None)}
-        return _pre_allocate(size, columns, categories, index, self.cats,
+        return _pre_allocate(self.statistics, size, columns, categories, index, self.cats,
                              self._dtypes(categories), tz)
 
     @property
@@ -493,7 +494,7 @@ class ParquetFile(object):
     __repr__ = __str__
 
 
-def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
+def _pre_allocate(stats, size, columns, categories, index, cs, dt, tz=None):
     cols = [c for c in columns if index != c]
     categories = categories or {}
     cats = cs.copy()
@@ -503,7 +504,15 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     def get_type(name):
         if name in categories:
             return 'category'
-        return dt.get(name, None)
+        desired_type = dt.get(name, None)
+        if not desired_type:
+            return None
+        elif isinstance(stats['null_count'][name], list):
+            return np.dtype("O")
+        elif desired_type.kind in ['u', 'i', 'b'] and stats['null_count'][name] > 0:
+            return np.dtype("O")
+        else:
+            return desired_type
 
     dtypes = [get_type(c) for c in cols]
     index_type = get_type(index)
