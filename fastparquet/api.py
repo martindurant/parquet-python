@@ -418,7 +418,7 @@ class ParquetFile(object):
             md = json.loads(self.key_value_metadata['pandas'])['columns']
             tz = {c['name']: c['metadata']['timezone'] for c in md
                   if (c.get('metadata', {}) or {}).get('timezone', None)}
-        return _pre_allocate(self.statistics, size, columns, categories, index, self.cats,
+        return _pre_allocate(self, size, columns, categories, index, self.cats,
                              self._dtypes(categories), tz)
 
     @property
@@ -494,7 +494,7 @@ class ParquetFile(object):
     __repr__ = __str__
 
 
-def _pre_allocate(stats, size, columns, categories, index, cs, dt, tz=None):
+def _pre_allocate(self, size, columns, categories, index, cs, dt, tz=None):
     cols = [c for c in columns if index != c]
     categories = categories or {}
     cats = cs.copy()
@@ -507,9 +507,9 @@ def _pre_allocate(stats, size, columns, categories, index, cs, dt, tz=None):
         desired_type = dt.get(name, None)
         if not desired_type:
             return None
-        elif isinstance(stats['null_count'][name], list):
+        elif self.schema.max_repetition_level(name) > 0:
             return np.dtype("O")
-        elif desired_type.kind in ['u', 'i', 'b'] and stats['null_count'][name] > 0:
+        elif desired_type.kind in ['u', 'i', 'b'] and sum(listwrap(self.statistics['null_count'][name])) > 0:
             return np.dtype("O")
         else:
             return desired_type

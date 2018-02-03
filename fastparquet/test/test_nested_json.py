@@ -27,8 +27,6 @@ def test_deep_write(tempdir):
     assert new_data['a.b'][0] == [1, 2]
 
 
-
-
 # @pytest.mark.skip
 def test_simple_write(tempdir):
 
