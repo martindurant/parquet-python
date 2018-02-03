@@ -12,7 +12,7 @@ TEST_DATA = "test-data"
 _ = tempdir
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_deep_write(tempdir):
 
     filename = os.sep.join([tempdir, TEST_DATA])
@@ -29,7 +29,7 @@ def test_deep_write(tempdir):
 
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_simple_write(tempdir):
 
     filename = os.sep.join([tempdir, TEST_DATA])

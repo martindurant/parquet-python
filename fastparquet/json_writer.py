@@ -125,7 +125,7 @@ def write_column(f, data, selement, compression=None):
     """
     encoding = "PLAIN"
 
-    num_values = sum(1 for d in data.defs if d == data.max_definition_level)
+    num_values = len(data.defs)
     num_nulls = sum(1 for d in data.defs if d != data.max_definition_level)
 
     cats = False
