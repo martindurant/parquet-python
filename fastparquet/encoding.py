@@ -15,7 +15,7 @@ from .util import byte_buffer
 
 def read_plain_boolean(raw_bytes, count):
     """Read `count` booleans using the plain encoding."""
-    return np.unpackbits(np.fromstring(raw_bytes, dtype=np.uint8)).reshape(
+    return np.unpackbits(np.frombuffer(raw_bytes, dtype=np.uint8)).reshape(
             (-1, 8))[:, ::-1].ravel().astype(bool)[:count]
 
 DECODE_TYPEMAP = {

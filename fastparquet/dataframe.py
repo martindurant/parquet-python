@@ -40,9 +40,9 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None,
     views = {}
     timezones = timezones or {}
 
-    cols = cols if cols is not None else range(cols)
     if isinstance(types, STR_TYPE):
         types = types.split(',')
+    cols = cols if cols is not None else range(len(types))
     for t, col in zip(types, cols):
         if str(t) == 'category':
             if cats is None or col not in cats:
