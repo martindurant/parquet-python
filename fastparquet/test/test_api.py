@@ -532,18 +532,18 @@ def test_only_partition_columns(tempdir):
     write(tempdir, df, file_scheme='hive', partition_on=['b'])
     pf = ParquetFile(tempdir)
     df2 = pf.to_pandas(columns=['b'])
-    df.b.value_counts() == df2.b.value_counts()
+    df.b.value_counts().to_dict() == df2.b.value_counts().to_dict()
 
     write(tempdir, df, file_scheme='hive', partition_on=['a', 'b'])
     pf = ParquetFile(tempdir)
     df2 = pf.to_pandas(columns=['a', 'b'])
-    df.b.value_counts() == df2.b.value_counts()
+    df.b.value_counts().to_dict() == df2.b.value_counts().to_dict()
 
     df2 = pf.to_pandas(columns=['b'])
-    df.b.value_counts() == df2.b.value_counts()
+    df.b.value_counts().to_dict() == df2.b.value_counts().to_dict()
 
     df2 = pf.to_pandas(columns=['b', 'c'])
-    df.b.value_counts() == df2.b.value_counts()
+    df.b.value_counts().to_dict() == df2.b.value_counts().to_dict()
 
     with pytest.raises(ValueError):
         # because this leaves no data to write
