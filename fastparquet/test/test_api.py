@@ -523,3 +523,28 @@ def test_int96_stats(tempdir):
     s = statistics(p)
     assert isinstance(s['min']['D'][0], (np.datetime64, pd.tslib.Timestamp))
     assert 'D' in sorted_partitioned_columns(p)
+
+
+def test_only_partition_columns(tempdir):
+    df = pd.DataFrame({'a': np.random.rand(20),
+                       'b': np.random.choice(['hi', 'ho'], size=20),
+                       'c': np.random.choice(['a', 'b'], size=20)})
+    write(tempdir, df, file_scheme='hive', partition_on=['b'])
+    pf = ParquetFile(tempdir)
+    df2 = pf.to_pandas(columns=['b'])
+    df.b.value_counts() == df2.b.value_counts()
+
+    write(tempdir, df, file_scheme='hive', partition_on=['a', 'b'])
+    pf = ParquetFile(tempdir)
+    df2 = pf.to_pandas(columns=['a', 'b'])
+    df.b.value_counts() == df2.b.value_counts()
+
+    df2 = pf.to_pandas(columns=['b'])
+    df.b.value_counts() == df2.b.value_counts()
+
+    df2 = pf.to_pandas(columns=['b', 'c'])
+    df.b.value_counts() == df2.b.value_counts()
+
+    with pytest.raises(ValueError):
+        # because this leaves no data to write
+        write(tempdir, df[['b']], file_scheme='hive', partition_on=['b'])

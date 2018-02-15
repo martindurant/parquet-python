@@ -384,7 +384,7 @@ class ParquetFile(object):
         columns = columns or self.columns
         if index and index not in columns:
             columns.append(index)
-        check_column_names(self.columns, columns, categories)
+        check_column_names(self.columns + list(self.cats), columns, categories)
         df, views = self.pre_allocate(size, columns, categories, index)
         start = 0
         if self.file_scheme == 'simple':
