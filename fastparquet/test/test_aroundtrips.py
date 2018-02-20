@@ -75,6 +75,8 @@ df = sql.read.json('temp.json')
 def test_pyspark_roundtrip(tempdir, scheme, row_groups, comp, sql):
     if comp == 'BROTLI':
         pytest.xfail("spark doesn't support BROTLI compression")
+    if comp == 'ZSTD':
+        pytest.xfail("spark doesn't support ZSTD compression")
     data = pd.DataFrame({'i32': np.random.randint(-2**17, 2**17, size=1001,
                                                   dtype=np.int32),
                          'i64': np.random.randint(-2**33, 2**33, size=1001,

@@ -465,6 +465,7 @@ def write_column(f, data, selement, compression=None):
     name = data.name
     diff = 0
     max, min = None, None
+    start = f.tell()
 
     if is_categorical_dtype(data.dtype):
         dph = parquet_thrift.DictionaryPageHeader(
@@ -508,7 +509,6 @@ def write_column(f, data, selement, compression=None):
         # disallow bitpacking for compatability
         data = data.astype('int32')
 
-    start = f.tell()
     bdata = definition_data + repetition_data + encode[encoding](
             data, selement)
     bdata += 8 * b'\x00'
