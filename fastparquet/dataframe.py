@@ -1,7 +1,8 @@
+from collections import OrderedDict
 import numpy as np
 from pandas.core.index import CategoricalIndex, RangeIndex, Index
 from pandas.core.internals import BlockManager
-from pandas import Categorical, DataFrame
+from pandas import Categorical, DataFrame, Series
 from pandas.api.types import is_categorical_dtype
 from .util import STR_TYPE
 
@@ -36,13 +37,13 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None,
     - list of numpy views, in order, of the columns of the dataframe. Assign
         to this.
     """
-    df = DataFrame()
     views = {}
     timezones = timezones or {}
 
     if isinstance(types, STR_TYPE):
         types = types.split(',')
     cols = cols if cols is not None else range(len(types))
+    df = OrderedDict()
     for t, col in zip(types, cols):
         if str(t) == 'category':
             if cats is None or col not in cats:
@@ -57,9 +58,11 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None,
                 df[str(col)] = Categorical([], categories=cats[col],
                                            fastpath=True)
         else:
-            df[str(col)] = np.empty(0, dtype=t)
-            if df[str(col)].dtype.kind == "M" and str(col) in timezones:
-                df[str(col)] = df[str(col)].dt.tz_localize(timezones[str(col)])
+            d = np.empty(0, dtype=t)
+            if d.dtype.kind == "M" and str(col) in timezones:
+                d = Series(d).dt.tz_localize(timezones[str(col)])
+            df[str(col)] = d
+    df = DataFrame(df)
 
     if index_type is not None and index_type is not False:
         if index_name is None:
