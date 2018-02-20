@@ -420,6 +420,27 @@ def test_duplicate_columns(tempdir):
     assert 'duplicate' in str(e)
 
 
+@pytest.mark.parametrize('cmp', [None, 'gzip'])
+def test_cmd_bytesize(tempdir, cmp):
+    from fastparquet import core
+    fn = os.path.join(tempdir, 'tmp.parq')
+    df = pd.DataFrame({'s': ['a', 'b']}, dtype='category')
+    write(fn, df, compression=cmp)
+    pf = ParquetFile(fn)
+    chunk = pf.row_groups[0].columns[0]
+    cmd = chunk.meta_data
+    csize = cmd.total_compressed_size
+    f = open(fn, 'rb')
+    f.seek(cmd.dictionary_page_offset)
+    ph = core.read_thrift(f, parquet_thrift.PageHeader)
+    c1 = ph.compressed_page_size
+    f.seek(c1, 1)
+    ph = core.read_thrift(f, parquet_thrift.PageHeader)
+    c2 = ph.compressed_page_size
+    f.seek(c2, 1)
+    assert csize == f.tell() - cmd.dictionary_page_offset
+
+
 def test_dotted_column(tempdir):
     fn = os.path.join(tempdir, 'tmp.parq')
     df = pd.DataFrame({'x.y': [1, 2, 3],
