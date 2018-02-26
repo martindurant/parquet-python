@@ -716,12 +716,6 @@ def test_merge_fail(tempdir):
         writer.merge([fn0, fn1])
     assert 'schemas' in str(e)
 
-    os.remove(fn1)
-    write(fn1, df0, file_scheme='hive')
-    with pytest.raises(ValueError) as e:
-        writer.merge([fn0, fn1])
-    assert 'multi-file' in str(e)
-
 
 def test_append_simple(tempdir):
     fn = os.path.join(str(tempdir), 'test.parq')
