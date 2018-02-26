@@ -131,15 +131,20 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
 
     for pf, fn in zip(pfs, file_list):
         if pf.file_scheme not in ['simple', 'empty']:
-            # should remove 'empty' datasets up front? Get ignored on load
-            # anyway.
-            raise ValueError('Cannot merge multi-file input', fn)
-        for rg in pf.row_groups:
-            rg = copy.copy(rg)
-            rg.columns = [copy.copy(c) for c in rg.columns]
-            for chunk in rg.columns:
-                chunk.file_path = fn
-            fmd.row_groups.append(rg)
+            for rg in pf.row_groups:
+                rg = copy.copy(rg)
+                rg.columns = [copy.copy(c) for c in rg.columns]
+                for chunk in rg.columns:
+                    chunk.file_path = '/'.join([fn, chunk.file_path])
+                fmd.row_groups.append(rg)
+
+        else:
+            for rg in pf.row_groups:
+                rg = copy.copy(rg)
+                rg.columns = [copy.copy(c) for c in rg.columns]
+                for chunk in rg.columns:
+                    chunk.file_path = fn
+                fmd.row_groups.append(rg)
 
     fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
     return basepath, fmd

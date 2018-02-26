@@ -51,7 +51,7 @@ setup(
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@continuum.io',
-    url='https://github.com/martindurant/fastparquet/',
+    url='https://github.com/dask/fastparquet/',
     license='Apache License 2.0',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -67,7 +67,7 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     packages=['fastparquet'],
-    cmdclass={'build_ext':build_ext},
+    cmdclass={'build_ext': build_ext},
     install_requires=install_requires,
     setup_requires=[
         'pytest-runner',

@@ -339,6 +339,23 @@ def test_drill_list(tempdir):
     assert out.dir0.tolist() == ['x'] * 3 + ['y'] * 3
 
 
+def test_multi_list(tempdir):
+    df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]})
+    dir1 = os.path.join(tempdir, 'x')
+    write(dir1, df, file_scheme='hive')
+    dir2 = os.path.join(tempdir, 'y')
+    write(dir2, df, file_scheme='hive')
+    dir3 = os.path.join(tempdir, 'z', 'deep')
+    write(dir3, df, file_scheme='hive')
+
+    pf = ParquetFile([dir1, dir2])
+    out = pf.to_pandas()  # this version may have extra column!
+    assert out.a.tolist() == ['x', 'y', 'z'] * 2
+    pf = ParquetFile([dir1, dir2, dir3])
+    out = pf.to_pandas()
+    assert out.a.tolist() == ['x', 'y', 'z'] * 3
+
+
 def test_hive_and_drill_list(tempdir):
     df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]})
     dir1 = os.path.join(tempdir, 'x=0')
