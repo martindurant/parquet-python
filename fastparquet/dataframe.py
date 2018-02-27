@@ -79,7 +79,6 @@ def empty(types, size, cats=None, cols=None, index_type=None, index_name=None,
             else:  # explicit labels list
                 c = Categorical([], categories=cats[index_name],
                                 fastpath=True)
-            print(cats, index_name, c)
             vals = np.empty(size, dtype=c.codes.dtype)
             index = CategoricalIndex(c)
             index._data._codes = vals
