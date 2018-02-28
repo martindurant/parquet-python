@@ -71,7 +71,7 @@ class ParquetFile(object):
         Thrift objects for each row group
     schema: schema.SchemaHelper
         print this for a representation of the column structure
-    self_made: bool
+    selfmade: bool
         If this file was created by fastparquet
     statistics: dict
         Max/min/count of each column chunk
