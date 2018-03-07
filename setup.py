@@ -12,9 +12,13 @@ except ImportError:
 # Kudos to https://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py/21621689
 class build_ext(_build_ext):
     def finalize_options(self):
+        if sys.version_info[0] >= 3:
+            import builtins
+        else:
+            import __builtin__ as builtins
         _build_ext.finalize_options(self)
         # Prevent numpy from thinking it is still in its setup process:
-        __builtins__.__NUMPY_SETUP__ = False
+        builtins.__NUMPY_SETUP__ = False
         import numpy
         self.include_dirs.append(numpy.get_include())
 
