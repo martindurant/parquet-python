@@ -431,7 +431,7 @@ def test_compression_zstandard(tempdir):
                 "threads": 0,
                 "write_checksum": True,
                 "write_dict_id": True,
-                "write_content_size": True,
+                "write_content_size": False,
             }
         },
         "_default": {
@@ -470,12 +470,8 @@ def test_compression_lz4(tempdir):
         "y": {
             "type": "lz4",
             "args": {
-                "compression_level": 5,
-                "content_checksum": True,
-                "block_size": 0,
-                "block_checksum": True,
-                "block_linked": True,
-                "store_size": True,
+                "compression": 5,
+                "store_size": False,
             }
         },
         "_default": {
