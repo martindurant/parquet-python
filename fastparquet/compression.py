@@ -65,13 +65,7 @@ except ImportError:
 try:
     import lz4.block
     def lz4_compress(data, **kwargs):
-        try:
-            if kwargs['store_size'] == True:
-                raise RuntimeError(
-                    'The store_size parameter should be False for LZ4 the compressor'
-                )
-        except KeyError:
-            kwargs['store_size'] = False
+        kwargs['store_size'] = False
         return lz4.block.compress(data, **kwargs)
     def lz4_decompress(data, uncompressed_size):
         return lz4.block.decompress(data, uncompressed_size=uncompressed_size)
@@ -82,13 +76,7 @@ except ImportError:
 try:
     import zstd
     def zstd_compress(data, **kwargs):
-        try:
-            if kwargs['write_content_size'] == True:
-                raise RuntimeError(
-                    'The write_content_size parameter should be False for the ZSTD compressor'
-                )
-        except KeyError:
-            kwargs['write_content_size'] = False
+        kwargs['write_content_size'] = False
         cctx = zstd.ZstdCompressor(**kwargs)
         return cctx.compress(data, allow_empty=True)
     def zstd_decompress(data, uncompressed_size):
