@@ -68,7 +68,7 @@ try:
         try:
             if kwargs['store_size'] == True:
                 raise RuntimeError(
-                    'store_size cannot be True for LZ4 the compressor'
+                    'The store_size parameter should be False for LZ4 the compressor'
                 )
         except KeyError:
             kwargs['store_size'] = False
@@ -85,7 +85,7 @@ try:
         try:
             if kwargs['write_content_size'] == True:
                 raise RuntimeError(
-                    'write_content_size cannot be false for the ZSTD compressor'
+                    'The write_content_size parameter should be False for the ZSTD compressor'
                 )
         except KeyError:
             kwargs['write_content_size'] = False
