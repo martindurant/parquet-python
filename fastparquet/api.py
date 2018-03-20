@@ -453,26 +453,19 @@ class ParquetFile(object):
                           if f.num_children in [None, 0] else np.dtype("O"))
                  for name, f in self.schema.root.children.items()}
 
-        schema_path_cols = None 
-        for col, dt in dtype.copy().items():
+        chunks_list = [[c for c in rg.columns] for rg in self.row_groups]
+        for (col, dt), chunks in zip(dtype.copy().items(), chunks_list):
             if dt.kind in ['i', 'b']:
                 # int/bool columns that may have nulls become float columns
                 num_nulls = 0
-                for rg in self.row_groups:
-                    # Only calculate this once
-                    if schema_path_cols is None:
-                        schema_path_cols = ['.'.join(c.meta_data.path_in_schema) 
-                                                for c in rg.columns]
-                    chunks = [c for c,c2 in zip(rg.columns, schema_path_cols)
-                                if c2==col]
-                    for chunk in chunks:
-                        if chunk.meta_data.statistics is None:
-                            num_nulls = True
-                            break
-                        if chunk.meta_data.statistics.null_count is None:
-                            num_nulls = True
-                            break
-                        num_nulls += chunk.meta_data.statistics.null_count
+                for chunk in chunks:
+                    if chunk.meta_data.statistics is None:
+                        num_nulls = True
+                        break
+                    if chunk.meta_data.statistics.null_count is None:
+                        num_nulls = True
+                        break
+                    num_nulls += chunk.meta_data.statistics.null_count
                 if num_nulls:
                     if dtype[col].itemsize == 1:
                         dtype[col] = np.dtype('f2')
