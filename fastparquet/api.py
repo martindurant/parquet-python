@@ -454,10 +454,13 @@ class ParquetFile(object):
                  for name, f in self.schema.root.children.items()}
 
         chunks_list = [[c for c in rg.columns] for rg in self.row_groups]
-        for (col, dt), chunks in zip(dtype.copy().items(), chunks_list):
+        for i, (col, dt) in enumerate(dtype.copy().items()):
             if dt.kind in ['i', 'b']:
                 # int/bool columns that may have nulls become float columns
                 num_nulls = 0
+
+                # Get correct list of chunks
+                chunks = [cs[i] for cs in chunks_list]
                 for chunk in chunks:
                     if chunk.meta_data.statistics is None:
                         num_nulls = True
