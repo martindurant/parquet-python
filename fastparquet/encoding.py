@@ -13,10 +13,23 @@ from .thrift_structures import parquet_thrift
 from .util import byte_buffer
 
 
+@numba.njit(nogil=True)
+def unpack_boolean(data, out):
+    for i in range(len(data)):
+        d = data[i]
+        for j in range(8):
+            out[i * 8 + j] = d & 1
+            d >>= 1
+
+
 def read_plain_boolean(raw_bytes, count):
     """Read `count` booleans using the plain encoding."""
-    return np.unpackbits(np.frombuffer(raw_bytes, dtype=np.uint8)).reshape(
-            (-1, 8))[:, ::-1].ravel().astype(bool)[:count]
+    data = np.frombuffer(raw_bytes, dtype='uint8')
+    padded = (8 * (count // 8) + 8 if count % 8 > 0 else count)
+    out = np.empty(padded, dtype=bool)
+    unpack_boolean(data, out)
+    return out[:count]
+
 
 DECODE_TYPEMAP = {
     parquet_thrift.Type.INT32: np.int32,
