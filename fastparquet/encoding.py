@@ -25,7 +25,7 @@ def unpack_boolean(data, out):
 def read_plain_boolean(raw_bytes, count):
     """Read `count` booleans using the plain encoding."""
     data = np.frombuffer(raw_bytes, dtype='uint8')
-    padded = (8 * (count // 8) + 8 if count % 8 > 0 else count)
+    padded = len(raw_bytes) * 8
     out = np.empty(padded, dtype=bool)
     unpack_boolean(data, out)
     return out[:count]
