@@ -142,7 +142,7 @@ class ParquetFile(object):
         self._read_partitions()
         self._dtypes()
 
-    @ property
+    @property
     def helper(self):
         return self.schema
 
