@@ -5,7 +5,7 @@ fastparquet
     :target: https://github.com/dask/fastparquet
 
 fastparquet is a python implementation of the `parquet
-format <https://github.com/Parquet/parquet-format>`_, aiming integrate
+format <https://github.com/apache/parquet-format>`_, aiming integrate
 into python-based big data work-flows.
 
 Not all parts of the parquet-format have been implemented yet or tested
