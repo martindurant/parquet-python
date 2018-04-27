@@ -33,7 +33,9 @@ class ParquetFile(object):
     fn: path/URL string or list of paths
         Location of the data. If a directory, will attempt to read a file
         "_metadata" within that directory. If a list of paths, will assume
-        that they make up a single parquet data set.
+        that they make up a single parquet data set. This parameter can also
+        be any file-like object, in which case this must be a single-file
+        dataset.
     verify: bool [False]
         test file start/end byte markers
     open_with: function
@@ -87,6 +89,14 @@ class ParquetFile(object):
                 self.fn = '_metadata'
             self.fmd = fmd
             self._set_attrs()
+        elif hasattr(fn, 'read'):
+            # file-like
+            self._parse_header(fn, verify)
+            if self.file_scheme not in ['simple', 'empty']:
+                raise ValueError('Cannot use file-like input '
+                                 'with multi-file data')
+            open_with = lambda *args, **kwargs: fn
+            self.fn = None
         else:
             try:
                 fn2 = join_path(fn, '_metadata')

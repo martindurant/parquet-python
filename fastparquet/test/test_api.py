@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import io
 import os
 
 import numpy as np
@@ -138,6 +139,23 @@ def test_open_standard(tempdir):
     write(fn, df, row_group_offsets=[0, 2], file_scheme='hive',
           open_with=open)
     pf = ParquetFile(fn, open_with=open)
+    d2 = pf.to_pandas()
+    pd.util.testing.assert_frame_equal(d2, df)
+
+
+def test_filelike(tempdir):
+    df = pd.DataFrame({'x': [1, 2, 3, 4],
+                       'y': [1.0, 2.0, 1.0, 2.0],
+                       'z': ['a', 'b', 'c', 'd']})
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df, row_group_offsets=[0, 2])
+    with open(fn, 'rb') as f:
+        pf = ParquetFile(f, open_with=open)
+        d2 = pf.to_pandas()
+        pd.util.testing.assert_frame_equal(d2, df)
+
+    b = io.BytesIO(open(fn, 'rb').read())
+    pf = ParquetFile(b, open_with=open)
     d2 = pf.to_pandas()
     pd.util.testing.assert_frame_equal(d2, df)
 
