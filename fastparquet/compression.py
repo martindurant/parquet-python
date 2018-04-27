@@ -77,10 +77,10 @@ try:
     import zstandard
     def zstd_compress(data, **kwargs):
         kwargs['write_content_size'] = False
-        cctx = zstd.ZstdCompressor(**kwargs)
+        cctx = zstandard.ZstdCompressor(**kwargs)
         return cctx.compress(data)
     def zstd_decompress(data, uncompressed_size):
-        dctx = zstd.ZstdDecompressor()
+        dctx = zstandard.ZstdDecompressor()
         return dctx.decompress(data)
     compressions['ZSTD'] = zstd_compress
     decompressions['ZSTD'] = zstd_decompress
