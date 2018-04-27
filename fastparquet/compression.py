@@ -74,18 +74,32 @@ try:
 except ImportError:
     pass
 try:
-    import zstd
+    import zstandard
     def zstd_compress(data, **kwargs):
         kwargs['write_content_size'] = False
         cctx = zstd.ZstdCompressor(**kwargs)
-        return cctx.compress(data, allow_empty=True)
+        return cctx.compress(data)
     def zstd_decompress(data, uncompressed_size):
         dctx = zstd.ZstdDecompressor()
-        return dctx.decompress(data, max_output_size=uncompressed_size)
+        return dctx.decompress(data)
     compressions['ZSTD'] = zstd_compress
     decompressions['ZSTD'] = zstd_decompress
 except ImportError:
     pass
+if 'ZSTD' not in compressions:
+    try:
+        import zstd
+        def zstd_compress(data, **kwargs):
+            kwargs['write_content_size'] = False
+            cctx = zstd.ZstdCompressor(**kwargs)
+            return cctx.compress(data, allow_empty=True)
+        def zstd_decompress(data, uncompressed_size):
+            dctx = zstd.ZstdDecompressor()
+            return dctx.decompress(data, max_output_size=uncompressed_size)
+        compressions['ZSTD'] = zstd_compress
+        decompressions['ZSTD'] = zstd_decompress
+    except ImportError:
+        pass
 
 compressions = {k.upper(): v for k, v in compressions.items()}
 decompressions = {k.upper(): v for k, v in decompressions.items()}
