@@ -81,7 +81,7 @@ try:
         return cctx.compress(data)
     def zstd_decompress(data, uncompressed_size):
         dctx = zstandard.ZstdDecompressor()
-        return dctx.decompress(data)
+        return dctx.decompress(data, max_output_size=uncompressed_size)
     compressions['ZSTD'] = zstd_compress
     decompressions['ZSTD'] = zstd_decompress
 except ImportError:
