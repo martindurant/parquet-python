@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import json
 import os
-import re
 import six
 import struct
 
@@ -19,7 +18,7 @@ from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
 from .util import (default_open, ParquetException, val_to_num,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, get_file_scheme)
+                   ex_from_sep, get_file_scheme, STR_TYPE)
 
 
 class ParquetFile(object):
@@ -307,10 +306,11 @@ class ParquetFile(object):
             (This is not row-level filtering)
             Filter syntax: [(column, op, val), ...],
             where op is [==, >, >=, <, <=, !=, in, not in]
-        index: string or None
-            Column to assign to the index. If None, index is inferred from the
-            metadata (if this was originally pandas data); if the metadata does
-            not exist or index is False, index is simple sequential integers.
+        index: string or list of strings or False or None
+            Column(s) to assign to the (multi-)index. If None, index is
+            inferred from the metadata (if this was originally pandas data); if
+            the metadata does not exist or index is False, index is simple
+            sequential integers.
         assign: dict {cols: array}
             Pre-allocated memory to write to. If None, will allocate memory
             here.
@@ -319,11 +319,10 @@ class ParquetFile(object):
         -------
         Generator yielding one Pandas data-frame per row-group
         """
-        if index is None:
-            index = self._get_index(index)
+        index = self._get_index(index)
         columns = columns or self.columns
-        if index and index not in columns:
-            columns.append(index)
+        if index:
+            columns += [i for i in index if i not in columns]
         check_column_names(self.columns, columns, categories)
         rgs = self.filter_row_groups(filters)
         if all(column.file_path is None for rg in self.row_groups
@@ -347,13 +346,8 @@ class ParquetFile(object):
         if index is None:
             index = json.loads(self.key_value_metadata.get('pandas', '{}')).get(
                 'index_columns', [])
-            if len(index) > 1:
-                raise NotImplementedError('multi-index not yet supported, '
-                                          'use index=False')
-            if index:
-                return index[0]
-            else:
-                return None
+        if isinstance(index, STR_TYPE):
+            index = [index]
         return index
 
     def to_pandas(self, columns=None, categories=None, filters=[],
@@ -378,10 +372,11 @@ class ParquetFile(object):
             (This is not row-level filtering)
             Filter syntax: [(column, op, val), ...],
             where op is [==, >, >=, <, <=, !=, in, not in]
-        index: string or None
-            Column to assign to the index. If None, index is inferred from the
-            metadata (if this was originally pandas data); if the metadata does
-            not exist or index is False, index is simple sequential integers.
+        index: string or list of strings or False or None
+            Column(s) to assign to the (multi-)index. If None, index is
+            inferred from the metadata (if this was originally pandas data); if
+            the metadata does not exist or index is False, index is simple
+            sequential integers.
 
         Returns
         -------
@@ -389,11 +384,10 @@ class ParquetFile(object):
         """
         rgs = self.filter_row_groups(filters)
         size = sum(rg.num_rows for rg in rgs)
-        if index is None:
-            index = self._get_index(index)
+        index = self._get_index(index)
         columns = columns or self.columns
-        if index and index not in columns:
-            columns.append(index)
+        if index:
+            columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
         df, views = self.pre_allocate(size, columns, categories, index)
         start = 0
@@ -500,7 +494,8 @@ class ParquetFile(object):
 
 
 def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
-    cols = [c for c in columns if index != c]
+    index = index or []
+    cols = [c for c in columns if c not in index]
     categories = categories or {}
     cats = cs.copy()
     if isinstance(categories, dict):
@@ -512,13 +507,11 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
         return dt.get(name, None)
 
     dtypes = [get_type(c) for c in cols]
-    index_type = get_type(index)
+    index_types = [get_type(i) for i in index]
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
-    df, views = dataframe.empty(dtypes, size, cols=cols, index_name=index,
-                                index_type=index_type, cats=cats, timezones=tz)
-    if index and re.match(r'__index_level_\d+__', index):
-        df.index.name = None
+    df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
+                                index_types=index_types, cats=cats, timezones=tz)
     return df, views
 
 

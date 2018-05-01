@@ -306,3 +306,32 @@ def test_null_sizes(tempdir):
     pf = fastparquet.ParquetFile(tempdir)
     assert pf.dtypes['a'] == 'float16'
     assert pf.dtypes['b'] == 'float64'
+
+
+def test_multi_index(tempdir):
+    r = pd.date_range('2000', '2000-01-03')
+    df = pd.DataFrame({'a': r, 'b': [1, 3, 3], 'c': [1.0, np.nan, 3]})
+    df = df.set_index(['a', 'b'])
+    fastparquet.write(tempdir, df, has_nulls=True, file_scheme='hive')
+    dg = fastparquet.ParquetFile(tempdir).to_pandas()
+    assert dg.shape == (3, 1)
+    assert len(dg.index.levels) == 2
+    assert dg.index.levels[0].name == 'a'
+    assert dg.index.levels[0].dtype == '<M8[ns]'
+    assert dg.index.levels[1].name == 'b'
+    assert dg.index.levels[1].dtype == int
+
+
+def test_multi_index_category(tempdir):
+    r = pd.date_range('2000', '2000-01-03')
+    df = pd.DataFrame({'a': r, 'b': ['X', 'X', 'L'], 'c': [1.0, np.nan, 3]})
+    df['c'] = df['c'].astype('category')
+    df = df.set_index(['a', 'b'])
+    fastparquet.write(tempdir, df, has_nulls=True, file_scheme='hive')
+    dg = fastparquet.ParquetFile(tempdir).to_pandas()
+    assert dg.shape == (3, 1)
+    assert len(dg.index.levels) == 2
+    assert dg.index.levels[0].name == 'a'
+    assert dg.index.levels[0].dtype == '<M8[ns]'
+    assert dg.index.levels[1].name == 'b'
+    assert dg.index.levels[1].is_categorical()
