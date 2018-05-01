@@ -65,39 +65,49 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
     df = DataFrame(df)
     if not index_types:
-        indexes = [RangeIndex(size)]
+        index = RangeIndex(size)
+    elif len(index_types) == 1:
+        t, col = index_types[0], index_names[0]
+        if col is None:
+            raise ValueError('If using an index, must give an index name')
+        if str(t) == 'category':
+            c = Categorical([], categories=cat(col), fastpath=True)
+            vals = np.zeros(size, dtype=c.codes.dtype)
+            index = CategoricalIndex(c)
+            index._data._codes = vals
+            views[col] = vals
+            views[col+'-catdef'] = index._data
+        else:
+            d = np.empty(size, dtype=t)
+            # if d.dtype.kind == "M" and str(col) in timezones:
+            #     d = Series(d).dt.tz_localize(timezones[str(col)])
+            index = Index(d)
+            views[col] = index.values
     else:
-        indexes = []
-        for t, col in zip(index_types, index_names):
-            if col is None:
-                raise ValueError('If using an index, must give an index name')
-            if str(t) == 'category':
+        index = MultiIndex([[]], [[]])
+        # index = MultiIndex.from_arrays(indexes)
+        index._levels = list()
+        index._labels = list()
+        for i, col in enumerate(index_names):
+            if str(index_types[i]) == 'category':
                 c = Categorical([], categories=cat(col), fastpath=True)
+                z = CategoricalIndex(c)
+                z._data._codes = c.categories._data
+                z._set_categories = c._set_categories
+                index._levels.append(z)
+
                 vals = np.zeros(size, dtype=c.codes.dtype)
-                index = CategoricalIndex(c)
-                index._data._codes = vals
-                views[col] = vals
-                views[col+'-catdef'] = index._data
+                index._labels.append(vals)
+
+                views[col] = index._labels[i]
+                views[col+'-catdef'] = index._levels[i]
             else:
-                d = np.empty(size, dtype=t)
+                d = np.empty(size, dtype=index_types[i])
                 # if d.dtype.kind == "M" and str(col) in timezones:
                 #     d = Series(d).dt.tz_localize(timezones[str(col)])
-                index = Index(d)
-                views[col] = index.values
-            indexes.append(index)
-
-    if len(indexes) > 1:
-        levels = [
-            views[n] if str(t) != 'category' else views[n+'-catdef'].categories
-            for t, n in zip(index_types, index_names)
-        ]
-        labels = [
-            range(size) if str(t) != 'category' else views[n]
-            for t, n in zip(index_types, index_names)
-        ]
-        index = MultiIndex(levels=levels, labels=labels, names=index_names)
-    else:
-        index = indexes[0]
+                index._levels.append(Index(d))
+                index._labels.append(np.arange(size, dtype=int))
+                views[col] = index._levels[i]._data
 
     axes = [df._data.axes[0], index]
 

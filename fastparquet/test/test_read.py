@@ -325,7 +325,7 @@ def test_multi_index(tempdir):
 def test_multi_index_category(tempdir):
     r = pd.date_range('2000', '2000-01-03')
     df = pd.DataFrame({'a': r, 'b': ['X', 'X', 'L'], 'c': [1.0, np.nan, 3]})
-    df['c'] = df['c'].astype('category')
+    df['b'] = df['b'].astype('category')
     df = df.set_index(['a', 'b'])
     fastparquet.write(tempdir, df, has_nulls=True, file_scheme='hive')
     dg = fastparquet.ParquetFile(tempdir).to_pandas()
