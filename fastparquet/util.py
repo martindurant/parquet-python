@@ -16,7 +16,7 @@ PY2 = six.PY2
 PY3 = six.PY3
 STR_TYPE = six.string_types[0]  # 'str' for Python3, 'basestring' for Python2
 created_by = "fastparquet-python version 1.0.0 (build 111)"
-
+DISALLOWED_LITERAL_CHARACTERS = "+boxjeBOXJE_'\""
 
 class ParquetException(Exception):
     """Generic Exception related to unexpected data format when
@@ -38,13 +38,14 @@ def default_open(f, mode='rb'):
 
 
 def val_to_num(x):
-    if x in ['NOW', 'TODAY']:
+    """Parse a string as a number, date or timedelta if possible, otherwise return the string"""
+    if x in ['NOW', 'TODAY', '']:
         return x
     if set(x) == {'0'}:
         # special case for values like "000"
         return 0
     try:
-        return ast.literal_eval(x.lstrip('0'))
+        return _parse_literal(x)
     except:
         pass
     try:
@@ -56,6 +57,15 @@ def val_to_num(x):
     except:
         return x
 
+def _parse_literal(x):
+    """ Parse a subset of possible numeric literals """
+    if any(c in x for c in DISALLOWED_LITERAL_CHARACTERS):
+        raise ValueError("Characters in [%s] are not allowed" % DISALLOWED_LITERAL_CHARACTERS)
+    # Allow '-' at the start of the string for negative numbers
+    if '-' in x[1:]:
+        raise ValueError('dashes (-) not allowed inside of numeric literal')
+
+    return ast.literal_eval(x.lstrip('0'))
 
 if PY2:
     def ensure_bytes(s):
