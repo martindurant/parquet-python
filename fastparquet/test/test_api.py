@@ -262,6 +262,41 @@ def test_datetime_partition_names(tempdir):
     assert out[out.date == '2020-10-17'].x.tolist() == [2]
 
 
+@pytest.mark.parametrize('partitions', [['2017-05-09', 'may 9 2017'], ['0.7', '.7']])
+def test_datetime_partition_no_dupilcates(tempdir, partitions):
+    df = pd.DataFrame({
+        'partitions': partitions,
+        'x': [1, 2]
+    })
+    write(tempdir, df, file_scheme='hive', partition_on=['partitions'])
+    with pytest.raises(ValueError, match=r'Partition names map to the same value.*'):
+        ParquetFile(tempdir)
+
+
+@pytest.mark.parametrize('categories', [['2017-05-09', 'may 9 2017'], ['0.7', '.7']])
+def test_datetime_category_no_dupilcates(tempdir, categories):
+    # The purpose of this test is to ensure that the changes made for the previous test
+    # haven't broken categories in general.
+    df = pd.DataFrame({
+        'categories': categories,
+        'x': [1, 2]
+    }).astype({'categories': 'category'})
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df)
+    assert ParquetFile(fn).to_pandas().categories.tolist() == categories
+
+
+@pytest.mark.parametrize('partitions', [['2017-01-05', '1421'], ['0.7', '10']])
+def test_mixed_partition_types_warning(tempdir, partitions):
+    df = pd.DataFrame({
+        'partitions': partitions,
+        'x': [1, 2]
+    })
+    write(tempdir, df, file_scheme='hive', partition_on=['partitions'])
+    with pytest.warns(UserWarning, match=r'Partition names coerce to values of different types.*'):
+        ParquetFile(tempdir)
+
+
 def test_filter_without_paths(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     df = pd.DataFrame({

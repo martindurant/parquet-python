@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import pytest
 
-from fastparquet.util import analyse_paths, get_file_scheme, val_to_num, join_path
+from fastparquet.util import analyse_paths, get_file_scheme, val_to_num, join_path, groupby_types
 
 
 def test_analyse_paths():
@@ -95,3 +95,10 @@ def test_val_to_num():
     assert val_to_num('50+20') == pd.to_timedelta('50+20')
     assert val_to_num('50-20') == pd.to_timedelta('50-20')
 
+
+def test_groupby_types():
+    assert len(groupby_types([1, 2, 3])) == 1
+    assert len(groupby_types(["1", "2", "3.0"])) == 1
+    assert len(groupby_types([1, 2, 3.0])) == 2
+    assert len(groupby_types([1, "2", "3.0"])) == 2 
+    assert len(groupby_types([pd.to_datetime("2000"), "2000"])) == 2
