@@ -248,6 +248,20 @@ def test_numerical_partition_name(tempdir):
     assert out[out.y1 == 'bb'].x.tolist() == [2]
 
 
+def test_datetime_partition_names(tempdir):
+    date_strings = ['2015-05-09', '2018-10-15', '2020-10-17', '2015-05-09']
+    df = pd.DataFrame({
+        'date': date_strings,
+        'x': [1, 5, 2, 5]
+    })
+    write(tempdir, df, file_scheme='hive', partition_on=['date'])
+    pf = ParquetFile(tempdir)
+    out = pf.to_pandas()
+    assert set(out.date.tolist()) == set(pd.to_datetime(date_strings).tolist())
+    assert out[out.date == '2015-05-09'].x.tolist() == [1, 5]
+    assert out[out.date == '2020-10-17'].x.tolist() == [2]
+
+
 def test_filter_without_paths(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     df = pd.DataFrame({
@@ -273,6 +287,27 @@ def test_filter_special(tempdir):
     out = pf.to_pandas(filters=[('symbol', '==', 'NOW')])
     assert out.x.tolist() == [1, 5, 6]
     assert out.symbol.tolist() == ['NOW', 'NOW', 'NOW']
+
+
+def test_filter_dates(tempdir):
+    df = pd.DataFrame({
+        'x': [1, 2, 3, 4, 5, 6, 7],
+        'date': [
+            '2015-05-09', '2017-05-15', '2017-05-14', 
+            '2017-05-13', '2015-05-10', '2015-05-11', '2017-05-12'
+        ]
+    })
+    write(tempdir, df, file_scheme='hive', partition_on=['date'])
+    pf = ParquetFile(tempdir)
+    out_1 = pf.to_pandas(filters=[('date', '>', '2017-01-01')])
+    
+    assert set(out_1.x.tolist()) == {2, 3, 4, 7}
+    expected_dates = set(pd.to_datetime(['2017-05-15', '2017-05-14', '2017-05-13', '2017-05-12']))
+    assert set(out_1.date.tolist()) == expected_dates
+
+    out_2 = pf.to_pandas(filters=[('date', '==', pd.to_datetime('may 9 2015'))])
+    assert out_2.x.tolist() == [1]
+    assert out_2.date.tolist() == pd.to_datetime(['2015-05-09']).tolist()
 
 
 def test_in_filter(tempdir):
