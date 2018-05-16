@@ -28,6 +28,12 @@ class ParquetFile(object):
     Reads the metadata (row-groups and schema definition) and provides
     methods to extract the data from the files.
 
+    Note that when reading parquet files partitioned using directories
+    (i.e. using the hive/drill scheme), an attempt is made to coerce
+    the partition values to a number, datetime or timedelta. Fastparquet
+    cannot read a hive/drill parquet file with partition names which coerce
+    to the same value, such as "0.7" and ".7".
+
     Parameters
     ----------
     fn: path/URL string or list of paths
@@ -63,7 +69,7 @@ class ParquetFile(object):
     file_scheme: str
         'simple': all row groups are within the same file; 'hive': all row
         groups are in other files; 'mixed': row groups in this file and others
-        too; 'empty': no row grops at all.
+        too; 'empty': no row groups at all.
     info: dict
         Combination of some of the other attributes
     key_value_metadata: list
