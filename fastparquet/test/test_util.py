@@ -82,15 +82,20 @@ def test_val_to_num():
     assert val_to_num('0') == 0
     assert val_to_num('00') == 0
     assert val_to_num('-20') == -20
+    assert val_to_num(7) == 7
+    assert val_to_num(0.7) == 0.7
+    assert val_to_num(0) == 0
     assert val_to_num('NOW') == 'NOW'
     assert val_to_num('now') == 'now'
     assert val_to_num('TODAY') == 'TODAY'
+    assert val_to_num('') == ''
     assert val_to_num('2018-10-10') == pd.to_datetime('2018-10-10')
     assert val_to_num('2018-10-09') == pd.to_datetime('2018-10-09')
     assert val_to_num('2017-12') == pd.to_datetime('2017-12')
-    assert val_to_num('5e6') == '5e6'
+    assert val_to_num('5e+6') == 5e6
+    assert val_to_num('5e-6') == 5e-6
+    assert val_to_num('0xabc') == '0xabc'
     assert val_to_num('hello world') == 'hello world'
-    assert val_to_num('') == ''
     # The following tests document an idiosyncrasy of val_to_num which is difficult
     # to avoid while timedeltas are supported.
     assert val_to_num('50+20') == pd.to_timedelta('50+20')
