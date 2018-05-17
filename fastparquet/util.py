@@ -40,7 +40,7 @@ def default_open(f, mode='rb'):
 
 def val_to_num(x):
     """Parse a string as a number, date or timedelta if possible, otherwise return the string"""
-    if x in ['NOW', 'TODAY', '']:
+    if x in ['now', 'NOW', 'TODAY', '']:
         return x
     if set(x) == {'0'}:
         # special case for values like "000"
