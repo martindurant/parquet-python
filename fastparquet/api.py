@@ -192,8 +192,8 @@ class ParquetFile(object):
                 else:
                     for i, val in enumerate(col.file_path.split('/')[:-1]):
                         key = 'dir%i' % i
-                        cats.setdefault(key, set()).add(val)
-                        raw_cats.setdefault(key, set()).add(val_to_num(val))
+                        cats.setdefault(key, set()).add(val_to_num(val))
+                        raw_cats.setdefault(key, set()).add(val)
 
         for key, v in cats.items():
             # Check that no partition names map to the same value after transformation by val_to_num

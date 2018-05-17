@@ -45,6 +45,10 @@ def val_to_num(x):
     if set(x) == {'0'}:
         # special case for values like "000"
         return 0
+    if x == "True":
+        return True
+    if x == "False":
+        return False
     try:
         return _parse_literal(x)
     except:
