@@ -656,3 +656,10 @@ def test_only_partition_columns(tempdir):
     with pytest.raises(ValueError):
         # because this leaves no data to write
         write(tempdir, df[['b']], file_scheme='hive', partition_on=['b'])
+
+
+def test_empty_df():
+    p = ParquetFile(os.path.join(TEST_DATA, "empty.parquet"))
+    df = p.to_pandas()
+    assert list(p.columns) == ['a', 'b', 'c', '__index_level_0__']
+    assert len(df) == 0
