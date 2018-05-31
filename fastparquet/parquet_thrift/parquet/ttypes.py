@@ -94,6 +94,7 @@ class ConvertedType(object):
     JSON = 19
     BSON = 20
     INTERVAL = 21
+    NULL = 24
     NA = 25
 
     _VALUES_TO_NAMES = {
@@ -119,6 +120,7 @@ class ConvertedType(object):
         19: "JSON",
         20: "BSON",
         21: "INTERVAL",
+        24: "NULL",
         25: "NA",
     }
 
@@ -145,6 +147,7 @@ class ConvertedType(object):
         "JSON": 19,
         "BSON": 20,
         "INTERVAL": 21,
+        "NULL": 24,
         "NA": 25,
     }
 
