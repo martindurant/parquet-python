@@ -5,6 +5,7 @@ from pandas.core.index import CategoricalIndex, RangeIndex, Index, MultiIndex
 from pandas.core.internals import BlockManager
 from pandas import Categorical, DataFrame, Series
 from pandas.api.types import is_categorical_dtype
+import six
 from .util import STR_TYPE
 
 
@@ -56,12 +57,13 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     df = OrderedDict()
     for t, col in zip(types, cols):
         if str(t) == 'category':
-            df[str(col)] = Categorical([], categories=cat(col), fastpath=True)
+            df[six.text_type(col)] = Categorical([], categories=cat(col),
+                                                 fastpath=True)
         else:
             d = np.empty(0, dtype=t)
-            if d.dtype.kind == "M" and str(col) in timezones:
-                d = Series(d).dt.tz_localize(timezones[str(col)])
-            df[str(col)] = d
+            if d.dtype.kind == "M" and six.text_type(col) in timezones:
+                d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+            df[six.text_type(col)] = d
 
     df = DataFrame(df)
     if not index_types:
@@ -79,8 +81,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col+'-catdef'] = index._data
         else:
             d = np.empty(size, dtype=t)
-            # if d.dtype.kind == "M" and str(col) in timezones:
-            #     d = Series(d).dt.tz_localize(timezones[str(col)])
+            # if d.dtype.kind == "M" and six.text_type(col) in timezones:
+            #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
             index = Index(d)
             views[col] = index.values
     else:
@@ -103,8 +105,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 views[col+'-catdef'] = index._levels[i]
             else:
                 d = np.empty(size, dtype=index_types[i])
-                # if d.dtype.kind == "M" and str(col) in timezones:
-                #     d = Series(d).dt.tz_localize(timezones[str(col)])
+                # if d.dtype.kind == "M" and six.text_type(col) in timezones:
+                #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
                 index._levels.append(Index(d))
                 index._labels.append(np.arange(size, dtype=int))
                 views[col] = index._levels[i]._data

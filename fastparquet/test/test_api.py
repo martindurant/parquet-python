@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import io
@@ -663,3 +664,11 @@ def test_empty_df():
     df = p.to_pandas()
     assert list(p.columns) == ['a', 'b', 'c', '__index_level_0__']
     assert len(df) == 0
+
+
+def test_unicode_cols(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    df = pd.DataFrame({u"région": [1, 2, 3]})
+    write(fn, df)
+    pf = ParquetFile(fn)
+    pf.to_pandas()

@@ -214,7 +214,7 @@ def convert(data, se):
 
 
 def infer_object_encoding(data):
-    head = data[:10] if isinstance(data, pd.Index) else data.valid()[:10]
+    head = data[:10] if isinstance(data, pd.Index) else data.dropna()[:10]
     if all(isinstance(i, STR_TYPE) for i in head) and not PY2:
         return "utf8"
     elif PY2 and all(isinstance(i, unicode) for i in head):
@@ -404,7 +404,7 @@ def make_definitions(data, no_nulls):
         head = temp.so_far().tostring()
 
         block = struct.pack('<i', len(head + out)) + head + out
-        out = data.valid()  # better, data[data.notnull()], from above ?
+        out = data.dropna()  # better, data[data.notnull()], from above ?
     return block, out
 
 
