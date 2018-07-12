@@ -918,8 +918,10 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     if not remaining:
         raise ValueError("Cannot include all columns in partition_on")
     rgs = []
-    for key in sorted(gb.indices):
-        df = gb.get_group(key)[remaining]
+    for key, _df in gb:
+        if _df.empty:
+            continue
+        df = _df[remaining]
         if not isinstance(key, tuple):
             key = (key,)
         if with_field:
