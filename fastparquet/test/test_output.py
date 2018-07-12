@@ -359,6 +359,22 @@ def test_too_many_partition_columns(tempdir):
     assert "Cannot include all columns" in str(ve)
 
 
+def test_read_partitioned_and_write_with_empty_partions(tempdir):
+    df = pd.DataFrame({'a': np.random.choice(['a', 'b', 'c'], size=1000),
+                       'c': np.random.choice([True, False], size=1000)})
+
+    writer.write(tempdir, df, partition_on=['a'], file_scheme='hive')
+    df_filtered = ParquetFile(tempdir).to_pandas(
+                                            filters=[('a', '==', 'b')]
+                                            )
+
+    writer.write(tempdir, df_filtered, partition_on=['a'], file_scheme='hive')
+
+    df_loaded = ParquetFile(tempdir).to_pandas()
+
+    tm.assert_frame_equal(df_filtered, df_loaded, check_categorical=False)
+
+
 @pytest.mark.parametrize('compression', ['GZIP',
                                          'gzip',
                                          None,
