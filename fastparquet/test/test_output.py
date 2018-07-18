@@ -428,6 +428,27 @@ def test_index(tempdir):
     assert (out.z == df.index).all()
 
 
+def test_multi_index(tempdir):
+    import json
+    fn = os.path.join(tempdir, 'tmp.parq')
+    idx = pd.MultiIndex.from_product([['a', 'b', 'c'], [1, 2, 3]])
+    idx.names = ['index0', 'index1']
+    df = pd.DataFrame(list(range(9)), idx, ['col'])
+    writer.write(fn, df)
+
+    pf = ParquetFile(fn)
+    assert set(pf.columns) == {'col', 'index0', 'index1'}
+    meta = json.loads(pf.key_value_metadata['pandas'])
+    assert meta['index_columns'] == idx.names
+    out = pf.to_pandas()
+    assert out.index.names == idx.names
+    pd.util.testing.assert_frame_equal(df, out)
+    out = pf.to_pandas(index=False)
+    assert out.index.name is None
+    assert (out.index == range(9)).all()
+    assert len(out.columns) == 3
+
+
 def test_duplicate_columns(tempdir):
     fn = os.path.join(tempdir, 'tmp.parq')
     df = pd.DataFrame(np.arange(12).reshape(4, 3), columns=list('aaa'))

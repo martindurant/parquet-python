@@ -240,7 +240,7 @@ class ParquetFile(object):
                 open=self.open, selfmade=self.selfmade, index=index,
                 assign=assign, scheme=self.file_scheme)
         if ret:
-            return df
+            return dataframe.finalize(df, assign)
 
     def read_row_group(self, rg, columns, categories, infile=None,
                        index=None, assign=None):
@@ -259,7 +259,7 @@ class ParquetFile(object):
                 self.selfmade, index=index, assign=assign,
                 scheme=self.file_scheme)
         if ret:
-            return df
+            return dataframe.finalize(df, assign)
 
     def grab_cats(self, columns, row_group_index=0):
         """ Read dictionaries of first row_group
@@ -356,18 +356,12 @@ class ParquetFile(object):
                for column in rg.columns):
             with self.open(self.fn, 'rb') as f:
                 for rg in rgs:
-                    df, views = self.pre_allocate(rg.num_rows, columns,
-                                                  categories, index)
-                    self.read_row_group(rg, columns, categories, infile=f,
-                                        index=index, assign=views)
-                    yield df
+                    yield self.read_row_group(
+                            rg, columns, categories, infile=f, index=index)
         else:
             for rg in rgs:
-                df, views = self.pre_allocate(rg.num_rows, columns,
-                                              categories, index)
-                self.read_row_group_file(rg, columns, categories, index,
-                                         assign=views)
-                yield df
+                yield self.read_row_group_file(
+                        rg, columns, categories, index=index)
 
     def _get_index(self, index=None):
         if index is None:
@@ -435,7 +429,7 @@ class ParquetFile(object):
                 self.read_row_group_file(rg, columns, categories, index,
                                          assign=parts)
                 start += rg.num_rows
-        return df
+        return dataframe.finalize(df, views)
 
     def pre_allocate(self, size, columns, categories, index):
         if categories is None:
@@ -537,9 +531,8 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     index_types = [get_type(i) for i in index]
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
-    df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
+    return dataframe.empty(dtypes, size, cols=cols, index_names=index,
                                 index_types=index_types, cats=cats, timezones=tz)
-    return df, views
 
 
 def filter_out_stats(rg, filters, schema):
