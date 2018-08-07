@@ -672,3 +672,37 @@ def test_unicode_cols(tempdir):
     write(fn, df)
     pf = ParquetFile(fn)
     pf.to_pandas()
+
+
+def test_multi_cat(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    N = 200
+    df = pd.DataFrame(
+        {'a': np.random.randint(10, size=N),
+         'b': np.random.choice(['a', 'b', 'c'], size=N),
+         'c': np.arange(200)})
+    df['a'] = df.a.astype('category')
+    df['b'] = df.b.astype('category')
+    df = df.set_index(['a', 'b'])
+    write(fn, df)
+
+    pf = ParquetFile(fn)
+    df1 = pf.to_pandas()
+    assert df1.equals(df)
+    assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+
+
+def test_multi(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    N = 200
+    df = pd.DataFrame(
+        {'a': np.random.randint(10, size=N),
+         'b': np.random.choice(['a', 'b', 'c'], size=N),
+         'c': np.arange(200)})
+    df = df.set_index(['a', 'b'])
+    write(fn, df)
+
+    pf = ParquetFile(fn)
+    df1 = pf.to_pandas()
+    assert df1.equals(df)
+    assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])

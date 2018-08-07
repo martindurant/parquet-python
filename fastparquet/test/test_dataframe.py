@@ -1,4 +1,3 @@
-import pandas as pd
 from fastparquet.dataframe import empty
 
 

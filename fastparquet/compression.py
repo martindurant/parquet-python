@@ -13,7 +13,7 @@ decompressions = {
 }
 
 # Gzip is present regardless
-COMPRESSION_LEVEL = 9
+COMPRESSION_LEVEL = 6
 if PY2:
     def gzip_compress_v2(data, compresslevel=COMPRESSION_LEVEL):
         from io import BytesIO

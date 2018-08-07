@@ -9,6 +9,10 @@ import six
 from .util import STR_TYPE
 
 
+class Dummy(object):
+    pass
+
+
 def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
           timezones=None):
     """
@@ -81,8 +85,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col+'-catdef'] = index._data
         else:
             d = np.empty(size, dtype=t)
-            # if d.dtype.kind == "M" and six.text_type(col) in timezones:
-            #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
             index = Index(d)
             views[col] = index.values
     else:
@@ -91,25 +93,19 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         index._levels = list()
         index._labels = list()
         for i, col in enumerate(index_names):
-            if str(index_types[i]) == 'category':
-                c = Categorical([], categories=cat(col), fastpath=True)
-                z = CategoricalIndex(c)
-                z._data._codes = c.categories._data
-                z._set_categories = c._set_categories
-                index._levels.append(z)
+            index._levels.append(Index([None]))
 
-                vals = np.zeros(size, dtype=c.codes.dtype)
-                index._labels.append(vals)
+            def set_cats(values, i=i, col=col, **kwargs):
+                values.name = col
+                index._levels[i] = values
 
-                views[col] = index._labels[i]
-                views[col+'-catdef'] = index._levels[i]
-            else:
-                d = np.empty(size, dtype=index_types[i])
-                # if d.dtype.kind == "M" and six.text_type(col) in timezones:
-                #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
-                index._levels.append(Index(d))
-                index._labels.append(np.arange(size, dtype=int))
-                views[col] = index._levels[i]._data
+            x = Dummy()
+            x._set_categories = set_cats
+
+            d = np.zeros(size, dtype=int)
+            index._labels.append(d)
+            views[col] = d
+            views[col+'-catdef'] = x
 
     axes = [df._data.axes[0], index]
 

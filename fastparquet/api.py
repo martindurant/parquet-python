@@ -393,7 +393,7 @@ class ParquetFile(object):
             Category-type column, potentially saving memory and time. If a
             dict {col: int}, the value indicates the number of categories,
             so that the optimal data-dtype can be allocated. If ``None``,
-            will automatically set *if* the data was written by fastparquet.
+            will automatically set *if* the data was written from pandas.
         filters: list of tuples
             To filter out (i.e., not read) some of the row-groups.
             (This is not row-level filtering)
