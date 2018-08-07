@@ -9,6 +9,11 @@ import six
 from .util import STR_TYPE
 
 
+def _index_name(col):
+    pattern = r'^__index_level_\d+__$'
+    return None if re.match(pattern, col) else col
+
+
 def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
           timezones=None):
     """
@@ -54,6 +59,27 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         else:  # explicit labels list
             return cats[col]
 
+    indexes = []
+    if index_names:
+        for t, col in zip(index_types, index_names):
+            if col is None:
+                raise ValueError('If using an index, must give an index name')
+            if str(t) == 'category':
+                c = Categorical([], categories=cat(col), fastpath=True)
+                vals = np.zeros(size, dtype=c.codes.dtype)
+                index = CategoricalIndex(c)
+                index._data._codes = vals
+                views[col] = vals
+                views[col+'-catdef'] = index._data
+            else:
+                d = np.empty(size, dtype=t)
+                # if d.dtype.kind == "M" and six.text_type(col) in timezones:
+                #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                index = Index(d)
+                views[col] = index.values
+            index.name = _index_name(col)
+            indexes.append(index)
+
     df = OrderedDict()
     for t, col in zip(types, cols):
         if str(t) == 'category':
@@ -66,52 +92,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             df[six.text_type(col)] = d
 
     df = DataFrame(df)
-    if not index_types:
-        index = RangeIndex(size)
-    elif len(index_types) == 1:
-        t, col = index_types[0], index_names[0]
-        if col is None:
-            raise ValueError('If using an index, must give an index name')
-        if str(t) == 'category':
-            c = Categorical([], categories=cat(col), fastpath=True)
-            vals = np.zeros(size, dtype=c.codes.dtype)
-            index = CategoricalIndex(c)
-            index._data._codes = vals
-            views[col] = vals
-            views[col+'-catdef'] = index._data
-        else:
-            d = np.empty(size, dtype=t)
-            # if d.dtype.kind == "M" and six.text_type(col) in timezones:
-            #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
-            index = Index(d)
-            views[col] = index.values
-    else:
-        index = MultiIndex([[]], [[]])
-        # index = MultiIndex.from_arrays(indexes)
-        index._levels = list()
-        index._labels = list()
-        for i, col in enumerate(index_names):
-            if str(index_types[i]) == 'category':
-                c = Categorical([], categories=cat(col), fastpath=True)
-                z = CategoricalIndex(c)
-                z._data._codes = c.categories._data
-                z._set_categories = c._set_categories
-                index._levels.append(z)
-
-                vals = np.zeros(size, dtype=c.codes.dtype)
-                index._labels.append(vals)
-
-                views[col] = index._labels[i]
-                views[col+'-catdef'] = index._levels[i]
-            else:
-                d = np.empty(size, dtype=index_types[i])
-                # if d.dtype.kind == "M" and six.text_type(col) in timezones:
-                #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
-                index._levels.append(Index(d))
-                index._labels.append(np.arange(size, dtype=int))
-                views[col] = index._levels[i]._data
-
-    axes = [df._data.axes[0], index]
 
     # allocate and create blocks
     blocks = []
@@ -135,6 +115,13 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         blocks.append(new_block)
 
     # create block manager
+    axes = [df._data.axes[0], RangeIndex(size)]
+    n_indexes = len(indexes)
+    if n_indexes == 1:
+        axes[1] = indexes[0]
+    elif n_indexes > 1:
+        views['__fastparquet_multiindex__'] = indexes
+
     df = DataFrame(BlockManager(blocks, axes))
 
     # create views
@@ -153,9 +140,12 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             else:
                 views[col] = block.values[i]
 
-    if index_names:
-        df.index.names = [
-            None if re.match(r'__index_level_\d+__', n) else n
-            for n in index_names
-        ]
     return df, views
+
+
+def finalize(df, views):
+    indexes = views.get('__fastparquet_multiindex__', [])
+    if len(indexes) > 1:
+        index = MultiIndex.from_arrays(indexes)
+        df.index = index
+    return df
