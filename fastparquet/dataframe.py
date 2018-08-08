@@ -18,6 +18,25 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     """
     Create empty DataFrame to assign into
 
+    In the simplest case, will return a Pandas dataframe of the given size,
+    with columns of the given names and types. The second return value `views`
+    is a dictionary of numpy arrays into which you can assign values that
+    show up in the dataframe.
+
+    For categorical columns, you get two views to assign into: if the
+    column name is "col", you get both "col" (the category codes) and
+    "col-catdef" (the category labels).
+
+    For a single categorical index, you should use the `.set_categories`
+    method of the appropriate "-catdef" columns, passing an Index of values
+
+    ``views['index-catdef'].set_categories(pd.Index(newvalues), fastpath=True)``
+
+    Multi-indexes work a lot like categoricals, even if the types of each
+    index are not themselves categories, and will also have "-catdef" entries
+    in the views. However, these will be Dummy instances, providing only a
+    ``.set_categories`` method, to be used as above.
+
     Parameters
     ----------
     types: like np record structure, 'i4,u2,f4,f2,f4,M8,m8', or using tuples
@@ -33,6 +52,12 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         is missing, will assume 16-bit integers (a reasonable default).
     cols: list of labels
         assigned column names, including categorical ones.
+    index_types: list of str
+        For one of more index columns, make them have this type. See general
+        description, above, for caveats about multi-indexing. If None, the
+        index will be the default RangeIndex.
+    index_names: list of str
+        Names of the index column(s), if using
     timezones: dict {col: timezone_str}
         for timestamp type columns, apply this timezone to the pandas series;
         the numpy view will be UTC.
