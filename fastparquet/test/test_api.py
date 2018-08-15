@@ -692,6 +692,37 @@ def test_multi_cat(tempdir):
     assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
 
 
+def test_multi_cat_single(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    N = 200
+    df = pd.DataFrame(
+        {'a': np.random.randint(10, size=N),
+         'b': np.random.choice(['a', 'b', 'c'], size=N),
+         'c': np.arange(200)})
+    df = df.set_index(['a', 'b'])
+    write(fn, df)
+
+    pf = ParquetFile(fn)
+    df1 = pf.to_pandas()
+    assert df1.equals(df)
+    assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+
+
+def test_multi_cat_fail(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    N = 200
+    df = pd.DataFrame(
+        {'a': np.random.randint(10, size=N),
+         'b': np.random.choice(['a', 'b', 'c'], size=N),
+         'c': np.arange(200)})
+    df = df.set_index(['a', 'b'])
+    write(fn, df, row_group_offsets=25)
+
+    pf = ParquetFile(fn)
+    with pytest.raises(RuntimeError):
+        pf.to_pandas()
+
+
 def test_multi(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     N = 200

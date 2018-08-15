@@ -227,8 +227,7 @@ class ParquetFile(object):
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None):
         """ Open file for reading, and process it as a row-group """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
         ret = False
         if assign is None:
@@ -247,8 +246,7 @@ class ParquetFile(object):
         """
         Access row-group in a file and read some columns into a data-frame.
         """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         ret = False
         if assign is None:
             df, assign = self.pre_allocate(rg.num_rows, columns,
@@ -438,8 +436,7 @@ class ParquetFile(object):
         return df
 
     def pre_allocate(self, size, columns, categories, index):
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         tz = None
         if 'pandas' in self.key_value_metadata:
             md = json.loads(self.key_value_metadata['pandas'])['columns']
@@ -458,6 +455,18 @@ class ParquetFile(object):
         """ Some metadata details """
         return {'name': self.fn, 'columns': self.columns,
                 'partitions': list(self.cats), 'rows': self.count}
+
+    def check_categories(self, cats):
+        categ = self.categories
+        if (self.fmd.key_value_metadata is None
+                or self.key_value_metadata.get('pandas', None) is None):
+            return cats or {}
+        if cats is None:
+            return categ or {}
+        if any(c not in categ for c in cats):
+            raise TypeError('Attempt to load column as categorical that was'
+                            ' not categorical in the original pandas data')
+        return cats
 
     @property
     def categories(self):
@@ -478,8 +487,7 @@ class ParquetFile(object):
 
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         dtype = OrderedDict((name, (converted_types.typemap(f)
                             if f.num_children in [None, 0] else np.dtype("O")))
                             for name, f in self.schema.root.children.items())

@@ -122,7 +122,11 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
             def set_cats(values, i=i, col=col, **kwargs):
                 values.name = col
-                index._levels[i] = values
+                if index._levels[i][0] is None:
+                    index._levels[i] = values
+                elif not index._levels[i].equals(values):
+                    raise RuntimeError("Different dictionaries encountered"
+                                       " while building categorical")
 
             x = Dummy()
             x._set_categories = set_cats
