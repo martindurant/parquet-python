@@ -335,3 +335,18 @@ def test_multi_index_category(tempdir):
     assert dg.index.levels[0].dtype == '<M8[ns]'
     assert dg.index.levels[1].name == 'b'
     assert dg.equals(df)
+
+def test_no_columns(tempdir):
+    # https://github.com/dask/fastparquet/issues/361
+    # Create a non-empty DataFrame, then select no columns. That way we get
+    # _some_ rows, _no_ columns.
+    #
+    # df = pd.DataFrame({"A": [1, 2]})[[]]
+    # fastparquet.write("test-data/no_columns.parquet", df)
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "no_columns.parquet"))
+    assert pf.count == 2
+    assert pf.columns == []
+    result = pf.to_pandas()
+    expected = pd.DataFrame({"A": [1, 2]})[[]]
+    assert len(result) == 2
+    pd.testing.assert_frame_equal(result, expected)

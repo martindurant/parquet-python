@@ -153,8 +153,10 @@ class ParquetFile(object):
                 self.group_files.setdefault(i, set()).add(chunk.file_path)
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
-        self.file_scheme = get_file_scheme([rg.columns[0].file_path
-                                           for rg in self.row_groups])
+        files = [rg.columns[0].file_path
+                 for rg in self.row_groups
+                 if rg.columns]
+        self.file_scheme = get_file_scheme(files)
         self._read_partitions()
         self._dtypes()
 
@@ -215,7 +217,7 @@ class ParquetFile(object):
                                 for key, v in cats.items()])
 
     def row_group_filename(self, rg):
-        if rg.columns[0].file_path:
+        if rg.columns and rg.columns[0].file_path:
             base = self.fn.replace('_metadata', '').rstrip('/')
             if base:
                 return join_path(base, rg.columns[0].file_path)
