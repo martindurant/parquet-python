@@ -350,3 +350,28 @@ def test_no_columns(tempdir):
     expected = pd.DataFrame({"A": [1, 2]})[[]]
     assert len(result) == 2
     pd.testing.assert_frame_equal(result, expected)
+
+def test_map(tempdir):
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "map-test.snappy.parquet"))
+    assert pf.count == 3551
+    df = pf.to_pandas()
+    first_row = {u'FoxNews.com': 1.0, u'News Network': 0.4822922348976135, u'mobile technology': 0.8399999737739563,
+                 u'broadcast': 0.1539246141910553, u'sustainability': 0.07000000029802322,
+                 u'collective intelligence': 0.8399999737739563, u'radio': 0.8399999737739563,
+                 u'business law': 0.9900000095367432, u'LLC': 0.6126282811164856,
+                 u'telecommunications': 0.8399999737739563, u'FOX News Network': 1.0
+    }
+    last_row = {u'protests': 0.17000000178813934, u'gas mask': 0.025569163262844086, u'Pot & Painting Party': 1.0,
+                 u'Denver': 1.0, u'New Year': 0.07670748978853226, u'Anderson Cooper': 0.5639228820800781,
+                 u'gas mask bonk': 0.025569163262844086, u'digital media': 0.20999999344348907,
+                 u'marijuana leaf earrings': 0.05113832652568817, u'Screengrab': 0.05113832652568817,
+                 u'gas mask bongs': 0.025569163262844086, u'Randi Kaye': 0.627845823764801,
+                 u'Lee Rogers': 0.5127846002578735, u'Andy Cohen': 0.5767074823379517,
+                 u'CNN': 0.5269705057144165, u'Times Square': 0.025569163262844086, u'Colorado': 1.0,
+                 u'opera': 0.20999999344348907, u'slavery': 0.20999999344348907, u'Kathy Griffin': 0.5255691409111023,
+                 u'marijuana cigarette': 0.025569163262844086, u'executive producer': 0.025569163262844086
+    }
+    assert len(df) == 3551
+    assert df["topics"].iloc[0] == first_row
+    assert df["topics"].iloc[-1] == last_row
+    assert len(df) - df.count() == 0 # ensure every row got converted
