@@ -249,7 +249,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             null = not schema_helper.is_required(cmd.path_in_schema[0])
             null_val = (se.repetition_type !=
                         parquet_thrift.FieldRepetitionType.REQUIRED)
-            num = encoding._assemble_objects(assign, defi, rep, val, dic, d,
+            num += encoding._assemble_objects(assign, defi, rep, val, dic, d,
                                              null, null_val, max_defi)
         elif defi is not None:
             max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
