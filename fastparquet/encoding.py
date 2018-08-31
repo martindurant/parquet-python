@@ -245,6 +245,8 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
         can list elements be None
     max_defi: int
         value of definition level that corresponds to non-null
+    prev_i: int
+        1 + index where the last row in the previous page was inserted (0 if first page)
     """
     ## TODO: good case for cython
     if d:
@@ -265,7 +267,11 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
                 part = []
                 i += 1
             else:
-                # first time: no row to save yet
+                # first time: no row to save yet, unless it's a row continued from previous page
+                if vali > 0:
+                    assign[i - 1].extend(part) # add the items to previous row
+                    part = []
+                    # don't increment i since we only filled i-1
                 started = True
         if de == max_defi:
             # append real value to current item
@@ -276,7 +282,10 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
             part.append(None)
         # next object is None as opposed to an object
         have_null = de == 0 and null
-    assign[i] = None if have_null else part
+    if started: # normal case - add the leftovers to the next row
+        assign[i] = None if have_null else part
+    else: # can only happen if the only elements in this page are the continuation of the last row from previous page
+        assign[i - 1].extend(part)
     return i
 
 
