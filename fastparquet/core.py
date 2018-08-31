@@ -211,7 +211,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
                                (assign.dtype, len(dic)))
 
     rows = cmd.num_values
-    print "rows: %d" % rows
 
     do_convert = True
     if use_cat:
@@ -235,9 +234,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
             skip_nulls = False
         defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
                                         skip_nulls, selfmade=selfmade)
-        print "defi: %s" % str(defi)
-        print "rep: %s" % str(rep)
-        print "val: %s" % str(val)
         if rep is not None and assign.dtype.kind != 'O':  # pragma: no cover
             # this should never get called
             raise ValueError('Column contains repeated value, must use object '
@@ -251,16 +247,12 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
         max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
         if rep is not None:
-            print "rep is not None"
             null = not schema_helper.is_required(cmd.path_in_schema[0])
             null_val = (se.repetition_type !=
                         parquet_thrift.FieldRepetitionType.REQUIRED)
             row_idx = 1 + encoding._assemble_objects(assign, defi, rep, val, dic, d,
                                              null, null_val, max_defi, row_idx)
-            print "assemble_num: %d" % row_idx
-            #num += assemble_num
         elif defi is not None:
-            print "defi is not None"
             max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
             part = assign[num:num+len(defi)]
             part[defi != max_defi] = my_nan
@@ -271,7 +263,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
             else:
                 part[defi == max_defi] = val
         else:
-            print "else"
             piece = assign[num:num+len(val)]
             if use_cat and not d:
                 # only possible for multi-index
@@ -291,12 +282,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 piece[:] = val
 
         if defi is not None: print "len(defi): %d" % len(defi)
-        print "len(val): %d" % len(val)
-        print "num_before: %d" % num
         num += len(defi) if defi is not None else len(val)
-        print "num_after: %d" % num
         if num >= rows:
-            print "breaking"
             break
         ph = read_thrift(infile, parquet_thrift.PageHeader)
 
@@ -328,7 +315,6 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
             name = ".".join(column.meta_data.path_in_schema[:-2])
         else:
             name = ".".join(column.meta_data.path_in_schema)
-        print(name)
         if name not in columns:
             continue
 
@@ -337,23 +323,13 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
                  catdef=out.get(name+'-catdef', None))
 
         if _is_map_like(schema_helper, column):
-            print("map like")
             if name not in maps:
-                print("name not in maps")
                 maps[name] = out[name].copy()
-                print(len(maps[name]))
-                print(maps[name][1200:1210])
             else:
-                print("name in maps")
                 if column.meta_data.path_in_schema[0] == 'key':
-                    print("key")
                     key, value = out[name], maps[name]
                 else:
-                    print("not key")
                     value, key = out[name], maps[name]
-                    print(len(out[name]))
-                    print(len(maps[name]))
-                    print(out[name][1200:1210])
                 out[name][:] = [dict(zip(k, v)) if k is not None else None
                                 for k, v in zip(key, value)]
 

@@ -276,7 +276,6 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
             part.append(None)
         # next object is None as opposed to an object
         have_null = de == 0 and null
-    print("inserting at %d" % i)
     assign[i] = None if have_null else part
     return i
 
