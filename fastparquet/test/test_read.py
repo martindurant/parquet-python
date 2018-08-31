@@ -365,4 +365,4 @@ def test_map_multipage(tempdir):
     assert len(df) == 3551
     assert sorted(df["topics"].iloc[0].keys()) == sorted(first_row_keys)
     assert sorted(df["topics"].iloc[-1].keys()) == sorted(last_row_keys)
-    assert len(df) - df.count() == 0 # ensure every row got converted
+    assert df.isnull().sum().sum() == 0 # ensure every row got converted
