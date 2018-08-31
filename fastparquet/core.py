@@ -281,7 +281,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
             else:
                 piece[:] = val
 
-        if defi is not None: print "len(defi): %d" % len(defi)
         num += len(defi) if defi is not None else len(val)
         if num >= rows:
             break
