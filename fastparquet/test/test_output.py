@@ -640,31 +640,15 @@ def test_autocat(tempdir):
     pf = ParquetFile(fn)
     assert 'o' in pf.categories
     assert pf.categories['o'] == 2
-    assert pf.dtypes['o'] == 'category'
+    assert str(pf.dtypes['o']) == 'category'
     out = pf.to_pandas()
     assert out.dtypes['o'] == 'category'
     out = pf.to_pandas(categories={})
     assert str(out.dtypes['o']) != 'category'
     out = pf.to_pandas(categories=['o'])
-    assert out.dtypes['o'] == 'category'
+    assert out.dtypes['o'].kind == 'O'
     out = pf.to_pandas(categories={'o': 2})
-    assert out.dtypes['o'] == 'category'
-
-    # regression test
-    pf.fmd.key_value_metadata = [parquet_thrift.KeyValue(
-        key='fastparquet.cats', value='{"o": 2}')]
-    pf._set_attrs()
-    assert 'o' in pf.categories
-    assert pf.categories['o'] == 2
-    assert pf.dtypes['o'] == 'category'
-    out = pf.to_pandas()
-    assert out.dtypes['o'] == 'category'
-    out = pf.to_pandas(categories={})
-    assert str(out.dtypes['o']) != 'category'
-    out = pf.to_pandas(categories=['o'])
-    assert out.dtypes['o'] == 'category'
-    out = pf.to_pandas(categories={'o': 2})
-    assert out.dtypes['o'] == 'category'
+    assert out.dtypes['o'].kind == 'O'
 
 
 @pytest.mark.parametrize('row_groups', ([0], [0, 2]))

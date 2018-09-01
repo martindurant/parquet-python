@@ -153,8 +153,10 @@ class ParquetFile(object):
                 self.group_files.setdefault(i, set()).add(chunk.file_path)
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
-        self.file_scheme = get_file_scheme([rg.columns[0].file_path
-                                           for rg in self.row_groups])
+        files = [rg.columns[0].file_path
+                 for rg in self.row_groups
+                 if rg.columns]
+        self.file_scheme = get_file_scheme(files)
         self._read_partitions()
         self._dtypes()
 
@@ -215,7 +217,7 @@ class ParquetFile(object):
                                 for key, v in cats.items()])
 
     def row_group_filename(self, rg):
-        if rg.columns[0].file_path:
+        if rg.columns and rg.columns[0].file_path:
             base = self.fn.replace('_metadata', '').rstrip('/')
             if base:
                 return join_path(base, rg.columns[0].file_path)
@@ -227,8 +229,7 @@ class ParquetFile(object):
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None):
         """ Open file for reading, and process it as a row-group """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
         ret = False
         if assign is None:
@@ -247,8 +248,7 @@ class ParquetFile(object):
         """
         Access row-group in a file and read some columns into a data-frame.
         """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         ret = False
         if assign is None:
             df, assign = self.pre_allocate(rg.num_rows, columns,
@@ -393,7 +393,7 @@ class ParquetFile(object):
             Category-type column, potentially saving memory and time. If a
             dict {col: int}, the value indicates the number of categories,
             so that the optimal data-dtype can be allocated. If ``None``,
-            will automatically set *if* the data was written by fastparquet.
+            will automatically set *if* the data was written from pandas.
         filters: list of tuples
             To filter out (i.e., not read) some of the row-groups.
             (This is not row-level filtering)
@@ -438,8 +438,7 @@ class ParquetFile(object):
         return df
 
     def pre_allocate(self, size, columns, categories, index):
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         tz = None
         if 'pandas' in self.key_value_metadata:
             md = json.loads(self.key_value_metadata['pandas'])['columns']
@@ -458,6 +457,18 @@ class ParquetFile(object):
         """ Some metadata details """
         return {'name': self.fn, 'columns': self.columns,
                 'partitions': list(self.cats), 'rows': self.count}
+
+    def check_categories(self, cats):
+        categ = self.categories
+        if (self.fmd.key_value_metadata is None
+                or self.key_value_metadata.get('pandas', None) is None):
+            return cats or {}
+        if cats is None:
+            return categ or {}
+        if any(c not in categ for c in cats):
+            raise TypeError('Attempt to load column as categorical that was'
+                            ' not categorical in the original pandas data')
+        return cats
 
     @property
     def categories(self):
@@ -478,8 +489,7 @@ class ParquetFile(object):
 
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         dtype = OrderedDict((name, (converted_types.typemap(f)
                             if f.num_children in [None, 0] else np.dtype("O")))
                             for name, f in self.schema.root.children.items())

@@ -13,7 +13,7 @@ decompressions = {
 }
 
 # Gzip is present regardless
-COMPRESSION_LEVEL = 9
+COMPRESSION_LEVEL = 6
 if PY2:
     def gzip_compress_v2(data, compresslevel=COMPRESSION_LEVEL):
         from io import BytesIO
@@ -92,7 +92,11 @@ if 'ZSTD' not in compressions:
         def zstd_compress(data, **kwargs):
             kwargs['write_content_size'] = False
             cctx = zstd.ZstdCompressor(**kwargs)
-            return cctx.compress(data, allow_empty=True)
+            try:
+                return cctx.compress(data, allow_empty=True)
+            except TypeError:
+                # zstandard-0.9 removed allow_empy and made it the default.
+                return cctx.compress(data)
         def zstd_decompress(data, uncompressed_size):
             dctx = zstd.ZstdDecompressor()
             return dctx.decompress(data, max_output_size=uncompressed_size)

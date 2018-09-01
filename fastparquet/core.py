@@ -1,8 +1,4 @@
-import io
-import os
-import re
-import struct
-
+import warnings
 import numpy as np
 import pandas as pd
 try:
@@ -205,7 +201,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
         dic = convert(dic, se)
     if grab_dict:
         return dic
-    if use_cat:
+    if use_cat and dic is not None:
         # fastpath skips the check the number of categories hasn't changed.
         # In this case, they may change, if the default RangeIndex was used.
         catdef._set_categories(pd.Index(dic), fastpath=True)
@@ -229,6 +225,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             my_nan = None
 
     num = 0
+    row_idx = 0
     while True:
         if (selfmade and hasattr(cmd, 'statistics') and
                 getattr(cmd.statistics, 'null_count', 1) == 0):
@@ -239,21 +236,22 @@ def read_col(column, schema_helper, infile, use_cat=False,
                                         skip_nulls, selfmade=selfmade)
         if rep is not None and assign.dtype.kind != 'O':  # pragma: no cover
             # this should never get called
-            raise ValueError('Column contains repeated value, must use object'
+            raise ValueError('Column contains repeated value, must use object '
                              'type, but has assumed type: %s' % assign.dtype)
         d = ph.data_page_header.encoding == parquet_thrift.Encoding.PLAIN_DICTIONARY
         if use_cat and not d:
-            raise ValueError('Returning category type requires all chunks to'
-                             'use dictionary encoding; column: %s',
-                             cmd.path_in_schema)
+            if not hasattr(catdef, '_set_categories'):
+                raise ValueError('Returning category type requires all chunks'
+                                 ' to use dictionary encoding; column: %s',
+                                 cmd.path_in_schema)
 
         max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
         if rep is not None:
             null = not schema_helper.is_required(cmd.path_in_schema[0])
             null_val = (se.repetition_type !=
                         parquet_thrift.FieldRepetitionType.REQUIRED)
-            num = encoding._assemble_objects(assign, defi, rep, val, dic, d,
-                                             null, null_val, max_defi)
+            row_idx = 1 + encoding._assemble_objects(assign, defi, rep, val, dic, d,
+                                             null, null_val, max_defi, row_idx)
         elif defi is not None:
             max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
             part = assign[num:num+len(defi)]
@@ -266,7 +264,17 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 part[defi == max_defi] = val
         else:
             piece = assign[num:num+len(val)]
-            if d and not use_cat:
+            if use_cat and not d:
+                # only possible for multi-index
+                warnings.warn("Non-categorical multi-index is likely brittle")
+                val = convert(val, se)
+                try:
+                    i = pd.Categorical(val)
+                except:
+                    i = pd.Categorical(val.tolist())
+                catdef._set_categories(pd.Index(i.categories), fastpath=True)
+                piece[:] = i.codes
+            elif d and not use_cat:
                 piece[:] = dic[val]
             elif do_convert:
                 piece[:] = convert(val, se)
@@ -309,10 +317,9 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
         if name not in columns:
             continue
 
-        use = name in categories if categories is not None else False
-        read_col(column, schema_helper, file, use_cat=use,
+        read_col(column, schema_helper, file, use_cat=name+'-catdef' in out,
                  selfmade=selfmade, assign=out[name],
-                 catdef=out[name+'-catdef'] if use else None)
+                 catdef=out.get(name+'-catdef', None))
 
         if _is_map_like(schema_helper, column):
             if name not in maps:

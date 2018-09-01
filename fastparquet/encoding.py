@@ -224,7 +224,7 @@ spec32 = [('data', numba.uint32[:]), ('loc', numba.int64), ('len', numba.int64)]
 Numpy32 = numba.jitclass(spec32)(NumpyIO)
 
 
-def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi):
+def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, prev_i):
     """Dremel-assembly of arrays of values into lists
 
     Parameters
@@ -250,7 +250,7 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi):
     if d:
         # dereference dict values
         val = dic[val]
-    i = 0
+    i = prev_i
     vali = 0
     part = []
     started = False

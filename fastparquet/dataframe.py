@@ -9,10 +9,33 @@ import six
 from .util import STR_TYPE
 
 
+class Dummy(object):
+    pass
+
+
 def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
           timezones=None):
     """
     Create empty DataFrame to assign into
+
+    In the simplest case, will return a Pandas dataframe of the given size,
+    with columns of the given names and types. The second return value `views`
+    is a dictionary of numpy arrays into which you can assign values that
+    show up in the dataframe.
+
+    For categorical columns, you get two views to assign into: if the
+    column name is "col", you get both "col" (the category codes) and
+    "col-catdef" (the category labels).
+
+    For a single categorical index, you should use the `.set_categories`
+    method of the appropriate "-catdef" columns, passing an Index of values
+
+    ``views['index-catdef'].set_categories(pd.Index(newvalues), fastpath=True)``
+
+    Multi-indexes work a lot like categoricals, even if the types of each
+    index are not themselves categories, and will also have "-catdef" entries
+    in the views. However, these will be Dummy instances, providing only a
+    ``.set_categories`` method, to be used as above.
 
     Parameters
     ----------
@@ -29,6 +52,12 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         is missing, will assume 16-bit integers (a reasonable default).
     cols: list of labels
         assigned column names, including categorical ones.
+    index_types: list of str
+        For one of more index columns, make them have this type. See general
+        description, above, for caveats about multi-indexing. If None, the
+        index will be the default RangeIndex.
+    index_names: list of str
+        Names of the index column(s), if using
     timezones: dict {col: timezone_str}
         for timestamp type columns, apply this timezone to the pandas series;
         the numpy view will be UTC.
@@ -81,8 +110,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col+'-catdef'] = index._data
         else:
             d = np.empty(size, dtype=t)
-            # if d.dtype.kind == "M" and six.text_type(col) in timezones:
-            #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
             index = Index(d)
             views[col] = index.values
     else:
@@ -91,25 +118,23 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         index._levels = list()
         index._labels = list()
         for i, col in enumerate(index_names):
-            if str(index_types[i]) == 'category':
-                c = Categorical([], categories=cat(col), fastpath=True)
-                z = CategoricalIndex(c)
-                z._data._codes = c.categories._data
-                z._set_categories = c._set_categories
-                index._levels.append(z)
+            index._levels.append(Index([None]))
 
-                vals = np.zeros(size, dtype=c.codes.dtype)
-                index._labels.append(vals)
+            def set_cats(values, i=i, col=col, **kwargs):
+                values.name = col
+                if index._levels[i][0] is None:
+                    index._levels[i] = values
+                elif not index._levels[i].equals(values):
+                    raise RuntimeError("Different dictionaries encountered"
+                                       " while building categorical")
 
-                views[col] = index._labels[i]
-                views[col+'-catdef'] = index._levels[i]
-            else:
-                d = np.empty(size, dtype=index_types[i])
-                # if d.dtype.kind == "M" and six.text_type(col) in timezones:
-                #     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
-                index._levels.append(Index(d))
-                index._labels.append(np.arange(size, dtype=int))
-                views[col] = index._levels[i]._data
+            x = Dummy()
+            x._set_categories = set_cats
+
+            d = np.zeros(size, dtype=int)
+            index._labels.append(d)
+            views[col] = d
+            views[col+'-catdef'] = x
 
     axes = [df._data.axes[0], index]
 

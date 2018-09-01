@@ -334,4 +334,35 @@ def test_multi_index_category(tempdir):
     assert dg.index.levels[0].name == 'a'
     assert dg.index.levels[0].dtype == '<M8[ns]'
     assert dg.index.levels[1].name == 'b'
-    assert dg.index.levels[1].is_categorical()
+    assert dg.equals(df)
+
+def test_no_columns(tempdir):
+    # https://github.com/dask/fastparquet/issues/361
+    # Create a non-empty DataFrame, then select no columns. That way we get
+    # _some_ rows, _no_ columns.
+    #
+    # df = pd.DataFrame({"A": [1, 2]})[[]]
+    # fastparquet.write("test-data/no_columns.parquet", df)
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "no_columns.parquet"))
+    assert pf.count == 2
+    assert pf.columns == []
+    result = pf.to_pandas()
+    expected = pd.DataFrame({"A": [1, 2]})[[]]
+    assert len(result) == 2
+    pd.testing.assert_frame_equal(result, expected)
+
+def test_map_multipage(tempdir):
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "map-test.snappy.parquet"))
+    assert pf.count == 3551
+    df = pf.to_pandas()
+    first_row_keys = [u'FoxNews.com', u'News Network', u'mobile technology', u'broadcast', u'sustainability',
+                      u'collective intelligence', u'radio', u'business law', u'LLC', u'telecommunications',
+                      u'FOX News Network']
+    last_row_keys = [u'protests', u'gas mask', u'Pot & Painting Party', u'Denver', u'New Year', u'Anderson Cooper',
+                     u'gas mask bonk', u'digital media', u'marijuana leaf earrings', u'Screengrab', u'gas mask bongs',
+                     u'Randi Kaye', u'Lee Rogers', u'Andy Cohen', u'CNN', u'Times Square', u'Colorado', u'opera',
+                     u'slavery', u'Kathy Griffin', u'marijuana cigarette', u'executive producer']
+    assert len(df) == 3551
+    assert sorted(df["topics"].iloc[0].keys()) == sorted(first_row_keys)
+    assert sorted(df["topics"].iloc[-1].keys()) == sorted(last_row_keys)
+    assert df.isnull().sum().sum() == 0 # ensure every row got converted
