@@ -97,6 +97,36 @@ def test_sorted_row_group_columns(tempdir):
     assert result == expected
 
 
+def test_sorted_row_group_columns_with_filters(tempdir):
+    dd = pytest.importorskip('dask.dataframe')
+    # create dummy dataframe
+    df = pd.DataFrame({'unique': [0, 0, 1, 1, 2, 2, 3, 3],
+                       'id': ['id1', 'id2',
+                              'id1', 'id2',
+                              'id1', 'id2',
+                              'id1', 'id2']},
+                      index=[0, 0, 1, 1, 2, 2, 3, 3])
+    df = dd.from_pandas(df, npartitions=2)
+    fn = os.path.join(tempdir, 'foo.parquet')
+    df.to_parquet(fn,
+                  engine='fastparquet',
+                  partition_on=['id'])
+    # load ParquetFile
+    pf = ParquetFile(fn)
+    filters = [('id', '==', 'id1')]
+
+    # without filters no columns are sorted
+    result = sorted_partitioned_columns(pf)
+    expected = {}
+    assert result == expected
+
+    # with filters both columns are sorted
+    result = sorted_partitioned_columns(pf, filters=filters)
+    expected = {'index': {'min': [0, 2], 'max': [1, 3]},
+                'unique': {'min': [0, 2], 'max': [1, 3]}}
+    assert result == expected
+
+
 def test_iter(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3, 4],
                        'y': [1.0, 2.0, 1.0, 2.0],

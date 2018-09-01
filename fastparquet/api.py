@@ -682,7 +682,7 @@ def statistics(obj):
         return d
 
 
-def sorted_partitioned_columns(pf):
+def sorted_partitioned_columns(pf, filters=None):
     """
     The columns that are known to be sorted partition-by-partition
 
@@ -703,6 +703,13 @@ def sorted_partitioned_columns(pf):
     statistics
     """
     s = statistics(pf)
+    if (filters is not None) & (filters != []):
+        idx_list = [i for i, rg in enumerate(pf.row_groups) if
+                    not(filter_out_stats(rg, filters, pf.schema)) and
+                    not(filter_out_cats(rg, filters))]
+        for stat in s.keys():
+            for col in s[stat].keys():
+                s[stat][col] = [s[stat][col][i] for i in idx_list]
     columns = pf.columns
     out = dict()
     for c in columns:
