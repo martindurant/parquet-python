@@ -5,6 +5,7 @@ import json
 import re
 import struct
 import warnings
+from io import BytesIO
 
 import numba
 import numpy as np
@@ -694,33 +695,45 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
     """
     Write to one single file (for file_scheme='simple')
     """
-    if append:
-        pf = api.ParquetFile(fn, open_with=open_with)
-        if pf.file_scheme not in ['simple', 'empty']:
-            raise ValueError('File scheme requested is simple, but '
-                             'existing file scheme is not')
-        fmd = pf.fmd
-        mode = 'rb+'
+    # Issue #360 - add type check to support usecase where a bytes object may be written to if required for simple schemas.
+    if type(fn) == BytesIO:
+        bytes_object_writer = BytesObjectWriter(
+            buffer=fn,
+            data=data,
+            fmd=fmd,
+            row_group_offsets=row_group_offsets,
+            compression=compression,
+            append=append
+        )
+        bytes_object_writer.write()
     else:
-        mode = 'wb'
-    with open_with(fn, mode) as f:
         if append:
-            f.seek(-8, 2)
-            head_size = struct.unpack('<i', f.read(4))[0]
-            f.seek(-(head_size+8), 2)
+            pf = api.ParquetFile(fn, open_with=open_with)
+            if pf.file_scheme not in ['simple', 'empty']:
+                raise ValueError('File scheme requested is simple, but '
+                                 'existing file scheme is not')
+            fmd = pf.fmd
+            mode = 'rb+'
         else:
-            f.write(MARKER)
-        for i, start in enumerate(row_group_offsets):
-            end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
-                   else None)
-            rg = make_row_group(f, data[start:end], fmd.schema,
-                                compression=compression)
-            if rg is not None:
-                fmd.row_groups.append(rg)
+            mode = 'wb'
+        with open_with(fn, mode) as f:
+            if append:
+                f.seek(-8, 2)
+                head_size = struct.unpack('<i', f.read(4))[0]
+                f.seek(-(head_size+8), 2)
+            else:
+                f.write(MARKER)
+            for i, start in enumerate(row_group_offsets):
+                end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
+                       else None)
+                rg = make_row_group(f, data[start:end], fmd.schema,
+                                    compression=compression)
+                if rg is not None:
+                    fmd.row_groups.append(rg)
 
-        foot_size = write_thrift(f, fmd)
-        f.write(struct.pack(b"<i", foot_size))
-        f.write(MARKER)
+            foot_size = write_thrift(f, fmd)
+            f.write(struct.pack(b"<i", foot_size))
+            f.write(MARKER)
 
 
 def write(filename, data, row_group_offsets=50000000,
@@ -1030,3 +1043,34 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     out_file = join_path(basepath, '_common_metadata')
     write_common_metadata(out_file, fmd, open_with)
     return out
+
+
+class BytesObjectWriter:
+
+    def __init__(self, buffer=None, data=None, fmd=None, row_group_offsets=None, compression=None, append=None):
+        self.buffer = buffer
+        self.data = data
+        self.fmd = fmd
+        self.row_group_offsets = row_group_offsets
+        self.compression = compression
+        self.append = append
+
+    def write(self):
+        if self.append:
+            self.buffer.seek(-8, 2)
+            head_size = struct.unpack('<i', self.buffer.read(4))[0]
+            self.buffer.seek(-(head_size + 8), 2)
+        else:
+            self.buffer.write(MARKER)
+        for i, start in enumerate(self.row_group_offsets):
+            end = (self.row_group_offsets[i + 1] if i < (len(self.row_group_offsets) - 1)
+                   else None)
+            rg = make_row_group(self.buffer, self.data[start:end], self.fmd.schema,
+                                compression=self.compression)
+            if rg is not None:
+                self.fmd.row_groups.append(rg)
+
+        foot_size = write_thrift(self.buffer, self.fmd)
+        self.buffer.write(struct.pack(b"<i", foot_size))
+        self.buffer.write(MARKER)
+
