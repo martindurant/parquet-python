@@ -497,17 +497,20 @@ class ParquetFile(object):
             if dt.kind in ['i', 'b']:
                 # int/bool columns that may have nulls become float columns
                 num_nulls = 0
-                for rg in self.row_groups:
-                    chunk = rg.columns[i]
-                    if chunk.meta_data.statistics is None:
-                        num_nulls = True
-                        break
-                    if chunk.meta_data.statistics.null_count is None:
-                        num_nulls = True
-                        break
-                    if chunk.meta_data.statistics.null_count:
-                        num_nulls = True
-                        break
+                if not self.schema.is_required(col):
+                    num_nulls = True
+                else:
+                    for rg in self.row_groups:
+                        chunk = rg.columns[i]
+                        if chunk.meta_data.statistics is None:
+                            num_nulls = True
+                            break
+                        if chunk.meta_data.statistics.null_count is None:
+                            num_nulls = True
+                            break
+                        if chunk.meta_data.statistics.null_count:
+                            num_nulls = True
+                            break
                 if num_nulls:
                     if dtype[col].itemsize == 1:
                         dtype[col] = np.dtype('f2')
