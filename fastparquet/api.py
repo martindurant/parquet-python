@@ -497,7 +497,7 @@ class ParquetFile(object):
             if dt.kind in ['i', 'b']:
                 # int/bool columns that may have nulls become float columns
                 num_nulls = 0
-                if not self.schema.is_required(col):
+                if '.' in col and not self.schema.is_required(col):
                     num_nulls = True
                 else:
                     for rg in self.row_groups:
