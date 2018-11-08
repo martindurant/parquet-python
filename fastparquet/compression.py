@@ -89,17 +89,12 @@ except ImportError:
 if 'ZSTD' not in compressions:
     try:
         import zstd
-        def zstd_compress(data, **kwargs):
-            kwargs['write_content_size'] = False
-            cctx = zstd.ZstdCompressor(**kwargs)
-            try:
-                return cctx.compress(data, allow_empty=True)
-            except TypeError:
-                # zstandard-0.9 removed allow_empy and made it the default.
-                return cctx.compress(data)
-        def zstd_decompress(data, uncompressed_size):
-            dctx = zstd.ZstdDecompressor()
-            return dctx.decompress(data, max_output_size=uncompressed_size)
+        def zstd_compress(data, level=None):
+            if level is not None:
+                return zstd.compress(data, level)
+            return zstd.compress(data)
+        def zstd_decompress(data):
+            return zstd.decompress(data)
         compressions['ZSTD'] = zstd_compress
         decompressions['ZSTD'] = zstd_decompress
     except ImportError:

@@ -93,6 +93,7 @@ setup(
         'python-snappy',
         'lz4 >= 0.19.1',
         'zstandard',
+        'zstd',
     ],
     long_description=(open('README.rst').read() if os.path.exists('README.rst')
                       else ''),
