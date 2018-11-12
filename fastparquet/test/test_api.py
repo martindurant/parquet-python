@@ -447,6 +447,14 @@ def test_no_index_name(tempdir):
     assert out.index.name is None
     assert out.index.tolist() == [0, 1, 2]
 
+def test_input_column_list_not_mutated(tempdir):
+    df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
+    write(tempdir, df, file_scheme='hive')
+    cols = ['a']
+    pf = ParquetFile(tempdir)
+    out = pf.to_pandas(columns=cols)
+    assert cols == ['a']
+
 
 def test_drill_list(tempdir):
     df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]})
