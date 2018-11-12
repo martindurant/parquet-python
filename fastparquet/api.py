@@ -413,7 +413,7 @@ class ParquetFile(object):
         size = sum(rg.num_rows for rg in rgs)
         index = self._get_index(index)
         if columns is not None:
-            columns = columns.copy()
+            columns = columns[:]
         else:
             columns = self.columns
         if index:
