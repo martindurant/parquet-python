@@ -14,8 +14,8 @@ Required:
 
 Optional (compression algorithms; gzip is always available):
 
-- snappy
-- lzo
+- python-snappy
+- python-lzo
 - brotli
 
 Installation

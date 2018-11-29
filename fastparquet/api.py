@@ -153,8 +153,10 @@ class ParquetFile(object):
                 self.group_files.setdefault(i, set()).add(chunk.file_path)
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
-        self.file_scheme = get_file_scheme([rg.columns[0].file_path
-                                           for rg in self.row_groups])
+        files = [rg.columns[0].file_path
+                 for rg in self.row_groups
+                 if rg.columns]
+        self.file_scheme = get_file_scheme(files)
         self._read_partitions()
         self._dtypes()
 
@@ -215,7 +217,7 @@ class ParquetFile(object):
                                 for key, v in cats.items()])
 
     def row_group_filename(self, rg):
-        if rg.columns[0].file_path:
+        if rg.columns and rg.columns[0].file_path:
             base = self.fn.replace('_metadata', '').rstrip('/')
             if base:
                 return join_path(base, rg.columns[0].file_path)
@@ -410,7 +412,10 @@ class ParquetFile(object):
         rgs = self.filter_row_groups(filters)
         size = sum(rg.num_rows for rg in rgs)
         index = self._get_index(index)
-        columns = columns or self.columns
+        if columns is not None:
+            columns = columns[:]
+        else:
+            columns = self.columns
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
@@ -680,7 +685,7 @@ def statistics(obj):
         return d
 
 
-def sorted_partitioned_columns(pf):
+def sorted_partitioned_columns(pf, filters=None):
     """
     The columns that are known to be sorted partition-by-partition
 
@@ -701,6 +706,13 @@ def sorted_partitioned_columns(pf):
     statistics
     """
     s = statistics(pf)
+    if (filters is not None) & (filters != []):
+        idx_list = [i for i, rg in enumerate(pf.row_groups) if
+                    not(filter_out_stats(rg, filters, pf.schema)) and
+                    not(filter_out_cats(rg, filters))]
+        for stat in s.keys():
+            for col in s[stat].keys():
+                s[stat][col] = [s[stat][col][i] for i in idx_list]
     columns = pf.columns
     out = dict()
     for c in columns:

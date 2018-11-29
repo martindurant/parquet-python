@@ -984,7 +984,7 @@ def consolidate_categories(fmd):
         for rg in fmd.row_groups:
             for col in rg.columns:
                 if ".".join(col.meta_data.path_in_schema) == cat['name']:
-                    ncats = [k.value for k in col.meta_data.key_value_metadata
+                    ncats = [k.value for k in (col.meta_data.key_value_metadata or [])
                              if k.key == 'num_categories']
                     if ncats and int(ncats[0]) > cat['metadata'][
                             'num_categories']:
