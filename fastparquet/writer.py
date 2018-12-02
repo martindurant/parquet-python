@@ -543,8 +543,13 @@ def write_column(f, data, selement, compression=None):
                                    uncompressed_page_size=l0,
                                    compressed_page_size=l1,
                                    data_page_header=dph, crc=None)
+    try:
+        write_thrift(f, ph)
+    except OverflowError as err:
+        raise IOError('Overflow error while writing page; try using row groups '
+                      'or smaller ones if you already are. Original message: ' +
+                      str(err))
 
-    write_thrift(f, ph)
     f.write(bdata)
 
     compressed_size = f.tell() - start
