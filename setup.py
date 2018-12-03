@@ -54,7 +54,7 @@ install_requires.append('pytest-runner')
 
 setup(
     name='fastparquet',
-    version='0.1.6',
+    version='0.2.0',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@continuum.io',

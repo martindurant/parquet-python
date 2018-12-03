@@ -412,7 +412,10 @@ class ParquetFile(object):
         rgs = self.filter_row_groups(filters)
         size = sum(rg.num_rows for rg in rgs)
         index = self._get_index(index)
-        columns = columns or self.columns
+        if columns is not None:
+            columns = columns[:]
+        else:
+            columns = self.columns
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
