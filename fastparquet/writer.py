@@ -546,8 +546,8 @@ def write_column(f, data, selement, compression=None):
     try:
         write_thrift(f, ph)
     except OverflowError as err:
-        raise IOError('Overflow error while writing page; try using row groups '
-                      'or smaller ones if you already are. Original message: ' +
+        raise IOError('Overflow error while writing page; try using a smaller '
+                      'value for `row_group_offsets`. Original message: ' +
                       str(err))
 
     f.write(bdata)
