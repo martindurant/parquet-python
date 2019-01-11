@@ -25,14 +25,14 @@ def rows_to_columns(data, schema=None):
     """
     if not schema:
         schema = SchemaTree()
-
+    all_schema = schema
     all_leaves = schema.leaves
     values = {full_name: [] for full_name in all_leaves}
     reps = {full_name: [] for full_name in all_leaves}
     defs = {full_name: [] for full_name in all_leaves}
 
     def _none_to_column(schema, path, rep_level, def_level):
-        for full_path in all_leaves:
+        for full_path in all_schema.leaves:
             if startswith_field(full_path, path):
                 reps[full_path].append(rep_level)
                 defs[full_path].append(def_level)
@@ -84,12 +84,13 @@ def rows_to_columns(data, schema=None):
                         Log.error("{{path}} is not allowed in the schema", path=path)
                     new_path = concat_field(path, name)
                     new_value = value.get(name, None)
+                    ptype = type(new_value)
                     sub_schema = schema.add(
                         new_path,
                         REPEATED if isinstance(new_value, list) else OPTIONAL,
-                        type(new_value)
+                        ptype
                     )
-                    if python_type_to_json_type[type(new_value)] in PRIMITIVE:
+                    if python_type_to_json_type[ptype] in PRIMITIVE:
                         values[new_path] = []
                         reps[new_path] = [0] * counters[0]
                         defs[new_path] = [0] * counters[0]
@@ -116,7 +117,7 @@ def rows_to_columns(data, schema=None):
 
 
 def get_rep_level(counters):
-    for rep_level, c in reversed(list(enumerate(counters))):
+    for rep_level, c in list(reversed(list(enumerate(counters)))):
         if c > 0:
             return rep_level
     return 0  # SHOULD BE -1 FOR MISSING RECORD, BUT WE WILL ASSUME THE RECORD EXISTS
