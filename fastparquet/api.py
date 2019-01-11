@@ -155,7 +155,7 @@ class ParquetFile(object):
             i.name
             for i in self.schema.get_parquet_metadata()
             if not i.num_children
-            or i.converted_type in  [parquet_thrift.ConvertedType.LIST, parquet_thrift.ConvertedType.MAP]
+            or i.converted_type in [parquet_thrift.ConvertedType.LIST, parquet_thrift.ConvertedType.MAP]
         ]
 
     @property
@@ -480,7 +480,7 @@ class ParquetFile(object):
                     else:
                         dtype[col] = np.dtype('f8')
             elif dt == 'S12':
-                dtype[col] = 'M8[ns]'
+                dtype[col] = np.dtype('M8[ns]')
         for field in categories:
             dtype[field] = 'category'
         for cat in self.cats:

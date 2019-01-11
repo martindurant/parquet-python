@@ -18,7 +18,8 @@ from fastparquet.parquet_thrift.parquet.ttypes import Type, FieldRepetitionType,
 from fastparquet.thrift_structures import parquet_thrift
 
 from jx_base import NESTED, python_type_to_json_type
-from mo_dots import concat_field, split_field, join_field, Data, relative_field, coalesce
+from jx_python.jx import count
+from mo_dots import concat_field, split_field, join_field, Data, relative_field, coalesce, literal_field
 from mo_future import none_type
 from mo_future import sort_using_key, PY2, text_type
 from mo_logs import Log
@@ -106,27 +107,38 @@ class SchemaTree(object):
         return _get(self, split_field(name))
 
     @staticmethod
-    def new_instance(parquet_schema):
-        index = [0]
+    def new_instance(parquet_schema_list):
+        off = type(str(''), (), dict(set=0))()
 
         def _worker(start):
             output = SchemaTree()
-            root = parquet_schema[index[0]]
+            root = parquet_schema_list[off.set]
 
             output.element = root
             max = start + coalesce(root.num_children, 0)
 
-            if index[0] == 0:
+            if off.set == 0:
                 if root.name not in ['.', 'schema', 'spark_schema', 'm', 'hive_schema', 'root']:  # some known root names
                     Log.warning("first SchemaElement is given name {{name|quote}}, name is ignored", name=root.name)
                 root.name = '.'
                 root.repetition_type = REQUIRED
 
-            while index[0] < max:
-                index[0] += 1
-                child = _worker(index[0])
-                name = relative_field(child.element.name, root.name)
-                output.more[name] = child
+            while off.set < max:
+                off.set += 1
+                child = _worker(off.set)
+                parent = output
+                path = relative_field(child.element.name, root.name)
+
+                # path = split_field(relative_field(child.element.name, root.name))
+                # for i, p in enumerate(path[:-1]):
+                #     new_parent = parent.more[p] = SchemaTree()
+                #     new_parent.element = SchemaElement(
+                #         name=concat_field(root.name, join_field(path[:i+1])),
+                #         repetition_type=REQUIRED
+                #     )
+                #     parent = new_parent
+                # parent.more[path[-1]] = child
+                parent.more[path] = child
             return output
 
         output = _worker(0)
@@ -156,31 +168,40 @@ class SchemaTree(object):
             output = output.more['.']
         return output.element
 
+    def _path_to_schema_element(self, path):
+        if isinstance(path, text_type):
+            def _find(sub_schema):
+                if sub_schema.element.name==path:
+                    return (sub_schema,)
+
+                for m in sub_schema.more.values():
+                    p = _find(m)
+                    if p:
+                        return (sub_schema, )+p
+
+            return _find(self)
+        else:
+            output = [self]
+            for p in path:
+                next = output[-1].more.get(p)
+                if next is None:
+                    return []
+                else:
+                    output.append(next)
+            while '.' in output[-1].more:
+                output.append(output[-1].more['.'])
+            return output
+
     def is_required(self, path):
         return self.schema_element(path).repetition_type == REQUIRED
 
     def max_definition_level(self, path):
-        if isinstance(path, text_type):
-            path = split_field(path)
-        sub_schema = self
-        max_def = 0 if sub_schema.element.repetition_type==REQUIRED else 1
-        for p in path:
-            sub_schema = sub_schema.more.get(p)
-            if sub_schema.element.repetition_type != REQUIRED:
-                max_def += 1
-        return max_def
+        path = self._path_to_schema_element(path)
+        return count(p for p in path if p.element.repetition_type != REQUIRED)
 
     def max_repetition_level(self, path):
-        if isinstance(path, text_type):
-            path = split_field(path)
-        sub_schema = self
-        max_rep = 0
-        for p in path:
-            sub_schema = sub_schema.more.get(p)
-            if sub_schema.element.repetition_type == REPEATED:
-                max_rep += 1
-        return max_rep
-
+        path = self._path_to_schema_element(path)
+        return count(p for p in path if p.element.repetition_type == REPEATED)
 
 
     def get_parquet_metadata(
