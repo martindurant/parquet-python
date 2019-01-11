@@ -12,9 +12,13 @@ except ImportError:
 # Kudos to https://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py/21621689
 class build_ext(_build_ext):
     def finalize_options(self):
+        if sys.version_info[0] >= 3:
+            import builtins
+        else:
+            import __builtin__ as builtins
         _build_ext.finalize_options(self)
         # Prevent numpy from thinking it is still in its setup process:
-        __builtins__.__NUMPY_SETUP__ = False
+        builtins.__NUMPY_SETUP__ = False
         import numpy
         self.include_dirs.append(numpy.get_include())
 
@@ -45,13 +49,16 @@ else:
 
 install_requires = open('requirements.txt').read().strip().split('\n')
 
+# add pytest-runner from setup_requires
+install_requires.append('pytest-runner')
+
 setup(
     name='fastparquet',
-    version='0.1.4',
+    version='0.2.1',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@continuum.io',
-    url='https://github.com/martindurant/fastparquet/',
+    url='https://github.com/dask/fastparquet/',
     license='Apache License 2.0',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -61,18 +68,26 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     packages=['fastparquet'],
-    cmdclass={'build_ext':build_ext},
+    cmdclass={'build_ext': build_ext},
     install_requires=install_requires,
-    setup_requires=[
-        'pytest-runner',
-        [p for p in install_requires if p.startswith('numpy')][0]
-    ],
+    # remove wierd setup_requires to get rid of easy_install
+    # setup_requires=[
+    #    'pytest-runner',
+    #    [p for p in install_requires if p.startswith('numpy')][0]
+    #],
+    extras_require={
+        'brotli': ['brotli'],
+        'lz4': ['lz4 >= 0.19.1'],
+        'lzo': ['python-lzo'],
+        'snappy': ['python-snappy'],
+        'zstandard': ['zstandard']
+    },
     tests_require=[
         'pytest',
         'python-snappy',
@@ -83,6 +98,6 @@ setup(
                       else ''),
     package_data={'fastparquet': ['*.thrift']},
     include_package_data=True,
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*,",
     **extra
 )

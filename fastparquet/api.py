@@ -7,9 +7,9 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import json
 import os
-import re
 import six
 import struct
+import warnings
 
 import numpy as np
 from fastparquet.util import join_path
@@ -21,7 +21,7 @@ from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
 from .util import (default_open, ParquetException, val_to_num,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, get_file_scheme)
+                   ex_from_sep, get_file_scheme, STR_TYPE, groupby_types)
 
 
 class ParquetFile(object):
@@ -30,12 +30,20 @@ class ParquetFile(object):
     Reads the metadata (row-groups and schema definition) and provides
     methods to extract the data from the files.
 
+    Note that when reading parquet files partitioned using directories
+    (i.e. using the hive/drill scheme), an attempt is made to coerce
+    the partition values to a number, datetime or timedelta. Fastparquet
+    cannot read a hive/drill parquet file with partition names which coerce
+    to the same value, such as "0.7" and ".7".
+
     Parameters
     ----------
     fn: path/URL string or list of paths
         Location of the data. If a directory, will attempt to read a file
         "_metadata" within that directory. If a list of paths, will assume
-        that they make up a single parquet data set.
+        that they make up a single parquet data set. This parameter can also
+        be any file-like object, in which case this must be a single-file
+        dataset.
     verify: bool [False]
         test file start/end byte markers
     open_with: function
@@ -63,7 +71,7 @@ class ParquetFile(object):
     file_scheme: str
         'simple': all row groups are within the same file; 'hive': all row
         groups are in other files; 'mixed': row groups in this file and others
-        too; 'empty': no row grops at all.
+        too; 'empty': no row groups at all.
     info: dict
         Combination of some of the other attributes
     key_value_metadata: list
@@ -73,7 +81,7 @@ class ParquetFile(object):
         Thrift objects for each row group
     schema: schema.SchemaHelper
         print this for a representation of the column structure
-    self_made: bool
+    selfmade: bool
         If this file was created by fastparquet
     statistics: dict
         Max/min/count of each column chunk
@@ -89,6 +97,14 @@ class ParquetFile(object):
                 self.fn = '_metadata'
             self.fmd = fmd
             self._set_attrs()
+        elif hasattr(fn, 'read'):
+            # file-like
+            self._parse_header(fn, verify)
+            if self.file_scheme not in ['simple', 'empty']:
+                raise ValueError('Cannot use file-like input '
+                                 'with multi-file data')
+            open_with = lambda *args, **kwargs: fn
+            self.fn = None
         else:
             try:
                 fn2 = join_path(fn, '_metadata')
@@ -139,12 +155,14 @@ class ParquetFile(object):
                 self.group_files.setdefault(i, set()).add(chunk.file_path)
         self.schema = SchemaTree.new_instance(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
-        self.file_scheme = get_file_scheme([rg.columns[0].file_path
-                                           for rg in self.row_groups])
+        files = [rg.columns[0].file_path
+                 for rg in self.row_groups
+                 if rg.columns]
+        self.file_scheme = get_file_scheme(files)
         self._read_partitions()
         self._dtypes()
 
-    @ property
+    @property
     def helper(self):
         return self.schema
 
@@ -167,6 +185,7 @@ class ParquetFile(object):
             self.cats = {}
             return
         cats = OrderedDict()
+        raw_cats = OrderedDict()
         for rg in self.row_groups:
             for col in rg.columns:
                 s = ex_from_sep('/')
@@ -174,16 +193,35 @@ class ParquetFile(object):
                 if self.file_scheme == 'hive':
                     partitions = s.findall(path)
                     for key, val in partitions:
-                        cats.setdefault(key, set()).add(val)
+                        cats.setdefault(key, set()).add(val_to_num(val))
+                        raw_cats.setdefault(key, set()).add(val)
                 else:
                     for i, val in enumerate(col.file_path.split('/')[:-1]):
                         key = 'dir%i' % i
-                        cats.setdefault(key, set()).add(val)
-        self.cats = OrderedDict([(key, list([val_to_num(x) for x in v]))
+                        cats.setdefault(key, set()).add(val_to_num(val))
+                        raw_cats.setdefault(key, set()).add(val)
+
+        for key, v in cats.items():
+            # Check that no partition names map to the same value after transformation by val_to_num
+            raw = raw_cats[key]
+            if len(v) != len(raw):
+                conflicts_by_value = OrderedDict()
+                for raw_val in raw_cats[key]:
+                    conflicts_by_value.setdefault(val_to_num(raw_val), set()).add(raw_val)
+                conflicts = [c for k in conflicts_by_value.values() if len(k) > 1 for c in k]
+                raise ValueError("Partition names map to the same value: %s" % conflicts)
+            vals_by_type = groupby_types(v)
+
+            # Check that all partition names map to the same type after transformation by val_to_num
+            if len(vals_by_type) > 1:
+                examples = [x[0] for x in vals_by_type.values()]
+                warnings.warn("Partition names coerce to values of different types, e.g. %s" % examples)
+
+        self.cats = OrderedDict([(key, list(v))
                                 for key, v in cats.items()])
 
     def row_group_filename(self, rg):
-        if rg.columns[0].file_path:
+        if rg.columns and rg.columns[0].file_path:
             base = self.fn.replace('_metadata', '').rstrip('/')
             if base:
                 return join_path(base, rg.columns[0].file_path)
@@ -195,8 +233,7 @@ class ParquetFile(object):
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None):
         """ Open file for reading, and process it as a row-group """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
         ret = False
         if assign is None:
@@ -215,8 +252,7 @@ class ParquetFile(object):
         """
         Access row-group in a file and read some columns into a data-frame.
         """
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         ret = False
         if assign is None:
             df, assign = self.pre_allocate(rg.num_rows, columns,
@@ -301,10 +337,11 @@ class ParquetFile(object):
             (This is not row-level filtering)
             Filter syntax: [(column, op, val), ...],
             where op is [==, >, >=, <, <=, !=, in, not in]
-        index: string or None
-            Column to assign to the index. If None, index is inferred from the
-            metadata (if this was originally pandas data); if the metadata does
-            not exist or index is False, index is simple sequential integers.
+        index: string or list of strings or False or None
+            Column(s) to assign to the (multi-)index. If None, index is
+            inferred from the metadata (if this was originally pandas data); if
+            the metadata does not exist or index is False, index is simple
+            sequential integers.
         assign: dict {cols: array}
             Pre-allocated memory to write to. If None, will allocate memory
             here.
@@ -313,11 +350,10 @@ class ParquetFile(object):
         -------
         Generator yielding one Pandas data-frame per row-group
         """
-        if index is None:
-            index = self._get_index(index)
+        index = self._get_index(index)
         columns = columns or self.columns
-        if index and index not in columns:
-            columns.append(index)
+        if index:
+            columns += [i for i in index if i not in columns]
         check_column_names(self.columns, columns, categories)
         rgs = self.filter_row_groups(filters)
         if all(column.file_path is None for rg in self.row_groups
@@ -341,13 +377,8 @@ class ParquetFile(object):
         if index is None:
             index = json.loads(self.key_value_metadata.get('pandas', '{}')).get(
                 'index_columns', [])
-            if len(index) > 1:
-                raise NotImplementedError('multi-index not yet supported, '
-                                          'use index=False')
-            if index:
-                return index[0]
-            else:
-                return None
+        if isinstance(index, STR_TYPE):
+            index = [index]
         return index
 
     def to_pandas(self, columns=None, categories=None, filters=[],
@@ -366,16 +397,17 @@ class ParquetFile(object):
             Category-type column, potentially saving memory and time. If a
             dict {col: int}, the value indicates the number of categories,
             so that the optimal data-dtype can be allocated. If ``None``,
-            will automatically set *if* the data was written by fastparquet.
+            will automatically set *if* the data was written from pandas.
         filters: list of tuples
             To filter out (i.e., not read) some of the row-groups.
             (This is not row-level filtering)
             Filter syntax: [(column, op, val), ...],
             where op is [==, >, >=, <, <=, !=, in, not in]
-        index: string or None
-            Column to assign to the index. If None, index is inferred from the
-            metadata (if this was originally pandas data); if the metadata does
-            not exist or index is False, index is simple sequential integers.
+        index: string or list of strings or False or None
+            Column(s) to assign to the (multi-)index. If None, index is
+            inferred from the metadata (if this was originally pandas data); if
+            the metadata does not exist or index is False, index is simple
+            sequential integers.
 
         Returns
         -------
@@ -383,12 +415,14 @@ class ParquetFile(object):
         """
         rgs = self.filter_row_groups(filters)
         size = sum(rg.num_rows for rg in rgs)
-        if index is None:
-            index = self._get_index(index)
-        columns = columns or self.columns
-        if index and index not in columns:
-            columns.append(index)
-        check_column_names(self.columns, columns, categories)
+        index = self._get_index(index)
+        if columns is not None:
+            columns = columns[:]
+        else:
+            columns = self.columns
+        if index:
+            columns += [i for i in index if i not in columns]
+        check_column_names(self.columns + list(self.cats), columns, categories)
         df, views = self.pre_allocate(size, columns, categories, index)
         start = 0
         if self.file_scheme == 'simple':
@@ -411,8 +445,7 @@ class ParquetFile(object):
         return df
 
     def pre_allocate(self, size, columns, categories, index):
-        if categories is None:
-            categories = self.categories
+        categories = self.check_categories(categories)
         tz = None
         if 'pandas' in self.key_value_metadata:
             md = json.loads(self.key_value_metadata['pandas'])['columns']
@@ -431,6 +464,18 @@ class ParquetFile(object):
         """ Some metadata details """
         return {'name': self.fn, 'columns': self.columns,
                 'partitions': list(self.cats), 'rows': self.count}
+
+    def check_categories(self, cats):
+        categ = self.categories
+        if (self.fmd.key_value_metadata is None
+                or self.key_value_metadata.get('pandas', None) is None):
+            return cats or {}
+        if cats is None:
+            return categ or {}
+        if any(c not in categ for c in cats):
+            raise TypeError('Attempt to load column as categorical that was'
+                            ' not categorical in the original pandas data')
+        return cats
 
     @property
     def categories(self):
@@ -451,27 +496,30 @@ class ParquetFile(object):
 
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
-        if categories is None:
-            categories = self.categories
-        dtype = {
-            f.name: converted_types.typemap(f) if not f.num_children else np.dtype("O")
+
+        categories = self.check_categories(categories)
+        dtype = OrderedDict(
+            (
+                f.name,
+                converted_types.typemap(f) if not f.num_children else np.dtype("O")
+            )
             for f in self.schema.get_parquet_metadata()
-        }
-        for col, dt in dtype.copy().items():
+        )
+        for i, (col, dt) in enumerate(dtype.copy().items()):
             if dt.kind in ['i', 'b']:
                 # int/bool columns that may have nulls become float columns
                 num_nulls = 0
                 for rg in self.row_groups:
-                    chunks = [c for c in rg.columns
-                              if '.'.join(c.meta_data.path_in_schema) == col]
-                    for chunk in chunks:
-                        if chunk.meta_data.statistics is None:
-                            num_nulls = True
-                            break
-                        if chunk.meta_data.statistics.null_count is None:
-                            num_nulls = True
-                            break
-                        num_nulls += chunk.meta_data.statistics.null_count
+                    chunk = rg.columns[i]
+                    if chunk.meta_data.statistics is None:
+                        num_nulls = True
+                        break
+                    if chunk.meta_data.statistics.null_count is None:
+                        num_nulls = True
+                        break
+                    if chunk.meta_data.statistics.null_count:
+                        num_nulls = True
+                        break
                 if num_nulls:
                     if dtype[col].itemsize == 1:
                         dtype[col] = np.dtype('f2')
@@ -495,7 +543,8 @@ class ParquetFile(object):
 
 
 def _pre_allocate(self, size, columns, categories, index, cs, dt, tz=None):
-    cols = [c for c in columns if index != c]
+    index = [index] if isinstance(index, str) else (index or [])
+    cols = [c for c in columns if c not in index]
     categories = categories or {}
     cats = cs.copy()
     if isinstance(categories, dict):
@@ -515,13 +564,11 @@ def _pre_allocate(self, size, columns, categories, index, cs, dt, tz=None):
             return desired_type
 
     dtypes = [get_type(c) for c in cols]
-    index_type = get_type(index)
+    index_types = [get_type(i) for i in index]
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
-    df, views = dataframe.empty(dtypes, size, cols=cols, index_name=index,
-                                index_type=index_type, cats=cats, timezones=tz)
-    if index and re.match(r'__index_level_\d+__', index):
-        df.index.name = None
+    df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
+                                index_types=index_types, cats=cats, timezones=tz)
     return df, views
 
 
@@ -655,7 +702,7 @@ def statistics(obj):
         return d
 
 
-def sorted_partitioned_columns(pf):
+def sorted_partitioned_columns(pf, filters=None):
     """
     The columns that are known to be sorted partition-by-partition
 
@@ -676,6 +723,13 @@ def sorted_partitioned_columns(pf):
     statistics
     """
     s = statistics(pf)
+    if (filters is not None) & (filters != []):
+        idx_list = [i for i, rg in enumerate(pf.row_groups) if
+                    not(filter_out_stats(rg, filters, pf.schema)) and
+                    not(filter_out_cats(rg, filters))]
+        for stat in s.keys():
+            for col in s[stat].keys():
+                s[stat][col] = [s[stat][col][i] for i in idx_list]
     columns = pf.columns
     out = dict()
     for c in columns:

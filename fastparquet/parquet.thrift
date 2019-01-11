@@ -187,6 +187,7 @@ enum ConvertedType {
    * particular timezone or date.
    */
   INTERVAL = 21;
+  NULL = 24;
 
   /**
    * Annotates a column that is always null

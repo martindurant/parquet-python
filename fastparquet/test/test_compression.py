@@ -13,7 +13,7 @@ def test_compress_decompress_roundtrip(fmt):
     else:
         assert len(compressed) < len(data)
 
-    decompressed = decompress_data(compressed, algorithm=fmt)
+    decompressed = decompress_data(compressed, len(data), algorithm=fmt)
     assert data == decompressed
 
 
@@ -30,7 +30,7 @@ def test_compress_decompress_roundtrip_args_gzip():
     )
     assert len(compressed) < len(data)
 
-    decompressed = decompress_data(compressed, algorithm="gzip")
+    decompressed = decompress_data(compressed, len(data), algorithm="gzip")
     assert data == decompressed
 
 def test_compress_decompress_roundtrip_args_lz4():
@@ -41,18 +41,14 @@ def test_compress_decompress_roundtrip_args_lz4():
         compression={
             "type": "lz4",
             "args": {
-                "compression_level": 5,
-                "content_checksum": True,
-                "block_size": 0,
-                "block_checksum": True,
-                "block_linked": True,
-                "store_size": True,
+                "compression": 5,
+                "store_size": False,
             }
         }
     )
     assert len(compressed) < len(data)
 
-    decompressed = decompress_data(compressed, algorithm="lz4")
+    decompressed = decompress_data(compressed, len(data), algorithm="lz4")
     assert data == decompressed
 
 def test_compress_decompress_roundtrip_args_zstd():
@@ -67,13 +63,13 @@ def test_compress_decompress_roundtrip_args_zstd():
                 "threads": 0,
                 "write_checksum": True,
                 "write_dict_id": True,
-                "write_content_size": True,
+                "write_content_size": False,
             }
         }
     )
     assert len(compressed) < len(data)
 
-    decompressed = decompress_data(compressed, algorithm="zstd")
+    decompressed = decompress_data(compressed, len(data), algorithm="zstd")
     assert data == decompressed
 
 def test_errors():

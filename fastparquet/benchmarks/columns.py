@@ -31,6 +31,7 @@ def time_column():
                           'y': r / np.random.randint(1, 1000, size=n),
                           'z': np.random.randint(0, 127, size=n,
                                                  dtype=np.uint8)})
+        d['b'] = r > 0
 
         for col in d.columns:
             df = d[[col]]

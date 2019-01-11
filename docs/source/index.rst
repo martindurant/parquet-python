@@ -6,7 +6,7 @@ A Python interface to the Parquet file format.
 Introduction
 ------------
 
-The `Parquet format <https://github.com/Parquet/parquet-format>`_ is a common binary data store, used
+The `Parquet format <https://github.com/apache/parquet-format>`_ is a common binary data store, used
 particularly in the Hadoop/big-data sphere. It provides several advantages relevant to big-data
 processing:
 

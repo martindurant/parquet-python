@@ -19,6 +19,7 @@ from mo_json.typed_encoder import TYPE_PREFIX
 class Table(object):
     """
     REPRESENT A DATA CUBE
+    Mimic multiple Panda's Dataframes
     """
 
     def __init__(self, values, reps, defs, num_rows, schema, max_definition_level=None):

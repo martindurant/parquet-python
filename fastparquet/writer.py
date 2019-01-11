@@ -214,7 +214,7 @@ def convert(data, se):
 
 
 def infer_object_encoding(data):
-    head = data[:10] if isinstance(data, pd.Index) else data.valid()[:10]
+    head = data[:10] if isinstance(data, pd.Index) else data.dropna()[:10]
     if all(isinstance(i, STR_TYPE) for i in head) and not PY2:
         return "utf8"
     elif PY2 and all(isinstance(i, unicode) for i in head):
@@ -404,7 +404,7 @@ def make_definitions(data, no_nulls):
         head = temp.so_far().tostring()
 
         block = struct.pack('<i', len(head + out)) + head + out
-        out = data.valid()  # better, data[data.notnull()], from above ?
+        out = data.dropna()  # better, data[data.notnull()], from above ?
     return block, out
 
 
@@ -465,6 +465,7 @@ def write_column(f, data, selement, compression=None):
     name = data.name
     diff = 0
     max, min = None, None
+    start = f.tell()
 
     if is_categorical_dtype(data.dtype):
         dph = parquet_thrift.DictionaryPageHeader(
@@ -508,7 +509,6 @@ def write_column(f, data, selement, compression=None):
         # disallow bitpacking for compatability
         data = data.astype('int32')
 
-    start = f.tell()
     bdata = definition_data + repetition_data + encode[encoding](
             data, selement)
     bdata += 8 * b'\x00'
@@ -543,8 +543,13 @@ def write_column(f, data, selement, compression=None):
                                    uncompressed_page_size=l0,
                                    compressed_page_size=l1,
                                    data_page_header=dph, crc=None)
+    try:
+        write_thrift(f, ph)
+    except OverflowError as err:
+        raise IOError('Overflow error while writing page; try using a smaller '
+                      'value for `row_group_offsets`. Original message: ' +
+                      str(err))
 
-    write_thrift(f, ph)
     f.write(bdata)
 
     compressed_size = f.tell() - start
@@ -918,8 +923,10 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     if not remaining:
         raise ValueError("Cannot include all columns in partition_on")
     rgs = []
-    for key in sorted(gb.indices):
-        df = gb.get_group(key)[remaining]
+    for key, group in zip(sorted(gb.indices), sorted(gb)):
+        if group[1].empty:
+            continue
+        df = group[1][remaining]
         if not isinstance(key, tuple):
             key = (key,)
         if with_field:
@@ -982,7 +989,7 @@ def consolidate_categories(fmd):
         for rg in fmd.row_groups:
             for col in rg.columns:
                 if ".".join(col.meta_data.path_in_schema) == cat['name']:
-                    ncats = [k.value for k in col.meta_data.key_value_metadata
+                    ncats = [k.value for k in (col.meta_data.key_value_metadata or [])
                              if k.key == 'num_categories']
                     if ncats and int(ncats[0]) > cat['metadata'][
                             'num_categories']:

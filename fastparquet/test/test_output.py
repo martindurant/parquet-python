@@ -212,7 +212,7 @@ def test_make_definitions_with_nulls():
         data = pd.Series(np.random.choice([True, None],
                                           size=np.random.randint(1, 1000)))
         out, d2 = writer.make_definitions(data, False)
-        i = encoding.Numpy8(np.fromstring(out, dtype=np.uint8))
+        i = encoding.Numpy8(np.frombuffer(out, dtype=np.uint8))
         encoding.read_rle_bit_packed_hybrid(i, 1, length=None, o=o)
         out = o.so_far()[:len(data)]
         assert (out == ~data.isnull()).sum()
@@ -232,7 +232,7 @@ def test_make_definitions_without_nulls():
             p += 1
         assert len(out) == 4 + p + 1  # "length", num_count, value
 
-        i = encoding.Numpy8(np.fromstring(out, dtype=np.uint8))
+        i = encoding.Numpy8(np.frombuffer(out, dtype=np.uint8))
         encoding.read_rle_bit_packed_hybrid(i, 1, length=None, o=o)
         out = o.so_far()
         assert (out == ~data.isnull()).sum()
@@ -359,6 +359,22 @@ def test_too_many_partition_columns(tempdir):
     assert "Cannot include all columns" in str(ve)
 
 
+def test_read_partitioned_and_write_with_empty_partions(tempdir):
+    df = pd.DataFrame({'a': np.random.choice(['a', 'b', 'c'], size=1000),
+                       'c': np.random.choice([True, False], size=1000)})
+
+    writer.write(tempdir, df, partition_on=['a'], file_scheme='hive')
+    df_filtered = ParquetFile(tempdir).to_pandas(
+                                            filters=[('a', '==', 'b')]
+                                            )
+
+    writer.write(tempdir, df_filtered, partition_on=['a'], file_scheme='hive')
+
+    df_loaded = ParquetFile(tempdir).to_pandas()
+
+    tm.assert_frame_equal(df_filtered, df_loaded, check_categorical=False)
+
+
 @pytest.mark.parametrize('compression', ['GZIP',
                                          'gzip',
                                          None,
@@ -418,6 +434,27 @@ def test_duplicate_columns(tempdir):
     with pytest.raises(ValueError) as e:
         write(fn, df)
     assert 'duplicate' in str(e)
+
+
+@pytest.mark.parametrize('cmp', [None, 'gzip'])
+def test_cmd_bytesize(tempdir, cmp):
+    from fastparquet import core
+    fn = os.path.join(tempdir, 'tmp.parq')
+    df = pd.DataFrame({'s': ['a', 'b']}, dtype='category')
+    write(fn, df, compression=cmp)
+    pf = ParquetFile(fn)
+    chunk = pf.row_groups[0].columns[0]
+    cmd = chunk.meta_data
+    csize = cmd.total_compressed_size
+    f = open(fn, 'rb')
+    f.seek(cmd.dictionary_page_offset)
+    ph = core.read_thrift(f, parquet_thrift.PageHeader)
+    c1 = ph.compressed_page_size
+    f.seek(c1, 1)
+    ph = core.read_thrift(f, parquet_thrift.PageHeader)
+    c2 = ph.compressed_page_size
+    f.seek(c2, 1)
+    assert csize == f.tell() - cmd.dictionary_page_offset
 
 
 def test_dotted_column(tempdir):
@@ -603,31 +640,15 @@ def test_autocat(tempdir):
     pf = ParquetFile(fn)
     assert 'o' in pf.categories
     assert pf.categories['o'] == 2
-    assert pf.dtypes['o'] == 'category'
+    assert str(pf.dtypes['o']) == 'category'
     out = pf.to_pandas()
     assert out.dtypes['o'] == 'category'
     out = pf.to_pandas(categories={})
     assert str(out.dtypes['o']) != 'category'
     out = pf.to_pandas(categories=['o'])
-    assert out.dtypes['o'] == 'category'
+    assert out.dtypes['o'].kind == 'O'
     out = pf.to_pandas(categories={'o': 2})
-    assert out.dtypes['o'] == 'category'
-
-    # regression test
-    pf.fmd.key_value_metadata = [parquet_thrift.KeyValue(
-        key='fastparquet.cats', value='{"o": 2}')]
-    pf._set_attrs()
-    assert 'o' in pf.categories
-    assert pf.categories['o'] == 2
-    assert pf.dtypes['o'] == 'category'
-    out = pf.to_pandas()
-    assert out.dtypes['o'] == 'category'
-    out = pf.to_pandas(categories={})
-    assert str(out.dtypes['o']) != 'category'
-    out = pf.to_pandas(categories=['o'])
-    assert out.dtypes['o'] == 'category'
-    out = pf.to_pandas(categories={'o': 2})
-    assert out.dtypes['o'] == 'category'
+    assert out.dtypes['o'].kind == 'O'
 
 
 @pytest.mark.parametrize('row_groups', ([0], [0, 2]))
@@ -694,12 +715,6 @@ def test_merge_fail(tempdir):
     with pytest.raises(ValueError) as e:
         writer.merge([fn0, fn1])
     assert 'schemas' in str(e)
-
-    os.remove(fn1)
-    write(fn1, df0, file_scheme='hive')
-    with pytest.raises(ValueError) as e:
-        writer.merge([fn0, fn1])
-    assert 'multi-file' in str(e)
 
 
 def test_append_simple(tempdir):
