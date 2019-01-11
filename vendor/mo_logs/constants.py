@@ -6,14 +6,12 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import sys
 
-from mo_dots import set_attr as mo_dots_set_attr
-from mo_dots import wrap, join_field, split_field
+from mo_dots import join_field, set_attr as mo_dots_set_attr, split_field, wrap
 
 DEBUG = True
 

@@ -7,24 +7,19 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-import mo_json
-from mo_future import text_type, get_function_arguments
-
-from mo_dots import set_default, wrap, _get_attr, Null, coalesce
-from mo_json import value2json
-from mo_logs import Log
-from mo_threads import Lock
-from pyLibrary import convert
+from mo_future import is_text, is_binary
+from collections import namedtuple
 from types import FunctionType
 
-from jx_python.expressions import jx_expression
+from mo_dots import Null, _get_attr, set_default
+from mo_future import get_function_arguments, get_function_name, text_type
+import mo_json
+from mo_logs import Log
 from mo_logs.exceptions import Except
-from mo_logs.strings import expand_template
 from mo_math.randoms import Random
+from mo_threads import Lock
 from mo_times.dates import Date
 from mo_times.durations import DAY
 
@@ -57,7 +52,7 @@ def new_instance(settings):
     path = ".".join(path[:-1])
     constructor = None
     try:
-        temp = __import__(path, globals(), locals(), [class_name], -1)
+        temp = __import__(path, globals(), locals(), [class_name], 0)
         constructor = object.__getattribute__(temp, class_name)
     except Exception as e:
         Log.error("Can not find class {{class}}", {"class": path}, cause=e)
@@ -140,7 +135,10 @@ def wrap_function(cache_store, func_):
         using_self = False
         func = lambda self, *args: func_(*args)
 
-    def output(*args):
+    def output(*args, **kwargs):
+        if kwargs:
+            Log.error("Sorry, caching only works with ordered parameter, not keyword arguments")
+
         with cache_store.locker:
             if using_self:
                 self = args[0]
@@ -157,7 +155,7 @@ def wrap_function(cache_store, func_):
 
             if Random.int(100) == 0:
                 # REMOVE OLD CACHE
-                _cache = {k: v for k, v in _cache.items() if v[0]==None or v[0] > now}
+                _cache = {k: v for k, v in _cache.items() if v.timeout == None or v.timeout > now}
                 setattr(self, attr_name, _cache)
 
             timeout, key, value, exception = _cache.get(args, (Null, Null, Null, Null))
@@ -165,7 +163,7 @@ def wrap_function(cache_store, func_):
         if now >= timeout:
             value = func(self, *args)
             with cache_store.locker:
-                _cache[args] = (now + cache_store.timeout, args, value, None)
+                _cache[args] = CacheElement(now + cache_store.timeout, args, value, None)
             return value
 
         if value == None:
@@ -173,12 +171,12 @@ def wrap_function(cache_store, func_):
                 try:
                     value = func(self, *args)
                     with cache_store.locker:
-                        _cache[args] = (now + cache_store.timeout, args, value, None)
+                        _cache[args] = CacheElement(now + cache_store.timeout, args, value, None)
                     return value
                 except Exception as e:
                     e = Except.wrap(e)
                     with cache_store.locker:
-                        _cache[args] = (now + cache_store.timeout, args, None, e)
+                        _cache[args] = CacheElement(now + cache_store.timeout, args, None, e)
                     raise e
             else:
                 raise exception
@@ -188,9 +186,10 @@ def wrap_function(cache_store, func_):
     return output
 
 
+CacheElement = namedtuple("CacheElement", ("timeout", "key", "value", "exception"))
+
+
 class _FakeLock():
-
-
     def __enter__(self):
         pass
 
@@ -198,149 +197,9 @@ class _FakeLock():
         pass
 
 
-def DataClass(name, columns, constraint=True):
-    """
-    Use the DataClass to define a class, but with some extra features:
-    1. restrict the datatype of property
-    2. restrict if `required`, or if `nulls` are allowed
-    3. generic constraints on object properties
-
-    It is expected that this class become a real class (or be removed) in the
-    long term because it is expensive to use and should only be good for
-    verifying program correctness, not user input.
-
-    :param name: Name of the class we are creating
-    :param columns: Each columns[i] has properties {
-            "name",     - (required) name of the property
-            "required", - False if it must be defined (even if None)
-            "nulls",    - True if property can be None, or missing
-            "default",  - A default value, if none is provided
-            "type"      - a Python datatype
-        }
-    :param constraint: a JSON query Expression for extra constraints
-    :return: The class that has been created
-    """
-
-    columns = wrap([{"name": c, "required": True, "nulls": False, "type": object} if isinstance(c, text_type) else c for c in columns])
-    slots = columns.name
-    required = wrap(filter(lambda c: c.required and not c.nulls and not c.default, columns)).name
-    nulls = wrap(filter(lambda c: c.nulls, columns)).name
-    defaults = {c.name: coalesce(c.default, None) for c in columns}
-    types = {c.name: coalesce(c.type, object) for c in columns}
-
-    code = expand_template(
-"""
-from __future__ import unicode_literals
-from collections import Mapping
-
-meta = None
-types_ = {{types}}
-defaults_ = {{defaults}}
-
-class {{class_name}}(Mapping):
-    __slots__ = {{slots}}
-
-
-    def _constraint(row, rownum, rows):
-        return {{constraint_expr}}
-
-    def __init__(self, **kwargs):
-        if not kwargs:
-            return
-
-        for s in {{slots}}:
-            object.__setattr__(self, s, kwargs.get(s, {{defaults}}.get(s, None)))
-
-        missed = {{required}}-set(kwargs.keys())
-        if missed:
-            Log.error("Expecting properties {"+"{missed}}", missed=missed)
-
-        illegal = set(kwargs.keys())-set({{slots}})
-        if illegal:
-            Log.error("{"+"{names}} are not a valid properties", names=illegal)
-
-        if not self._constraint(0, [self]):
-            Log.error("constraint not satisfied {"+"{expect}}\\n{"+"{value|indent}}", expect={{constraint}}, value=self)
-
-    def __getitem__(self, item):
-        return getattr(self, item)
-
-    def __setitem__(self, item, value):
-        setattr(self, item, value)
-        return self
-
-    def __setattr__(self, item, value):
-        if item not in {{slots}}:
-            Log.error("{"+"{item|quote}} not valid attribute", item=item)
-        object.__setattr__(self, item, value)
-        if not self._constraint(0, [self]):
-            Log.error("constraint not satisfied {"+"{expect}}\\n{"+"{value|indent}}", expect={{constraint}}, value=self)
-
-    def __getattr__(self, item):
-        Log.error("{"+"{item|quote}} not valid attribute", item=item)
-
-    def __hash__(self):
-        return object.__hash__(self)
-
-    def __eq__(self, other):
-        if isinstance(other, {{class_name}}) and dict(self)==dict(other) and self is not other:
-            Log.error("expecting to be same object")
-        return self is other
-
-    def __dict__(self):
-        return {k: getattr(self, k) for k in {{slots}}}
-
-    def items(self):
-        return ((k, getattr(self, k)) for k in {{slots}})
-
-    def __copy__(self):
-        _set = object.__setattr__
-        output = object.__new__({{class_name}})
-        {{assign}}
-        return output
-
-    def __iter__(self):
-        return {{slots}}.__iter__()
-
-    def __len__(self):
-        return {{len_slots}}
-
-    def __str__(self):
-        return str({{dict}})
-
-""",
-        {
-            "class_name": name,
-            "slots": "(" + (", ".join(convert.value2quote(s) for s in slots)) + ")",
-            "required": "{" + (", ".join(convert.value2quote(s) for s in required)) + "}",
-            "nulls": "{" + (", ".join(convert.value2quote(s) for s in nulls)) + "}",
-            "defaults": jx_expression({"literal": defaults}).to_python(),
-            "len_slots": len(slots),
-            "dict": "{" + (", ".join(convert.value2quote(s) + ": self." + s for s in slots)) + "}",
-            "assign": "; ".join("_set(output, "+convert.value2quote(s)+", self."+s+")" for s in slots),
-            "types": "{" + (",".join(convert.string2quote(k) + ": " + v.__name__ for k, v in types.items())) + "}",
-            "constraint_expr": jx_expression(constraint).to_python(),
-            "constraint": value2json(constraint)
-        }
-    )
-
-    return _exec(code, name)
-
-
-def _exec(code, name):
-    try:
-        globs = globals()
-        fake_locals = {}
-        exec(code, globs, fake_locals)
-        temp = globs[name] = fake_locals[name]
-        return temp
-    except Exception as e:
-        Log.error("Can not make class\n{{code}}", code=code, cause=e)
-
-
 def value2quote(value):
     # RETURN PRETTY PYTHON CODE FOR THE SAME
-    if isinstance(value, text_type):
+    if is_text(value):
         return mo_json.quote(value)
     else:
         return text_type(repr(value))
@@ -358,6 +217,18 @@ class extenstion_method(object):
         else:
             setattr(self.value, func.__name__, func)
             return func
+
+
+def extend(cls):
+    """
+    DECORATOR TO ADD METHODS TO CLASSES
+    :param cls: THE CLASS TO ADD THE METHOD TO
+    :return:
+    """
+    def extender(func):
+        setattr(cls, get_function_name(func), func)
+        return func
+    return extender
 
 
 class MemorySample(object):

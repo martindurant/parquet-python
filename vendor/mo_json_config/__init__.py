@@ -8,29 +8,36 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import os
-from collections import Mapping
 
 import mo_dots
-from mo_dots import set_default, wrap, unwrap
+from mo_dots import is_data, is_list, set_default, unwrap, wrap
 from mo_files import File
+from mo_files.url import URL
+from mo_future import text_type
 from mo_json import json2value
 from mo_json_config.convert import ini2value
-from mo_logs import Log, Except
-from mo_logs.url import URL
+from mo_logs import Except, Log
 
 DEBUG = False
+
+
+def get_file(file):
+    file = File(file)
+    if os.sep=="\\":
+        return get("file:///" + file.abspath)
+    else:
+        return get("file://" + file.abspath)
 
 
 def get(url):
     """
     USE json.net CONVENTIONS TO LINK TO INLINE OTHER JSON
     """
-    url = str(url)
+    url = text_type(url)
     if url.find("://") == -1:
         Log.error("{{url}} must have a prototcol (eg http://) declared", url=url)
 
@@ -56,6 +63,8 @@ def expand(doc, doc_url="param://", params=None):
     ASSUMING YOU ALREADY PULED THE doc FROM doc_url, YOU CAN STILL USE THE
     EXPANDING FEATURE
 
+    USE mo_json_config.expand({}) TO ASSUME CURRENT WORKING DIRECTORY
+
     :param doc: THE DATA STRUCTURE FROM JSON SOURCE
     :param doc_url: THE URL THIS doc CAME FROM (DEFAULT USES params AS A DOCUMENT SOURCE)
     :param params: EXTRA PARAMETERS NOT FOUND IN THE doc_url PARAMETERS (WILL SUPERSEDE PARAMETERS FROM doc_url)
@@ -75,7 +84,7 @@ def _replace_ref(node, url):
     if url.path.endswith("/"):
         url.path = url.path[:-1]
 
-    if isinstance(node, Mapping):
+    if is_data(node):
         ref = None
         output = {}
         for k, v in node.items():
@@ -108,19 +117,19 @@ def _replace_ref(node, url):
         if ref.fragment:
             new_value = mo_dots.get_attr(new_value, ref.fragment)
 
-        if DEBUG:
-            Log.note("Replace {{ref}} with {{new_value}}", ref=ref, new_value=new_value)
+        DEBUG and Log.note("Replace {{ref}} with {{new_value}}", ref=ref, new_value=new_value)
 
         if not output:
             output = new_value
+        elif is_text(output):
+            Log.error("Can not handle set_default({{output}},{{new_value}})", output=output, new_value=new_value)
         else:
             output = unwrap(set_default(output, new_value))
 
-        if DEBUG:
-            Log.note("Return {{output}}", output=output)
+        DEBUG and Log.note("Return {{output}}", output=output)
 
         return output
-    elif isinstance(node, list):
+    elif is_list(node):
         output = [_replace_ref(n, url) for n in node]
         # if all(p[0] is p[1] for p in zip(output, node)):
         #     return node
@@ -130,7 +139,7 @@ def _replace_ref(node, url):
 
 
 def _replace_locals(node, doc_path):
-    if isinstance(node, Mapping):
+    if is_data(node):
         # RECURS, DEEP COPY
         ref = None
         output = {}
@@ -168,7 +177,7 @@ def _replace_locals(node, doc_path):
         else:
             return unwrap(set_default(output, new_value))
 
-    elif isinstance(node, list):
+    elif is_list(node):
         candidate = [_replace_locals(n, [n] + doc_path) for n in node]
         # if all(p[0] is p[1] for p in zip(candidate, node)):
         #     return node
@@ -181,7 +190,7 @@ def _replace_locals(node, doc_path):
 ## SCHEME LOADERS ARE BELOW THIS LINE
 ###############################################################################
 
-def get_file(ref, url):
+def _get_file(ref, url):
 
     if ref.path.startswith("~"):
         home_path = os.path.expanduser("~")
@@ -207,8 +216,7 @@ def get_file(ref, url):
     path = ref.path if os.sep != "\\" else ref.path[1::].replace("/", "\\")
 
     try:
-        if DEBUG:
-            Log.note("reading file {{path}}", path=path)
+        DEBUG and Log.note("reading file {{path}}", path=path)
         content = File(path).read()
     except Exception as e:
         content = None
@@ -234,17 +242,17 @@ def get_http(ref, url):
     return new_value
 
 
-def get_env(ref, url):
+def _get_env(ref, url):
     # GET ENVIRONMENT VARIABLES
     ref = ref.host
     try:
         new_value = json2value(os.environ[ref])
     except Exception as e:
-        new_value = os.environ[ref]
+        new_value = os.environ.get(ref)
     return new_value
 
 
-def get_param(ref, url):
+def _get_param(ref, url):
     # GET PARAMETERS FROM url
     param = url.query
     new_value = param[ref.host]
@@ -253,8 +261,8 @@ def get_param(ref, url):
 
 scheme_loaders = {
     "http": get_http,
-    "file": get_file,
-    "env": get_env,
-    "param": get_param
+    "file": _get_file,
+    "env": _get_env,
+    "param": _get_param
 }
 

@@ -7,35 +7,28 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-from collections import Mapping
-
-from jx_base import container
+from mo_future import is_text, is_binary
+from jx_base import Column, container
 from jx_base.container import Container
 from jx_base.dimensions import Dimension
 from jx_base.expressions import jx_expression
-from jx_base.queries import is_variable_name
 from jx_base.query import QueryOp
-from jx_base.schema import Schema
+from jx_base.language import is_op
 from jx_elasticsearch.es52.aggs import es_aggsop, is_aggsop
-from jx_elasticsearch.es52.deep import is_deepop, es_deepop
-from jx_elasticsearch.es52.setop import is_setop, es_setop
+from jx_elasticsearch.es52.deep import es_deepop, is_deepop
+from jx_elasticsearch.es52.setop import es_setop, is_setop
 from jx_elasticsearch.es52.util import aggregates
-from jx_elasticsearch.meta import FromESMetadata
+from jx_elasticsearch.meta import ElasticsearchMetadata, Table
 from jx_python import jx
-from mo_dots import Data, Null, unwrap
-from mo_dots import coalesce, split_field, literal_field, unwraplist, join_field
-from mo_dots import wrap, listwrap
-from mo_dots.lists import FlatList
-from mo_json import scrub
-from mo_json.typed_encoder import TYPE_PREFIX
+from mo_dots import Data, coalesce, is_list, join_field, listwrap, split_field, startswith_field, unwrap, wrap
+from mo_future import sort_using_key
+from mo_json import EXISTS, OBJECT, value2json
+from mo_json.typed_encoder import EXISTS_TYPE
 from mo_kwargs import override
-from mo_logs import Log
-from mo_logs.exceptions import Except
-from pyLibrary import convert
+from mo_logs import Except, Log
+from mo_times import Date
 from pyLibrary.env import elasticsearch, http
 
 
@@ -46,7 +39,7 @@ class ES52(Container):
 
     def __new__(cls, *args, **kwargs):
         if (len(args) == 1 and args[0].get("index") == "meta") or kwargs.get("index") == "meta":
-            output = FromESMetadata.__new__(FromESMetadata, *args, **kwargs)
+            output = ElasticsearchMetadata.__new__(ElasticsearchMetadata, *args, **kwargs)
             output.__init__(*args, **kwargs)
             return output
         else:
@@ -58,7 +51,6 @@ class ES52(Container):
         host,
         index,
         type=None,
-        alias=None,
         name=None,
         port=9200,
         read_only=True,
@@ -67,36 +59,83 @@ class ES52(Container):
         typed=None,
         kwargs=None
     ):
-        Container.__init__(self, None)
+        Container.__init__(self)
         if not container.config.default:
             container.config.default = {
                 "type": "elasticsearch",
                 "settings": unwrap(kwargs)
             }
         self.settings = kwargs
-        self.name = coalesce(name, alias, index)
+        self.name = name = coalesce(name, index)
         if read_only:
-            self._es = elasticsearch.Alias(alias=coalesce(alias, index), kwargs=kwargs)
+            self.es = elasticsearch.Alias(alias=index, kwargs=kwargs)
         else:
-            self._es = elasticsearch.Cluster(kwargs=kwargs).get_index(read_only=read_only, kwargs=kwargs)
+            self.es = elasticsearch.Cluster(kwargs=kwargs).get_index(read_only=read_only, kwargs=kwargs)
 
-        self.meta = FromESMetadata(kwargs=kwargs)
-        self.settings.type = self._es.settings.type
+        self._namespace = ElasticsearchMetadata(kwargs=kwargs)
+        self.settings.type = self.es.settings.type
         self.edges = Data()
         self.worker = None
 
-        columns = self.meta.get_columns(table_name=coalesce(name, alias, index))
-        self._schema = Schema(coalesce(name, alias, index), columns)
+        columns = self.snowflake.columns  # ABSOLUTE COLUMNS
+        is_typed = any(c.es_column == EXISTS_TYPE for c in columns)
 
         if typed == None:
             # SWITCH ON TYPED MODE
-            self.typed = any(c.es_column.find("."+TYPE_PREFIX) != -1 for c in columns)
+            self.typed = is_typed
         else:
+            if is_typed != typed:
+                Log.error("Expecting given typed {{typed}} to match {{is_typed}}", typed=typed, is_typed=is_typed)
             self.typed = typed
 
+        if not typed:
+            # ADD EXISTENCE COLUMNS
+            all_paths = {".": None}  # MAP FROM path TO parent TO MAKE A TREE
+
+            def nested_path_of(v):
+                if not v:
+                    return []
+                else:
+                    return [v] + nested_path_of(all_paths[v])
+
+            all = sort_using_key(set(step for path in self.snowflake.query_paths for step in path), key=lambda p: len(split_field(p)))
+            for step in sorted(all):
+                if step in all_paths:
+                    continue
+                else:
+                    best = '.'
+                    for candidate in all_paths.keys():
+                        if startswith_field(step, candidate):
+                            if startswith_field(candidate, best):
+                                best = candidate
+                    all_paths[step] = best
+            for p in all_paths.keys():
+                nested_path = nested_path_of(all_paths[p])
+                if not nested_path:
+                    nested_path = ['.']
+                self.namespace.meta.columns.add(Column(
+                    name=p,
+                    es_column=p,
+                    es_index=self.name,
+                    es_type=OBJECT,
+                    jx_type=EXISTS,
+                    nested_path=nested_path,
+                    last_updated=Date.now()
+                ))
+
     @property
-    def schema(self):
-        return self._schema
+    def snowflake(self):
+        return self._namespace.get_snowflake(self.es.settings.alias)
+
+    @property
+    def namespace(self):
+        return self._namespace
+
+    def get_table(self, full_name):
+        return Table(full_name, self)
+
+    def get_schema(self, query_path):
+        return self._namespace.get_schema(query_path)
 
     def __data__(self):
         settings = self.settings.copy()
@@ -123,17 +162,14 @@ class ES52(Container):
 
     @property
     def url(self):
-        return self._es.url
+        return self.es.url
 
     def query(self, _query):
         try:
-            query = QueryOp.wrap(_query, table=self)
-
-            for n in self.namespaces:
-                query = n.convert(query)
+            query = QueryOp.wrap(_query, container=self, namespace=self.namespace)
 
             for s in listwrap(query.select):
-                if not aggregates.get(s.aggregate):
+                if s.aggregate != None and not aggregates.get(s.aggregate):
                     Log.error(
                         "ES can not aggregate {{name}} because {{aggregate|quote}} is not a recognized aggregate",
                         name=s.name,
@@ -141,28 +177,28 @@ class ES52(Container):
                     )
 
             frum = query["from"]
-            if isinstance(frum, QueryOp):
+            if is_op(frum, QueryOp):
                 result = self.query(frum)
                 q2 = query.copy()
                 q2.frum = result
                 return jx.run(q2)
 
-            if is_deepop(self._es, query):
-                return es_deepop(self._es, query)
-            if is_aggsop(self._es, query):
-                return es_aggsop(self._es, frum, query)
-            if is_setop(self._es, query):
-                return es_setop(self._es, query)
+            if is_deepop(self.es, query):
+                return es_deepop(self.es, query)
+            if is_aggsop(self.es, query):
+                return es_aggsop(self.es, frum, query)
+            if is_setop(self.es, query):
+                return es_setop(self.es, query)
             Log.error("Can not handle")
         except Exception as e:
             e = Except.wrap(e)
             if "Data too large, data for" in e:
-                http.post(self._es.cluster.path+"/_cache/clear")
+                http.post(self.es.cluster.url / "_cache/clear")
                 Log.error("Problem (Tried to clear Elasticsearch cache)", e)
             Log.error("problem", e)
 
     def addDimension(self, dim):
-        if isinstance(dim, list):
+        if is_list(dim):
             Log.error("Expecting dimension to be a object, not a list:\n{{dim}}",  dim= dim)
         self._addDimension(dim, [])
 
@@ -194,37 +230,37 @@ class ES52(Container):
         THE where CLAUSE IS AN ES FILTER
         """
         command = wrap(command)
-        schema = self._es.get_properties()
+        table = self.get_table(command['update'])
+
+        es_index = self.es.cluster.get_index(read_only=False, alias=None, kwargs=self.es.settings)
+
+        schema = table.schema
 
         # GET IDS OF DOCUMENTS
-        results = self._es.search({
-            "stored_fields": listwrap(schema._routing.path),
-            "query": {"bool": {
-                "filter": jx_expression(command.where).to_esfilter(Null)
-            }},
-            "size": 10000
-        })
+        query = {
+            "from": command['update'],
+            "select": [{"value": "_id"}] + [
+                {"name": k, "value": v}
+                for k, v in command.set.items()
+            ],
+            "where": command.where,
+            "format": "list",
+            "limit": 10000
+        }
 
-        # SCRIPT IS SAME FOR ALL (CAN ONLY HANDLE ASSIGNMENT TO CONSTANT)
-        scripts = FlatList()
-        for k, v in command.set.items():
-            if not is_variable_name(k):
-                Log.error("Only support simple paths for now")
-            if isinstance(v, Mapping) and v.doc:
-                scripts.append({"doc": v.doc})
-            else:
-                v = scrub(v)
-                scripts.append({"script": "ctx._source." + k + " = " + jx_expression(v).to_painless(schema).script(schema)})
+        results = self.query(query)
 
-        if results.hits.hits:
-            updates = []
-            for h in results.hits.hits:
-                for s in scripts:
-                    updates.append({"update": {"_id": h._id, "_routing": unwraplist(h.fields[literal_field(schema._routing.path)])}})
-                    updates.append(s)
-            content = ("\n".join(convert.value2json(c) for c in updates) + "\n").encode('utf-8')
-            response = self._es.cluster.post(
-                self._es.path + "/_bulk",
+        if results.data:
+            content = "".join(
+                t
+                for r in results.data
+                for _id, row in [(r._id, r)]
+                for _ in [row.__setitem__('_id', None)]  # WARNING! DESTRUCTIVE TO row
+                for update in map(value2json, ({"update": {"_id": _id}}, {"doc": row}))
+                for t in (update, "\n")
+            )
+            response = self.es.cluster.post(
+                es_index.path + "/" + "_bulk",
                 data=content,
                 headers={"Content-Type": "application/json"},
                 timeout=self.settings.timeout,
@@ -232,4 +268,13 @@ class ES52(Container):
             )
             if response.errors:
                 Log.error("could not update: {{error}}", error=[e.error for i in response["items"] for e in i.values() if e.status not in (200, 201)])
+
+        # DELETE BY QUERY, IF NEEDED
+        if "." in listwrap(command.clear):
+            es_filter = self.es.cluster.lang[jx_expression(command.where)].to_esfilter(schema)
+            self.es.delete_record(es_filter)
+            return
+
+        es_index.flush()
+
 

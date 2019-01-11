@@ -9,16 +9,16 @@
 #
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-from mo_dots import listwrap, get_module, set_default, literal_field, Data
+from mo_future import is_text, is_binary
+from mo_dots import Data, listwrap, literal_field
 from mo_kwargs import override
 from mo_logs import Log
 from mo_logs.exceptions import ALARM, NOTE
 from mo_logs.log_usingNothing import StructuredLogger
 from mo_logs.strings import expand_template
+from mo_math.randoms import Random
 from mo_threads import Lock
 from mo_times import Date, Duration, HOUR, MINUTE
 from pyLibrary.env.emailer import Emailer
@@ -39,7 +39,7 @@ class StructuredLogger_usingEmail(StructuredLogger):
         use_ssl=1,
         cc=None,
         log_type="email",
-        max_interval=HOUR,
+        average_interval=HOUR,
         kwargs=None
     ):
         """
@@ -59,7 +59,6 @@ class StructuredLogger_usingEmail(StructuredLogger):
             "password": "password",
             "use_ssl": 1
         }
-
         """
         assert kwargs.log_type == "email", "Expecing settings to be of type 'email'"
         self.settings = kwargs
@@ -67,7 +66,7 @@ class StructuredLogger_usingEmail(StructuredLogger):
         self.cc = listwrap(cc)
         self.next_send = Date.now() + MINUTE
         self.locker = Lock()
-        self.settings.max_interval = Duration(kwargs.max_interval)
+        self.settings.average_interval = Duration(kwargs.average_interval)
 
     def write(self, template, params):
         with self.locker:
@@ -83,28 +82,30 @@ class StructuredLogger_usingEmail(StructuredLogger):
 
     def _send_email(self):
         try:
-            if self.accumulation:
-                with Emailer(self.settings) as emailer:
-                    # WHO ARE WE SENDING TO
-                    emails = Data()
-                    for template, params in self.accumulation:
-                        content = expand_template(template, params)
-                        emails[literal_field(self.settings.to_address)] += [content]
-                        for c in self.cc:
-                            if any(d in params.params.error for d in c.contains):
-                                emails[literal_field(c.to_address)] += [content]
+            if not self.accumulation:
+                return
+            with Emailer(self.settings) as emailer:
+                # WHO ARE WE SENDING TO
+                emails = Data()
+                for template, params in self.accumulation:
+                    content = expand_template(template, params)
+                    emails[literal_field(self.settings.to_address)] += [content]
+                    for c in self.cc:
+                        if any(d in params.params.error for d in c.contains):
+                            emails[literal_field(c.to_address)] += [content]
 
-                    # SEND TO EACH
-                    for to_address, content in emails.items():
-                        emailer.send_email(
-                            from_address=self.settings.from_address,
-                            to_address=listwrap(to_address),
-                            subject=self.settings.subject,
-                            text_data="\n\n".join(content)
-                        )
+                # SEND TO EACH
+                for to_address, content in emails.items():
+                    emailer.send_email(
+                        from_address=self.settings.from_address,
+                        to_address=listwrap(to_address),
+                        subject=self.settings.subject,
+                        text_data="\n\n".join(content)
+                    )
 
-            self.next_send = Date.now() + self.settings.max_interval
             self.accumulation = []
         except Exception as e:
-            self.next_send = Date.now() + self.settings.max_interval
             Log.warning("Could not send", e)
+        finally:
+            self.next_send = Date.now() + self.settings.average_interval * (2 * Random.float())
+

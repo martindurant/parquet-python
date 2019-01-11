@@ -8,13 +8,11 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-import mo_json
 from mo_dots import Data, wrap
 from mo_files import File
+import mo_json
 from mo_logs import Log
 from mo_logs.exceptions import suppress_exception
 from mo_math.randoms import Random
@@ -63,16 +61,14 @@ class PersistentQueue(object):
             if lost:
                 Log.warning("queue file had {{num}} items lost",  num= lost)
 
-            if DEBUG:
-                Log.note("Persistent queue {{name}} found with {{num}} items", name=self.file.abspath, num=len(self))
+            DEBUG and Log.note("Persistent queue {{name}} found with {{num}} items", name=self.file.abspath, num=len(self))
         else:
             self.db.status = Data(
                 start=0,
                 end=0
             )
             self.start = self.db.status.start
-            if DEBUG:
-                Log.note("New persistent queue {{name}}", name=self.file.abspath)
+            DEBUG and Log.note("New persistent queue {{name}}", name=self.file.abspath)
 
     def _add_pending(self, delta):
         delta = wrap(delta)
@@ -95,8 +91,6 @@ class PersistentQueue(object):
                     yield value
             except Exception as e:
                 Log.warning("Tell me about what happened here", cause=e)
-        if DEBUG:
-            Log.note("queue iterator is done")
 
     def add(self, value):
         with self.lock:
@@ -104,8 +98,7 @@ class PersistentQueue(object):
                 Log.error("Queue is closed")
 
             if value is THREAD_STOP:
-                if DEBUG:
-                    Log.note("Stop is seen in persistent queue")
+                DEBUG and Log.note("Stop is seen in persistent queue")
                 self.please_stop.go()
                 return
 
@@ -142,8 +135,7 @@ class PersistentQueue(object):
                 else:
                     self.lock.wait()
 
-            if DEBUG:
-                Log.note("persistent queue already stopped")
+            DEBUG and Log.note("persistent queue already stopped")
             return THREAD_STOP
 
     def pop_all(self):
@@ -184,7 +176,6 @@ class PersistentQueue(object):
                     # SIMPLY RE-WRITE FILE
                     if DEBUG:
                         Log.note("Re-write {{num_keys}} keys to persistent queue", num_keys=self.db.status.end - self.start)
-
                         for k in self.db.keys():
                             if k == "status" or int(k) >= self.db.status.start:
                                 continue
@@ -209,12 +200,10 @@ class PersistentQueue(object):
             self.add(THREAD_STOP)
 
             if self.db.status.end == self.start:
-                if DEBUG:
-                    Log.note("persistent queue clear and closed")
+                DEBUG and Log.note("persistent queue clear and closed")
                 self.file.delete()
             else:
-                if DEBUG:
-                    Log.note("persistent queue closed with {{num}} items left", num=len(self))
+                DEBUG and Log.note("persistent queue closed with {{num}} items left", num=len(self))
                 try:
                     self._add_pending({"add": {"status.start": self.start}})
                     for i in range(self.db.status.start, self.start):

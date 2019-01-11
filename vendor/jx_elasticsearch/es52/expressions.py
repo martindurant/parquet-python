@@ -7,1123 +7,495 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 import itertools
 
-from mo_future import text_type
-
-from jx_base import NUMBER, STRING, BOOLEAN, OBJECT, INTEGER
-from jx_base.expressions import Variable, TupleOp, LeavesOp, BinaryOp, OrOp, ScriptOp, \
-    WhenOp, InequalityOp, extend, Literal, NullOp, TrueOp, FalseOp, DivOp, FloorOp, \
-    EqOp, NeOp, NotOp, LengthOp, NumberOp, StringOp, CountOp, MultiOp, RegExpOp, CoalesceOp, MissingOp, ExistsOp, \
-    PrefixOp, NotLeftOp, InOp, CaseOp, AndOp, \
-    ConcatOp, IsNumberOp, Expression, BasicIndexOfOp, MaxOp, MinOp, BasicEqOp, BooleanOp, IntegerOp, BasicSubstringOp, ZERO, NULL, FirstOp, FALSE, TRUE, SuffixOp
-from mo_dots import coalesce, wrap, Null, unwraplist, set_default, literal_field
+from jx_base.expressions import (AndOp as AndOp_, BasicEqOp as BasicEqOp_, BasicStartsWithOp as BasicStartsWithOp_, BooleanOp as BooleanOp_, CaseOp as CaseOp_, CoalesceOp as CoalesceOp_, ConcatOp as ConcatOp_, DivOp as DivOp_, EqOp as EqOp_, EsNestedOp as EsNestedOp_, ExistsOp as ExistsOp_, FALSE, FalseOp as FalseOp_, GtOp as GtOp_, GteOp as GteOp_, InOp as InOp_, LengthOp as LengthOp_, Literal as Literal_, LtOp as LtOp_, LteOp as LteOp_, MissingOp as MissingOp_, NULL, NeOp as NeOp_, NotOp as NotOp_, NullOp, OrOp as OrOp_, PrefixOp as PrefixOp_, RegExpOp as RegExpOp_, ScriptOp as ScriptOp_, StringOp as StringOp_, SuffixOp as SuffixOp_, TRUE, TrueOp as TrueOp_, Variable as Variable_, WhenOp as WhenOp_, extend, is_literal)
+from jx_base.language import Language, define_language, is_op
+from jx_elasticsearch.es52.util import (
+    MATCH_ALL,
+    MATCH_NONE,
+    es_and,
+    es_exists,
+    es_missing,
+    es_not,
+    es_or,
+    es_script,
+    pull_functions,
+)
+from jx_python.jx import value_compare
+from mo_dots import Data, Null, is_container, is_list, literal_field, set_default, wrap, is_sequence
+from mo_future import first
+from mo_json import BOOLEAN, NESTED, OBJECT, python_type_to_json_type
 from mo_logs import Log, suppress_exception
-from mo_logs.strings import expand_template, quote
 from mo_math import MAX, OR
-from pyLibrary.convert import string2regexp
-
-TO_STRING = """Optional.of({{expr}}).map(
-                        value -> {
-                            String output = String.valueOf(value);
-                            if (output.endsWith(".0")) output = output.substring(0, output.length() - 2);
-                            return output;
-                        }
-                ).orElse(null)"""
+from pyLibrary.convert import string2regexp, value2boolean
 
 
-class Painless(Expression):
-    __slots__ = ("miss", "type", "expr", "many")
-
-    def __init__(self, type, expr, frum, miss=None, many=False):
-        self.miss = coalesce(miss, FALSE)  # Expression that will return true/false to indicate missing result
-        self.data_type = type
-        self.expr = expr
-        self.many = many  # True if script returns multi-value
-        self.frum = frum
-
-    @property
-    def type(self):
-        return self.data_type
-
-    def script(self, schema):
-        """
-        RETURN A SCRIPT SUITABLE FOR CODE OUTSIDE THIS MODULE (NO KNOWLEDGE OF Painless)
-        :param schema:
-        :return:
-        """
-        missing = self.miss.partial_eval()
-        if missing is FALSE:
-            return self.partial_eval().to_painless(schema).expr
-        elif missing is TRUE:
-            return "null"
-
-        return "(" + missing.to_painless(schema).expr + ")?null:(" + self.expr + ")"
-
+class Variable(Variable_):
     def to_esfilter(self, schema):
-        return {"script": {"script": {"lang": "painless", "inline": self.script(schema)}}}
-
-    def to_painless(self, schema):
-        return self
-
-    def missing(self):
-        return self.miss
-
-    def __data__(self):
-        return {"script": self.script}
-
-    def __eq__(self, other):
-        if not isinstance(other, Painless):
-            return False
-        elif self.expr==other.expr:
-            return True
+        v = self.var
+        cols = schema.values(v, (OBJECT, NESTED))
+        if len(cols) == 0:
+            return MATCH_NONE
+        elif len(cols) == 1:
+            c = first(cols)
+            return (
+                {"term": {c.es_column: True}}
+                if c.es_type == BOOLEAN
+                else es_exists(c.es_column)
+            )
         else:
-            return False
+            return es_and(
+                [
+                    {"term": {c.es_column: True}}
+                    if c.es_type == BOOLEAN
+                    else es_exists(c.es_column)
+                    for c in cols
+                ]
+            )
 
 
-@extend(BinaryOp)
-def to_painless(self, schema):
-    lhs = NumberOp("number", self.lhs).partial_eval().to_painless(schema).expr
-    rhs = NumberOp("number", self.rhs).partial_eval().to_painless(schema).expr
-    script = "(" + lhs + ") " + BinaryOp.operators[self.op] + " (" + rhs + ")"
-    missing = OrOp("or", [self.lhs.missing(), self.rhs.missing()])
+class NeOp(NeOp_):
+    def to_esfilter(self, schema):
+        if not is_op(self.lhs, Variable_) or not is_literal(self.rhs):
+            return self.to_es_script(schema).to_esfilter(schema)
 
-    return WhenOp(
-        "when",
-        missing,
-        **{
-            "then": self.default,
-            "else":
-                Painless(type=NUMBER, expr=script, frum=self)
-        }
-    ).partial_eval().to_painless(schema)
+        return es_not({"term": {self.lhs.var: self.rhs.to_esfilter(schema)}})
 
 
-@extend(BinaryOp)
-def to_esfilter(self, schema):
-    if not isinstance(self.lhs, Variable) or not isinstance(self.rhs, Literal) or self.op in BinaryOp.operators:
-        return self.to_painless(schema).to_esfilter(schema)
-
-    if self.op in ["eq", "term"]:
-        return {"term": {self.lhs.var: self.rhs.to_esfilter(schema)}}
-    elif self.op in ["ne", "neq"]:
-        return {"bool": {"must_not": {"term": {self.lhs.var: self.rhs.to_esfilter(schema)}}}}
-    elif self.op in BinaryOp.ineq_ops:
-        return {"range": {self.lhs.var: {self.op: self.rhs.value}}}
-    else:
-        Log.error("Logic error")
-
-
-@extend(CaseOp)
-def to_painless(self, schema):
-    acc = self.whens[-1].partial_eval().to_painless(schema)
-    for w in reversed(self.whens[0:-1]):
-        acc = WhenOp(
-            "when",
-            w.when,
-            **{"then": w.then, "else": acc}
-        ).partial_eval().to_painless(schema)
-    return acc
+class CaseOp(CaseOp_):
+    def to_esfilter(self, schema):
+        if self.type == BOOLEAN:
+            return (
+                OrOp(
+                    [AndOp([w.when, w.then]) for w in self.whens[:-1]] + self.whens[-1:]
+                )
+                .partial_eval()
+                .to_esfilter(schema)
+            )
+        else:
+            Log.error("do not know how to handle")
+            return self.to_es_script(schema).script(schema).to_esfilter(schema)
 
 
-@extend(CaseOp)
-def to_esfilter(self, schema):
-    return ScriptOp("script",  self.to_painless(schema).script(schema)).to_esfilter(schema)
-
-
-@extend(ConcatOp)
-def to_esfilter(self, schema):
-    if isinstance(self.value, Variable) and isinstance(self.find, Literal):
-        return {"regexp": {self.value.var: ".*" + string2regexp(self.find.value) + ".*"}}
-    else:
-        return ScriptOp("script",  self.to_painless(schema).script(schema)).to_esfilter(schema)
-
-
-@extend(ConcatOp)
-def to_painless(self, schema):
-    if len(self.terms) == 0:
-        return self.default.to_painless(schema)
-
-    acc = []
-    separator = StringOp("string", self.separator).partial_eval()
-    sep = separator.to_painless(schema).expr
-    for t in self.terms:
-        val = WhenOp(
-            "when",
-            t.missing(),
-            **{
-                "then": Literal("literal", ""),
-                "else": Painless(type=STRING, expr=sep + "+" + StringOp(None, t).partial_eval().to_painless(schema).expr, frum=t)
-                # "else": ConcatOp("concat", [sep, t])
+class ConcatOp(ConcatOp_):
+    def to_esfilter(self, schema):
+        if is_op(self.value, Variable_) and is_literal(self.find):
+            return {
+                "regexp": {self.value.var: ".*" + string2regexp(self.find.value) + ".*"}
             }
-        )
-        acc.append("(" + val.partial_eval().to_painless(schema).expr + ")")
-    expr_ = "(" + "+".join(acc) + ").substring(" + LengthOp("length", separator).to_painless(schema).expr + ")"
-
-    if isinstance(self.default, NullOp):
-        return Painless(
-            miss=self.missing(),
-            type=STRING,
-            expr=expr_,
-            frum=self
-        )
-    else:
-        return Painless(
-            miss=self.missing(),
-            type=STRING,
-            expr="((" + expr_ + ").length==0) ? (" + self.default.to_painless(schema).expr + ") : (" + expr_ + ")",
-            frum=self
-        )
-
-
-@extend(Literal)
-def to_painless(self, schema):
-    def _convert(v):
-        if v is None:
-            return NULL.to_painless(schema)
-        if v is True:
-            return Painless(
-                type=BOOLEAN,
-                expr="true",
-                frum=self
-            )
-        if v is False:
-            return Painless(
-                type=BOOLEAN,
-                expr="false",
-                frum=self
-            )
-        if isinstance(v, text_type):
-            return Painless(
-                type=STRING,
-                expr=quote(v),
-                frum=self
-            )
-        if isinstance(v, int):
-            return Painless(
-                type=INTEGER,
-                expr=text_type(v),
-                frum=self
-            )
-        if isinstance(v, float):
-            return Painless(
-                type=NUMBER,
-                expr=text_type(v),
-                frum=self
-            )
-        if isinstance(v, dict):
-            return Painless(
-                type=OBJECT,
-                expr="[" + ", ".join(quote(k) + ": " + _convert(vv) for k, vv in v.items()) + "]",
-                frum=self
-            )
-        if isinstance(v, (list, tuple)):
-            return Painless(
-                type=OBJECT,
-                expr="[" + ", ".join(_convert(vv).expr for vv in v) + "]",
-                frum=self
-            )
-
-    return _convert(self.term)
-
-
-@extend(CoalesceOp)
-def to_painless(self, schema):
-    if not self.terms:
-        return NULL.to_painless(schema)
-
-    v = self.terms[-1]
-    acc = FirstOp("first", v).partial_eval().to_painless(schema)
-    for v in reversed(self.terms[:-1]):
-        m = v.missing().partial_eval()
-        e = NotOp("not", m).partial_eval().to_painless(schema)
-        r = FirstOp("first", v).partial_eval().to_painless(schema)
-
-        if r.miss is TRUE:
-            continue
-        elif r.miss is FALSE:
-            acc = r
-            continue
-        elif acc.type == r.type:
-            new_type = r.type
-        elif acc.type == NUMBER and r.type == INTEGER:
-            new_type = NUMBER
-        elif acc.type == INTEGER and r.type == NUMBER:
-            new_type = NUMBER
         else:
-            new_type = OBJECT
-
-        acc = Painless(
-            miss=AndOp("and", [acc.miss, m]).partial_eval(),
-            type=new_type,
-            expr="(" + e.expr + ") ? (" + r.expr + ") : (" + acc.expr + ")",
-            frum=self
-        )
-    return acc
+            return self.to_es_script(schema).script(schema).to_esfilter(schema)
 
 
-@extend(CoalesceOp)
-def to_esfilter(self, schema):
-    return {"bool": {"should": [{"exists": {"field": v}} for v in self.terms]}}
+class Literal(Literal_):
+    def to_esfilter(self, schema):
+        return self.json
 
 
-@extend(ExistsOp)
-def to_painless(self, schema):
-    return self.field.exists().partial_eval().to_painless(schema)
+class CoalesceOp(CoalesceOp_):
+    def to_esfilter(self, schema):
+        return {"bool": {"should": [{"exists": {"field": v}} for v in self.terms]}}
 
 
-@extend(ExistsOp)
-def to_esfilter(self, schema):
-    return self.field.exists().partial_eval().to_esfilter(schema)
-
-
-@extend(Literal)
-def to_esfilter(self, schema):
-    return self.json
+class ExistsOp(ExistsOp_):
+    def to_esfilter(self, schema):
+        return self.field.exists().partial_eval().to_esfilter(schema)
 
 
 @extend(NullOp)
-def to_painless(self, schema):
-    return Painless(
-        miss=TRUE,
-        type=OBJECT,
-        expr="null",
-        frum=self
-    )
-
-@extend(NullOp)
 def to_esfilter(self, schema):
-    return {"bool": {"must_not": {"match_all": {}}}}
+    return MATCH_NONE
 
 
-@extend(FalseOp)
-def to_painless(self, schema):
-    return Painless(type=BOOLEAN, expr="false", frum=self)
-
-
-@extend(FalseOp)
+@extend(FalseOp_)
 def to_esfilter(self, schema):
-    return {"bool": {"must_not": {"match_all": {}}}}
+    return MATCH_NONE
 
 
-@extend(TupleOp)
-def to_esfilter(self, schema):
-    Log.error("not supported")
-
-
-@extend(LeavesOp)
-def to_painless(self, schema):
-    Log.error("not supported")
-
-
-@extend(LeavesOp)
-def to_esfilter(self, schema):
-    Log.error("not supported")
-
-
-@extend(InequalityOp)
-def to_painless(self, schema):
-    lhs = NumberOp("number", self.lhs).partial_eval().to_painless(schema).expr
-    rhs = NumberOp("number", self.rhs).partial_eval().to_painless(schema).expr
-    script = "(" + lhs + ") " + InequalityOp.operators[self.op] + " (" + rhs + ")"
-
-    output = WhenOp(
-        "when",
-        OrOp("or", [self.lhs.missing(), self.rhs.missing()]),
-        **{
-            "then": FALSE,
-            "else":
-                Painless(type=BOOLEAN, expr=script, frum=self)
-        }
-    ).partial_eval().to_painless(schema)
-    return output
-
-
-@extend(InequalityOp)
-def to_esfilter(self, schema):
-    if isinstance(self.lhs, Variable) and isinstance(self.rhs, Literal):
+def _inequality_to_esfilter(self, schema):
+    if is_op(self.lhs, Variable_) and is_literal(self.rhs):
         cols = schema.leaves(self.lhs.var)
         if not cols:
             lhs = self.lhs.var  # HAPPENS DURING DEBUGGING, AND MAYBE IN REAL LIFE TOO
         elif len(cols) == 1:
-            lhs = schema.leaves(self.lhs.var)[0].es_column
+            lhs = first(cols).es_column
         else:
             Log.error("operator {{op|quote}} does not work on objects", op=self.op)
         return {"range": {lhs: {self.op: self.rhs.value}}}
     else:
-        return {"script": {"script": {"lang": "painless", "inline": self.to_painless(schema).script(schema)}}}
+        script = Painless[self].to_es_script(schema)
+        if script.miss is not FALSE:
+            Log.error("inequality must be decisive")
+        return {"script": es_script(script.expr)}
 
 
-@extend(DivOp)
-def to_painless(self, schema):
-    lhs = NumberOp("number", self.lhs).partial_eval()
-    rhs = NumberOp("number", self.rhs).partial_eval()
-    script = "(" + lhs.to_painless(schema).expr + ") / (" + rhs.to_painless(schema).expr + ")"
-
-    output = WhenOp(
-        "when",
-        OrOp("or", [self.lhs.missing(), self.rhs.missing(), EqOp("eq", [self.rhs, ZERO])]),
-        **{
-            "then": self.default,
-            "else": Painless(type=NUMBER, expr=script, frum=self)
-        }
-    ).partial_eval().to_painless(schema)
-
-    return output
+class GtOp(GtOp_):
+    to_esfilter = _inequality_to_esfilter
 
 
-@extend(DivOp)
-def to_esfilter(self, schema):
-    return NotOp("not", self.missing()).partial_eval().to_esfilter(schema)
+class GteOp(GteOp_):
+    to_esfilter = _inequality_to_esfilter
 
 
-@extend(FloorOp)
-def to_painless(self, schema):
-    lhs = self.lhs.to_painless(schema)
-    rhs = self.rhs.to_painless(schema)
-    script = "(int)Math.floor(((double)(" + lhs + ") / (double)(" + rhs + ")).doubleValue())*(" + rhs + ")"
-
-    output = WhenOp(
-        "when",
-        OrOp("or", [self.lhs.missing(), self.rhs.missing(), EqOp("eq", [self.rhs, ZERO])]),
-        **{
-            "then": self.default,
-            "else":
-                ScriptOp("script", script)
-        }
-    ).to_painless(schema)
-    return output
+class LtOp(LtOp_):
+    to_esfilter = _inequality_to_esfilter
 
 
-@extend(FloorOp)
-def to_esfilter(self, schema):
-    Log.error("Logic error")
+class LteOp(LteOp_):
+    to_esfilter = _inequality_to_esfilter
 
 
-@extend(EqOp)
-def to_painless(self, schema):
-    return CaseOp("case", [
-        WhenOp("when", self.lhs.missing(), **{"then": self.rhs.missing()}),
-        WhenOp("when", self.rhs.missing(), **{"then": FALSE}),
-        BasicEqOp("eq", [self.lhs, self.rhs])
-    ]).partial_eval().to_painless(schema)
+class DivOp(DivOp_):
+    def to_esfilter(self, schema):
+        return NotOp(self.missing()).partial_eval().to_esfilter(schema)
 
 
-@extend(EqOp)
-def to_esfilter(self, schema):
-    if isinstance(self.lhs, Variable) and isinstance(self.rhs, Literal):
-        rhs = self.rhs.value
-        lhs = self.lhs.var
-        cols = schema.leaves(lhs)
-        if cols:
-            lhs = cols[0].es_column
+class EqOp(EqOp_):
+    def partial_eval(self):
+        lhs = ES52[self.lhs].partial_eval()
+        rhs = ES52[self.rhs].partial_eval()
 
-        if isinstance(rhs, list):
-            if len(rhs) == 1:
-                return {"term": {lhs: rhs[0]}}
+        if is_literal(lhs):
+            if is_literal(rhs):
+                return FALSE if value_compare(lhs.value, rhs.value) else TRUE
             else:
-                return {"terms": {lhs: rhs}}
-        else:
-            return {"term": {lhs: rhs}}
+                return EqOp([rhs, lhs])  # FLIP SO WE CAN USE TERMS FILTER
 
-    else:
-        return CaseOp("case", [
-            WhenOp("when", self.lhs.missing(), **{"then": self.rhs.missing()}),
-            WhenOp("when", self.rhs.missing(), **{"then": FALSE}),
-            BasicEqOp("eq", [self.lhs, self.rhs])
-        ]).partial_eval().to_esfilter(schema)
+        return EqOp([lhs, rhs])
 
+    def to_esfilter(self, schema):
+        if is_op(self.lhs, Variable_) and is_literal(self.rhs):
+            rhs = self.rhs.value
+            lhs = self.lhs.var
+            cols = schema.leaves(lhs)
 
-@extend(BasicEqOp)
-def to_painless(self, schema):
-    lhs = self.lhs.partial_eval().to_painless(schema)
-    rhs = self.rhs.partial_eval().to_painless(schema)
-
-    if lhs.many:
-        if rhs.many:
-            return AndOp("and", [
-                Painless(type=BOOLEAN, expr="(" + lhs.expr + ").size()==(" + rhs.expr + ").size()", frum=self),
-                Painless(type=BOOLEAN, expr="(" + rhs.expr + ").containsAll(" + lhs.expr + ")", frum=self)
-            ]).to_painless(schema)
-        else:
-            return Painless(type=BOOLEAN, expr="(" + lhs.expr + ").contains(" + rhs.expr + ")",frum=self)
-    elif rhs.many:
-        return Painless(
-            type=BOOLEAN,
-            expr="(" + rhs.expr + ").contains(" + lhs.expr + ")",
-            frum=self
-        )
-    else:
-        return Painless(
-            type=BOOLEAN,
-            expr="(" + lhs.expr + "==" + rhs.expr + ")",
-            frum=self
-        )
-
-
-@extend(BasicEqOp)
-def to_esfilter(self, schema):
-    if isinstance(self.lhs, Variable) and isinstance(self.rhs, Literal):
-        lhs = self.lhs.var
-        cols = schema.leaves(lhs)
-        if cols:
-            lhs = cols[0].es_column
-        rhs = self.rhs.value
-        if isinstance(rhs, list):
-            if len(rhs) == 1:
-                return {"term": {lhs: rhs[0]}}
-            else:
-                return {"terms": {lhs: rhs}}
-        else:
-            return {"term": {lhs: rhs}}
-    else:
-        return self.to_painless(schema).to_esfilter(schema)
-
-
-
-@extend(MissingOp)
-def to_painless(self, schema, not_null=False, boolean=True):
-    if isinstance(self.expr, Variable):
-        if self.expr.var == "_id":
-            return Painless(type=BOOLEAN, expr="false", frum=self)
-        else:
-            columns = schema.leaves(self.expr.var)
-            if len(columns) == 1:
-                return Painless(type=BOOLEAN, expr="doc[" + quote(columns[0].es_column) + "].empty", frum=self)
-            else:
-                return AndOp("and", [
-                    Painless(
-                        type=BOOLEAN,
-                        expr="doc[" + quote(c.es_column) + "].empty",
-                        frum=self
-                    )
-                    for c in columns
-                ]).partial_eval().to_painless(schema)
-    elif isinstance(self.expr, Literal):
-        return self.expr.missing().to_painless(schema)
-    else:
-        return self.expr.missing().to_painless(schema)
-
-
-@extend(MissingOp)
-def to_esfilter(self, schema):
-    if isinstance(self.expr, Variable):
-        cols = schema.leaves(self.expr.var)
-        if not cols:
-            return {"match_all": {}}
-        elif len(cols) == 1:
-            return {"bool": {"must_not": {"exists": {"field": cols[0].es_column}}}}
-        else:
-            return {"bool": {"must": [
-                {"bool": {"must_not": {"exists": {"field": c.es_column}}}} for c in cols]
-            }}
-    else:
-        return ScriptOp("script", self.to_painless(schema).script(schema)).to_esfilter(schema)
-
-
-@extend(NotLeftOp)
-def to_painless(self, schema):
-    v = StringOp("string", self.value).partial_eval().to_painless(schema).expr
-    l = NumberOp("number", self.length).partial_eval().to_painless(schema).expr
-
-    expr = "(" + v + ").substring((int)Math.max(0, (int)Math.min(" + v + ".length(), " + l + ")))"
-    return Painless(
-        miss=OrOp("or", [self.value.missing(), self.length.missing()]),
-        type=STRING,
-        expr=expr,
-        frum=self
-    )
-
-
-@extend(NeOp)
-def to_painless(self, schema):
-    return CaseOp("case", [
-        WhenOp("when", self.lhs.missing(), **{"then": NotOp("not", self.rhs.missing())}),
-        WhenOp("when", self.rhs.missing(), **{"then": NotOp("not", self.lhs.missing())}),
-        NotOp("not", BasicEqOp("eq", [self.lhs, self.rhs]))
-    ]).partial_eval().to_painless(schema)
-
-
-@extend(NeOp)
-def to_esfilter(self, schema):
-    if isinstance(self.lhs, Variable) and isinstance(self.rhs, Literal):
-        columns = schema.values(self.lhs.var)
-        if len(columns) == 0:
-            return {"match_all": {}}
-        elif len(columns) == 1:
-            return {"bool": {"must_not": {"term": {columns[0].es_column: self.rhs.value}}}}
-        else:
-            Log.error("column split to multiple, not handled")
-    else:
-        lhs = self.lhs.partial_eval().to_painless(schema)
-        rhs = self.rhs.partial_eval().to_painless(schema)
-
-        if lhs.many:
-            if rhs.many:
-                return wrap({"bool": {"must_not":
-                    ScriptOp(
-                        "script",
-                        (
-                            "(" + lhs.expr + ").size()==(" + rhs.expr + ").size() && " +
-                            "(" + rhs.expr + ").containsAll(" + lhs.expr + ")"
+            if is_list(rhs):
+                if len(rhs) == 1:
+                    rhs = rhs[0]
+                else:
+                    types = Data()  # MAP JSON TYPE TO LIST OF LITERALS
+                    for r in rhs:
+                        types[python_type_to_json_type[rhs.__class__]] += [r]
+                    if len(types) == 1:
+                        jx_type, values = first(types.items())
+                        for c in cols:
+                            if jx_type == c.jx_type:
+                                return {"terms": {c.es_column: values}}
+                        return FALSE.to_esfilter(schema)
+                    else:
+                        return (
+                            OrOp(
+                                [
+                                    EqOp([self.lhs, values])
+                                    for t, values in types.items()
+                                ]
+                            )
+                            .partial_eval()
+                            .to_esfilter(schema)
                         )
-                    ).to_esfilter(schema)
-                }})
+
+            for c in cols:
+                if c.jx_type == BOOLEAN:
+                    rhs = pull_functions[c.jx_type](rhs)
+                if python_type_to_json_type[rhs.__class__] == c.jx_type:
+                    return {"term": {c.es_column: rhs}}
+            return FALSE.to_esfilter(schema)
+        else:
+            return (
+                ES52[
+                    CaseOp(
+                        [
+                            WhenOp(self.lhs.missing(), **{"then": self.rhs.missing()}),
+                            WhenOp(self.rhs.missing(), **{"then": FALSE}),
+                            BasicEqOp([self.lhs, self.rhs]),
+                        ]
+                    )
+                ]
+                .partial_eval()
+                .to_esfilter(schema)
+            )
+
+
+class BasicEqOp(BasicEqOp_):
+    def to_esfilter(self, schema):
+        if is_op(self.lhs, Variable_) and is_literal(self.rhs):
+            lhs = self.lhs.var
+            cols = schema.leaves(lhs)
+            if cols:
+                lhs = first(cols).es_column
+            rhs = self.rhs.value
+            if is_list(rhs):
+                if len(rhs) == 1:
+                    return {"term": {lhs: rhs[0]}}
+                else:
+                    return {"terms": {lhs: rhs}}
             else:
-                return wrap({"bool": {"must_not":
-                    ScriptOp("script", "(" + lhs.expr + ").contains(" + rhs.expr + ")").to_esfilter(schema)
-                }})
+                return {"term": {lhs: rhs}}
         else:
-            if rhs.many:
-                return wrap({"bool": {"must_not":
-                    ScriptOp("script", "(" + rhs.expr + ").contains(" + lhs.expr + ")").to_esfilter(schema)
-                }})
+            return Painless[self].to_es_script(schema).to_esfilter(schema)
+
+
+class MissingOp(MissingOp_):
+    def to_esfilter(self, schema):
+        if is_op(self.expr, Variable_):
+            cols = schema.leaves(self.expr.var)
+            if not cols:
+                return MATCH_ALL
+            elif len(cols) == 1:
+                return es_missing(first(cols).es_column)
             else:
-                return wrap({"bool": {"must":
-                    ScriptOp("script", "(" + lhs.expr + ") != (" + rhs.expr + ")").to_esfilter(schema)
-                }})
-
-@extend(NotOp)
-def to_painless(self, schema):
-    return Painless(
-        type=BOOLEAN,
-        expr="!(" + self.term.to_painless(schema).expr + ")",
-        frum=self
-    )
-
-
-@extend(NotOp)
-def to_esfilter(self, schema):
-    if isinstance(self.term, MissingOp) and isinstance(self.term.expr, Variable):
-        v = self.term.expr.var
-        cols = schema.leaves(v)
-        if cols:
-            v = cols[0].es_column
-        return {"exists": {"field": v}}
-    else:
-        operand = self.term.to_esfilter(schema)
-        return {"bool": {"must_not": operand}}
-
-
-@extend(AndOp)
-def to_painless(self, schema):
-    if not self.terms:
-        return TRUE.to_painless()
-    else:
-        return Painless(
-            miss=FALSE,
-            type=BOOLEAN,
-            expr=" && ".join("(" + t.to_painless(schema).expr + ")" for t in self.terms),
-            frum=self
-        )
-
-
-@extend(AndOp)
-def to_esfilter(self, schema):
-    if not len(self.terms):
-        return {"match_all": {}}
-    else:
-        return {"bool": {"must": [t.to_esfilter(schema) for t in self.terms]}}
-
-
-@extend(OrOp)
-def to_painless(self, schema):
-    return Painless(
-        miss=FALSE,
-        type=BOOLEAN,
-        expr=" || ".join("(" + t.to_painless(schema).expr + ")" for t in self.terms if t),
-        frum=self
-    )
-
-
-@extend(OrOp)
-def to_esfilter(self, schema):
-    return {"bool": {"should": [t.to_esfilter(schema) for t in self.terms]}}
-
-
-@extend(LengthOp)
-def to_painless(self, schema):
-    value = StringOp("string", self.term).to_painless(schema)
-    missing = self.term.missing().partial_eval()
-    return Painless(
-        miss=missing,
-        type=INTEGER,
-        expr="(" + value.expr + ").length()",
-        frum=self
-    )
-
-
-@extend(FirstOp)
-def to_painless(self, schema):
-    term = self.term.to_painless(schema)
-
-    if isinstance(term.frum, CoalesceOp):
-        return CoalesceOp("coalesce", [FirstOp("first", t.partial_eval().to_painless(schema)) for t in term.frum.terms]).to_painless(schema)
-
-    if term.many:
-        return Painless(
-            miss=term.miss,
-            type=term.type,
-            expr="(" + term.expr + ")[0]",
-            frum=term.frum
-        ).to_painless(schema)
-    else:
-        return term
-
-
-
-@extend(BooleanOp)
-def to_painless(self, schema):
-    value = self.term.to_painless(schema)
-    if value.many:
-        return BooleanOp("boolean", Painless(
-            miss=value.miss,
-            type=value.type,
-            expr="(" + value.expr + ")[0]",
-            frum=value.frum
-        )).to_painless(schema)
-    elif value.type == BOOLEAN:
-        miss = value.miss
-        value.miss = FALSE
-        return WhenOp("when",  miss, **{"then": FALSE, "else": value}).partial_eval().to_painless(schema)
-    else:
-        return NotOp("not", value.miss).partial_eval().to_painless(schema)
-
-@extend(BooleanOp)
-def to_esfilter(self, schema):
-    if isinstance(self.term, Variable):
-        return {"term": {self.term.var: True}}
-    else:
-        return self.to_painless(schema).to_esfilter(schema)
-
-@extend(IntegerOp)
-def to_painless(self, schema):
-    value = self.term.to_painless(schema)
-    if value.many:
-        return IntegerOp("integer", Painless(
-            miss=value.missing,
-            type=value.type,
-            expr="(" + value.expr + ")[0]",
-            frum=value.frum
-        )).to_painless(schema)
-    elif value.type == BOOLEAN:
-        return Painless(
-            miss=value.missing,
-            type=INTEGER,
-            expr=value.expr + " ? 1 : 0",
-            frum=self
-        )
-    elif value.type == INTEGER:
-        return value
-    elif value.type == NUMBER:
-        return Painless(
-            miss=value.missing,
-            type=INTEGER,
-            expr="(int)(" + value.expr + ")",
-            frum=self
-        )
-    elif value.type == STRING:
-        return Painless(
-            miss=value.missing,
-            type=INTEGER,
-            expr="Integer.parseInt(" + value.expr + ")",
-            frum=self
-        )
-    else:
-        return Painless(
-            miss=value.missing,
-            type=INTEGER,
-            expr="((" + value.expr + ") instanceof String) ? Integer.parseInt(" + value.expr + ") : (int)(" + value.expr + ")",
-            frum=self
-        )
-
-@extend(NumberOp)
-def to_painless(self, schema):
-    term = FirstOp("first", self.term).partial_eval()
-    value = term.to_painless(schema)
-
-    if isinstance(value.frum, CoalesceOp):
-        return CoalesceOp("coalesce", [NumberOp("number", t).partial_eval().to_painless(schema) for t in value.frum.terms]).to_painless(schema)
-
-    if value.type == BOOLEAN:
-        return Painless(
-            miss=term.missing().partial_eval(),
-            type=NUMBER,
-            expr=value.expr + " ? 1 : 0",
-            frum=self
-        )
-    elif value.type == INTEGER:
-        return Painless(
-            miss=term.missing().partial_eval(),
-            type=NUMBER,
-            expr=value.expr,
-            frum=self
-        )
-    elif value.type == NUMBER:
-        return Painless(
-            miss=term.missing().partial_eval(),
-            type=NUMBER,
-            expr=value.expr,
-            frum=self
-        )
-    elif value.type == STRING:
-        return Painless(
-            miss=term.missing().partial_eval(),
-            type=NUMBER,
-            expr="Double.parseDouble(" + value.expr + ")",
-            frum=self
-        )
-    elif value.type == OBJECT:
-        return Painless(
-            miss=term.missing().partial_eval(),
-            type=NUMBER,
-            expr="((" + value.expr + ") instanceof String) ? Double.parseDouble(" + value.expr + ") : (" + value.expr + ")",
-            frum=self
-        )
-
-
-@extend(IsNumberOp)
-def to_painless(self, schema):
-    value = self.term.to_painless(schema)
-    if value.expr or value.i:
-        return TRUE.to_painless(schema)
-    else:
-        return Painless(
-            miss=FALSE,
-            type=BOOLEAN,
-            expr="(" + value.expr + ") instanceof java.lang.Double",
-            frum=self
-        )
-
-@extend(CountOp)
-def to_painless(self, schema):
-    return Painless(
-        miss=FALSE,
-        type=INTEGER,
-        expr="+".join("((" + t.missing().partial_eval().to_painless(schema).expr + ") ? 0 : 1)" for t in self.terms),
-        frum=self
-    )
-
-
-@extend(LengthOp)
-def to_esfilter(self, schema):
-    return {"regexp": {self.var.var: self.pattern.value}}
-
-
-@extend(MaxOp)
-def to_painless(self, schema):
-    acc = NumberOp("number", self.terms[-1]).partial_eval().to_painless(schema).expr
-    for t in reversed(self.terms[0:-1]):
-        acc = "Math.max(" + NumberOp("number", t).partial_eval().to_painless(schema).expr + " , " + acc + ")"
-    return Painless(
-        miss=AndOp("or", [t.missing() for t in self.terms]),
-        type=NUMBER,
-        expr=acc,
-        frum=self
-    )
-
-
-@extend(MinOp)
-def to_painless(self, schema):
-    acc = NumberOp("number", self.terms[-1]).partial_eval().to_painless(schema).expr
-    for t in reversed(self.terms[0:-1]):
-        acc = "Math.min(" + NumberOp("number", t).partial_eval().to_painless(schema).expr + " , " + acc + ")"
-    return Painless(
-        miss=AndOp("or", [t.missing() for t in self.terms]),
-        type=NUMBER,
-        expr=acc,
-        frum=self
-    )
-
-
-@extend(MultiOp)
-def to_painless(self, schema):
-    op, unit = MultiOp.operators[self.op]
-    if self.nulls:
-        calc = op.join(
-            "((" + t.missing().to_painless(schema).expr + ") ? " + unit + " : (" + NumberOp("number", t).partial_eval().to_painless(schema).expr + "))" for
-            t in self.terms
-        )
-        return WhenOp(
-            "when",
-            AndOp("and", [t.missing() for t in self.terms]),
-            **{"then": self.default, "else": Painless(type=NUMBER, expr=calc, frum=self)}
-        ).partial_eval().to_painless(schema)
-    else:
-        calc = op.join(
-            "(" + NumberOp("number", t).to_painless(schema).expr + ")"
-            for t in self.terms
-        )
-        return WhenOp(
-            "when",
-            OrOp("or", [t.missing() for t in self.terms]),
-            **{"then": self.default, "else": Painless(type=NUMBER, expr=calc, frum=self)}
-        ).partial_eval().to_painless(schema)
-
-
-@extend(RegExpOp)
-def to_esfilter(self, schema):
-    if isinstance(self.pattern, Literal) and isinstance(self.var, Variable):
-        cols = schema.leaves(self.var.var)
-        if len(cols) == 0:
-            return {"bool": {"must_not": {"match_all": {}}}}
-        elif len(cols) == 1:
-            return {"regexp": {cols[0].es_column: self.pattern.value}}
+                return es_and([es_missing(c.es_column) for c in cols])
         else:
-            Log.error("regex on not supported ")
-    else:
-        Log.error("regex only accepts a variable and literal pattern")
+            return PainlessMissingOp.to_es_script(self, schema).to_esfilter(schema)
 
 
-@extend(StringOp)
-def to_painless(self, schema):
-    term = FirstOp("first", self.term).partial_eval()
-    value = term.to_painless(schema)
-
-    if isinstance(value.frum, CoalesceOp):
-        return CoalesceOp("coalesce", [StringOp("string", t).partial_eval() for t in value.frum.terms]).to_painless(schema)
-
-    if value.type == BOOLEAN:
-        return Painless(
-            miss=self.term.missing().partial_eval(),
-            type=STRING,
-            expr=value.expr + ' ? "T" : "F"',
-            frum=self
-        )
-    elif value.type == INTEGER:
-        return Painless(
-            miss=self.term.missing().partial_eval(),
-            type=STRING,
-            expr="String.valueOf(" + value.expr + ")",
-            frum=self
-        )
-    elif value.type == NUMBER:
-        return Painless(
-            miss=self.term.missing().partial_eval(),
-            type=STRING,
-            expr=expand_template(TO_STRING, {"expr":value.expr}),
-            frum=self
-        )
-    elif value.type == STRING:
-        return value
-    else:
-        return Painless(
-            miss=self.term.missing().partial_eval(),
-            type=STRING,
-            expr=expand_template(TO_STRING, {"expr":value.expr}),
-            frum=self
-        )
-
-    # ((Runnable)(() -> {int a=2; int b=3; System.out.println(a+b);})).run();
-    # "((Runnable)((value) -> {String output=String.valueOf(value); if (output.endsWith('.0')) {return output.substring(0, output.length-2);} else return output;})).run(" + value.expr + ")"
-
-
-@extend(TrueOp)
-def to_painless(self, schema):
-    return Painless(type=BOOLEAN, expr="true", frum=self)
-
-
-@extend(TrueOp)
-def to_esfilter(self, schema):
-    return {"match_all": {}}
-
-
-@extend(PrefixOp)
-def to_painless(self, schema):
-    if not self.field:
-        return "true"
-    else:
-        return "(" + self.field.to_painless(schema) + ").startsWith(" + self.prefix.to_painless(schema) + ")"
-
-
-@extend(PrefixOp)
-def to_esfilter(self, schema):
-    if not self.field:
-        return {"match_all": {}}
-    elif isinstance(self.field, Variable) and isinstance(self.prefix, Literal):
-        var = schema.leaves(self.field.var)[0].es_column
-        return {"prefix": {var: self.prefix.value}}
-    else:
-        return ScriptOp("script",  self.to_painless(schema).script(schema)).to_esfilter(schema)
-
-@extend(SuffixOp)
-def to_painless(self, schema):
-    if not self.field:
-        return "true"
-    else:
-        return "(" + self.field.to_painless(schema) + ").endsWith(" + self.prefix.to_painless(schema) + ")"
-
-
-@extend(SuffixOp)
-def to_esfilter(self, schema):
-    if not self.field:
-        return {"match_all": {}}
-    elif isinstance(self.field, Variable) and isinstance(self.prefix, Literal):
-        var = schema.leaves(self.field.var)[0].es_column
-        return {"regexp": {var: ".*"+string2regexp(self.prefix.value)}}
-    else:
-        return ScriptOp("script",  self.to_painless(schema).script(schema)).to_esfilter(schema)
-
-
-@extend(InOp)
-def to_painless(self, schema):
-    superset = self.superset.to_painless(schema)
-    value = self.value.to_painless(schema)
-    return Painless(
-        type=BOOLEAN,
-        expr="(" + superset.expr + ").contains(" + value.expr + ")",
-        frum=self
-    )
-
-
-@extend(InOp)
-def to_esfilter(self, schema):
-    if isinstance(self.value, Variable):
-        var = self.value.var
-        cols = schema.leaves(var)
-        if cols:
-            var = cols[0].es_column
-        return {"terms": {var: self.superset.value}}
-    else:
-        return ScriptOp("script",  self.to_painless(schema).script(schema)).to_esfilter(schema)
-
-
-@extend(ScriptOp)
-def to_painless(self, schema):
-    return Painless(type=OBJECT, expr=self.script)
-
-
-@extend(ScriptOp)
-def to_esfilter(self, schema):
-    return {"script": {"script": {"lang": "painless", "inline": self.script}}}
-
-
-@extend(Variable)
-def to_painless(self, schema):
-    if self.var == ".":
-        return "_source"
-    else:
-        if self.var == "_id":
-            return Painless(type=STRING, expr='doc["_uid"].value.substring(doc["_uid"].value.indexOf(\'#\')+1)', frum=self)
-
-        columns = schema.values(self.var)
-        acc = []
-        for c in columns:
-            varname = c.es_column
-            frum = Variable(c.es_column)
-            q = quote(varname)
-            acc.append(Painless(
-                miss=frum.missing(),
-                type=c.type,
-                expr="doc[" + q + "].values",
-                frum=frum,
-                many=True
-            ))
-
-        if len(acc) == 0:
-            return NULL.to_painless(schema)
-        elif len(acc) == 1:
-            return acc[0]
+class NeOp(NeOp_):
+    def to_esfilter(self, schema):
+        if is_op(self.lhs, Variable_) and is_literal(self.rhs):
+            columns = schema.values(self.lhs.var)
+            if len(columns) == 0:
+                return MATCH_ALL
+            elif len(columns) == 1:
+                return es_not({"term": {first(columns).es_column: self.rhs.value}})
+            else:
+                Log.error("column split to multiple, not handled")
         else:
-            return CoalesceOp("coalesce", acc).to_painless(schema)
+            lhs = self.lhs.partial_eval().to_es_script(schema)
+            rhs = self.rhs.partial_eval().to_es_script(schema)
+
+            if lhs.many:
+                if rhs.many:
+                    return es_not(
+                        ScriptOp(
+                            (
+                                "("
+                                + lhs.expr
+                                + ").size()==("
+                                + rhs.expr
+                                + ").size() && "
+                                + "("
+                                + rhs.expr
+                                + ").containsAll("
+                                + lhs.expr
+                                + ")"
+                            )
+                        ).to_esfilter(schema)
+                    )
+                else:
+                    return es_not(
+                        ScriptOp(
+                            "(" + lhs.expr + ").contains(" + rhs.expr + ")"
+                        ).to_esfilter(schema)
+                    )
+            else:
+                if rhs.many:
+                    return es_not(
+                        ScriptOp(
+                            "(" + rhs.expr + ").contains(" + lhs.expr + ")"
+                        ).to_esfilter(schema)
+                    )
+                else:
+                    return es_not(
+                        ScriptOp(
+                            "(" + lhs.expr + ") != (" + rhs.expr + ")"
+                        ).to_esfilter(schema)
+                    )
 
 
-@extend(WhenOp)
-def to_painless(self, schema):
-    if self.simplified:
-        when = self.when.to_painless(schema)
-        then = self.then.to_painless(schema)
-        els_ = self.els_.to_painless(schema)
-
-        if when is TRUE:
-            return then
-        elif when is FALSE:
-            return els_
-        elif then.miss is TRUE:
-            return Painless(
-                miss=self.missing(),
-                type=els_.type,
-                expr=els_.expr,
-                frum=self
-            )
-        elif els_.miss is TRUE:
-            return Painless(
-                miss=self.missing(),
-                type=then.type,
-                expr=then.expr,
-                frum=self
-            )
-
-        elif then.type == els_.type:
-            return Painless(
-                miss=self.missing(),
-                type=then.type,
-                expr="(" + when.expr + ") ? (" + then.expr + ") : (" + els_.expr + ")",
-                frum=self
-            )
-        elif then.type in (INTEGER, NUMBER) and els_.type in (INTEGER, NUMBER):
-            return Painless(
-                miss=self.missing(),
-                type=NUMBER,
-                expr="(" + when.expr + ") ? (" + then.expr + ") : (" + els_.expr + ")",
-                frum=self
-            )
+class NotOp(NotOp_):
+    def to_esfilter(self, schema):
+        if is_op(self.term, MissingOp_) and is_op(self.term.expr, Variable_):
+            # PREVENT RECURSIVE LOOP
+            v = self.term.expr.var
+            cols = schema.values(v, (OBJECT, NESTED))
+            if len(cols) == 0:
+                return MATCH_NONE
+            elif len(cols) == 1:
+                return {"exists": {"field": first(cols).es_column}}
+            else:
+                return es_and([{"exists": {"field": c.es_column}} for c in cols])
         else:
-            Log.error("do not know how to handle")
-    else:
-        return self.partial_eval().to_painless(schema)
+            operand = ES52[self.term].to_esfilter(schema)
+            return es_not(operand)
 
 
-@extend(WhenOp)
+class AndOp(AndOp_):
+    def to_esfilter(self, schema):
+        if not len(self.terms):
+            return MATCH_ALL
+        else:
+            return es_and([ES52[t].to_esfilter(schema) for t in self.terms])
+
+
+class OrOp(OrOp_):
+    def to_esfilter(self, schema):
+
+        if schema.snowflake.namespace.es_cluster.version.startswith("5."):
+            # VERSION 5.2.x
+            # WE REQUIRE EXIT-EARLY SEMANTICS, OTHERWISE EVERY EXPRESSION IS A SCRIPT EXPRESSION
+            # {"bool":{"should"  :[a, b, c]}} RUNS IN PARALLEL
+            # {"bool":{"must_not":[a, b, c]}} ALSO RUNS IN PARALLEL
+
+            # OR(x) == NOT(AND(NOT(xi) for xi in x))
+            output = es_not(
+                es_and(
+                    [NotOp(t).partial_eval().to_esfilter(schema) for t in self.terms]
+                )
+            )
+            return output
+        else:
+            # VERSION 6.2+
+            return es_or(
+                [ES52[t].partial_eval().to_esfilter(schema) for t in self.terms]
+            )
+
+
+class BooleanOp(BooleanOp_):
+    def to_esfilter(self, schema):
+        if is_op(self.term, Variable_):
+            return {"term": {self.term.var: True}}
+        else:
+            return self.to_es_script(schema).to_esfilter(schema)
+
+
+class LengthOp(LengthOp_):
+    def to_esfilter(self, schema):
+        return {"regexp": {self.var.var: self.pattern.value}}
+
+
+class RegExpOp(RegExpOp_):
+    def to_esfilter(self, schema):
+        if is_literal(self.pattern) and is_op(self.var, Variable_):
+            cols = schema.leaves(self.var.var)
+            if len(cols) == 0:
+                return MATCH_NONE
+            elif len(cols) == 1:
+                return {"regexp": {first(cols).es_column: self.pattern.value}}
+            else:
+                Log.error("regex on not supported ")
+        else:
+            Log.error("regex only accepts a variable and literal pattern")
+
+
+@extend(TrueOp_)
 def to_esfilter(self, schema):
-    output = OrOp("or", [
-        AndOp("and", [self.when, BooleanOp("boolean", self.then)]),
-        AndOp("and", [NotOp("not", self.when), BooleanOp("boolean", self.els_)])
-    ]).partial_eval()
-
-    return output.to_esfilter(schema)
+    return MATCH_ALL
 
 
-@extend(BasicIndexOfOp)
-def to_painless(self, schema):
-    v = StringOp("string", self.value).to_painless(schema).expr
-    find = StringOp("string", self.find).to_painless(schema).expr
-    start = IntegerOp("integer", self.start).to_painless(schema).expr
-
-    return Painless(
-        miss=FALSE,
-        type=INTEGER,
-        expr="(" + v + ").indexOf(" + find + ", " + start + ")",
-        frum=self
-    )
-
-
-@extend(BasicIndexOfOp)
-def to_esfilter(self, schema):
-    return ScriptOp("", self.to_painless(schema).script(schema)).to_esfilter(schema)
+class EsNestedOp(EsNestedOp_):
+    def to_esfilter(self, schema):
+        if self.path.var == ".":
+            return {"query": self.query.to_esfilter(schema)}
+        else:
+            return {
+                "nested": {
+                    "path": self.path.var,
+                    "query": self.query.to_esfilter(schema),
+                }
+            }
 
 
-@extend(BasicSubstringOp)
-def to_painless(self, schema):
-    v = StringOp("string", self.value).partial_eval().to_painless(schema).expr
-    start = IntegerOp("string", self.start).partial_eval().to_painless(schema).expr
-    end = IntegerOp("integer", self.end).partial_eval().to_painless(schema).expr
+class BasicStartsWithOp(BasicStartsWithOp_):
+    def to_esfilter(self, schema):
+        if not self.value:
+            return MATCH_ALL
+        elif is_op(self.value, Variable_) and is_literal(self.prefix):
+            var = first(schema.leaves(self.value.var)).es_column
+            return {"prefix": {var: self.prefix.value}}
+        else:
+            output = PainlessBasicStartsWithOp.self.to_es_script(self, schema)
+            if output is false_script:
+                return MATCH_NONE
+            return output
 
-    return Painless(
-        miss=FALSE,
-        type=STRING,
-        expr="(" + v + ").substring(" + start + ", " + end + ")",
-        frum=self
-    )
+
+class PrefixOp(PrefixOp_):
+    def partial_eval(self):
+        if not self.expr:
+            return TRUE
+
+        expr = PainlessStringOp(self.expr).partial_eval()
+        prefix = PainlessStringOp(self.prefix).partial_eval()
+
+        if self.expr is NULL:
+            return TRUE
+
+        return PrefixOp([expr, prefix])
+
+    def to_esfilter(self, schema):
+        if is_literal(self.prefix) and not self.prefix.value:
+            return MATCH_ALL
+
+        expr = self.expr
+
+        if expr is NULL:
+            return es_not(MATCH_ALL)
+        elif not expr:
+            return MATCH_ALL
+
+        if is_op(expr, StringOp_):
+            expr = expr.term
+
+        if is_op(expr, Variable_) and is_literal(self.prefix):
+            var = first(schema.leaves(expr.var)).es_column
+            return {"prefix": {var: self.prefix.value}}
+        else:
+            return PainlessPrefixOp.to_es_script(self, schema).to_esfilter(schema)
 
 
+class SuffixOp(SuffixOp_):
+    def to_esfilter(self, schema):
+        if not self.suffix:
+            return MATCH_ALL
+        elif is_op(self.expr, Variable_) and is_literal(self.suffix):
+            var = first(schema.leaves(self.expr.var)).es_column
+            return {"regexp": {var: ".*" + string2regexp(self.suffix.value)}}
+        else:
+            return PainlessSuffixOp.to_es_script(self, schema).to_esfilter(schema)
 
-MATCH_ALL = wrap({"match_all": {}})
-MATCH_NONE = wrap({"bool": {"must_not": {"match_all": {}}}})
+
+class InOp(InOp_):
+    def to_esfilter(self, schema):
+        if is_op(self.value, Variable_):
+            var = self.value.var
+            cols = schema.leaves(var)
+            if not cols:
+                Log.error("expecting {{var}} to be a column", var=var)
+            col = first(cols)
+            var = col.es_column
+
+            if col.jx_type == BOOLEAN:
+                if is_literal(self.superset) and not is_sequence(self.superset.value):
+                    return {"term": {var: value2boolean(self.superset.value)}}
+                else:
+                    return {"terms": {var: map(value2boolean, self.superset.value)}}
+            else:
+                if is_literal(self.superset) and not is_sequence(self.superset.value):
+                    return {"term": {var: self.superset.value}}
+                else:
+                    return {"terms": {var: self.superset.value}}
+        else:
+            return Painless[self].to_es_script(schema).to_esfilter(schema)
+
+
+class ScriptOp(ScriptOp_):
+    def to_esfilter(self, schema):
+        return {"script": es_script(self.script)}
+
+
+class WhenOp(WhenOp_):
+    def to_esfilter(self, schema):
+        output = OrOp(
+            [
+                AndOp([self.when, BooleanOp(self.then)]),
+                AndOp([NotOp(self.when), BooleanOp(self.els_)]),
+            ]
+        ).partial_eval()
+
+        return output.to_esfilter(schema)
 
 
 def simplify_esfilter(esfilter):
@@ -1151,14 +523,19 @@ def _normalize(esfilter):
     while isDiff:
         isDiff = False
 
-        if esfilter.bool.must:
-            terms = esfilter.bool.must
-            for (i0, t0), (i1, t1) in itertools.product(enumerate(terms), enumerate(terms)):
+        if esfilter.bool.filter:
+            terms = esfilter.bool.filter
+            for (i0, t0), (i1, t1) in itertools.product(
+                enumerate(terms), enumerate(terms)
+            ):
                 if i0 == i1:
                     continue  # SAME, IGNORE
                 # TERM FILTER ALREADY ASSUMES EXISTENCE
                 with suppress_exception:
-                    if t0.exists.field != None and t0.exists.field == t1.term.items()[0][0]:
+                    if (
+                        t0.exists.field != None
+                        and t0.exists.field == t1.term.items()[0][0]
+                    ):
                         terms[i0] = MATCH_ALL
                         continue
 
@@ -1180,7 +557,7 @@ def _normalize(esfilter):
 
             output = []
             for a in terms:
-                if isinstance(a, (list, set)):
+                if is_container(a):
                     from mo_logs import Log
 
                     Log.error("and clause is not allowed a list inside a list")
@@ -1193,10 +570,10 @@ def _normalize(esfilter):
                     continue
                 if a == MATCH_NONE:
                     return MATCH_NONE
-                if a.bool.must:
+                if a.bool.filter:
                     isDiff = True
                     a.isNormal = None
-                    output.extend(a.bool.must)
+                    output.extend(a.bool.filter)
                 else:
                     a.isNormal = None
                     output.append(a)
@@ -1207,7 +584,7 @@ def _normalize(esfilter):
                 esfilter = output[0]
                 break
             elif isDiff:
-                esfilter = wrap({"bool": {"must": output}})
+                esfilter = es_and(output)
             continue
 
         if esfilter.bool.should:
@@ -1231,7 +608,7 @@ def _normalize(esfilter):
                 esfilter = output[0]
                 break
             elif isDiff:
-                esfilter = wrap({"bool": {"should": output}})
+                esfilter = wrap(es_or(output))
             continue
 
         if esfilter.term != None:
@@ -1247,18 +624,11 @@ def _normalize(esfilter):
                     if OR(vv == None for vv in v):
                         rest = [vv for vv in v if vv != None]
                         if len(rest) > 0:
-                            return {
-                                "bool": {"should": [
-                                    {"bool": {"must_not": {"exists": {"field": k}}}},
-                                    {"terms": {k: rest}}
-                                ]},
-                                "isNormal": True
-                            }
+                            output = es_or([es_missing(k), {"terms": {k: rest}}])
                         else:
-                            return {
-                                "bool": {"must_not": {"exists": {"field": k}}},
-                                "isNormal": True
-                            }
+                            output = es_missing(k)
+                        output.isNormal = True
+                        return output
                     else:
                         esfilter.isNormal = True
                         return esfilter
@@ -1300,24 +670,62 @@ def split_expression_by_depth(where, schema, output=None, var_to_depth=None):
         if not vars_:
             return Null
         # MAP VARIABLE NAMES TO HOW DEEP THEY ARE
-        var_to_depth = {v: len(c.nested_path) - 1 for v in vars_ for c in schema[v]}
+        var_to_depth = {
+            v.var: max(len(c.nested_path) - 1, 0) for v in vars_ for c in schema[v.var]
+        }
         all_depths = set(var_to_depth.values())
-        if -1 in all_depths:
-            Log.error(
-                "Can not find column with name {{column|quote}}",
-                column=unwraplist([k for k, v in var_to_depth.items() if v == -1])
-            )
         if len(all_depths) == 0:
             all_depths = {0}
         output = wrap([[] for _ in range(MAX(all_depths) + 1)])
     else:
-        all_depths = set(var_to_depth[v] for v in vars_)
+        all_depths = set(var_to_depth[v.var] for v in vars_)
 
     if len(all_depths) == 1:
-        output[list(all_depths)[0]] += [where]
-    elif isinstance(where, AndOp):
+        output[first(all_depths)] += [where]
+    elif is_op(where, AndOp_):
         for a in where.terms:
             split_expression_by_depth(a, schema, output, var_to_depth)
+    else:
+        Log.error("Can not handle complex where clause")
+
+    return output
+
+
+def split_expression_by_path(
+    where, schema, output=None, var_to_columns=None, lang=Language
+):
+    """
+    :param where: EXPRESSION TO INSPECT
+    :param schema: THE SCHEMA
+    :param output: THE MAP FROM PATH TO EXPRESSION WE WANT UPDATED
+    :param var_to_columns: MAP FROM EACH VARIABLE NAME TO THE DEPTH
+    :return: output: A MAP FROM PATH TO EXPRESSION
+    """
+    if var_to_columns is None:
+        var_to_columns = {v.var: schema.leaves(v.var) for v in where.vars()}
+        output = wrap({schema.query_path[0]: []})
+        if not var_to_columns:
+            output["\\."] += [where]  # LEGIT EXPRESSIONS OF ZERO VARIABLES
+            return output
+
+    where_vars = where.vars()
+    all_paths = set(c.nested_path[0] for v in where_vars for c in var_to_columns[v.var])
+
+    if len(all_paths) == 0:
+        output["\\."] += [where]
+    elif len(all_paths) == 1:
+        output[literal_field(first(all_paths))] += [
+            where.map(
+                {
+                    v.var: c.es_column
+                    for v in where.vars()
+                    for c in var_to_columns[v.var]
+                }
+            )
+        ]
+    elif is_op(where, AndOp_):
+        for w in where.terms:
+            split_expression_by_path(w, schema, output, var_to_columns, lang=lang)
     else:
         Log.error("Can not handle complex where clause")
 
@@ -1328,11 +736,21 @@ def get_type(var_name):
     type_ = var_name.split(".$")[1:]
     if not type_:
         return "j"
-    return json_type_to_painless_type.get(type_[0], "j")
+    return json_type_to_es_script_type.get(type_[0], "j")
 
 
-json_type_to_painless_type = {
-    "string": "s",
-    "boolean": "b",
-    "number": "n"
-}
+json_type_to_es_script_type = {"string": "s", "boolean": "b", "number": "n"}
+
+
+ES52 = define_language("ES52", vars())
+
+
+from jx_elasticsearch.es52.painless import (
+    false_script,
+    PrefixOp as PainlessPrefixOp,
+    SuffixOp as PainlessSuffixOp,
+    MissingOp as PainlessMissingOp,
+    StringOp as PainlessStringOp,
+    BasicStartsWithOp as PainlessBasicStartsWithOp,
+    Painless,
+)

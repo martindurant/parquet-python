@@ -7,27 +7,29 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-from collections import Mapping
-
-from mo_future import text_type, binary_type
-
+from mo_future import is_text, is_binary
 from jx_base.dimensions import Dimension
-from jx_base.domains import SimpleSetDomain, DefaultDomain, PARTITION
-from jx_base.expressions import TupleOp, value2json
-from jx_base.query import MAX_LIMIT, DEFAULT_LIMIT
-from jx_elasticsearch.es52.expressions import Variable, NotOp, InOp, Literal, OrOp, AndOp, InequalityOp, LeavesOp
+from jx_base.domains import DefaultDomain, PARTITION, SimpleSetDomain
+from jx_base.expressions import ExistsOp, FirstOp, GtOp, GteOp, LeavesOp, LtOp, LteOp, MissingOp, TupleOp, Variable
+from jx_base.query import DEFAULT_LIMIT, MAX_LIMIT
+from jx_base.language import is_op
+from jx_elasticsearch.es52.es_query import Aggs, FilterAggs, FiltersAggs, NestedAggs, RangeAggs, TermsAggs
+from jx_elasticsearch.es52.expressions import AndOp, InOp, Literal, NotOp
+from jx_elasticsearch.es52.painless import LIST_TO_PIPE, Painless
+from jx_elasticsearch.es52.util import pull_functions
 from jx_python import jx
-from mo_dots import set_default, coalesce, literal_field, Data, relative_field, unwraplist
-from mo_dots import wrap
-from mo_json.typed_encoder import untype_path
+from mo_dots import Data, coalesce, concat_field, is_data, literal_field, relative_field, set_default, wrap
+from mo_future import first, text_type, transpose
+from mo_json import EXISTS, OBJECT, STRING
+from mo_json.typed_encoder import EXISTS_TYPE, NESTED_TYPE, untype_path
 from mo_logs import Log
-from mo_logs.strings import quote
+from mo_logs.strings import expand_template, quote
+import mo_math
 from mo_math import MAX, MIN
-from mo_math import Math
+
+DEBUG = False
 
 
 class AggsDecoder(object):
@@ -38,100 +40,109 @@ class AggsDecoder(object):
             # if query.groupby:
             #     return object.__new__(DefaultDecoder, e)
 
-            if isinstance(e.value, (text_type, binary_type)):
+            if is_text(e.value):
                 Log.error("Expecting Variable or Expression, not plain string")
 
-            if isinstance(e.value, LeavesOp):
-                return object.__new__(ObjectDecoder, e)
-            elif isinstance(e.value, TupleOp):
+            if is_op(e.value, LeavesOp):
+                return object.__new__(ObjectDecoder)
+            elif is_op(e.value, TupleOp):
                 # THIS domain IS FROM A dimension THAT IS A SIMPLE LIST OF fields
                 # JUST PULL THE FIELDS
-                if not all(isinstance(t, Variable) for t in e.value.terms):
+                if not all(is_op(t, Variable) for t in e.value.terms):
                     Log.error("Can only handle variables in tuples")
 
                 e.domain = Data(
                     dimension={"fields": e.value.terms}
                 )
-                return object.__new__(DimFieldListDecoder, e)
+                return object.__new__(DimFieldListDecoder)
 
-            elif isinstance(e.value, Variable):
+            elif is_op(e.value, Variable):
                 schema = query.frum.schema
                 cols = schema.leaves(e.value.var)
                 if not cols:
-                    return object.__new__(DefaultDecoder, e)
+                    return object.__new__(DefaultDecoder)
                 if len(cols) != 1:
-                    return object.__new__(ObjectDecoder, e)
-                col = cols[0]
+                    return object.__new__(ObjectDecoder)
+                col = first(cols)
                 limit = coalesce(e.domain.limit, query.limit, DEFAULT_LIMIT)
 
-                if col.partitions != None:
-                    if col.multi > 1 and len(col.partitions) < 6:
+                if col.cardinality == None:
+                    DEBUG and Log.warning(
+                        "metadata for column {{name|quote}} (id={{id}}) is not ready",
+                        name=concat_field(col.es_index, col.es_column),
+                        id=id(col)
+                    )
+                    e.domain = set_default(DefaultDomain(limit=limit), e.domain.__data__())
+                    return object.__new__(DefaultDecoder)
+                elif col.partitions == None:
+                    e.domain = set_default(DefaultDomain(limit=limit), e.domain.__data__())
+                    return object.__new__(DefaultDecoder)
+                else:
+                    DEBUG and Log.note("id={{id}} has parts!!!", id=id(col))
+                    if col.multi > 1 and len(col.partitions) < 10:
                         return object.__new__(MultivalueDecoder)
 
                     partitions = col.partitions[:limit:]
-                    if e.domain.sort==-1:
+                    if e.domain.sort == -1:
                         partitions = list(reversed(sorted(partitions)))
                     else:
                         partitions = sorted(partitions)
                     e.domain = SimpleSetDomain(partitions=partitions, limit=limit)
-                else:
-                    e.domain = set_default(DefaultDomain(limit=limit), e.domain.__data__())
-                    return object.__new__(DefaultDecoder, e)
 
             else:
-                return object.__new__(DefaultDecoder, e)
+                return object.__new__(DefaultDecoder)
 
         if e.value and e.domain.type in PARTITION:
-            return object.__new__(SetDecoder, e)
+            return object.__new__(SetDecoder)
         if isinstance(e.domain.dimension, Dimension):
             e.domain = e.domain.dimension.getDomain()
-            return object.__new__(SetDecoder, e)
+            return object.__new__(SetDecoder)
         if e.value and e.domain.type == "time":
-            return object.__new__(TimeDecoder, e)
+            return object.__new__(TimeDecoder)
         if e.range:
-            return object.__new__(GeneralRangeDecoder, e)
+            return object.__new__(GeneralRangeDecoder)
         if e.value and e.domain.type == "duration":
-            return object.__new__(DurationDecoder, e)
+            return object.__new__(DurationDecoder)
         elif e.value and e.domain.type == "range":
-            return object.__new__(RangeDecoder, e)
+            return object.__new__(RangeDecoder)
         elif not e.value and e.domain.dimension.fields:
             # THIS domain IS FROM A dimension THAT IS A SIMPLE LIST OF fields
             # JUST PULL THE FIELDS
             fields = e.domain.dimension.fields
-            if isinstance(fields, Mapping):
+            if is_data(fields):
                 Log.error("No longer allowed: All objects are expressions")
             else:
-                return object.__new__(DimFieldListDecoder, e)
+                return object.__new__(DimFieldListDecoder)
         elif not e.value and all(e.domain.partitions.where):
-            return object.__new__(GeneralSetDecoder, e)
+            return object.__new__(GeneralSetDecoder)
         else:
             Log.error("domain type of {{type}} is not supported yet", type=e.domain.type)
 
     def __init__(self, edge, query, limit):
-        self.start = None
         self.edge = edge
         self.name = literal_field(self.edge.name)
         self.query = query
         self.limit = limit
         self.schema = self.query.frum.schema
 
-    def append_query(self, es_query, start):
+    def append_query(self, query_path, es_query):
         Log.error("Not supported")
 
     def count(self, row):
         pass
 
-    def done_count(self):
-        pass
+    # DO NOT IMPLEMENT IF domain HAS KNOWN PARTITIONS
+    # def done_count(self):
+    #     pass
 
     def get_value_from_row(self, row):
-        Log.error("Not implemented")
+        raise NotImplementedError()
 
     def get_value(self, index):
-        Log.error("Not implemented")
+        raise NotImplementedError()
 
-    def get_index(self, row):
-        Log.error("Not implemented")
+    def get_index(self, row, es_query=None, index=None):
+        raise NotImplementedError()
 
     @property
     def num_columns(self):
@@ -143,83 +154,87 @@ class SetDecoder(AggsDecoder):
     def __init__(self, edge, query, limit):
         AggsDecoder.__init__(self, edge, query, limit)
         domain = self.domain = edge.domain
+        self.sorted = None
+        self.pull = pull_functions[STRING]
 
         # WE ASSUME IF THE VARIABLES MATCH, THEN THE SORT TERM AND EDGE TERM MATCH, AND WE SORT BY TERM
         # self.sorted = {1: "asc", -1: "desc", None: None}[getattr(edge.domain, 'sort', None)]
-        edge_var = edge.value.vars()
+        edge_var = set(v.var for v in edge.value.vars())
         if query.sort:
             for s in query.sort:
-                if not edge_var - s.value.vars():
+                if not edge_var - set(v.var for v in s.value.vars()):
                     self.sorted = {1: "asc", -1: "desc"}[s.sort]
                     parts = jx.sort(domain.partitions, {"value": domain.key, "sort": s.sort})
                     edge.domain = self.domain = SimpleSetDomain(key=domain.key, label=domain.label, partitions=parts)
-        else:
-            self.sorted = None
 
-    def append_query(self, es_query, start):
-        self.start = start
+    def append_query(self, query_path, es_query):
         domain = self.domain
-
         domain_key = domain.key
-        include, text_include = zip(*(
-            (
-                float(v) if isinstance(v, (int, float)) else v,
-                text_type(float(v)) if isinstance(v, (int, float)) else v
-            )
-            for v in (p[domain_key] for p in domain.partitions)
-        ))
-        value = self.edge.value
-        exists = AndOp("and", [
-            value.exists(),
-            InOp("in", [value, Literal("literal", include)])
-        ]).partial_eval()
+        value = Painless[self.edge.value]
+        cnv = pull_functions[value.type]
+        include = tuple(cnv(p[domain_key]) for p in domain.partitions)
+
+        exists = Painless[AndOp([
+            InOp([value, Literal(include)])
+        ])].partial_eval()
 
         limit = coalesce(self.limit, len(domain.partitions))
 
-        if isinstance(value, Variable):
-            es_field = self.query.frum.schema.leaves(value.var)[0].es_column  # ALREADY CHECKED THERE IS ONLY ONE
-            terms = set_default({"terms": {
-                "field": es_field,
-                "size": limit,
-                "order": {"_term": self.sorted} if self.sorted else None
-            }}, es_query)
-        else:
-            terms = set_default({"terms": {
-                "script": {
-                    "lang": "painless",
-                    "inline": value.to_painless(self.schema).script(self.schema)
+        if is_op(value, Variable):
+            es_field = first(self.query.frum.schema.leaves(value.var)).es_column  # ALREADY CHECKED THERE IS ONLY ONE
+            match = TermsAggs(
+                "_match",
+                {
+                    "field": es_field,
+                    "size": limit,
+                    "order": {"_term": self.sorted} if self.sorted else None
                 },
-                "size": limit
-            }}, es_query)
-
-        if self.edge.allowNulls:
-            missing = set_default(
-                {"filter": NotOp("not", exists).to_esfilter(self.schema)},
-                es_query
+                self
             )
         else:
-            missing = None
+            match = TermsAggs(
+                "_match",
+                {
+                    "script": text_type(value.to_es_script(self.schema)),
+                    "size": limit
+                },
+                self
+            )
+        output = Aggs().add(FilterAggs("_filter", exists, None).add(match.add(es_query)))
 
-        return wrap({"aggs": {
-            "_match": {
-                "filter": exists.to_esfilter(self.schema),
-                "aggs": {
-                    "_filter": terms
-                }
-            },
-            "_missing": missing
-        }})
+        if self.edge.allowNulls:
+            # FIND NULLS AT EACH NESTED LEVEL
+            for p in self.schema.query_path:
+                if p == query_path:
+                    # MISSING AT THE QUERY DEPTH
+                    output.add(
+                        NestedAggs(p).add(FilterAggs("_missing0", NotOp(exists), self).add(es_query))
+                    )
+                else:
+                    # PARENT HAS NO CHILDREN, SO MISSING
+                    column = first(self.schema.values(query_path, (OBJECT, EXISTS)))
+                    output.add(
+                        NestedAggs(column.nested_path[0]).add(
+                            FilterAggs(
+                                "_missing1",
+                                NotOp(ExistsOp(Variable(column.es_column.replace(NESTED_TYPE, EXISTS_TYPE)))),
+                                self
+                            ).add(es_query)
+                        )
+                    )
+        return output
 
     def get_value(self, index):
         return self.domain.getKeyByIndex(index)
 
-    def get_value_from_row(self, row):
-        return row[self.start].get('key')
+    def get_value_from_row(self, parts):
+        key = parts[0].get('key')
+        return self.pull(key)
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         try:
-            part = row[self.start]
-            return self.domain.getIndexByKey(part.get('key'))
+            key = row[0].get('key')
+            return self.domain.getIndexByKey(key)
         except Exception as e:
             Log.error("problem", cause=e)
 
@@ -228,52 +243,43 @@ class SetDecoder(AggsDecoder):
         return 1
 
 
-def _range_composer(edge, domain, es_query, to_float, schema):
+def _range_composer(self, edge, domain, es_query, to_float, schema):
     # USE RANGES
     _min = coalesce(domain.min, MIN(domain.partitions.min))
     _max = coalesce(domain.max, MAX(domain.partitions.max))
 
+    output = Aggs()
     if edge.allowNulls:
-        missing_filter = set_default(
-            {
-                "filter": NotOp("not", AndOp("and", [
-                    edge.value.exists(),
-                    InequalityOp("gte", [edge.value, Literal(None, to_float(_min))]),
-                    InequalityOp("lt", [edge.value, Literal(None, to_float(_max))])
-                ]).partial_eval()).to_esfilter(schema)
-            },
-            es_query
-        )
-    else:
-        missing_filter = None
+        output.add(FilterAggs(
+            "_missing",
+            NotOp(AndOp([
+                edge.value.exists(),
+                GteOp([edge.value, Literal(to_float(_min))]),
+                LtOp([edge.value, Literal(to_float(_max))])
+            ]).partial_eval()),
+            self
+        ).add(es_query))
 
-    if isinstance(edge.value, Variable):
-        calc = {"field": schema.leaves(edge.value.var)[0].es_column}
+    if is_op(edge.value, Variable):
+        calc = {"field": first(schema.leaves(edge.value.var)).es_column}
     else:
-        calc = {"script": edge.value.to_painless(schema).script(schema)}
+        calc = {"script": text_type(Painless[edge.value].to_es_script(schema))}
+    calc['ranges'] = [{"from": to_float(p.min), "to": to_float(p.max)} for p in domain.partitions]
 
-    return wrap({"aggs": {
-        "_match": set_default(
-            {"range": calc},
-            {"range": {"ranges": [{"from": to_float(p.min), "to": to_float(p.max)} for p in domain.partitions]}},
-            es_query
-        ),
-        "_missing": missing_filter
-    }})
+    return output.add(RangeAggs("_match", calc, self).add(es_query))
 
 
 class TimeDecoder(AggsDecoder):
-    def append_query(self, es_query, start):
-        self.start = start
+    def append_query(self, query_path, es_query):
         schema = self.query.frum.schema
-        return _range_composer(self.edge, self.edge.domain, es_query, lambda x: x.unix, schema)
+        return _range_composer(self, self.edge, self.edge.domain, es_query, lambda x: x.unix, schema)
 
     def get_value(self, index):
         return self.edge.domain.getKeyByIndex(index)
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         domain = self.edge.domain
-        part = row[self.start]
+        part = row[0]
         if part == None:
             return len(domain.partitions)
 
@@ -310,35 +316,31 @@ class GeneralRangeDecoder(AggsDecoder):
         else:
             Log.error("Unknown domain of type {{type}} for range edge", type=edge.domain.type)
 
-    def append_query(self, es_query, start):
-        self.start = start
-
+    def append_query(self, query_path, es_query):
         edge = self.edge
         range = edge.range
         domain = edge.domain
 
-        aggs = {}
+        aggs = Aggs()
         for i, p in enumerate(domain.partitions):
-            filter_ = AndOp("and", [
-                InequalityOp("lte", [range.min, Literal("literal", self.to_float(p.min))]),
-                InequalityOp("gt", [range.max, Literal("literal", self.to_float(p.min))])
+            filter_ = AndOp([
+                LteOp([range.min, Literal(self.to_float(p.min))]),
+                GtOp([range.max, Literal(self.to_float(p.min))])
             ])
-            aggs["_join_" + text_type(i)] = set_default(
-                {"filter": filter_.to_esfilter(self.schema)},
-                es_query
-            )
+            aggs.add(FilterAggs("_match" + text_type(i), filter_, self).add(es_query))
 
-        return wrap({"aggs": aggs})
+        return aggs
 
     def get_value(self, index):
         return self.edge.domain.getKeyByIndex(index)
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         domain = self.edge.domain
-        part = row[self.start]
+        part = row[0]
         if part == None:
             return len(domain.partitions)
-        return part["_index"]
+        index = int(es_query.name[6:])
+        return index
 
     @property
     def num_columns(self):
@@ -350,42 +352,30 @@ class GeneralSetDecoder(AggsDecoder):
     EXPECTING ALL PARTS IN partitions TO HAVE A where CLAUSE
     """
 
-    def append_query(self, es_query, start):
-        self.start = start
-
+    def append_query(self, query_path, es_query):
         parts = self.edge.domain.partitions
         filters = []
         notty = []
-
         for p in parts:
             w = p.where
-            filters.append(AndOp("and", [w] + notty).to_esfilter(self.schema))
-            notty.append(NotOp("not", w))
+            filters.append(AndOp([w] + notty))
+            notty.append(NotOp(w))
 
-        missing_filter = None
+        output = Aggs().add(FiltersAggs("_match", filters, self).add(es_query))
         if self.edge.allowNulls:  # TODO: Use Expression.missing().esfilter() TO GET OPTIMIZED FILTER
-            missing_filter = set_default(
-                {"filter": AndOp("and", notty).to_esfilter(self.schema)},
-                es_query
-            )
+            output.add(FilterAggs("_missing", AndOp(notty), self).add(es_query))
 
-        return wrap({"aggs": {
-            "_match": set_default(
-                {"filters": {"filters": filters}},
-                es_query
-            ),
-            "_missing": missing_filter
-        }})
+        return output
 
     def get_value(self, index):
         return self.edge.domain.getKeyByIndex(index)
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         domain = self.edge.domain
-        part = row[self.start]
-        # if part == None:
-        #     return len(domain.partitions)
-        return part.get("_index", len(domain.partitions))
+        if index == None:
+            return len(domain.partitions)
+        else:
+            return index
 
     @property
     def num_columns(self):
@@ -393,16 +383,15 @@ class GeneralSetDecoder(AggsDecoder):
 
 
 class DurationDecoder(AggsDecoder):
-    def append_query(self, es_query, start):
-        self.start = start
-        return _range_composer(self.edge, self.edge.domain, es_query, lambda x: x.seconds, self.schema)
+    def append_query(self, query_path, es_query):
+        return _range_composer(self, self.edge, self.edge.domain, es_query, lambda x: x.seconds, self.schema)
 
     def get_value(self, index):
         return self.edge.domain.getKeyByIndex(index)
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         domain = self.edge.domain
-        part = row[self.start]
+        part = row[0]
         if part == None:
             return len(domain.partitions)
 
@@ -424,16 +413,15 @@ class DurationDecoder(AggsDecoder):
 
 
 class RangeDecoder(AggsDecoder):
-    def append_query(self, es_query, start):
-        self.start = start
-        return _range_composer(self.edge, self.edge.domain, es_query, lambda x: x, self.schema)
+    def append_query(self, query_path, es_query):
+        return _range_composer(self, self.edge, self.edge.domain, es_query, lambda x: x, self.schema)
 
     def get_value(self, index):
         return self.edge.domain.getKeyByIndex(index)
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         domain = self.edge.domain
-        part = row[self.start]
+        part = row[0]
         if part == None:
             return len(domain.partitions)
 
@@ -461,70 +449,80 @@ class MultivalueDecoder(SetDecoder):
         self.values = query.frum.schema[edge.value.var][0].partitions
         self.parts = []
 
-    def append_query(self, es_query, start):
-        self.start = start
+    def append_query(self, query_path, es_query):
+        es_field = first(self.query.frum.schema.leaves(self.var)).es_column
 
-        es_field = self.query.frum.schema.leaves(self.var)[0].es_column
-        for i, v in enumerate(self.values):
-            es_query =  wrap({"aggs": {
-                "_match": set_default({"terms": {
-                    "script": 'doc['+quote(es_field)+'].values.contains(' + value2json(v) + ') ? 1 : 0'
-                }}, es_query)
-            }})
-
-        return es_query
+        return Aggs().add(TermsAggs("_match", {
+            "script": expand_template(LIST_TO_PIPE, {"expr": 'doc[' + quote(es_field) + '].values'})
+        }, self).add(es_query))
 
     def get_value_from_row(self, row):
-        return unwraplist([v for v, p in zip(self.values, row[self.start:self.start + self.num_columns:]) if p["key"] == '1'])
+        values = row[0]['key'].replace("||", "\b").split("|")
+        if len(values) == 2:
+            return None
+        t = tuple(v.replace("\b", "|") for v in sorted(values[1:-1]))
 
-    def get_index(self, row):
+        if len(t) == 0:
+            return None
+        elif len(t) == 1:
+            return t[0]
+        else:
+            return t
+
+    def get_index(self, row, es_query=None, index=None):
         find = self.get_value_from_row(row)
-        try:
-            return self.parts.index(find)
-        except Exception:
-            self.parts.append(find)
-            return len(self.parts)-1
+        return self.domain.getIndexByKey(find)
+
+    def count(self, row):
+        value = self.get_value_from_row(row)
+        self.parts.append(value)
+
+    def done_count(self):
+        self.edge.allowNulls = False
+        self.edge.domain = self.domain = SimpleSetDomain(
+            partitions=jx.sort(set(self.parts))
+        )
+        self.parts = None
 
     @property
     def num_columns(self):
-        return len(self.values)
+        return 1
 
 
 class ObjectDecoder(AggsDecoder):
     def __init__(self, edge, query, limit):
         AggsDecoder.__init__(self, edge, query, limit)
-        if isinstance(edge.value, LeavesOp):
+        if is_op(edge.value, LeavesOp):
             prefix = edge.value.term.var
             flatter = lambda k: literal_field(relative_field(k, prefix))
         else:
             prefix = edge.value.var
             flatter = lambda k: relative_field(k, prefix)
 
-        self.put, self.fields = zip(*[
-            (flatter(untype_path(c.names["."])), c.es_column)
+        self.put, self.fields = transpose(*[
+            (flatter(untype_path(c.name)), c.es_column)
             for c in query.frum.schema.leaves(prefix)
         ])
 
         self.domain = self.edge.domain = wrap({"dimension": {"fields": self.fields}})
-        self.domain.limit = Math.min(coalesce(self.domain.limit, query.limit, 10), MAX_LIMIT)
+        self.domain.limit = mo_math.min(coalesce(self.domain.limit, query.limit, 10), MAX_LIMIT)
         self.parts = list()
         self.key2index = {}
         self.computed_domain = False
 
-    def append_query(self, es_query, start):
-        self.start = start
+    def append_query(self, query_path, es_query):
+        decoder = self
         for i, v in enumerate(self.fields):
-            nest = wrap({"aggs": {
-                "_match": set_default({"terms": {
+            nest = Aggs().add(
+                TermsAggs("_match", {
                     "field": v,
                     "size": self.domain.limit
-                }}, es_query),
-                "_missing": set_default(
-                    {"filter": {"bool": {"must_not": {"exists": {"field": v}}}}},
-                    es_query
-                )
-            }})
+                }, decoder).add(es_query)
+            ).add(
+                FilterAggs("_missing", MissingOp(Variable(v)), decoder).add(es_query)
+            )
             es_query = nest
+            decoder = None
         return es_query
 
     def count(self, row):
@@ -541,7 +539,7 @@ class ObjectDecoder(AggsDecoder):
             partitions=[{"value": p, "dataIndex": i} for i, p in enumerate(self.parts)]
         )
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         value = self.get_value_from_row(row)
         if self.computed_domain:
             return self.domain.getIndexByKey(value)
@@ -554,15 +552,17 @@ class ObjectDecoder(AggsDecoder):
             self.parts.append(value)
         return i
 
-    def get_value_from_row(self, row):
-        part = row[self.start:self.start + self.num_columns:]
-        if not part[0]['doc_count']:
+    def get_value_from_row(self, parts):
+        if not parts[0]['doc_count']:
             return None
 
         output = Data()
-        for k, v in zip(self.put, part):
+        for k, v in transpose(self.put, parts):
             output[k] = v.get('key')
         return output
+
+    def get_value(self, index):
+        return self.parts[index]
 
     @property
     def num_columns(self):
@@ -575,87 +575,55 @@ class DefaultDecoder(SetDecoder):
     def __init__(self, edge, query, limit):
         AggsDecoder.__init__(self, edge, query, limit)
         self.domain = edge.domain
-        self.domain.limit = Math.min(coalesce(self.domain.limit, query.limit, 10), MAX_LIMIT)
+        self.domain.limit = mo_math.min(coalesce(self.domain.limit, query.limit, 10), MAX_LIMIT)
         self.parts = list()
         self.key2index = {}
         self.computed_domain = False
+        self.script = Painless[self.edge.value].partial_eval().to_es_script(self.schema)
+        self.pull = pull_functions[self.script.data_type]
+        self.missing = self.script.miss.partial_eval()
+        self.exists = NotOp(self.missing).partial_eval()
 
-        # WE ASSUME IF THE VARIABLES MATCH, THEN THE SORT TERM AND EDGE TERM MATCH, AND WE SORT BY TERM
-        self.sorted = None
-        edge_var = edge.value.vars()
-        for s in query.sort:
-            if not edge_var - s.value.vars():
-                self.sorted = {1: "asc", -1: "desc"}[s.sort]
-
-    def append_query(self, es_query, start):
-        self.start = start
-
-        value = self.edge.value.partial_eval()
-        script = value.to_painless(self.schema)
-        exists = NotOp("not", script.miss).partial_eval()
-        if not isinstance(self.edge.value, Variable):
-
-            output = wrap({"aggs": {
-                "_match": {
-                    "filter": exists.to_esfilter(self.schema),
-                    "aggs": {
-                        "_filter": set_default(
-                            {"terms": {
-                                "script": {
-                                    "lang": "painless",
-                                    "inline": script.expr
-                                },
-                                "size": self.domain.limit,
-                                "order": {"_term": self.sorted} if self.sorted else None
-                            }},
-                            es_query
-                        )
-                    }
-                },
-                "_missing": set_default(
-                    {"filter": NotOp("not", exists).to_esfilter(self.schema)},
-                    es_query
-                )
-            }})
-            return output
-        elif self.edge.value.var in [s.value.var for s in self.query.sort]:
-            sort_dir = [s.sort for s in self.query.sort if s.value.var == self.edge.value.var][0]
-            output = wrap({"aggs": {
-                "_match": set_default(
-                    {"terms": {
-                        "field": self.schema.leaves(self.edge.value.var)[0].es_column,
-                        "size": self.domain.limit,
-                        "order": {"_term": "asc" if sort_dir == 1 else "desc"}
-                    }},
-                    es_query
-                ),
-                "_missing": set_default(
-                    {"filter": NotOp("not", exists).to_esfilter(self.schema)},
-                    es_query
-                )
-            }})
-            return output
+        # WHEN SORT VALUE AND EDGE VALUE MATCHES, WE SORT BY TERM
+        sort_candidates = [s for s in query.sort if s.value == edge.value]
+        if sort_candidates:
+            self.es_order = {"_term": {1: "asc", -1: "desc"}[sort_candidates[0].sort]}
         else:
-            output = wrap({"aggs": {
-                "_match": set_default(
-                    {"terms": {
-                        "field": self.schema.leaves(self.edge.value.var)[0].es_column,
-                        "size": self.domain.limit
-                    }},
-                    es_query
-                ),
-                "_missing": set_default(
-                    {"filter": NotOp("not", exists).to_esfilter(self.schema)},
-                    es_query
-                )
-            }})
-            return output
+            self.es_order = None
+
+    def append_query(self, query_path, es_query):
+        if is_op(self.edge.value, FirstOp) and is_op(self.edge.value.term, Variable):
+            self.edge.value = self.edge.value.term  # ES USES THE FIRST TERM FOR {"terms": } AGGREGATION
+        if not is_op(self.edge.value, Variable):
+            terms = TermsAggs(
+                "_match",
+                {
+                    "script": {"lang": "painless", "inline": self.script.expr},
+                    "size": self.domain.limit,
+                    "order": self.es_order
+                },
+                self
+            )
+        else:
+            terms = TermsAggs(
+                "_match", {
+                    "field": first(self.schema.leaves(self.edge.value.var)).es_column,
+                    "size": self.domain.limit,
+                    "order": self.es_order
+                },
+                self
+            )
+        output = Aggs()
+        output.add(FilterAggs("_filter", self.exists, None).add(terms.add(es_query)))
+        output.add(FilterAggs("_missing", self.missing, self).add(es_query))
+        return output
 
     def count(self, row):
-        part = row[self.start]
+        part = row[0]
         if part['doc_count']:
-            if part.get('key') != None:
-                self.parts.append(part.get('key'))
+            key = part.get('key')
+            if key != None:
+                self.parts.append(self.pull(key))
             else:
                 self.edge.allowNulls = True  # OK! WE WILL ALLOW NULLS
 
@@ -666,23 +634,23 @@ class DefaultDecoder(SetDecoder):
         self.parts = None
         self.computed_domain = True
 
-    def get_index(self, row):
+    def get_index(self, row, es_query=None, index=None):
         if self.computed_domain:
             try:
-                part = row[self.start]
-                return self.domain.getIndexByKey(part.get('key'))
+                part = row[0]
+                return self.domain.getIndexByKey(self.pull(part.get('key')))
             except Exception as e:
                 Log.error("problem", cause=e)
         else:
             try:
-                part = row[self.start]
-                key = part.get('key')
+                part = row[0]
+                key = self.pull(part.get('key'))
                 i = self.key2index.get(key)
                 if i is None:
                     i = len(self.parts)
                     part = {"key": key, "dataIndex": i}
-                    self.parts.append({"key": key, "dataIndex": i})
-                    self.key2index[i] = part
+                    self.parts.append(part)
+                    self.key2index[key] = i
                 return i
             except Exception as e:
                 Log.error("problem", cause=e)
@@ -695,40 +663,33 @@ class DefaultDecoder(SetDecoder):
 class DimFieldListDecoder(SetDecoder):
     def __init__(self, edge, query, limit):
         AggsDecoder.__init__(self, edge, query, limit)
+        edge.allowNulls = False
         self.fields = edge.domain.dimension.fields
         self.domain = self.edge.domain
-        self.domain.limit = Math.min(coalesce(self.domain.limit, query.limit, 10), MAX_LIMIT)
+        self.domain.limit = mo_math.min(coalesce(self.domain.limit, query.limit, 10), MAX_LIMIT)
         self.parts = list()
 
-    def append_query(self, es_query, start):
-        # TODO: USE "reverse_nested" QUERY TO PULL THESE
-        self.start = start
+    def append_query(self, query_path, es_query):
+        decoder = self
         for i, v in enumerate(self.fields):
             exists = v.exists().partial_eval()
-            nest = wrap({"aggs": {"_match": {
-                "filter": exists.to_esfilter(self.schema),
-                "aggs": {"_filter": set_default({"terms": {
-                    "field": self.schema.leaves(v.var)[0].es_column,
-                    "size": self.domain.limit
-                }}, es_query)}
-            }}})
-            if self.edge.allowNulls:
-                nest.aggs._missing = set_default(
-                    {"filter": NotOp("not", exists).to_esfilter(self.schema)},
-                    es_query
-                )
+            nest = Aggs()
+            nest.add(TermsAggs("_match", {
+                "field": first(self.schema.leaves(v.var)).es_column,
+                "size": self.domain.limit
+            }, decoder).add(es_query))
+            nest.add(FilterAggs("_missing", NotOp(exists), decoder).add(es_query))
             es_query = nest
+            decoder = None
 
         if self.domain.where:
-            filter_ = self.domain.where.partial_eval().to_esfilter(self.schema)
-            es_query = {"aggs": {"_filter": set_default({"filter": filter_}, es_query)}}
+            es_query = FilterAggs("_filter", self.domain.where, None).add(es_query)
 
         return es_query
 
-    def count(self, row):
-        part = row[self.start:self.start + len(self.fields):]
-        if part[0]['doc_count']:
-            value = tuple(p.get("key") for p in part)
+    def count(self, parts):
+        if parts[0]['doc_count']:
+            value = tuple(p.get("key") for p, f in zip(parts, self.fields))
             self.parts.append(value)
 
     def done_count(self):
@@ -742,9 +703,11 @@ class DimFieldListDecoder(SetDecoder):
             partitions=[{"value": tuple(v[k] for k in columns), "dataIndex": i} for i, v in enumerate(sorted_parts)]
         )
 
-    def get_index(self, row):
-        find = tuple(p.get("key") for p in row[self.start:self.start + self.num_columns:])
-        return self.domain.getIndexByKey(find)
+    def get_index(self, row, es_query=None, index=None):
+        if row[0]['doc_count']:
+            find = tuple(p.get("key") for p, f in zip(row, self.fields))
+            output = self.domain.getIndexByKey(find)
+            return output
 
     @property
     def num_columns(self):

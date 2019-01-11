@@ -1,45 +1,16 @@
 # encoding: utf-8
 #
-#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-# REMOVED SO LOGIC SWITCHES FROM BYTES TO STRING BETWEEN PY2 AND PY3 RESPECTIVELY
-# from __future__ import unicode_literals
 
-from collections import Mapping
-
-from mo_dots import wrap, Data
-from mo_future import text_type, PY3
-from mo_future import urlparse
-
-_value2json = None
-_json2value = None
-_Log = None
-
-
-def _late_import():
-    global _value2json
-    global _json2value
-    global _Log
-
-    from mo_json import value2json as value2json_
-    from mo_json import json2value as json2value_
-    from mo_logs import Log as _Log
-
-    if PY3:
-        _value2json = value2json_
-        _json2value = json2value_
-    else:
-        _value2json = lambda v: value2json_(v).encode('latin1')
-        _json2value = lambda v: json2value_(v.decode('latin1'))
-
-    _ = _Log
+from mo_dots import Data, Null, coalesce, is_data, is_list, wrap
+from mo_future import PY2, is_text, text_type, unichr, urlparse, is_binary
+from mo_json import json2value, value2json
+from mo_logs import Log
 
 
 class URL(object):
@@ -49,37 +20,34 @@ class URL(object):
     [1] https://docs.python.org/3/library/urllib.parse.html
     """
 
-    def __init__(self, value):
+    def __init__(self, value, port=None, path=None, query=None, fragment=None):
         try:
             self.scheme = None
             self.host = None
-            self.port = None
-            self.path = ""
-            self.query = ""
-            self.fragment = ""
+            self.port = port
+            self.path = path
+            self.query = query
+            self.fragment = fragment
 
             if value == None:
                 return
 
             if value.startswith("file://") or value.startswith("//"):
                 # urlparse DOES NOT WORK IN THESE CASES
-                scheme, suffix = value.split("//", 1)
+                scheme, suffix = value.split("//", 2)
                 self.scheme = scheme.rstrip(":")
                 parse(self, suffix, 0, 1)
                 self.query = wrap(url_param2value(self.query))
             else:
                 output = urlparse(value)
                 self.scheme = output.scheme
-                self.port = output.port
+                self.port = coalesce(port, output.port)
                 self.host = output.netloc.split(":")[0]
-                self.path = output.path
-                self.query = wrap(url_param2value(output.query))
-                self.fragment = output.fragment
+                self.path = coalesce(path, output.path)
+                self.query = coalesce(query, wrap(url_param2value(output.query)))
+                self.fragment = coalesce(fragment, output.fragment)
         except Exception as e:
-            if not _Log:
-                _late_import()
-
-            _Log.error(u"problem parsing {{value}} to URL", value=value, cause=e)
+            Log.error(u"problem parsing {{value}} to URL", value=value, cause=e)
 
     def __nonzero__(self):
         if self.scheme or self.host or self.port or self.path or self.query or self.fragment:
@@ -91,19 +59,39 @@ class URL(object):
             return True
         return False
 
+    def __truediv__(self, other):
+        if not is_text(other):
+            Log.error(u"Expecting text path")
+        output = self.__copy__()
+        output.path = output.path.rstrip('/') + "/" + other.lstrip('/')
+        return output
+
     def __unicode__(self):
         return self.__str__().decode('utf8')  # ASSUME chr<128 ARE VALID UNICODE
+
+    def __copy__(self):
+        output = URL(None)
+        output.scheme = self.scheme
+        output.host = self.host
+        output.port = self.port
+        output.path = self.path
+        output.query = self.query
+        output.fragment = self.fragment
+        return output
+
+    def __data__(self):
+        return str(self)
 
     def __str__(self):
         url = ""
         if self.host:
             url = self.host
         if self.scheme:
-            url = self.scheme + "://" + url
+            url = self.scheme + "://"+url
         if self.port:
             url = url + ":" + str(self.port)
         if self.path:
-            if self.path[0] == "/":
+            if self.path[0] == text_type("/"):
                 url += str(self.path)
             else:
                 url += "/" + str(self.path)
@@ -114,16 +102,27 @@ class URL(object):
         return url
 
 
-def int_to_hex(value, size):
+def int2hex(value, size):
     return (("0" * size) + hex(value)[2:])[-size:]
 
-_str_to_url = {chr(i): chr(i) for i in range(32, 128)}
-for c in " {}<>;/?:@&=+$,":
-    _str_to_url[c] = "%" + int_to_hex(ord(c), 2)
-for i in range(128, 256):
-    _str_to_url[chr(i)] = "%" + int_to_hex(i, 2)
 
-_url_to_str = {v: k for k, v in _str_to_url.items()}
+def hex2chr(hex):
+    return unichr(int(hex, 16))
+
+
+if PY2:
+    _map2url = {chr(i): chr(i) for i in range(32, 128)}
+    for c in " {}<>;/?:@&=+$,":
+        _map2url[c] = "%" + str(int2hex(ord(c), 2))
+    for i in range(128, 256):
+        _map2url[chr(i)] = "%" + str(int2hex(i, 2))
+else:
+    _map2url = {i: unichr(i) for i in range(32, 128)}
+    for c in b" {}<>;/?:@&=+$,":
+        _map2url[c] = "%" + int2hex(c, 2)
+    for i in range(128, 256):
+        _map2url[i] = "%" + str(int2hex(i, 2))
+
 
 names = ["path", "query", "fragment"]
 indicator = ["/", "?", "#"]
@@ -146,30 +145,33 @@ def url_param2value(param):
     """
     CONVERT URL QUERY PARAMETERS INTO DICT
     """
+    if param == None:
+        return Null
+    if param == None:
+        return Null
+
     def _decode(v):
         output = []
         i = 0
         while i < len(v):
             c = v[i]
             if c == "%":
-                d = _url_to_str[v[i:i + 3]]
+                d = hex2chr(v[i + 1:i + 3])
                 output.append(d)
                 i += 3
             else:
                 output.append(c)
                 i += 1
 
-        output = ("".join(output))
+        output = text_type("".join(output))
         try:
-            if not _Log:
-                _late_import()
-            return _json2value(output)
+            return json2value(output)
         except Exception:
             pass
         return output
 
     query = Data()
-    for p in param.split("&"):
+    for p in param.split('&'):
         if not p:
             continue
         if p.find("=") == -1:
@@ -182,7 +184,7 @@ def url_param2value(param):
         u = query.get(k)
         if u is None:
             query[k] = v
-        elif isinstance(u, list):
+        elif is_list(u):
             u += [v]
         else:
             query[k] = [u, v]
@@ -190,27 +192,24 @@ def url_param2value(param):
     return query
 
 
-
-
 def value2url_param(value):
     """
     :param value:
     :return: ascii URL
     """
-    if not _Log:
-        _late_import()
-
     if value == None:
-        _Log.error(u"Can not encode None into a URL")
+        Log.error("Can not encode None into a URL")
 
-    if isinstance(value, Mapping):
+    if is_data(value):
         value_ = wrap(value)
         output = "&".join([
-            value2url_param(k) + "=" + (value2url_param(v) if isinstance(v, text_type) else value2url_param(_value2json(v)))
+            value2url_param(k) + "=" + (value2url_param(v) if is_text(v) else value2url_param(value2json(v)))
             for k, v in value_.leaves()
             ])
-    elif isinstance(value, text_type):
-        output = "".join(_str_to_url[c] for c in value)
+    elif is_text(value):
+        output = "".join(_map2url[c] for c in value.encode('utf8'))
+    elif is_binary(value):
+        output = "".join(_map2url[c] for c in value)
     elif hasattr(value, "__iter__"):
         output = ",".join(value2url_param(v) for v in value)
     else:

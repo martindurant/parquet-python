@@ -3,10 +3,12 @@ Cipher Mode of operation
 
 Abstract encryption mode test harness.
 """
-from .key_expander import KeyExpander
-from .aes_cipher import AESCipher
-
 import unittest
+
+from .aes_cipher import AESCipher
+from .key_expander import KeyExpander
+
+
 class GeneralTestEncryptionMode(unittest.TestCase):
     def get_keyed_cipher(self, key):
 

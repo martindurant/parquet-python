@@ -7,15 +7,13 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import json
-from collections import Mapping
 from types import GeneratorType
 
-from mo_dots import split_field, startswith_field, relative_field, Data, join_field, Null, wrap
+from mo_dots import Data, Null, is_data, join_field, relative_field, split_field, startswith_field, wrap
 from mo_logs import Log
 
 DEBUG = False
@@ -29,7 +27,6 @@ CLOSE = {
 NO_VARS = set()
 
 json_decoder = json.JSONDecoder().decode
-
 
 
 def parse(json, query_path, expected_vars=NO_VARS):
@@ -154,7 +151,7 @@ def parse(json, query_path, expected_vars=NO_VARS):
                 pass
             elif e == ".":
                 destination[i] = value
-            elif isinstance(value, Mapping):
+            elif is_data(value):
                 destination[i] = value[e]
             else:
                 destination[i] = Null
@@ -183,8 +180,7 @@ def parse(json, query_path, expected_vars=NO_VARS):
                 child_expected = needed("value", expected_vars)
                 index = _assign_token(index, c, child_expected)
                 c, index = skip_whitespace(index)
-                if DEBUG and not num_items % 1000:
-                    Log.note("{{num}} items iterated", num=num_items)
+                DEBUG and not num_items % 1000 and Log.note("{{num}} items iterated", num=num_items)
                 yield index
                 num_items += 1
             elif c == b"}":
@@ -313,7 +309,7 @@ def parse(json, query_path, expected_vars=NO_VARS):
             c = json[index]
         return c, index + 1
 
-    if isinstance(query_path, Mapping) and query_path.get("items"):
+    if is_data(query_path) and query_path.get("items"):
         path_list = split_field(query_path.get("items")) + ["$items"]  # INSERT A MARKER SO THAT OBJECT IS STREAM DECODED
     else:
         path_list = split_field(query_path)

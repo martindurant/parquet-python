@@ -8,18 +8,16 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
-import mo_threads
+from mo_future import is_text, is_binary
 from mo_logs.exceptions import suppress_exception
-from pyLibrary.meta import cache
 from mo_threads import Process
+from pyLibrary.meta import cache
 
 
 @cache
-def get_git_revision():
+def get_revision():
     """
     GET THE CURRENT GIT REVISION
     """
@@ -36,13 +34,12 @@ def get_git_revision():
         with suppress_exception:
             proc.join()
 
+
 @cache
 def get_remote_revision(url, branch):
     """
     GET REVISION OF A REMOTE BRANCH
     """
-
-    mo_threads.DEBUG = True
     proc = Process("git remote revision", ["git", "ls-remote", url, "refs/heads/" + branch])
 
     try:
@@ -58,5 +55,22 @@ def get_remote_revision(url, branch):
         except Exception:
             pass
 
-    return None
 
+@cache
+def get_branch():
+    """
+    GET THE CURRENT GIT BRANCH
+    """
+    proc = Process("git status", ["git", "status"])
+
+    try:
+        while True:
+            raw_line = proc.stdout.pop()
+            line = raw_line.decode('utf8').strip()
+            if line.startswith("On branch "):
+                return line[10:]
+    finally:
+        try:
+            proc.join()
+        except Exception:
+            pass

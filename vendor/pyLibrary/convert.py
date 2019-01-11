@@ -7,30 +7,27 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, absolute_import, division, unicode_literals
 
 import ast
 import base64
 import cgi
 import datetime
+from decimal import Decimal
 import gzip
 import hashlib
+from io import BytesIO
 import json
 import re
-from decimal import Decimal
-from io import BytesIO
 from tempfile import TemporaryFile
 
+from mo_dots import concat_field, unwrap, unwraplist, wrap
+from mo_future import HTMLParser, PY3, StringIO, is_binary, is_text, long, text_type
 import mo_json
-import mo_math
-from mo_dots import wrap, unwrap, unwraplist, concat_field
-from mo_future import text_type, HTMLParser, StringIO, PY3, long
 from mo_logs import Log
 from mo_logs.exceptions import suppress_exception
 from mo_logs.strings import expand_template, quote
+import mo_math
 from mo_times.dates import Date
 
 """
@@ -44,6 +41,32 @@ json2value = mo_json.json2value
 
 def string2datetime(value, format=None):
     return unix2datetime(Date(value, format).unix)
+
+
+def string2boolean(value):
+    if value in ["true", "T"]:
+        return True
+    elif value in ["false", "F"]:
+        return False
+    else:
+        return None
+
+
+_v2b = {
+    True: True,
+    "true": True,
+    "T": True,
+    1: True,
+    False: False,
+    "false": False,
+    "F": False,
+    0: False,
+    None: None
+}
+
+
+def value2boolean(value):
+    return _v2b.get(value, True)
 
 
 def str2datetime(value, format=None):
@@ -208,7 +231,7 @@ def value2string(value):
 
 def value2quote(value):
     # RETURN PRETTY PYTHON CODE FOR THE SAME
-    if isinstance(value, text_type):
+    if is_text(value):
         return string2quote(value)
     else:
         return text_type(repr(value))
@@ -224,9 +247,9 @@ string2regexp = re.escape
 
 
 def string2url(value):
-    if isinstance(value, text_type):
+    if is_text(value):
         return "".join([_map2url[c] for c in unicode2latin1(value)])
-    elif isinstance(value, str):
+    elif is_binary(value):
         return "".join([_map2url[c] for c in value])
     else:
         Log.error("Expecting a string")
@@ -236,7 +259,7 @@ def string2url(value):
 #     """
 #     CONVERT URL QUERY PARAMETERS INTO DICT
 #     """
-#     if isinstance(param, text_type):
+#     if is_text(param):
 #         param = param.encode("ascii")
 #
 #     def _decode(v):
@@ -274,7 +297,7 @@ def string2url(value):
 #         u = query.get(k)
 #         if u is None:
 #             query[k] = v
-#         elif isinstance(u, list):
+#         elif is_list(u):
 #             u += [v]
 #         else:
 #             query[k] = [u, v]
@@ -366,7 +389,7 @@ def bytes2base64(value):
 
 
 def bytes2sha1(value):
-    if isinstance(value, text_type):
+    if is_text(value):
         Log.error("can not convert unicode to sha1")
     sha = hashlib.sha1(value)
     return sha.hexdigest()
@@ -381,7 +404,7 @@ def value2intlist(value):
     elif isinstance(value, int):
         return [value]
     elif value.strip() == "":
-        return None
+        return []
     else:
         return [int(value)]
 
@@ -405,16 +428,8 @@ def value2number(v):
             Log.error("Not a number ({{value}})",  value= v, cause=e)
 
 
-def utf82unicode(value):
-    return value.decode('utf8')
-
-
-def unicode2utf8(value):
-    return value.encode('utf8')
-
-
 def latin12unicode(value):
-    if isinstance(value, text_type):
+    if is_text(value):
         Log.error("can not convert unicode from latin1")
     try:
         return text_type(value.decode('latin1'))
@@ -478,9 +493,9 @@ def ini2value(ini_content):
     """
     INI FILE CONTENT TO Data
     """
-    from ConfigParser import ConfigParser
+    from mo_future import ConfigParser, StringIO
 
-    buff = StringIO.StringIO(ini_content)
+    buff = StringIO(ini_content)
     config = ConfigParser()
     config._read(buff, "dummy")
 
@@ -542,7 +557,7 @@ def json_schema_to_markdown(schema):
 
     def _inner(schema, parent_name, indent):
         more_lines = []
-        for k,v in schema.items():
+        for k, v in schema.items():
             full_name = concat_field(parent_name, k)
             details = indent+"* "+_md_code(full_name)
             if v.type:
@@ -559,7 +574,7 @@ def json_schema_to_markdown(schema):
 
     lines = []
     if schema.title:
-        lines.append("#"+schema.title)
+        lines.append("# "+schema.title)
 
     lines.append(schema.description)
     lines.append("")
@@ -567,7 +582,7 @@ def json_schema_to_markdown(schema):
     for k, v in jx.sort(schema.properties.items(), 0):
         full_name = k
         if v.type in ["object", "array", "nested"]:
-            lines.append("##"+_md_code(full_name)+" Property")
+            lines.append("## "+_md_code(full_name)+" Property")
             if v.description:
                 lines.append(v.description)
             lines.append("")
@@ -575,7 +590,7 @@ def json_schema_to_markdown(schema):
             if v.type in ["object", "array", "nested"]:
                 lines.extend(_inner(v.properties, full_name, "  "))
         else:
-            lines.append("##"+_md_code(full_name)+" ("+v.type+")")
+            lines.append("## "+_md_code(full_name)+" ("+v.type+")")
             if v.description:
                 lines.append(v.description)
 

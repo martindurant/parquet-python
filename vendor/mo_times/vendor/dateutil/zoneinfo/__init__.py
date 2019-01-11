@@ -5,9 +5,10 @@ Copyright (c) 2003-2005  Gustavo Niemeyer <gustavo@niemeyer.net>
 This module offers extensions to the standard Python
 datetime module.
 """
-from dateutil.tz import tzfile
-from tarfile import TarFile
 import os
+from tarfile import TarFile
+
+from dateutil.tz import tzfile
 
 __author__ = "Tomi Pieviläinen <tomi.pievilainen@iki.fi>"
 __license__ = "Simplified BSD"

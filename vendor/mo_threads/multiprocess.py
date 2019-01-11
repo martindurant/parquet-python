@@ -6,21 +6,21 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import os
 import subprocess
 
-from mo_dots import set_default, unwrap, NullType
-from mo_future import none_type, binary_type, text_type
+from mo_dots import NullType, set_default
+from mo_future import none_type
 from mo_logs import Log, strings
 from mo_logs.exceptions import Except
 from mo_threads.lock import Lock
 from mo_threads.queues import Queue
 from mo_threads.signal import Signal
-from mo_threads.threads import Thread, THREAD_STOP
+from mo_threads.threads import THREAD_STOP, Thread
+from mo_threads.till import Till
 
 DEBUG = False
 
@@ -36,13 +36,13 @@ class Process(object):
         try:
             self.debug = debug or DEBUG
             self.service = service = subprocess.Popen(
-                params,
+                [str(p) for p in params],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 bufsize=bufsize,
-                cwd=cwd if isinstance(cwd, (text_type, binary_type, NullType, none_type)) else cwd.abspath,
-                env=unwrap(set_default(env, os.environ)),
+                cwd=cwd if isinstance(cwd, (str, NullType, none_type)) else cwd.abspath,
+                env={str(k): str(v) for k, v in set_default(env, os.environ).items()},
                 shell=shell
             )
 
@@ -58,8 +58,7 @@ class Process(object):
         except Exception as e:
             Log.error("Can not call", e)
 
-        if self.debug:
-            Log.note("{{process}} START: {{command}}", process=self.name, command=" ".join(map(strings.quote, params)))
+        self.debug and Log.note("{{process}} START: {{command}}", process=self.name, command=" ".join(map(strings.quote, params)))
 
     def __enter__(self):
         return self
@@ -68,7 +67,7 @@ class Process(object):
         self.join(raise_on_error=True)
 
     def stop(self):
-        self.stdin.add("exit")  # ONE MORE SEND
+        self.stdin.add(THREAD_STOP)  # ONE MORE SEND
         self.please_stop.go()
 
     def join(self, raise_on_error=False):
@@ -103,20 +102,32 @@ class Process(object):
 
     def _monitor(self, please_stop):
         self.service.wait()
-        if self.debug:
-            Log.note("{{process}} STOP: returncode={{returncode}}", process=self.name, returncode=self.service.returncode)
+        self.debug and Log.note("{{process}} STOP: returncode={{returncode}}", process=self.name, returncode=self.service.returncode)
         self.service_stopped.go()
         please_stop.go()
 
-    def _reader(self, name, pipe, recieve, please_stop):
+    def _reader(self, name, pipe, receive, please_stop):
         try:
-            line = "dummy"
-            while not please_stop and self.service.returncode is None and line:
+            while not please_stop and self.service.returncode is None:
                 line = pipe.readline().rstrip()
                 if line:
-                    recieve.add(line)
-                if self.debug:
-                    Log.note("{{process}} ({{name}}): {{line}}", name=name, process=self.name, line=line)
+                    receive.add(line)
+                    self.debug and Log.note("{{process}} ({{name}}): {{line}}", name=name, process=self.name, line=line)
+                    continue
+
+                # GRAB A FEW MORE LINES
+                for _ in range(100):
+                    try:
+                        line = pipe.readline().rstrip()
+                        if line:
+                            receive.add(line)
+                            self.debug and Log.note("{{process}} ({{name}}): {{line}}", name=name, process=self.name, line=line)
+                            break
+                    except Exception:
+                        break
+                else:
+                    Till(seconds=5).wait()
+
             # GRAB A FEW MORE LINES
             max = 100
             while max:
@@ -124,17 +135,17 @@ class Process(object):
                     line = pipe.readline().rstrip()
                     if line:
                         max = 100
-                        recieve.add(line)
-                        if self.debug:
-                            Log.note("{{process}} ({{name}}): {{line}}", name=name, process=self.name, line=line)
+                        receive.add(line)
+                        self.debug and Log.note("{{process}} ({{name}}): {{line}}", name=name, process=self.name, line=line)
                     else:
                         max -= 1
                 except Exception:
                     break
         finally:
             pipe.close()
+        self.debug and Log.note("{{process}} ({{name}} is closed)", name=name, process=self.name)
 
-        recieve.add(THREAD_STOP)
+        receive.add(THREAD_STOP)
 
     def _writer(self, pipe, send, please_stop):
         while not please_stop:
@@ -144,14 +155,14 @@ class Process(object):
                 break
 
             if line:
-                if self.debug:
-                    Log.note("{{process}} (stdin): {{line}}", process=self.name, line=line.rstrip())
-                pipe.write(line + b"\n")
-        pipe.close()
+                self.debug and Log.note("{{process}} (stdin): {{line}}", process=self.name, line=line.rstrip())
+                pipe.write(line.encode('utf8') + b"\n")
+                pipe.flush()
 
     def _kill(self):
         try:
             self.service.kill()
+            Log.note("Service was successfully terminated.")
         except Exception as e:
             ee = Except.wrap(e)
             if 'The operation completed successfully' in ee:

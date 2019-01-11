@@ -7,16 +7,15 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import re
 
-from pyLibrary import convert
+from mo_dots import Data, coalesce, is_data, listwrap, wrap_leaves
 from mo_logs import Log
-from mo_dots import coalesce, Data, listwrap, wrap_leaves
 from mo_times.dates import Date
+from pyLibrary import convert
 
 true = True
 false = False
@@ -42,6 +41,7 @@ def compile_expression(source):
     _ = EMPTY_DICT
     _ = re
     _ = wrap_leaves
+    _ = is_data
 
     fake_locals = {}
     try:

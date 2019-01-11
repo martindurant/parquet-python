@@ -7,23 +7,20 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 import sys
-from collections import Mapping
 
-from mo_dots.utils import get_logger, get_module
-from mo_future import text_type, binary_type, generator_types
+from mo_future import binary_type, generator_types, is_binary, is_text, text_type
+
+from mo_dots.utils import CLASS, OBJ, get_logger, get_module
 
 none_type = type(None)
 ModuleType = type(sys.modules[__name__])
 
 
 _builtin_zip = zip
-SELF_PATH = "."
-ROOT_PATH = [SELF_PATH]
+ROOT_PATH = ["."]
 
 
 _get = object.__getattribute__
@@ -68,7 +65,7 @@ def literal_field(field):
     RETURN SAME WITH DOTS (`.`) ESCAPED
     """
     try:
-        return field.replace(".", "\.")
+        return field.replace(".", "\\.")
     except Exception as e:
         get_logger().error("bad literal", e)
 
@@ -85,7 +82,23 @@ def unliteral_field(field):
     """
     if len(split_field(field)) > 1:
         get_logger().error("Bad call! Dude!")
-    return field.replace("\.", ".")
+    return field.replace("\\.", ".")
+
+
+def tail_field(field):
+    """
+    RETURN THE FIRST STEP IN PATH, ALONG WITH THE REMAINING TAIL
+    """
+    if field == "." or field==None:
+        return ".", "."
+    elif "." in field:
+        if "\\." in field:
+            return tuple(k.replace("\a", ".") for k in field.replace("\\.", "\a").split(".", 1))
+        else:
+            return field.split(".", 1)
+    else:
+        return field, "."
+
 
 
 def split_field(field):
@@ -94,7 +107,7 @@ def split_field(field):
     """
     if field == "." or field==None:
         return []
-    elif isinstance(field, text_type) and "." in field:
+    elif is_text(field) and "." in field:
         if field.startswith(".."):
             remainder = field.lstrip(".")
             back = len(field) - len(remainder) - 1
@@ -105,14 +118,17 @@ def split_field(field):
         return [field]
 
 
-def join_field(field):
+def join_field(path):
     """
     RETURN field SEQUENCE AS STRING
     """
-    potent = [f for f in field if f != "."]
-    if not potent:
-        return "."
-    return ".".join([f.replace(".", "\.") for f in potent])
+    output = ".".join([f.replace(".", "\\.") for f in path if f != None])
+    return output if output else "."
+
+    # potent = [f for f in path if f != "."]
+    # if not potent:
+    #     return "."
+    # return ".".join([f.replace(".", "\\.") for f in potent])
 
 
 def concat_field(prefix, suffix):
@@ -132,8 +148,14 @@ def startswith_field(field, prefix):
     """
     RETURN True IF field PATH STRING STARTS WITH prefix PATH STRING
     """
-    if prefix == ".":
+    if prefix.startswith("."):
         return True
+        # f_back = len(field) - len(field.strip("."))
+        # p_back = len(prefix) - len(prefix.strip("."))
+        # if f_back > p_back:
+        #     return False
+        # else:
+        #     return True
 
     if field.startswith(prefix):
         if len(field) == len(prefix) or field[len(prefix)] == ".":
@@ -164,9 +186,9 @@ def relative_field(field, parent):
 
 
 def hash_value(v):
-    if isinstance(v, (set, tuple, list)):
+    if is_many(v):
         return hash(tuple(hash_value(vv) for vv in v))
-    elif not isinstance(v, Mapping):
+    elif _get(v, CLASS) not in data_types:
         return hash(v)
     else:
         return hash(tuple(sorted(hash_value(vv) for vv in v.values())))
@@ -191,7 +213,7 @@ def set_default(*params):
     FOR EACH LEAF, RETURN THE HIGHEST PRIORITY LEAF VALUE
     """
     p0 = params[0]
-    agg = p0 if p0 or isinstance(p0, Mapping) else {}
+    agg = p0 if p0 or _get(p0, CLASS) in data_types else {}
     for p in params[1:]:
         p = unwrap(p)
         if p is None:
@@ -207,10 +229,10 @@ def _all_default(d, default, seen=None):
     """
     if default is None:
         return
-    if isinstance(default, Data):
-        default = object.__getattribute__(default, b"_dict")  # REACH IN AND GET THE dict
+    if _get(default, CLASS) is Data:
+        default = object.__getattribute__(default, SLOT)  # REACH IN AND GET THE dict
         # Log = _late_import()
-        # Log.error("strictly dict (or object) allowed: got {{type}}", type=default.__class__.__name__)
+        # Log.error("strictly dict (or object) allowed: got {{type}}", type=_get(default, CLASS).__name__)
 
     for k, default_value in default.items():
         default_value = unwrap(default_value)  # TWO DIFFERENT Dicts CAN SHARE id() BECAUSE THEY ARE SHORT LIVED
@@ -218,7 +240,7 @@ def _all_default(d, default, seen=None):
 
         if existing_value == None:
             if default_value != None:
-                if isinstance(default_value, Mapping):
+                if _get(default_value, CLASS) in data_types:
                     df = seen.get(id(default_value))
                     if df is not None:
                         _set_attr(d, [k], df)
@@ -234,10 +256,10 @@ def _all_default(d, default, seen=None):
                     except Exception as e:
                         if PATH_NOT_FOUND not in e:
                             get_logger().error("Can not set attribute {{name}}", name=k, cause=e)
-        elif isinstance(existing_value, list) or isinstance(default_value, list):
+        elif is_list(existing_value) or is_list(default_value):
             _set_attr(d, [k], None)
             _set_attr(d, [k], listwrap(existing_value) + listwrap(default_value))
-        elif (hasattr(existing_value, "__setattr__") or isinstance(existing_value, Mapping)) and isinstance(default_value, Mapping):
+        elif (hasattr(existing_value, "__setattr__") or _get(existing_value, CLASS) in data_types) and _get(default_value, CLASS) in data_types:
             df = seen.get(id(default_value))
             if df is not None:
                 _set_attr(d, [k], df)
@@ -334,11 +356,11 @@ def _get_attr(obj, path):
                 # WE CAN STILL PUT THE PATH TO THE FILE IN THE from CLAUSE
                 if len(path) == 1:
                     # GET MODULE OBJECT
-                    output = __import__(obj.__name__ + b"." + attr_name.decode('utf8'), globals(), locals(), [attr_name.decode('utf8')], 0)
+                    output = __import__(obj.__name__ + str(".") + str(attr_name), globals(), locals(), [str(attr_name)], 0)
                     return output
                 else:
                     # GET VARIABLE IN MODULE
-                    output = __import__(obj.__name__ + b"." + attr_name.decode('utf8'), globals(), locals(), [path[1].decode('utf8')], 0)
+                    output = __import__(obj.__name__ + str(".") + str(attr_name), globals(), locals(), [str(path[1])], 0)
                     return _get_attr(output, path[1:])
             except Exception as e:
                 Except = get_module("mo_logs.exceptions.Except")
@@ -390,7 +412,7 @@ def _set_attr(obj_, path, value):
         elif value == None:
             new_value = None
         else:
-            new_value = old_value.__class__(value)  # TRY TO MAKE INSTANCE OF SAME CLASS
+            new_value = _get(old_value, CLASS)(value)  # TRY TO MAKE INSTANCE OF SAME CLASS
     except Exception as e:
         old_value = None
         new_value = value
@@ -411,18 +433,24 @@ def lower_match(value, candidates):
 
 
 def wrap(v):
-    type_ = _get(v, "__class__")
+    """
+    WRAP AS Data OBJECT FOR DATA PROCESSING: https://github.com/klahnakoski/mo-dots/tree/dev/docs
+    :param v:  THE VALUE TO WRAP
+    :return:  Data INSTANCE
+    """
+
+    type_ = _get(v, CLASS)
 
     if type_ is dict:
         m = object.__new__(Data)
-        _set(m, "_dict", v)
+        _set(m, SLOT, v)
         return m
     elif type_ is none_type:
         return Null
     elif type_ is list:
         return FlatList(v)
     elif type_ in generator_types:
-        return FlatList(list(v))
+        return FlatList(list(unwrap(vv) for vv in v))
     else:
         return v
 
@@ -437,10 +465,12 @@ def wrap_leaves(value):
 def _wrap_leaves(value):
     if value == None:
         return None
-    if isinstance(value, (text_type, binary_type, int, float)):
+
+    class_ = _get(value, CLASS)
+    if class_ in (text_type, binary_type, int, float):
         return value
-    if isinstance(value, Mapping):
-        if isinstance(value, Data):
+    if class_ in data_types:
+        if class_ is Data:
             value = unwrap(value)
 
         output = {}
@@ -449,7 +479,7 @@ def _wrap_leaves(value):
 
             if key == "":
                 get_logger().error("key is empty string.  Probably a bad idea")
-            if isinstance(key, binary_type):
+            if is_binary(key):
                 key = key.decode("utf8")
 
             d = output
@@ -481,17 +511,17 @@ def _wrap_leaves(value):
 
 
 def unwrap(v):
-    _type = _get(v, "__class__")
+    _type = _get(v, CLASS)
     if _type is Data:
-        d = _get(v, "_dict")
+        d = _get(v, SLOT)
         return d
     elif _type is FlatList:
         return v.list
     elif _type is NullType:
         return None
     elif _type is DataObject:
-        d = _get(v, "_obj")
-        if isinstance(d, Mapping):
+        d = _get(v, OBJ)
+        if _get(d, CLASS) in data_types:
             return d
         else:
             return v
@@ -531,7 +561,7 @@ def listwrap(value):
     """
     if value == None:
         return FlatList()
-    elif isinstance(value, list):
+    elif is_list(value):
         return wrap(value)
     elif isinstance(value, set):
         return wrap(list(value))
@@ -542,7 +572,7 @@ def unwraplist(v):
     """
     LISTS WITH ZERO AND ONE element MAP TO None AND element RESPECTIVELY
     """
-    if isinstance(v, list):
+    if is_list(v):
         if len(v) == 0:
             return None
         elif len(v) == 1:
@@ -558,11 +588,11 @@ def tuplewrap(value):
     INTENDED TO TURN lists INTO tuples FOR USE AS KEYS
     """
     if isinstance(value, (list, set, tuple) + generator_types):
-        return tuple(tuplewrap(v) if isinstance(v, (list, tuple)) else v for v in value)
+        return tuple(tuplewrap(v) if is_sequence(v) else v for v in value)
     return unwrap(value),
 
 
+from mo_dots.datas import Data, SLOT, data_types, is_data
 from mo_dots.nones import Null, NullType
-from mo_dots.datas import Data
-from mo_dots.lists import FlatList
+from mo_dots.lists import FlatList, is_list, is_sequence, is_container, is_many
 from mo_dots.objects import DataObject

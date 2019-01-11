@@ -6,9 +6,10 @@ datetime module.
 """
 __license__ = "Simplified BSD"
 
-import itertools
-import datetime
 import calendar
+import datetime
+import itertools
+
 try:
     import _thread
 except ImportError:

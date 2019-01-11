@@ -5,8 +5,6 @@ This module offers extensions to the standard Python
 datetime module.
 """
 
-__license__ = "Simplified BSD"
-
 import datetime
 import os
 import struct
@@ -15,12 +13,13 @@ import time
 
 from mo_future import PY3, string_types
 
+__license__ = "Simplified BSD"
+__all__ = ["tzutc", "tzoffset", "tzlocal", "tzfile", "tzrange",
+           "tzstr", "tzical", "tzwin", "tzwinlocal", "gettz"]
+
 relativedelta = None
 parser = None
 rrule = None
-
-__all__ = ["tzutc", "tzoffset", "tzlocal", "tzfile", "tzrange",
-           "tzstr", "tzical", "tzwin", "tzwinlocal", "gettz"]
 
 try:
     from dateutil.tzwin import tzwin, tzwinlocal

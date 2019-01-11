@@ -7,16 +7,17 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-from mo_dots import _setdefault, wrap, split_field
-from mo_future import text_type, binary_type
+from mo_future import is_binary, text_type
+
+from mo_dots import _setdefault, wrap
+from mo_dots.utils import CLASS, OBJ
 
 _get = object.__getattribute__
 _set = object.__setattr__
 _zero_list = []
+_null_hash = hash(None)
 
 
 class NullType(object):
@@ -35,7 +36,7 @@ class NullType(object):
         key - THE dict ITEM REFERENCE (DOT(.) IS NOT ESCAPED)
         """
         d = _get(self, "__dict__")
-        d["_obj"] = obj
+        d[OBJ] = obj
         d["__key__"] = key
 
     def __bool__(self):
@@ -45,7 +46,7 @@ class NullType(object):
         return False
 
     def __add__(self, other):
-        if isinstance(other, list):
+        if is_list(other):
             return other
         return Null
 
@@ -58,7 +59,7 @@ class NullType(object):
     def __iadd__(self, other):
         try:
             d = _get(self, "__dict__")
-            o = d["_obj"]
+            o = d[OBJ]
             if o is None:
                 return self
             key = d["__key__"]
@@ -108,10 +109,10 @@ class NullType(object):
         return Null
 
     def __eq__(self, other):
-        return other == None or isinstance(other, NullType)
+        return other is None or _get(other, CLASS) is NullType or other == None
 
     def __ne__(self, other):
-        return other is not None and not isinstance(other, NullType)
+        return other is not None and _get(other, CLASS) is not NullType and other != None
 
     def __or__(self, other):
         if other is True:
@@ -153,7 +154,7 @@ class NullType(object):
     def __getitem__(self, key):
         if isinstance(key, slice):
             return Null
-        elif isinstance(key, binary_type):
+        elif is_binary(key):
             key = key.decode("utf8")
         elif isinstance(key, int):
             return NullType(self, key)
@@ -168,22 +169,26 @@ class NullType(object):
         key = text_type(key)
 
         d = _get(self, "__dict__")
-        o = wrap(d["_obj"])
+        o = wrap(d[OBJ])
         k = d["__key__"]
         if o is None:
             return Null
-        elif isinstance(o, NullType):
+        elif _get(o, CLASS) is NullType:
             return NullType(self, key)
         v = o.get(k)
         if v == None:
             return NullType(self, key)
-        return wrap(v.get(key))
+        try:
+            return wrap(v.get(key))
+        except Exception as e:
+            from mo_logs import Log
+            Log.error("not expected", cause=e)
 
     def __setattr__(self, key, value):
         key = text_type(key)
 
         d = _get(self, "__dict__")
-        o = wrap(d["_obj"])
+        o = wrap(d[OBJ])
         k = d["__key__"]
 
         seq = [k] + [key]
@@ -191,7 +196,7 @@ class NullType(object):
 
     def __setitem__(self, key, value):
         d = _get(self, "__dict__")
-        o = d["_obj"]
+        o = d[OBJ]
         if o is None:
             return
         k = d["__key__"]
@@ -221,7 +226,8 @@ class NullType(object):
         return "Null"
 
     def __hash__(self):
-        return hash(None)
+        return _null_hash
+
 
 Null = NullType()   # INSTEAD OF None!!!
 
@@ -235,9 +241,9 @@ def _assign_to_null(obj, path, value, force=True):
     try:
         if obj is Null:
             return
-        if isinstance(obj, NullType):
+        if _get(obj, CLASS) is NullType:
             d = _get(obj, "__dict__")
-            o = d["_obj"]
+            o = d[OBJ]
             p = d["__key__"]
             s = [p]+path
             return _assign_to_null(o, s, value)
@@ -270,4 +276,4 @@ def _split_field(field):
     if field == ".":
         return []
     else:
-        return [k.replace("\a", ".") for k in field.replace("\.", "\a").split(".")]
+        return [k.replace("\a", ".") for k in field.replace("\\.", "\a").split(".")]

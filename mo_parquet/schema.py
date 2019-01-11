@@ -6,24 +6,19 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from collections import Mapping
 
 import numpy
 
-from fastparquet.parquet_thrift.parquet.ttypes import Type, FieldRepetitionType, SchemaElement, ConvertedType
-from fastparquet.thrift_structures import parquet_thrift
-
-from jx_base import NESTED, python_type_to_json_type
+from fastparquet.parquet_thrift.parquet.ttypes import ConvertedType, FieldRepetitionType, SchemaElement, Type
 from jx_python.jx import count
-from mo_dots import concat_field, split_field, join_field, Data, relative_field, coalesce, literal_field
-from mo_future import none_type
-from mo_future import sort_using_key, PY2, text_type
+from mo_dots import Data, coalesce, concat_field, join_field, relative_field, split_field
+from mo_future import PY2, none_type, sort_using_key, text_type
+from mo_json import NESTED, python_type_to_json_type
+from mo_json.typed_encoder import json_type_to_inserter_type
 from mo_logs import Log
-from pyLibrary.env.typed_inserter import json_type_to_inserter_type
 
 REQUIRED = FieldRepetitionType.REQUIRED
 OPTIONAL = FieldRepetitionType.OPTIONAL

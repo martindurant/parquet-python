@@ -9,18 +9,16 @@
 #
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import logging
 
+from mo_dots import unwrap
 from mo_logs import Log
 from mo_logs.exceptions import suppress_exception
 from mo_logs.log_usingNothing import StructuredLogger
 from mo_logs.log_usingThreadedStream import StructuredLogger_usingThreadedStream, time_delta_pusher
-from mo_dots import unwrap
-
 
 _THREAD_STOP = None
 _Queue = None
@@ -84,7 +82,7 @@ def make_log_from_settings(settings):
     path = ".".join(path[:-1])
     constructor = None
     try:
-        temp = __import__(path, globals(), locals(), [class_name], -1)
+        temp = __import__(path, globals(), locals(), [class_name], 0)
         constructor = object.__getattribute__(temp, class_name)
     except Exception as e:
         if settings.stream and not constructor:
@@ -94,7 +92,7 @@ def make_log_from_settings(settings):
             Log.error("Can not find class {{class}}",  {"class": path}, cause=e)
 
     # IF WE NEED A FILE, MAKE SURE DIRECTORY EXISTS
-    if settings.filename:
+    if settings.filename != None:
         from mo_files import File
 
         f = File(settings.filename)

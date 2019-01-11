@@ -7,26 +7,38 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 import math
 import re
-from collections import Mapping
-from datetime import date, timedelta, datetime
-from decimal import Decimal
 
-from mo_dots import FlatList, NullType, Data, wrap_leaves, wrap, Null
+from mo_dots import Data, FlatList, Null, NullType, SLOT, is_data, wrap, wrap_leaves
 from mo_dots.objects import DataObject
-from mo_future import text_type, none_type, long, binary_type
-from mo_logs import Except, strings, Log
+from mo_future import PY2, is_binary, is_text, items, long, none_type, text_type
+from mo_logs import Except, Log, strings
 from mo_logs.strings import expand_template
 from mo_times import Date, Duration
 
 FIND_LOOPS = False
-SNAP_TO_BASE_10 = True  # Identify floats near a round base10 value (has 000 or 999) and shorten
+SNAP_TO_BASE_10 = False  # Identify floats near a round base10 value (has 000 or 999) and shorten
 CAN_NOT_DECODE_JSON = "Can not decode JSON"
+
+IS_NULL = '0'
+BOOLEAN = 'boolean'
+INTEGER = 'integer'
+NUMBER = 'number'
+STRING = 'string'
+OBJECT = 'object'
+NESTED = "nested"
+EXISTS = "exists"
+
+ALL_TYPES = {IS_NULL: IS_NULL, BOOLEAN: BOOLEAN, INTEGER: INTEGER, NUMBER: NUMBER, STRING: STRING, OBJECT: OBJECT, NESTED: NESTED, EXISTS: EXISTS}
+JSON_TYPES = [BOOLEAN, INTEGER, NUMBER, STRING, OBJECT]
+PRIMITIVE = [EXISTS, BOOLEAN, INTEGER, NUMBER, STRING]
+STRUCT = [EXISTS, OBJECT, NESTED]
 
 
 _get = object.__getattribute__
@@ -64,32 +76,35 @@ def float2json(value):
         value = abs(value)
         sci = value.__format__(".15e")
         mantissa, str_exp = sci.split("e")
-        int_exp = int(str_exp)
-        digits = _snap_to_base_10(mantissa)
+        digits, more_digits = _snap_to_base_10(mantissa)
+        int_exp = int(str_exp) + more_digits
         if int_exp > 15:
-            return sign + digits[0] + '.' + digits[1:].rstrip('0') + u"e" + text_type(int_exp)
+            return sign + digits[0] + '.' + (digits[1:].rstrip('0') or '0') + u"e" + text_type(int_exp)
         elif int_exp >= 0:
             return sign + (digits[:1 + int_exp] + '.' + digits[1 + int_exp:].rstrip('0')).rstrip('.')
         elif -4 < int_exp:
             digits = ("0" * (-int_exp)) + digits
             return sign + (digits[:1] + '.' + digits[1:].rstrip('0')).rstrip('.')
         else:
-            return sign + digits[0] + '.' + digits[1:].rstrip('0') + u"e" + text_type(int_exp)
+            return sign + digits[0] + '.' + (digits[1:].rstrip('0') or '0') + u"e" + text_type(int_exp)
     except Exception as e:
         from mo_logs import Log
         Log.error("not expected", e)
 
 
 def _snap_to_base_10(mantissa):
-    digits = ''.join(mantissa.split('.'))
+    # TODO: https://lists.nongnu.org/archive/html/gcl-devel/2012-10/pdfkieTlklRzN.pdf
+    digits = mantissa.replace('.', '')
     if SNAP_TO_BASE_10:
-        f9 = strings.find(digits, '999', start=1)
+        f9 = strings.find(digits, '999')
         f0 = strings.find(digits, '000')
-        if f9 < f0:
-            digits = digits[:f9 - 1] + text_type(int(digits[f9 - 1]) + 1) + ('0' * (16 - f9))  # we know the last digit is not 9
+        if f9 == 0:
+            return '1000000000000000', 1
+        elif f9 < f0:
+            digits = text_type(int(digits[:f9]) + 1) + ('0' * (16 - f9))
         else:
             digits = digits[:f0]+('0'*(16-f0))
-    return digits
+    return digits, 0
 
 
 def _scrub_number(value):
@@ -156,8 +171,8 @@ def _scrub(value, is_done, stack, scrub_text, scrub_number):
     elif type_ is Decimal:
         return scrub_number(value)
     elif type_ is Data:
-        return _scrub(_get(value, '_dict'), is_done, stack, scrub_text, scrub_number)
-    elif isinstance(value, Mapping):
+        return _scrub(_get(value, SLOT), is_done, stack, scrub_text, scrub_number)
+    elif is_data(value):
         _id = id(value)
         if _id in is_done:
             Log.warning("possible loop in structure detected")
@@ -166,16 +181,16 @@ def _scrub(value, is_done, stack, scrub_text, scrub_number):
 
         output = {}
         for k, v in value.items():
-            if isinstance(k, text_type):
+            if is_text(k):
                 pass
-            elif isinstance(k, binary_type):
+            elif is_binary(k):
                 k = k.decode('utf8')
             # elif hasattr(k, "__unicode__"):
             #     k = text_type(k)
             else:
                 Log.error("keys must be strings")
             v = _scrub(v, is_done, stack, scrub_text, scrub_number)
-            if v != None or isinstance(v, Mapping):
+            if v != None or is_data(v):
                 output[k] = v
 
         is_done.discard(_id)
@@ -185,7 +200,7 @@ def _scrub(value, is_done, stack, scrub_text, scrub_number):
         for v in value:
             v = _scrub(v, is_done, stack, scrub_text, scrub_number)
             output.append(v)
-        return output
+        return output # if output else None
     elif type_ is type:
         return value.__name__
     elif type_.__name__ == "bool_":  # DEAR ME!  Numpy has it's own booleans (value==False could be used, but 0==False in Python.  DOH!)
@@ -274,7 +289,7 @@ def json2value(json_string, params=Null, flexible=False, leaves=False):
     :param leaves: ASSUME JSON KEYS ARE DOT-DELIMITED
     :return: Python value
     """
-    if not isinstance(json_string, text_type):
+    if not is_text(json_string):
         Log.error("only unicode json accepted")
 
     try:
@@ -332,13 +347,16 @@ def json2value(json_string, params=Null, flexible=False, leaves=False):
         hexx_str = bytes2hex(base_str, " ")
         try:
             char_str = " " + "  ".join((c.decode("latin1") if ord(c) >= 32 else ".") for c in base_str)
-        except Exception as e:
+        except Exception:
             char_str = " "
         Log.error(CAN_NOT_DECODE_JSON + ":\n{{char_str}}\n{{hexx_str}}\n", char_str=char_str, hexx_str=hexx_str, cause=e)
 
-
-def bytes2hex(value, separator=" "):
-    return separator.join('{:02X}'.format(ord(x)) for x in value)
+if PY2:
+    def bytes2hex(value, separator=" "):
+        return separator.join('{:02X}'.format(ord(x)) for x in value)
+else:
+    def bytes2hex(value, separator=" "):
+        return separator.join('{:02X}'.format(x) for x in value)
 
 
 def utf82unicode(value):
@@ -360,6 +378,46 @@ def datetime2unix(d):
         return float(diff.total_seconds())
     except Exception as e:
         Log.error("Can not convert {{value}}",  value= d, cause=e)
+
+
+python_type_to_json_type = {
+    int: NUMBER,
+    text_type: STRING,
+    float: NUMBER,
+    bool: BOOLEAN,
+    NullType: OBJECT,
+    none_type: OBJECT,
+    Data: OBJECT,
+    dict: OBJECT,
+    object: OBJECT,
+    list: NESTED,
+    set: NESTED,
+    # tuple: NESTED,  # DO NOT INCLUDE, WILL HIDE LOGIC ERRORS
+    FlatList: NESTED,
+    Date: NUMBER
+}
+
+if PY2:
+    python_type_to_json_type[str] = STRING
+    python_type_to_json_type[long] = NUMBER
+
+for k, v in items(python_type_to_json_type):
+    python_type_to_json_type[k.__name__] = v
+
+_merge_order = {
+    BOOLEAN: 1,
+    INTEGER: 2,
+    NUMBER: 3,
+    STRING: 4,
+    OBJECT: 5,
+    NESTED: 6
+}
+
+
+def _merge_json_type(A, B):
+    a = _merge_order[A]
+    b = _merge_order[B]
+    return A if a >= b else B
 
 
 from mo_json.decoder import json_decoder

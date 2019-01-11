@@ -16,42 +16,51 @@
 # }}
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division
 
+from mo_future import is_text, is_binary
+from contextlib import closing
 from copy import copy
 from mmap import mmap
 from numbers import Number
 from tempfile import TemporaryFile
 
-from mo_future import text_type
-from jx_python import jx
-from mo_dots import Data, coalesce, wrap, set_default, unwrap
-from mo_json import value2json
-from mo_logs import Log
-from mo_math import Math
-from mo_threads import Lock
-from mo_threads import Till
-from pyLibrary import convert
-from requests import sessions, Response
+from requests import Response, sessions
 
-import mo_json
+from jx_python import jx
+from mo_dots import Data, Null, coalesce, is_list, set_default, unwrap, wrap
+from mo_files.url import URL
+from mo_future import PY2, text_type
+from mo_json import json2value, value2json
+from mo_logs import Log
 from mo_logs.exceptions import Except
+from mo_logs.strings import unicode2utf8, utf82unicode
+import mo_math
+from mo_threads import Lock, Till
 from mo_times.durations import Duration
-from pyLibrary.env.big_data import safe_size, ibytes2ilines, icompressed2ibytes
+from pyLibrary import convert
+from pyLibrary.env.big_data import ibytes2ilines, icompressed2ibytes, safe_size
 
 DEBUG = False
 FILE_SIZE_LIMIT = 100 * 1024 * 1024
 MIN_READ_SIZE = 8 * 1024
 ZIP_REQUEST = False
+
 default_headers = Data()  # TODO: MAKE THIS VARIABLE A SPECIAL TYPE OF EXPECTED MODULE PARAMETER SO IT COMPLAINS IF NOT SET
 default_timeout = 600
-
+DEFAULTS = {
+    "allow_redirects": True,
+    "stream": True,
+    "verify": True,
+    "timeout": 600,
+    "zip": False,
+    "retry": {"times": 1, "sleep": 0, "http": False}
+}
 _warning_sent = False
+request_count = 0
 
 
-def request(method, url, zip=None, retry=None, **kwargs):
+def request(method, url, headers=None, zip=None, retry=None, **kwargs):
     """
     JUST LIKE requests.request() BUT WITH DEFAULT HEADERS AND FIXES
     DEMANDS data IS ONE OF:
@@ -69,112 +78,119 @@ def request(method, url, zip=None, retry=None, **kwargs):
     INCLUDES url AND headers
     """
     global _warning_sent
-    if not default_headers and not _warning_sent:
-        _warning_sent = True
-        Log.warning(
-            "The pyLibrary.env.http module was meant to add extra "
-            "default headers to all requests, specifically the 'Referer' "
-            "header with a URL to the project. Use the `pyLibrary.debug.constants.set()` "
-            "function to set `pyLibrary.env.http.default_headers`"
-        )
+    global request_count
 
-    if isinstance(url, list):
+    if not _warning_sent and not default_headers:
+        Log.warning(text_type(
+            "The pyLibrary.env.http module was meant to add extra " +
+            "default headers to all requests, specifically the 'Referer' " +
+            "header with a URL to the project. Use the `pyLibrary.debug.constants.set()` " +
+            "function to set `pyLibrary.env.http.default_headers`"
+        ))
+    _warning_sent = True
+
+    if is_list(url):
         # TRY MANY URLS
         failures = []
         for remaining, u in jx.countdown(url):
             try:
-                response = request(method, u, zip=zip, retry=retry, **kwargs)
-                if Math.round(response.status_code, decimal=-2) not in [400, 500]:
+                response = request(method, u, retry=retry, **kwargs)
+                if mo_math.round(response.status_code, decimal=-2) not in [400, 500]:
                     return response
                 if not remaining:
                     return response
             except Exception as e:
                 e = Except.wrap(e)
                 failures.append(e)
-        Log.error("Tried {{num}} urls", num=len(url), cause=failures)
+        Log.error(u"Tried {{num}} urls", num=len(url), cause=failures)
 
-    if b"session" in kwargs:
-        session = kwargs[b"session"]
-        del kwargs[b"session"]
+    if 'session' in kwargs:
+        session = kwargs['session']
+        del kwargs['session']
+        sess = Null
     else:
-        session = sessions.Session()
-    session.headers.update(default_headers)
+        sess = session = sessions.Session()
 
-    if zip is None:
-        zip = ZIP_REQUEST
-
-    if isinstance(url, text_type):
-        # httplib.py WILL **FREAK OUT** IF IT SEES ANY UNICODE
-        url = url.encode("ascii")
-
-    _to_ascii_dict(kwargs)
-    timeout = kwargs[b'timeout'] = coalesce(kwargs.get(b'timeout'), default_timeout)
-
-    if retry == None:
-        retry = Data(times=1, sleep=0)
-    elif isinstance(retry, Number):
-        retry = Data(times=retry, sleep=1)
-    else:
-        retry = wrap(retry)
-        if isinstance(retry.sleep, Duration):
-            retry.sleep = retry.sleep.seconds
-        set_default(retry, {"times": 1, "sleep": 0})
-
-    if b'json' in kwargs:
-        kwargs[b'data'] = value2json(kwargs[b'json']).encode("utf8")
-        del kwargs[b'json']
-
-    try:
-        headers = kwargs[b"headers"] = unwrap(coalesce(kwargs.get(b'headers'), {}))
-        set_default(headers, {b"Accept-Encoding": b"compress, gzip"})
-
-        if zip and len(coalesce(kwargs.get(b"data"))) > 1000:
-            compressed = convert.bytes2zip(kwargs[b"data"])
-            headers[b'content-encoding'] = b'gzip'
-            kwargs[b"data"] = compressed
-
-            _to_ascii_dict(headers)
-        else:
-            _to_ascii_dict(headers)
-    except Exception as e:
-        Log.error("Request setup failure on {{url}}", url=url, cause=e)
-
-    errors = []
-    for r in range(retry.times):
-        if r:
-            Till(seconds=retry.sleep).wait()
+    with closing(sess):
+        if PY2 and is_text(url):
+            # httplib.py WILL **FREAK OUT** IF IT SEES ANY UNICODE
+            url = url.encode('ascii')
 
         try:
-            if DEBUG:
-                Log.note("http {{method}} to {{url}}", method=method, url=url)
-            return session.request(method=method, url=url, **kwargs)
+            set_default(kwargs, {"zip":zip, "retry": retry}, DEFAULTS)
+            _to_ascii_dict(kwargs)
+
+            # HEADERS
+            headers = kwargs['headers'] = unwrap(set_default(headers, session.headers, default_headers))
+            _to_ascii_dict(headers)
+            del kwargs['headers']
+
+            # RETRY
+            retry = wrap(kwargs['retry'])
+            if isinstance(retry, Number):
+                retry = set_default({"times":retry}, DEFAULTS['retry'])
+            if isinstance(retry.sleep, Duration):
+                retry.sleep = retry.sleep.seconds
+            del kwargs['retry']
+
+            # JSON
+            if 'json' in kwargs:
+                kwargs['data'] = value2json(kwargs['json']).encode('utf8')
+                del kwargs['json']
+
+            # ZIP
+            set_default(headers, {'Accept-Encoding': 'compress, gzip'})
+
+            if kwargs['zip'] and len(coalesce(kwargs.get('data'))) > 1000:
+                compressed = convert.bytes2zip(kwargs['data'])
+                headers['content-encoding'] = 'gzip'
+                kwargs['data'] = compressed
+            del kwargs['zip']
         except Exception as e:
-            errors.append(Except.wrap(e))
+            Log.error(u"Request setup failure on {{url}}", url=url, cause=e)
 
-    if " Read timed out." in errors[0]:
-        Log.error("Tried {{times}} times: Timeout failure (timeout was {{timeout}}", timeout=timeout, times=retry.times, cause=errors[0])
-    else:
-        Log.error("Tried {{times}} times: Request failure of {{url}}", url=url, times=retry.times, cause=errors[0])
+        errors = []
+        for r in range(retry.times):
+            if r:
+                Till(seconds=retry.sleep).wait()
+
+            try:
+                DEBUG and Log.note(u"http {{method|upper}} to {{url}}", method=method, url=text_type(url))
+                request_count += 1
+                return session.request(method=method, headers=headers, url=str(url), **kwargs)
+            except Exception as e:
+                e = Except.wrap(e)
+                if retry['http'] and str(url).startswith("https://") and "EOF occurred in violation of protocol" in e:
+                    url = URL("http://" + str(url)[8:])
+                    Log.note("Changed {{url}} to http due to SSL EOF violation.", url=str(url))
+                errors.append(e)
+
+        if " Read timed out." in errors[0]:
+            Log.error(u"Tried {{times}} times: Timeout failure (timeout was {{timeout}}", timeout=kwargs['timeout'], times=retry.times, cause=errors[0])
+        else:
+            Log.error(u"Tried {{times}} times: Request failure of {{url}}", url=url, times=retry.times, cause=errors[0])
 
 
-def _to_ascii_dict(headers):
-    if headers is None:
-        return
-    for k, v in copy(headers).items():
-        if isinstance(k, text_type):
-            del headers[k]
-            if isinstance(v, text_type):
-                headers[k.encode("ascii")] = v.encode("ascii")
-            else:
-                headers[k.encode("ascii")] = v
-        elif isinstance(v, text_type):
-            headers[k] = v.encode("ascii")
+if PY2:
+    def _to_ascii_dict(headers):
+        if headers is None:
+            return
+        for k, v in copy(headers).items():
+            if is_text(k):
+                del headers[k]
+                if is_text(v):
+                    headers[k.encode('ascii')] = v.encode('ascii')
+                else:
+                    headers[k.encode('ascii')] = v
+            elif is_text(v):
+                headers[k] = v.encode('ascii')
+else:
+    def _to_ascii_dict(headers):
+        pass
 
 
 def get(url, **kwargs):
-    kwargs.setdefault(b'allow_redirects', True)
-    kwargs[b"stream"] = True
-    return HttpResponse(request(b'get', url, **kwargs))
+    return HttpResponse(request('get', url, **kwargs))
 
 
 def get_json(url, **kwargs):
@@ -182,66 +198,61 @@ def get_json(url, **kwargs):
     ASSUME RESPONSE IN IN JSON
     """
     response = get(url, **kwargs)
-    c = response.all_content
-    return mo_json.json2value(convert.utf82unicode(c))
+    try:
+        c = response.all_content
+        return json2value(utf82unicode(c))
+    except Exception as e:
+        if mo_math.round(response.status_code, decimal=-2) in [400, 500]:
+            Log.error(u"Bad GET response: {{code}}", code=response.status_code)
+        else:
+            Log.error(u"Good GET requests, but bad JSON", cause=e)
+
 
 def options(url, **kwargs):
-    kwargs.setdefault(b'allow_redirects', True)
-    kwargs[b"stream"] = True
-    return HttpResponse(request(b'options', url, **kwargs))
+    return HttpResponse(request('options', url, **kwargs))
 
 
 def head(url, **kwargs):
-    kwargs.setdefault(b'allow_redirects', False)
-    kwargs[b"stream"] = True
-    return HttpResponse(request(b'head', url, **kwargs))
+    return HttpResponse(request('head', url, **kwargs))
 
 
 def post(url, **kwargs):
-    kwargs[b"stream"] = True
-    return HttpResponse(request(b'post', url, **kwargs))
-
-
-def delete(url, **kwargs):
-    return HttpResponse(request(b'delete', url, **kwargs))
+    return HttpResponse(request('post', url, **kwargs))
 
 
 def post_json(url, **kwargs):
     """
     ASSUME RESPONSE IN IN JSON
     """
-    if b"json" in kwargs:
-        kwargs[b"data"] = convert.unicode2utf8(value2json(kwargs[b"json"]))
-    elif b'data' in kwargs:
-        kwargs[b"data"] = convert.unicode2utf8(value2json(kwargs[b"data"]))
+    if 'json' in kwargs:
+        kwargs['data'] = unicode2utf8(value2json(kwargs['json']))
+        del kwargs['json']
+    elif 'data' in kwargs:
+        kwargs['data'] = unicode2utf8(value2json(kwargs['data']))
     else:
-        Log.error("Expecting `json` parameter")
-
+        Log.error(u"Expecting `json` parameter")
     response = post(url, **kwargs)
-    c = response.content
-    try:
-        details = mo_json.json2value(convert.utf82unicode(c))
-    except Exception as e:
-        Log.error("Unexpected return value {{content}}", content=c, cause=e)
+    details = json2value(utf82unicode(response.content))
+    if response.status_code not in [200, 201, 202]:
 
-    if response.status_code not in [200, 201]:
-        Log.error("Bad response", cause=Except.wrap(details))
-
-    return details
-
+        if "template" in details:
+            Log.error(u"Bad response code {{code}}", code=response.status_code, cause=Except.wrap(details))
+        else:
+            Log.error(u"Bad response code {{code}}\n{{details}}", code=response.status_code, details=details)
+    else:
+        return details
 
 def put(url, **kwargs):
-    return HttpResponse(request(b'put', url, **kwargs))
+    return HttpResponse(request('put', url, **kwargs))
 
 
 def patch(url, **kwargs):
-    kwargs[b"stream"] = True
-    return HttpResponse(request(b'patch', url, **kwargs))
+    return HttpResponse(request('patch', url, **kwargs))
 
 
 def delete(url, **kwargs):
-    kwargs[b"stream"] = True
-    return HttpResponse(request(b'delete', url, **kwargs))
+    kwargs.setdefault('stream', False)
+    return HttpResponse(request('delete', url, **kwargs))
 
 
 class HttpResponse(Response):
@@ -278,7 +289,7 @@ class HttpResponse(Response):
     def all_lines(self):
         return self.get_all_lines()
 
-    def get_all_lines(self, encoding="utf8", flexible=False):
+    def get_all_lines(self, encoding='utf8', flexible=False):
         try:
             iterator = self.raw.stream(4096, decode_content=False)
 
@@ -286,12 +297,12 @@ class HttpResponse(Response):
                 return ibytes2ilines(icompressed2ibytes(iterator), encoding=encoding, flexible=flexible)
             elif self.headers.get('content-type') == 'application/zip':
                 return ibytes2ilines(icompressed2ibytes(iterator), encoding=encoding, flexible=flexible)
-            elif self.url.endswith(".gz"):
+            elif self.url.endswith('.gz'):
                 return ibytes2ilines(icompressed2ibytes(iterator), encoding=encoding, flexible=flexible)
             else:
                 return ibytes2ilines(iterator, encoding=encoding, flexible=flexible, closer=self.close)
         except Exception as e:
-            Log.error("Can not read content", cause=e)
+            Log.error(u"Can not read content", cause=e)
 
 
 class Generator_usingStream(object):

@@ -7,19 +7,17 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import itertools
 
+from jx_base.domains import DefaultDomain, SimpleSetDomain
 from jx_python import windows
-from mo_dots import listwrap
-from mo_logs import Log
-
-from jx_base.domains import SimpleSetDomain, DefaultDomain
 from jx_python.expressions import jx_expression_to_function
 from mo_collections.matrix import Matrix
+from mo_dots import listwrap
+from mo_logs import Log
 
 
 def cube_aggs(frum, query):

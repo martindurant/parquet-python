@@ -103,8 +103,6 @@ functions/methods.  Their inclusion here is for function name consistency.
 ##
 ## 11/08/98 ... fixed aput to output large arrays correctly
 
-import string
-import copy
 from types import *
 
 __version__ = 0.4

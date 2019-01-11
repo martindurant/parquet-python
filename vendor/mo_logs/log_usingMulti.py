@@ -9,10 +9,9 @@
 #
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 from mo_logs import Log
 from mo_logs.exceptions import suppress_exception
 from mo_logs.log_usingNothing import StructuredLogger
@@ -29,7 +28,7 @@ class StructuredLogger_usingMulti(StructuredLogger):
                 m.write(template, params)
             except Exception as e:
                 bad.append(m)
-                Log.warning("Logger failed!  It will be removed: {{type}}", type=m.__class__.__name__, cause=e)
+                Log.warning("Logger {{type|quote}} failed! It will be removed.", type=m.__class__.__name__, cause=e)
         with suppress_exception:
             for b in bad:
                 self.many.remove(b)

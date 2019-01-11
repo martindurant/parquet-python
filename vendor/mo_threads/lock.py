@@ -11,10 +11,9 @@
 # THIS SIGNAL IS IMPORTANT FOR PROPER SIGNALLING WHICH ALLOWS
 # FOR FAST AND PREDICTABLE SHUTDOWN AND CLEANUP OF THREADS
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 from mo_future import allocate_lock as _allocate_lock
 from mo_threads.signal import Signal
 
@@ -49,7 +48,7 @@ def _late_import():
 
 class Lock(object):
     """
-    A NON-RE-ENTRANT LOCK WITH wait() AND
+    A NON-RE-ENTRANT LOCK WITH wait()
     """
     __slots__ = ["name", "lock", "waiting"]
 
@@ -61,38 +60,35 @@ class Lock(object):
         self.waiting = None
 
     def __enter__(self):
-        # with mo_times.timer.Timer("get lock"):
+        # DEBUG and print("acquire lock "+quote(self.name))
         self.lock.acquire()
         return self
 
     def __exit__(self, a, b, c):
         if self.waiting:
-            if DEBUG:
-                _Log.note("signaling {{num}} waiters", num=len(self.waiting))
+            DEBUG and _Log.note("signaling {{num}} waiters on {{name|quote}}", name=self.name, num=len(self.waiting))
             waiter = self.waiting.pop()
             waiter.go()
         self.lock.release()
+        # DEBUG and _Log.note("released lock {{name|quote}}", name=self.name)
 
     def wait(self, till=None):
         """
         THE ASSUMPTION IS wait() WILL ALWAYS RETURN WITH THE LOCK ACQUIRED
         :param till: WHEN TO GIVE UP WAITING FOR ANOTHER THREAD TO SIGNAL
-        :return: True IF SIGNALED TO GO, False IF TIMEOUT HAPPENED
+        :return: True IF SIGNALED TO GO, False IF till WAS SIGNALED
         """
         waiter = Signal()
         if self.waiting:
-            if DEBUG:
-                _Log.note("waiting with {{num}} others on {{name|quote}}", num=len(self.waiting), name=self.name)
+            DEBUG and _Log.note("waiting with {{num}} others on {{name|quote}}", num=len(self.waiting), name=self.name, stack_depth=1)
             self.waiting.insert(0, waiter)
         else:
-            if DEBUG:
-                _Log.note("waiting by self on {{name|quote}}", name=self.name)
+            DEBUG and _Log.note("waiting by self on {{name|quote}}", name=self.name)
             self.waiting = [waiter]
 
         try:
             self.lock.release()
-            if DEBUG:
-                _Log.note("out of lock {{name|quote}}", name=self.name)
+            DEBUG and _Log.note("out of lock {{name|quote}}", name=self.name)
             (waiter | till).wait()
             if DEBUG:
                 _Log.note("done minimum wait (for signal {{till|quote}})", till=till.name if till else "", name=self.name)
@@ -102,13 +98,11 @@ class Lock(object):
             _Log.warning("problem", cause=e)
         finally:
             self.lock.acquire()
-            if DEBUG:
-                _Log.note("re-acquired lock {{name|quote}}", name=self.name)
+            DEBUG and _Log.note("re-acquired lock {{name|quote}}", name=self.name)
 
         try:
             self.waiting.remove(waiter)
-            if DEBUG:
-                _Log.note("removed own signal from {{name|quote}}", name=self.name)
+            DEBUG and _Log.note("removed own signal from {{name|quote}}", name=self.name)
         except Exception:
             pass
 

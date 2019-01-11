@@ -7,26 +7,27 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-import requests
-from boto import sqs
-from boto import utils as boto_utils
+from mo_future import is_text, is_binary
+import time
+
+from boto import sqs, utils as boto_utils
 from boto.sqs.message import Message
-from mo_dots import wrap, unwrap, coalesce
+import requests
+
+from mo_dots import coalesce, unwrap, wrap
+import mo_json
 from mo_json import value2json
 from mo_kwargs import override
 from mo_logs import Log, machine_metadata
-from mo_math import Math
-from mo_threads import Thread
-
-import mo_json
 from mo_logs.exceptions import Except, suppress_exception
+import mo_math
+from mo_threads import Thread
 from mo_threads.signal import Signal
 from mo_threads.till import Till
-from mo_times.durations import SECOND, Duration
+from mo_times import timer
+from mo_times.durations import Duration, SECOND
 
 
 class Queue(object):
@@ -83,7 +84,7 @@ class Queue(object):
         if till is not None and not isinstance(till, Signal):
             Log.error("Expecting a signal")
 
-        m = self.queue.read(wait_time_seconds=Math.floor(wait.seconds))
+        m = self.queue.read(wait_time_seconds=mo_math.floor(wait.seconds))
         if not m:
             return None
 
@@ -98,7 +99,7 @@ class Queue(object):
         if till is not None and not isinstance(till, Signal):
             Log.error("Expecting a signal")
 
-        message = self.queue.read(wait_time_seconds=Math.floor(wait.seconds))
+        message = self.queue.read(wait_time_seconds=mo_math.floor(wait.seconds))
         if not message:
             return None
         message.delete = lambda: self.queue.delete_message(message)
@@ -136,9 +137,12 @@ def capture_termination_signal(please_stop):
     WILL SIGNAL please_stop WHEN THIS AWS INSTANCE IS DUE FOR SHUTDOWN
     """
     def worker(please_stop):
+        seen_problem = False
         while not please_stop:
+            request_time = (time.time() - timer.START)/60  # MINUTES
             try:
                 response = requests.get("http://169.254.169.254/latest/meta-data/spot/termination-time")
+                seen_problem = False
                 if response.status_code not in [400, 404]:
                     Log.alert("Shutdown AWS Spot Node {{name}} {{type}}", name=machine_metadata.name, type=machine_metadata.aws_instance_type)
                     please_stop.go()
@@ -147,8 +151,11 @@ def capture_termination_signal(please_stop):
                 if "Failed to establish a new connection: [Errno 10060]" in e or "A socket operation was attempted to an unreachable network" in e:
                     Log.note("AWS Spot Detection has shutdown, probably not a spot node, (http://169.254.169.254 is unreachable)")
                     return
-                else:
-                    Log.warning("AWS shutdown detection has problems", cause=e)
+                elif seen_problem:
+                    # IGNORE THE FIRST PROBLEM
+                    Log.warning("AWS shutdown detection has more than one consecutive problem: (last request {{time|round(1)}} minutes since startup)", time=request_time, cause=e)
+                seen_problem = True
+
                 (Till(seconds=61) | please_stop).wait()
             (Till(seconds=11) | please_stop).wait()
 

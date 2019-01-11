@@ -8,12 +8,10 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 
-
+from mo_future import is_text, is_binary
 class Multiset(object):
     """
     Multiset IS ONE MEMBER IN A FAMILY OF USEFUL CONTAINERS
@@ -51,7 +49,7 @@ class Multiset(object):
 class _Multiset(Multiset):
 
     def __new__(cls, *args):
-        return object.__new__(cls, *args)
+        return object.__new__(cls)
 
 
     def __init__(self, list=None, key_field=None, count_field=None, **kwargs):
@@ -150,7 +148,7 @@ class _Multiset(Multiset):
 
 class _NegMultiset(Multiset):
     def __new__(cls, *args, **kwargs):
-            return object.__new__(cls, *args, **kwargs)
+            return object.__new__(cls)
 
     def __init__(self, list=None, key_field=None, count_field=None, **kwargs):
         if not key_field and not count_field:
@@ -230,7 +228,7 @@ class _NegMultiset(Multiset):
         return set(self.dic.keys())
 
     def __len__(self):
-        return sum(self.dic.values())
+        return sum(abs(v) for v in self.dic.values())
 
     def __nonzero__(self):
         if self.dic:

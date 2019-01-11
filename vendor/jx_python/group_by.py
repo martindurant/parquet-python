@@ -8,22 +8,19 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 import math
 import sys
 
-from mo_dots import listwrap, Null, Data
-from mo_future import text_type, binary_type
-from mo_logs import Log
-
 from jx_base.container import Container
-from jx_base.expressions import jx_expression, Expression
+from jx_base.expressions import jx_expression
+from jx_base.language import is_expression
 from jx_python.expressions import jx_expression_to_function
 from mo_collections.multiset import Multiset
-from mo_dots.lists import FlatList
+from mo_dots import Data, FlatList, Null, listwrap
+from mo_future import binary_type, text_type
+from mo_logs import Log
 from mo_logs.exceptions import Except
 
 
@@ -57,7 +54,7 @@ def groupby(data, keys=None, size=None, min_size=None, max_size=None, contiguous
         if not data:
             return Null
 
-        if any(isinstance(k, Expression) for k in keys):
+        if any(is_expression(k) for k in keys):
             Log.error("can not handle expressions")
         else:
             accessor = jx_expression_to_function(jx_expression({"tuple": keys}))  # CAN RETURN Null, WHICH DOES NOT PLAY WELL WITH __cmp__
@@ -146,7 +143,7 @@ def groupby_min_max_size(data, min_size=0, max_size=None, ):
     if max_size == None:
         max_size = sys.maxint
 
-    if isinstance(data, (bytearray, text_type, binary_type, list)):
+    if data.__class__ in (bytearray, text_type, binary_type, list, FlatList):
         def _iter():
             num = int(math.ceil(len(data)/max_size))
             for i in range(num):

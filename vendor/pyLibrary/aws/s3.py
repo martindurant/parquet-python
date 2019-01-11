@@ -7,29 +7,27 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-import StringIO
 import gzip
-import zipfile
 from tempfile import TemporaryFile
+import zipfile
 
 import boto
-from BeautifulSoup import BeautifulSoup
 from boto.s3.connection import Location
-from mo_future import text_type
+from bs4 import BeautifulSoup
 
-from mo_dots import wrap, Null, coalesce, unwrap, Data
+from mo_dots import Data, Null, coalesce, unwrap, wrap
+from mo_files.url import value2url_param
+from mo_future import StringIO, is_binary, text_type
 from mo_kwargs import override
-from mo_logs import Log, Except
-from mo_logs.url import value2url_param
+from mo_logs import Except, Log
+from mo_logs.strings import unicode2utf8, utf82unicode
 from mo_times.dates import Date
 from mo_times.timer import Timer
 from pyLibrary import convert
 from pyLibrary.env import http
-from pyLibrary.env.big_data import safe_size, MAX_STRING_SIZE, LazyLines, ibytes2ilines, scompressed2ibytes
+from pyLibrary.env.big_data import LazyLines, MAX_STRING_SIZE, ibytes2ilines, safe_size, scompressed2ibytes
 
 TOO_MANY_KEYS = 1000 * 1000 * 1000
 READ_ERROR = "S3 read error"
@@ -264,7 +262,7 @@ class Bucket(object):
         elif source.key.endswith(".gz"):
             json = convert.zip2bytes(json)
 
-        return convert.utf82unicode(json)
+        return utf82unicode(json)
 
     def read_bytes(self, key):
         source = self.get_meta(key)
@@ -278,7 +276,7 @@ class Bucket(object):
             if source.key.endswith(".gz"):
                 return LazyLines(ibytes2ilines(scompressed2ibytes(source)))
             else:
-                return convert.utf82unicode(source.read()).split("\n")
+                return utf82unicode(source.read()).split("\n")
 
         if source.key.endswith(".gz"):
             return LazyLines(ibytes2ilines(scompressed2ibytes(source)))
@@ -310,16 +308,16 @@ class Bucket(object):
             if len(value) > 20 * 1000 and not disable_zip:
                 self.bucket.delete_key(key + ".json")
                 self.bucket.delete_key(key + ".json.gz")
-                if isinstance(value, str):
+                if is_binary(value):
                     value = convert.bytes2zip(value)
                     key += ".json.gz"
                 else:
-                    value = convert.bytes2zip(convert.unicode2utf8(value))
+                    value = convert.bytes2zip(unicode2utf8(value))
                     key += ".json.gz"
 
             else:
                 self.bucket.delete_key(key + ".json.gz")
-                if isinstance(value, str):
+                if is_binary(value):
                     key += ".json"
                 else:
                     key += ".json"
@@ -362,7 +360,7 @@ class Bucket(object):
         retry = 3
         while retry:
             try:
-                with Timer("Sending {{count}} lines in {{file_length|comma}} bytes", {"file_length": file_length, "count": count}, debug=self.settings.debug):
+                with Timer("Sending {{count}} lines in {{file_length|comma}} bytes", {"file_length": file_length, "count": count}, silent=not self.settings.debug):
                     buff.seek(0)
                     storage.set_contents_from_file(buff)
                 break
@@ -446,7 +444,7 @@ class PublicBucket(object):
 
         def more():
             xml = http.get(self.url + "?" + value2url_param(state)).content
-            data = BeautifulSoup(xml)
+            data = BeautifulSoup(xml, 'xml')
 
             state.get_more = data.find("istruncated").contents[0] == "true"
             contents = data.findAll("contents")
@@ -471,7 +469,7 @@ def strip_extension(key):
 
 
 def _unzip(compressed):
-    buff = StringIO.StringIO(compressed)
+    buff = StringIO(compressed)
     archive = zipfile.ZipFile(buff, mode='r')
     return archive.read(archive.namelist()[0])
 

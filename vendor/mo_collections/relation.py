@@ -8,42 +8,62 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
+
+from mo_future import is_text, is_binary
+from mo_logs import Log
 
 
 class Relation_usingList(object):
     def __init__(self):
-        self.all=set()
+        self.all = set()
 
     def len(self):
         return len(self.all)
-
-    def add(self, key, value):
-        test = (key, value)
-        if test not in self.all:
-            self.all.add(test)
 
     def testAndAdd(self, key, value):
         """
         RETURN TRUE IF THIS RELATION IS NET-NEW
         """
         test = (key, value)
-        if test not in self.all:
-            self.all.add(test)
-            return True
-        return False
+        output = test not in self.all
+        self.all.add(test)
+        return output
 
     def extend(self, key, values):
         for v in values:
-            self.add(key, v)
+            self[key] = v
 
     def __getitem__(self, key):
+        """
+        USE THIS IF YOU ARE CONFIDENT THIS IS A MANY-TO-ONE MAPPING
+        RETURN THE SINGLE CO-DOMAIN OBJECT THIS key MAPS TO
+        """
+        output = [v for k, v in self.all if k == key]
+        if not output:
+            return None
+        elif len(output) == 1:
+            return output[0]
+        else:
+            Log.error("Not allowed")
+
+    def __setitem__(self, key, value):
+        self.all.add((key, value))
+
+    def get_domain(self, value):
+        """
+        RETURN domain FOR GIVEN CODOMAIN
+        :param value:
+        :return:
+        """
+        return [k for k, v in self.all if v == value]
+
+    def get_codomain(self, key):
         """
         RETURN AN ARRAY OF OBJECTS THAT key MAPS TO
         """
         return [v for k, v in self.all if k == key]
+
 
 
 class Relation(object):
@@ -96,5 +116,3 @@ class Relation(object):
 
     def domain(self):
         return self.map.keys()
-
-

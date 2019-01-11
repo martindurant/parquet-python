@@ -8,15 +8,15 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-from collections import Mapping
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 import functools
-from mo_math import MIN
+
+from mo_dots import Data, FlatList, coalesce, is_data, is_list, split_field, wrap
+from mo_future import is_text
 from mo_logs import Log
-from mo_dots import split_field, coalesce, Data, FlatList, wrap
+from mo_math import MIN
 
 
 class PartFlatList(list):
@@ -52,10 +52,10 @@ class PartFlatList(list):
             yield r
 
     def select(self, fields):
-        if isinstance(fields, Mapping):
+        if is_data(fields):
             fields=fields.value
 
-        if isinstance(fields, text_type):
+        if is_text(fields):
             # RETURN LIST OF VALUES
             if len(split_field(fields)) == 1:
                 if self.path[0] == fields:
@@ -71,7 +71,7 @@ class PartFlatList(list):
                 _select1((wrap(d[depth]) for d in self.data), short_key, 0, output)
                 return output
 
-        if isinstance(fields, list):
+        if is_list(fields):
             output = FlatList()
 
             meta = []
@@ -131,7 +131,7 @@ def _select1(data, field, depth, output):
             if d == None:
                 output.append(None)
                 break
-            elif isinstance(d, list):
+            elif is_list(d):
                 _select1(d, field, i + 1, output)
                 break
         else:

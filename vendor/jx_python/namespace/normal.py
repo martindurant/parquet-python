@@ -7,26 +7,21 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-from collections import Mapping
+from mo_future import is_text, is_binary
 from copy import copy
-
-from mo_dots import Data
-from mo_dots import FlatList
-from mo_dots import coalesce, Null
-from mo_dots import wrap, listwrap
-from mo_logs import Log
-from mo_math import Math
 
 from jx_base.dimensions import Dimension
 from jx_base.domains import Domain
+from jx_base.query import QueryOp, get_all_vars
 from jx_python.containers import Container
 from jx_python.expressions import TRUE
 from jx_python.namespace import Namespace, convert_list
-from jx_base.query import QueryOp, get_all_vars
+from mo_dots import Data, FlatList, Null, coalesce, is_data, is_list, listwrap, wrap
+from mo_future import text_type
+from mo_logs import Log
+import mo_math
 
 DEFAULT_LIMIT = 10
 
@@ -37,7 +32,7 @@ class Normal(Namespace):
     """
 
     def convert(self, expr):
-        if isinstance(expr, Mapping) and expr["from"]:
+        if is_data(expr) and expr["from"]:
             return self._convert_query(expr)
         return expr
 
@@ -47,7 +42,7 @@ class Normal(Namespace):
         #     Log.error('Expecting from clause to be a Container')
         query = wrap(query)
 
-        output = QueryOp("from", None)
+        output = QueryOp(None)
         output["from"] = self._convert_from(query["from"])
 
         output.format = query.format
@@ -77,7 +72,7 @@ class Normal(Namespace):
         output.sort = self._convert_sort(query.sort)
 
         output.limit = coalesce(query.limit, DEFAULT_LIMIT)
-        if not Math.is_integer(output.limit) or output.limit < 0:
+        if not mo_math.is_integer(output.limit) or output.limit < 0:
             Log.error("Expecting limit >= 0")
 
         output.isLean = query.isLean
@@ -94,15 +89,15 @@ class Normal(Namespace):
         return output
 
     def _convert_from(self, frum):
-        if isinstance(frum, text_type):
+        if is_text(frum):
             return Data(name=frum)
-        elif isinstance(frum, (Container, QueryOp)):
+        elif is_op(frum, (Container, Variable)):
             return frum
         else:
             Log.error("Expecting from clause to be a name, or a container")
 
     def _convert_select(self, select):
-        if isinstance(select, text_type):
+        if is_text(select):
             return Data(
                 name=select.rstrip("."),  # TRAILING DOT INDICATES THE VALUE, BUT IS INVALID FOR THE NAME
                 value=select,
@@ -111,7 +106,7 @@ class Normal(Namespace):
         else:
             select = wrap(select)
             output = copy(select)
-            if not select.value or isinstance(select.value, text_type):
+            if not select.value or is_text(select.value):
                 if select.value == ".":
                     output.name = coalesce(select.name, select.aggregate)
                 else:
@@ -126,7 +121,7 @@ class Normal(Namespace):
             return output
 
     def _convert_edge(self, edge):
-        if isinstance(edge, text_type):
+        if is_text(edge):
             return Data(
                 name=edge,
                 value=edge,
@@ -134,10 +129,10 @@ class Normal(Namespace):
             )
         else:
             edge = wrap(edge)
-            if not edge.name and not isinstance(edge.value, text_type):
+            if not edge.name and not is_text(edge.value):
                 Log.error("You must name compound edges: {{edge}}",  edge= edge)
 
-            if isinstance(edge.value, (Mapping, list)) and not edge.domain:
+            if edge.value.__class__ in (Data, dict, list, FlatList) and not edge.domain:
                 # COMPLEX EDGE IS SHORT HAND
                 domain =self._convert_domain()
                 domain.dimension = Data(fields=edge.value)
@@ -158,7 +153,7 @@ class Normal(Namespace):
             )
 
     def _convert_group(self, column):
-        if isinstance(column, text_type):
+        if is_text(column):
             return wrap({
                 "name": column,
                 "value": column,
@@ -169,7 +164,7 @@ class Normal(Namespace):
             if (column.domain and column.domain.type != "default") or column.allowNulls != None:
                 Log.error("groupby does not accept complicated domains")
 
-            if not column.name and not isinstance(column.value, text_type):
+            if not column.name and not is_text(column.value):
                 Log.error("You must name compound edges: {{edge}}",  edge= column)
 
             return wrap({
@@ -191,7 +186,7 @@ class Normal(Namespace):
             domain = domain.copy()
             domain.name = domain.type
 
-        if not isinstance(domain.partitions, list):
+        if not is_list(domain.partitions):
             domain.partitions = list(domain.partitions)
 
         return Domain(**domain)
@@ -237,7 +232,7 @@ def normalize_sort(sort=None):
 
     output = FlatList()
     for s in listwrap(sort):
-        if isinstance(s, text_type) or Math.is_integer(s):
+        if is_text(s) or mo_math.is_integer(s):
             output.append({"value": s, "sort": 1})
         elif not s.field and not s.value and s.sort==None:
             #ASSUME {name: sort} FORM
@@ -255,8 +250,7 @@ sort_direction = {
     1: 1,
     0: 0,
     -1: -1,
-    None: 1,
-    Null: 1
+    None: 1
 }
 
 canonical_aggregates = {

@@ -7,21 +7,15 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-from collections import Mapping
-
+from jx_base.domains import ALGEBRAIC, Domain, KNOWN
+from mo_dots import Data, FlatList, Null, coalesce, is_data, is_list, join_field, listwrap, split_field, wrap
 import mo_dots as dot
-from mo_dots import Null, coalesce, join_field, split_field, Data
-from mo_dots import wrap, listwrap
-from mo_dots.lists import FlatList
+from mo_future import transpose
 from mo_logs import Log
 from mo_math import SUM
 from mo_times.timer import Timer
-
-from jx_base.domains import Domain, ALGEBRAIC, KNOWN
 
 DEFAULT_QUERY_LIMIT = 20
 
@@ -57,7 +51,7 @@ class Dimension(object):
         fields = coalesce(dim.field, dim.fields)
         if not fields:
             return  # NO FIELDS TO SEARCH
-        elif isinstance(fields, Mapping):
+        elif is_data(fields):
             self.fields = wrap(fields)
             edges = wrap([{"name": k, "value": v, "allowNulls": False} for k, v in self.fields.items()])
         else:
@@ -89,7 +83,7 @@ class Dimension(object):
             temp = Data(partitions=[])
             for i, count in enumerate(parts):
                 a = dim.path(d.getEnd(d.partitions[i]))
-                if not isinstance(a, list):
+                if not is_list(a):
                     Log.error("The path function on " + dim.name + " must return an ARRAY of parts")
                 addParts(
                     temp,
@@ -99,7 +93,7 @@ class Dimension(object):
                 )
             self.value = coalesce(dim.value, "name")
             self.partitions = temp.partitions
-        elif isinstance(fields, Mapping):
+        elif is_data(fields):
             self.value = "name"  # USE THE "name" ATTRIBUTE OF PARTS
 
             partitions = FlatList()
@@ -136,9 +130,9 @@ class Dimension(object):
             array = parts.data.values()[0].cube  # DIG DEEP INTO RESULT (ASSUME SINGLE VALUE CUBE, WITH NULL AT END)
 
             def edges2value(*values):
-                if isinstance(fields, Mapping):
+                if is_data(fields):
                     output = Data()
-                    for e, v in zip(edges, values):
+                    for e, v in transpose(edges, values):
                         output[e.name] = v
                     return output
                 else:
@@ -193,7 +187,7 @@ class Dimension(object):
     def getDomain(self, **kwargs):
         # kwargs.depth IS MEANT TO REACH INTO SUB-PARTITIONS
         kwargs = wrap(kwargs)
-        kwargs.depth = coalesce(kwargs.depth, len(self.fields)-1 if isinstance(self.fields, list) else None)
+        kwargs.depth = coalesce(kwargs.depth, len(self.fields)-1 if is_list(self.fields) else None)
 
         if not self.partitions and self.edges:
             # USE EACH EDGE AS A PARTITION, BUT isFacet==True SO IT ALLOWS THE OVERLAP

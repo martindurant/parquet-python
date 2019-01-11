@@ -4,15 +4,12 @@ Copyright (c) 2003-2010  Gustavo Niemeyer <gustavo@niemeyer.net>
 This module offers extensions to the standard Python
 datetime module.
 """
-__license__ = "Simplified BSD"
-
 import calendar
 import datetime
 
-from mo_future import long
+from mo_future import integer_types
 
-integer_types = (int, long)
-
+__license__ = "Simplified BSD"
 __all__ = ["relativedelta", "MO", "TU", "WE", "TH", "FR", "SA", "SU"]
 
 class weekday(object):

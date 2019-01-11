@@ -6,22 +6,20 @@
 #
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 from copy import copy
 from datetime import datetime
 
-from mo_future import text_type
-from mo_dots import wrap, Data, FlatList, literal_field
-from mo_json.typed_encoder import TYPE_PREFIX
-from mo_logs import Log
-from pyLibrary import convert
+from jx_base.query import QueryOp
 from jx_python import jx
 from jx_python.containers import Container
-from jx_python.expressions import Variable, Literal
-from jx_base.query import QueryOp
+from jx_python.expressions import Literal, Variable
+from mo_dots import Data, FlatList, is_list, literal_field, wrap
+from mo_future import text_type
+from mo_json.typed_encoder import TYPE_PREFIX
+from mo_logs import Log
 
 INDEX = "__index__"
 PARENT = "__parent__"
@@ -108,7 +106,7 @@ class DocStore(Container):
         if query.sort:
             short_list = self._sort(query.sort)
 
-        if isinstance(query.select, list):
+        if is_list(query.select):
             accessors = map(jx.get, query.select.value)
 
         if query.window:
@@ -192,7 +190,7 @@ class DocStore(Container):
 
     def having(self, having):
         _ = having
-        Log.error("not implemented")
+        raise NotImplementedError()
 
     def format(self, format):
         if format == "list":
@@ -218,7 +216,7 @@ class DocStore(Container):
         return filters[where.name](self, where)
 
     def _eq(self, op):
-        if isinstance(op.lhs, Variable) and isinstance(op.rhs, Literal):
+        if is_op(op.lhs, Variable) and is_literal(op.rhs):
             return copy(self._index[op.lhs][op.rhs])
 
     def _and(self, op):

@@ -1,8 +1,8 @@
 # This code was originally contributed by Jeffrey Harris.
 import datetime
 import struct
-import winreg
 
+import winreg
 
 __all__ = ["tzwin", "tzwinlocal"]
 

@@ -8,14 +8,13 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
+from datetime import date, datetime
 import json as _json
-from datetime import datetime, date
 
-from mo_future import text_type, PY3
+from mo_future import PY3
 
 
 def unix2datetime(u):

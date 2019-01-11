@@ -11,17 +11,17 @@ from __future__ import unicode_literals
 
 import types
 import unittest
-from collections import Mapping
 
-import mo_dots
+from jx_base.expressions import NULL
 from mo_collections.unique_index import UniqueIndex
-from mo_dots import coalesce, literal_field, unwrap, wrap
-from mo_future import text_type
-from mo_future import zip_longest
-from mo_logs import Log
-from mo_logs.exceptions import suppress_exception, Except
+import mo_dots
+from mo_dots import coalesce, is_container, is_list, literal_field, unwrap, wrap
+from mo_future import is_text, zip_longest
+from mo_json import is_data
+from mo_logs import Except, Log, suppress_exception
 from mo_logs.strings import expand_template
-from mo_math import Math
+import mo_math
+from mo_math import is_number, log10
 
 
 class FuzzyTestCase(unittest.TestCase):
@@ -62,7 +62,7 @@ class FuzzyTestCase(unittest.TestCase):
             function(*args, **kwargs)
         except Exception as e:
             f = Except.wrap(e)
-            if isinstance(problem, text_type):
+            if is_text(problem):
                 if problem in f:
                     return
                 Log.error(
@@ -87,21 +87,23 @@ def assertAlmostEqual(test, expected, digits=None, places=None, msg=None, delta=
             return
         elif test is expected:
             return
+        elif is_text(expected):
+            assertAlmostEqualValue(test, expected, msg=msg, digits=digits, places=places, delta=delta)
         elif isinstance(test, UniqueIndex):
             if test ^ expected:
                 Log.error("Sets do not match")
-        elif isinstance(expected, Mapping) and isinstance(test, Mapping):
+        elif is_data(expected) and is_data(test):
             for k, v2 in unwrap(expected).items():
                 v1 = test.get(k)
                 assertAlmostEqual(v1, v2, msg=msg, digits=digits, places=places, delta=delta)
-        elif isinstance(expected, Mapping):
+        elif is_data(expected):
             for k, v2 in expected.items():
-                if isinstance(k, text_type):
+                if is_text(k):
                     v1 = mo_dots.get_attr(test, literal_field(k))
                 else:
                     v1 = test[k]
                 assertAlmostEqual(v1, v2, msg=msg, digits=digits, places=places, delta=delta)
-        elif isinstance(test, (set, list)) and isinstance(expected, set):
+        elif is_container(test) and isinstance(expected, set):
             test = set(wrap(t) for t in test)
             if len(test) != len(expected):
                 Log.error(
@@ -144,7 +146,7 @@ def assertAlmostEqualValue(test, expected, digits=None, places=None, msg=None, d
     """
     Snagged from unittest/case.py, then modified (Aug2014)
     """
-    if expected.__class__.__name__ == "NullOp":
+    if expected is NULL:
         if test == None:
             return
         else:
@@ -156,11 +158,11 @@ def assertAlmostEqualValue(test, expected, digits=None, places=None, msg=None, d
         # shortcut
         return
 
-    if not Math.is_number(expected):
+    if not is_number(expected):
         # SOME SPECIAL CASES, EXPECTING EMPTY CONTAINERS IS THE SAME AS EXPECTING NULL
-        if isinstance(expected, list) and len(expected)==0 and test == None:
+        if is_list(expected) and len(expected) == 0 and test == None:
             return
-        if isinstance(expected, Mapping) and not expected.keys() and test == None:
+        if is_data(expected) and not expected.keys() and test == None:
             return
         if test != expected:
             raise AssertionError(expand_template("{{test}} != {{expected}}", locals()))
@@ -178,7 +180,7 @@ def assertAlmostEqualValue(test, expected, digits=None, places=None, msg=None, d
 
     if digits is not None:
         with suppress_exception:
-            diff = Math.log10(abs(test-expected))
+            diff = log10(abs(test-expected))
             if diff < digits:
                 return
 
@@ -193,10 +195,9 @@ def assertAlmostEqualValue(test, expected, digits=None, places=None, msg=None, d
             places = 15
 
         with suppress_exception:
-            diff = Math.log10(abs(test-expected))
-            if diff < ceiling(Math.log10(abs(test)))-places:
+            diff = mo_math.log10(abs(test-expected))
+            if diff < mo_math.ceiling(mo_math.log10(abs(test)))-places:
                 return
-
 
         standardMsg = expand_template("{{test|json}} != {{expected|json}} within {{places}} places", locals())
 

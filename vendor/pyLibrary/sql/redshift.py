@@ -8,23 +8,21 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
+from mo_future import is_text, is_binary
 # FOR WINDOWS INSTALL OF psycopg2
 # http://stickpeople.com/projects/python/win-psycopg/2.6.0/psycopg2-2.6.0.win32-py2.7-pg9.4.1-release.exe
 import psycopg2
 from psycopg2.extensions import adapt
 
-from pyLibrary import convert
-from mo_logs.exceptions import suppress_exception
-from mo_logs import Log
-from mo_kwargs import override
 from jx_python import jx
-from pyLibrary.sql import SQL
+from mo_kwargs import override
+from mo_logs import Log
+from mo_logs.exceptions import suppress_exception
 from mo_logs.strings import expand_template
 from mo_threads import Lock
+from pyLibrary.sql import SQL
 
 
 class Redshift(object):
@@ -86,11 +84,13 @@ class Redshift(object):
         keys = record.keys()
 
         try:
-            command = "INSERT INTO " + self.quote_column(table_name) + "(" + \
-                      ",".join([self.quote_column(k) for k in keys]) + \
-                      ") VALUES (" + \
-                      ",".join([self.quote_value(record[k]) for k in keys]) + \
-                      ")"
+            command = (
+                "INSERT INTO " + self.quote_column(table_name) + "(" +
+                ",".join([self.quote_column(k) for k in keys]) +
+                ") VALUES (" +
+                ",".join([self.quote_value(record[k]) for k in keys]) +
+                ")"
+            )
 
             self.execute(command)
         except Exception as e:
@@ -112,13 +112,14 @@ class Redshift(object):
                 {"ids": self.quote_column([r["_id"] for r in records])}
             )
 
-            command = \
-                "INSERT INTO " + self.quote_column(table_name) + "(" + \
-                ",".join([self.quote_column(k) for k in columns]) + \
+            command = (
+                "INSERT INTO " + self.quote_column(table_name) + "(" +
+                ",".join([self.quote_column(k) for k in columns]) +
                 ") VALUES " + ",\n".join([
-                    "(" + ",".join([self.quote_value(r.get(k, None)) for k in columns]) + ")"
-                    for r in records
-                ])
+                sql_iso(",".join([self.quote_value(r.get(k, None)) for k in columns]))
+                for r in records
+            ])
+            )
             self.execute(command)
         except Exception as e:
             Log.error("problem with insert", e)
@@ -135,18 +136,18 @@ class Redshift(object):
         return output
 
     def quote_column(self, name):
-        if isinstance(name, text_type):
+        if is_text(name):
             return SQL('"' + name.replace('"', '""') + '"')
-        return SQL("(" + (", ".join(self.quote_value(v) for v in name)) + ")")
+        return SQL(sql_iso((", ".join(self.quote_value(v) for v in name))))
 
     def quote_value(self, value):
         if value ==None:
-            return SQL("NULL")
-        if isinstance(value, list):
+            return SQL_NULL
+        if is_list(value):
             json = value2json(value)
             return self.quote_value(json)
 
-        if isinstance(value, text_type) and len(value) > 256:
+        if is_text(value) and len(value) > 256:
             value = value[:256]
         return SQL(adapt(value))
 

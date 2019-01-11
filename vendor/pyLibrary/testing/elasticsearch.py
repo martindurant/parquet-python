@@ -7,63 +7,63 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-import mo_json
-from mo_files import File
-from mo_logs import Log
-from mo_dots import Data
-from mo_dots import unwrap, wrap
-from pyLibrary import convert
-from pyLibrary.env.elasticsearch import Index, Cluster
-from mo_kwargs import override
+from mo_future import is_text, is_binary
 from jx_python import jx
+from mo_dots import Data, Null, is_list, unwrap, wrap
+from mo_files import File
+import mo_json
+from mo_kwargs import override
+from mo_logs import Log
+from pyLibrary.env.elasticsearch import Cluster
 
 
-def make_test_instance(name, settings):
-    if settings.filename:
-        File(settings.filename).delete()
-    return open_test_instance(name, settings)
+@override
+def make_test_instance(name, filename=None, kwargs=None):
+    if filename != None:
+        File(filename).delete()
+    return open_test_instance(kwargs)
 
 
-def open_test_instance(name, settings):
-    if settings.filename:
+@override
+def open_test_instance(name, filename=None, es=None, kwargs=None):
+    if filename != None:
         Log.note(
             "Using {{filename}} as {{type}}",
-            filename=settings.filename,
+            filename=filename,
             type=name
         )
-        return FakeES(settings)
+        return FakeES(filename=filename)
     else:
         Log.note(
             "Using ES cluster at {{host}} as {{type}}",
-            host=settings.host,
+            host=es.host,
             type=name
         )
-        cluster = Cluster(settings)
+        cluster = Cluster(es)
         try:
-            old_index = cluster.get_index(kwargs=settings)
-            old_index.delete()
+            old_index = cluster.get_index(es)
+            cluster.delete_index(old_index.settings.index)
         except Exception as e:
             if "Can not find index" not in e:
                 Log.error("unexpected", cause=e)
 
-        es = cluster.create_index(limit_replicas=True, limit_replicas_warning=False, kwargs=settings)
-        es.delete_all_but_self()
-        es.add_alias(settings.index)
-        return es
+        output = cluster.create_index(limit_replicas=True, limit_replicas_warning=False, kwargs=es)
+        output.delete_all_but_self()
+        output.add_alias(es.index)
+        return output
 
 
 class FakeES():
     @override
     def __init__(self, filename, host="fake", index="fake", kwargs=None):
         self.settings = kwargs
-        self.filename = kwargs.filename
+        self.file = File(filename)
+        self.cluster= Null
         try:
-            self.data = mo_json.json2value(File(self.filename).read())
-        except Exception:
+            self.data = mo_json.json2value(self.file.read())
+        except Exception as e:
             self.data = Data()
 
     def search(self, query):
@@ -79,23 +79,28 @@ class FakeES():
         """
         JUST SO WE MODEL A Queue
         """
-        records = {v["id"]: v["value"] for v in records}
+        records = {
+            v["id"]: v["value"] if "value" in v else mo_json.json2value(v['json'])
+            for v in records
+        }
 
         unwrap(self.data).update(records)
-
-        data_as_json = mo_json.value2json(self.data, pretty=True)
-
-        File(self.filename).write(data_as_json)
-        Log.note("{{num}} documents added",  num= len(records))
+        self.refresh()
+        Log.note("{{num}} documents added", num=len(records))
 
     def add(self, record):
-        if isinstance(record, list):
+        if is_list(record):
             Log.error("no longer accepting lists, use extend()")
         return self.extend([record])
 
     def delete_record(self, filter):
-        f = convert.esfilter2where(filter)
+        f = esfilter2where(filter)
         self.data = wrap({k: v for k, v in self.data.items() if not f(v)})
+
+    def refresh(self, *args, **kwargs):
+        data_as_json = mo_json.value2json(self.data, pretty=True)
+        self.file.write(data_as_json)
+
 
     def set_refresh_interval(self, seconds):
         pass

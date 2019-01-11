@@ -7,16 +7,17 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from collections import Mapping
 from datetime import date, datetime
 from decimal import Decimal
 
-from mo_dots import wrap, unwrap, Data, FlatList, NullType, get_attr, set_attr
-from mo_future import text_type, binary_type, get_function_defaults, get_function_arguments, none_type, generator_types
+from mo_future import binary_type, generator_types, get_function_arguments, get_function_defaults, none_type, text_type
+
+from mo_dots import Data, FlatList, NullType, SLOT, get_attr, set_attr, unwrap, wrap
+from mo_dots.datas import register_data
+from mo_dots.utils import CLASS, OBJ
 
 _get = object.__getattribute__
 _set = object.__setattr__
@@ -29,31 +30,31 @@ class DataObject(Mapping):
     """
 
     def __init__(self, obj):
-        _set(self, "_obj", obj)
+        _set(self, OBJ, obj)
 
     def __getattr__(self, item):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         output = get_attr(obj, item)
         return datawrap(output)
 
     def __setattr__(self, key, value):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         set_attr(obj, key, value)
 
     def __getitem__(self, item):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         output = get_attr(obj, item)
         return datawrap(output)
 
     def keys(self):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         try:
             return obj.__dict__.keys()
         except Exception as e:
             raise e
 
     def items(self):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         try:
             return obj.__dict__.items()
         except Exception as e:
@@ -64,7 +65,7 @@ class DataObject(Mapping):
             ]
 
     def iteritems(self):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         try:
             return obj.__dict__.iteritems()
         except Exception as e:
@@ -82,43 +83,40 @@ class DataObject(Mapping):
         return (k for k in self.keys())
 
     def __unicode__(self):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         return text_type(obj)
 
     def __str__(self):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         return str(obj)
 
     def __len__(self):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         return len(obj)
 
     def __call__(self, *args, **kwargs):
-        obj = _get(self, "_obj")
+        obj = _get(self, OBJ)
         return obj(*args, **kwargs)
 
 
+register_data(DataObject)
+
+
 def datawrap(v):
-    type_ = _get(v, "__class__")
+    type_ = _get(v, CLASS)
 
     if type_ is dict:
         m = Data()
-        _set(m, "_dict", v)  # INJECT m.__dict__=v SO THERE IS NO COPY
+        _set(m, SLOT, v)  # INJECT m.__dict__=v SO THERE IS NO COPY
         return m
-    elif type_ is Data:
-        return v
-    elif type_ is DataObject:
-        return v
-    elif type_ is none_type:
-        return None   # So we allow `is None`
     elif type_ is list:
         return FlatList(v)
+    elif type_ in (Data, DataObject, none_type, FlatList, text_type, binary_type, int, float, Decimal, datetime, date, NullType, none_type):
+        return v
     elif type_ in generator_types:
         return (wrap(vv) for vv in v)
-    elif isinstance(v, (text_type, binary_type, int, float, Decimal, datetime, date, Data, FlatList, NullType, none_type)):
+    elif isinstance(v, (text_type, binary_type, int, float, Decimal, datetime, date, FlatList, NullType, Mapping, none_type)):
         return v
-    elif isinstance(v, Mapping):
-        return DataObject(v)
     elif hasattr(v, "__data__"):
         return v.__data__()
     else:
@@ -127,7 +125,7 @@ def datawrap(v):
 
 class DictClass(object):
     """
-    ALLOW INSTANCES OF class_ TO ACK LIKE dicts
+    ALLOW INSTANCES OF class_ TO ACT LIKE dicts
     ALLOW CONSTRUCTOR TO ACCEPT @override
     """
 
