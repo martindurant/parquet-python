@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 
-from mo_dots import concat_field
+from mo_dots import concat_field, startswith_field
 from mo_json import NESTED, OBJECT, PRIMITIVE, STRING, python_type_to_json_type
 from mo_logs import Log
 from mo_parquet.schema import OPTIONAL, REPEATED, REQUIRED, SchemaTree, get_length, get_repetition_type, merge_schema_element, python_type_to_all_types
@@ -25,7 +25,6 @@ def rows_to_columns(data, schema=None):
     """
     if not schema:
         schema = SchemaTree()
-    new_schema = []
 
     all_leaves = schema.leaves
     values = {full_name: [] for full_name in all_leaves}
@@ -33,9 +32,10 @@ def rows_to_columns(data, schema=None):
     defs = {full_name: [] for full_name in all_leaves}
 
     def _none_to_column(schema, path, rep_level, def_level):
-        for full_path in schema.leaves:
-            reps[full_path].append(rep_level)
-            defs[full_path].append(def_level)
+        for full_path in all_leaves:
+            if startswith_field(full_path, path):
+                reps[full_path].append(rep_level)
+                defs[full_path].append(def_level)
 
     def _value_to_column(value, schema, path, counters, def_level):
         ptype = type(value)
@@ -50,10 +50,14 @@ def rows_to_columns(data, schema=None):
                 _none_to_column(schema, new_path, get_rep_level(counters), def_level)
             else:
                 try:
-                    schema.element.repetition_type = REQUIRED
+                    new_schema = schema.more.get('.')
+                    if not new_schema:
+                        # DEFAULT TO REQUIRED ENTRIES
+                        new_schema = schema
+                        schema.element.repetition_type = REQUIRED
                     for k, new_value in enumerate(value):
                         new_counters = counters + (k,)
-                        _value_to_column(new_value, schema, new_path, new_counters, def_level+1)
+                        _value_to_column(new_value, new_schema, new_path, new_counters, def_level+1)
                 finally:
                     schema.element.repetition_type = REPEATED
         elif jtype is OBJECT:

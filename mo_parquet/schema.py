@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from collections import Mapping
 
+from mo_math import MAX
 import numpy
 
 from fastparquet.parquet_thrift.parquet.ttypes import ConvertedType, FieldRepetitionType, SchemaElement, Type
@@ -74,7 +75,7 @@ class SchemaTree(object):
 
         for rt in repetition_type[:-1]:
             last.element = SchemaElement(
-                name=full_name,
+                name='.',
                 repetition_type=rt
             )
             temp = last.more['.'] = SchemaTree()
@@ -142,12 +143,12 @@ class SchemaTree(object):
     @property
     def leaves(self):
         output = set(
-            leaf
+            concat_field(name, leaf)
             for name, child_schema in self.more.items()
             for leaf in child_schema.leaves
         )
         if self.element.type is not None:
-            output.add(self.element.name)
+            output.add('.')
 
         return output
 
@@ -235,7 +236,7 @@ def get_repetition_type(jtype):
 
 
 def merge_schema_element(element, name, value, ptype, ltype, dtype, jtype, ittype, length):
-    element.type_length = max(element.type_length, length)
+    element.type_length = MAX((element.type_length, length))
     return element
 
 
@@ -248,7 +249,6 @@ all_type_to_parquet_type = {
     dict: None,
     object: None,
     Data: None,
-    Mapping: None,
     list: None
 }
 
