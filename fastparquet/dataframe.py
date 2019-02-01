@@ -1,9 +1,10 @@
 import re
 from collections import OrderedDict
+from distutils.version import LooseVersion
 import numpy as np
 from pandas.core.index import CategoricalIndex, RangeIndex, Index, MultiIndex
 from pandas.core.internals import BlockManager
-from pandas import Categorical, DataFrame, Series
+from pandas import Categorical, DataFrame, Series, __version__ as pdver
 from pandas.api.types import is_categorical_dtype
 import six
 from .util import STR_TYPE
@@ -117,6 +118,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         # index = MultiIndex.from_arrays(indexes)
         index._levels = list()
         index._labels = list()
+        index._codes = list()
         for i, col in enumerate(index_names):
             index._levels.append(Index([None]))
 
@@ -132,7 +134,10 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             x._set_categories = set_cats
 
             d = np.zeros(size, dtype=int)
-            index._labels.append(d)
+            if LooseVersion(pdver) >= LooseVersion("0.24.0"):
+                index._codes = list(index._codes) + [d]
+            else:
+                index._labels.append(d)
             views[col] = d
             views[col+'-catdef'] = x
 
