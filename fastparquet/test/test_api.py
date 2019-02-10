@@ -14,7 +14,7 @@ import pytest
 
 from fastparquet.test.util import tempdir
 from fastparquet import write, ParquetFile
-from fastparquet.api import statistics, sorted_partitioned_columns
+from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, filter_not_in
 from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
@@ -417,6 +417,66 @@ def test_filter_stats(tempdir):
     pf = ParquetFile(tempdir)
     out = pf.to_pandas(filters=[('x', '>=', 5)])
     assert out.x.tolist() == [5, 6, 7]
+
+
+@pytest.mark.parametrize("vals,vmin,vmax,expected_in, expected_not_in", [
+    # no stats
+    ([3, 6], None, None, False, False),
+
+    # unique values
+    ([3, 6], 3, 3, False, True),
+    ([3, 6], 2, 2, True, False),
+
+    # open intervals
+    ([3, 6], None, 7, False, False),
+    ([3, 6], None, 2, True, False),
+    ([3, 6], 2, None, False, False),
+    ([3, 6], 7, None, True, False),
+
+    # partial matches
+    ([3, 6], 2, 4, False, False),
+    ([3, 6], 5, 6, False, True),
+    ([3, 6], 2, 3, False, True),
+    ([3, 6], 6, 7, False, True),
+
+    # non match
+    ([3, 6], 1, 2, True, False),
+    ([3, 6], 7, 8, True, False),
+
+    # bounding interval
+    ([3, 6], 1, 8, False, False),
+
+    # empty values
+    ([], 1, 8, True, False),
+
+])
+def test_filter_in(vals, vmin, vmax, expected_in, expected_not_in):
+    assert filter_in(vals, vmin, vmax) == expected_in
+    assert filter_in(list(reversed(vals)), vmin, vmax) == expected_in
+
+    assert filter_not_in(vals, vmin, vmax) == expected_not_in
+    assert filter_not_in(list(reversed(vals)), vmin, vmax) == expected_not_in
+
+
+def test_in_filter_rowgroups(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    df = pd.DataFrame({
+        'x': range(10),
+    })
+    write(fn, df, row_group_offsets=2)
+    pf = ParquetFile(fn)
+    row_groups = list(pf.iter_row_groups(filters=[('x', 'in', [2])]))
+    assert len(row_groups) == 1
+    assert row_groups[0].x.tolist() == [2, 3]
+
+    row_groups = list(pf.iter_row_groups(filters=[('x', 'in', [9])]))
+    assert len(row_groups) == 1
+    assert row_groups[0].x.tolist() == [8, 9]
+
+    row_groups = list(pf.iter_row_groups(filters=[('x', 'in', [2, 9])]))
+    assert len(row_groups) == 2
+    assert row_groups[0].x.tolist() == [2, 3]
+    assert row_groups[1].x.tolist() == [8, 9]
 
 
 def test_index_not_in_columns(tempdir):
