@@ -427,7 +427,7 @@ def test_filter_stats(tempdir):
     ([3, 6], 3, 3, False, True),
     ([3, 6], 2, 2, True, False),
 
-    # open intervals
+    # open-ended intervals
     ([3, 6], None, 7, False, False),
     ([3, 6], None, 2, True, False),
     ([3, 6], 2, None, False, False),
@@ -443,14 +443,14 @@ def test_filter_stats(tempdir):
     ([3, 6], 1, 2, True, False),
     ([3, 6], 7, 8, True, False),
 
-    # bounding interval
+    # spanning interval
     ([3, 6], 1, 8, False, False),
 
     # empty values
     ([], 1, 8, True, False),
 
 ])
-def test_filter_in(vals, vmin, vmax, expected_in, expected_not_in):
+def test_in_filters(vals, vmin, vmax, expected_in, expected_not_in):
     assert filter_in(vals, vmin, vmax) == expected_in
     assert filter_in(list(reversed(vals)), vmin, vmax) == expected_in
 
