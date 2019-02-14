@@ -319,7 +319,7 @@ def test_multi_index(tempdir):
     assert dg.index.levels[0].name == 'a'
     assert dg.index.levels[0].dtype == '<M8[ns]'
     assert dg.index.levels[1].name == 'b'
-    assert dg.index.levels[1].dtype == int
+    assert dg.index.levels[1].dtype == np.int64
 
 
 def test_multi_index_category(tempdir):
