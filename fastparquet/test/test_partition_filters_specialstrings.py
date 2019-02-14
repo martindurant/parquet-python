@@ -66,6 +66,9 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
 def test_frame_write_read_verify(tempdir, input_symbols, input_days,
                                  file_scheme,
                                  input_columns, partitions, filters):
+    if os.name == 'nt':
+        pytest.xfail("Partitioning folder names contain special characters which are not supported on Windows")
+
     # Generate Temp Director for parquet Files
     fdir = str(tempdir)
     fname = os.path.join(fdir, 'test')
