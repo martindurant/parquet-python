@@ -899,7 +899,7 @@ def find_max_part(row_groups):
     Find the highest integer matching "**part.*.parquet" in referenced paths.
     """
     paths = [c.file_path or "" for rg in row_groups for c in rg.columns]
-    s = re.compile('.*part.(?P<i>[\d]+).parquet$')
+    s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
     matches = [s.match(path) for path in paths]
     nums = [int(match.groupdict()['i']) for match in matches if match]
     if nums:

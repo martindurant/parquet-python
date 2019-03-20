@@ -850,7 +850,7 @@ typedef struct {
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":730
  * # in Cython to enable them only on the right systems.
- * 
+ *
  * ctypedef npy_int8       int8_t             # <<<<<<<<<<<<<<
  * ctypedef npy_int16      int16_t
  * ctypedef npy_int32      int32_t
@@ -858,7 +858,7 @@ typedef struct {
 typedef npy_int8 __pyx_t_5numpy_int8_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":731
- * 
+ *
  * ctypedef npy_int8       int8_t
  * ctypedef npy_int16      int16_t             # <<<<<<<<<<<<<<
  * ctypedef npy_int32      int32_t
@@ -886,7 +886,7 @@ typedef npy_int64 __pyx_t_5numpy_int64_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":737
  * #ctypedef npy_int128     int128_t
- * 
+ *
  * ctypedef npy_uint8      uint8_t             # <<<<<<<<<<<<<<
  * ctypedef npy_uint16     uint16_t
  * ctypedef npy_uint32     uint32_t
@@ -894,7 +894,7 @@ typedef npy_int64 __pyx_t_5numpy_int64_t;
 typedef npy_uint8 __pyx_t_5numpy_uint8_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":738
- * 
+ *
  * ctypedef npy_uint8      uint8_t
  * ctypedef npy_uint16     uint16_t             # <<<<<<<<<<<<<<
  * ctypedef npy_uint32     uint32_t
@@ -922,7 +922,7 @@ typedef npy_uint64 __pyx_t_5numpy_uint64_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":744
  * #ctypedef npy_uint128    uint128_t
- * 
+ *
  * ctypedef npy_float32    float32_t             # <<<<<<<<<<<<<<
  * ctypedef npy_float64    float64_t
  * #ctypedef npy_float80    float80_t
@@ -930,7 +930,7 @@ typedef npy_uint64 __pyx_t_5numpy_uint64_t;
 typedef npy_float32 __pyx_t_5numpy_float32_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":745
- * 
+ *
  * ctypedef npy_float32    float32_t
  * ctypedef npy_float64    float64_t             # <<<<<<<<<<<<<<
  * #ctypedef npy_float80    float80_t
@@ -952,7 +952,7 @@ typedef npy_long __pyx_t_5numpy_int_t;
  * ctypedef npy_long       int_t
  * ctypedef npy_longlong   long_t             # <<<<<<<<<<<<<<
  * ctypedef npy_longlong   longlong_t
- * 
+ *
  */
 typedef npy_longlong __pyx_t_5numpy_long_t;
 
@@ -960,14 +960,14 @@ typedef npy_longlong __pyx_t_5numpy_long_t;
  * ctypedef npy_long       int_t
  * ctypedef npy_longlong   long_t
  * ctypedef npy_longlong   longlong_t             # <<<<<<<<<<<<<<
- * 
+ *
  * ctypedef npy_ulong      uint_t
  */
 typedef npy_longlong __pyx_t_5numpy_longlong_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":758
  * ctypedef npy_longlong   longlong_t
- * 
+ *
  * ctypedef npy_ulong      uint_t             # <<<<<<<<<<<<<<
  * ctypedef npy_ulonglong  ulong_t
  * ctypedef npy_ulonglong  ulonglong_t
@@ -975,11 +975,11 @@ typedef npy_longlong __pyx_t_5numpy_longlong_t;
 typedef npy_ulong __pyx_t_5numpy_uint_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":759
- * 
+ *
  * ctypedef npy_ulong      uint_t
  * ctypedef npy_ulonglong  ulong_t             # <<<<<<<<<<<<<<
  * ctypedef npy_ulonglong  ulonglong_t
- * 
+ *
  */
 typedef npy_ulonglong __pyx_t_5numpy_ulong_t;
 
@@ -987,32 +987,32 @@ typedef npy_ulonglong __pyx_t_5numpy_ulong_t;
  * ctypedef npy_ulong      uint_t
  * ctypedef npy_ulonglong  ulong_t
  * ctypedef npy_ulonglong  ulonglong_t             # <<<<<<<<<<<<<<
- * 
+ *
  * ctypedef npy_intp       intp_t
  */
 typedef npy_ulonglong __pyx_t_5numpy_ulonglong_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":762
  * ctypedef npy_ulonglong  ulonglong_t
- * 
+ *
  * ctypedef npy_intp       intp_t             # <<<<<<<<<<<<<<
  * ctypedef npy_uintp      uintp_t
- * 
+ *
  */
 typedef npy_intp __pyx_t_5numpy_intp_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":763
- * 
+ *
  * ctypedef npy_intp       intp_t
  * ctypedef npy_uintp      uintp_t             # <<<<<<<<<<<<<<
- * 
+ *
  * ctypedef npy_double     float_t
  */
 typedef npy_uintp __pyx_t_5numpy_uintp_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":765
  * ctypedef npy_uintp      uintp_t
- * 
+ *
  * ctypedef npy_double     float_t             # <<<<<<<<<<<<<<
  * ctypedef npy_double     double_t
  * ctypedef npy_longdouble longdouble_t
@@ -1020,11 +1020,11 @@ typedef npy_uintp __pyx_t_5numpy_uintp_t;
 typedef npy_double __pyx_t_5numpy_float_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":766
- * 
+ *
  * ctypedef npy_double     float_t
  * ctypedef npy_double     double_t             # <<<<<<<<<<<<<<
  * ctypedef npy_longdouble longdouble_t
- * 
+ *
  */
 typedef npy_double __pyx_t_5numpy_double_t;
 
@@ -1032,7 +1032,7 @@ typedef npy_double __pyx_t_5numpy_double_t;
  * ctypedef npy_double     float_t
  * ctypedef npy_double     double_t
  * ctypedef npy_longdouble longdouble_t             # <<<<<<<<<<<<<<
- * 
+ *
  * ctypedef npy_cfloat      cfloat_t
  */
 typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
@@ -1065,7 +1065,7 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_t_double_complex_from_parts(do
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":769
  * ctypedef npy_longdouble longdouble_t
- * 
+ *
  * ctypedef npy_cfloat      cfloat_t             # <<<<<<<<<<<<<<
  * ctypedef npy_cdouble     cdouble_t
  * ctypedef npy_clongdouble clongdouble_t
@@ -1073,11 +1073,11 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_t_double_complex_from_parts(do
 typedef npy_cfloat __pyx_t_5numpy_cfloat_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":770
- * 
+ *
  * ctypedef npy_cfloat      cfloat_t
  * ctypedef npy_cdouble     cdouble_t             # <<<<<<<<<<<<<<
  * ctypedef npy_clongdouble clongdouble_t
- * 
+ *
  */
 typedef npy_cdouble __pyx_t_5numpy_cdouble_t;
 
@@ -1085,16 +1085,16 @@ typedef npy_cdouble __pyx_t_5numpy_cdouble_t;
  * ctypedef npy_cfloat      cfloat_t
  * ctypedef npy_cdouble     cdouble_t
  * ctypedef npy_clongdouble clongdouble_t             # <<<<<<<<<<<<<<
- * 
+ *
  * ctypedef npy_cdouble     complex_t
  */
 typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":773
  * ctypedef npy_clongdouble clongdouble_t
- * 
+ *
  * ctypedef npy_cdouble     complex_t             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline object PyArray_MultiIterNew1(a):
  */
 typedef npy_cdouble __pyx_t_5numpy_complex_t;
@@ -1836,8 +1836,8 @@ static PyObject *__pyx_codeobj__26;
 /* Late includes */
 
 /* "fastparquet/speedups.pyx":21
- * 
- * 
+ *
+ *
  * def _to_array(obj):             # <<<<<<<<<<<<<<
  *     """
  *     Convert *obj* (a ndarray-compatible object, e.g. pandas Series)
@@ -1882,7 +1882,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups__to_array(CYTHON_UNUSED PyObje
  *         try:
  *             obj = obj.__array__()
  */
-  __pyx_t_1 = __Pyx_TypeCheck(__pyx_v_obj, __pyx_ptype_5numpy_ndarray); 
+  __pyx_t_1 = __Pyx_TypeCheck(__pyx_v_obj, __pyx_ptype_5numpy_ndarray);
   __pyx_t_2 = ((!(__pyx_t_1 != 0)) != 0);
   if (__pyx_t_2) {
 
@@ -2011,11 +2011,11 @@ static PyObject *__pyx_pf_11fastparquet_8speedups__to_array(CYTHON_UNUSED PyObje
  *                             % (type(obj,)))
  *         assert isinstance(obj, np.ndarray)             # <<<<<<<<<<<<<<
  *     return obj
- * 
+ *
  */
     #ifndef CYTHON_WITHOUT_ASSERTIONS
     if (unlikely(!Py_OptimizeFlag)) {
-      __pyx_t_2 = __Pyx_TypeCheck(__pyx_v_obj, __pyx_ptype_5numpy_ndarray); 
+      __pyx_t_2 = __Pyx_TypeCheck(__pyx_v_obj, __pyx_ptype_5numpy_ndarray);
       if (unlikely(!(__pyx_t_2 != 0))) {
         PyErr_SetNone(PyExc_AssertionError);
         __PYX_ERR(0, 32, __pyx_L1_error)
@@ -2036,8 +2036,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups__to_array(CYTHON_UNUSED PyObje
  *                             % (type(obj,)))
  *         assert isinstance(obj, np.ndarray)
  *     return obj             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_obj);
@@ -2045,8 +2045,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups__to_array(CYTHON_UNUSED PyObje
   goto __pyx_L0;
 
   /* "fastparquet/speedups.pyx":21
- * 
- * 
+ *
+ *
  * def _to_array(obj):             # <<<<<<<<<<<<<<
  *     """
  *     Convert *obj* (a ndarray-compatible object, e.g. pandas Series)
@@ -2069,8 +2069,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups__to_array(CYTHON_UNUSED PyObje
 }
 
 /* "fastparquet/speedups.pyx":36
- * 
- * 
+ *
+ *
  * def _check_1d_object_array(np.ndarray arr):             # <<<<<<<<<<<<<<
  *     if arr.ndim != 1:
  *         raise TypeError("expected a 1d array")
@@ -2105,7 +2105,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_2_check_1d_object_array(CYTHON
   __Pyx_RefNannySetupContext("_check_1d_object_array", 0);
 
   /* "fastparquet/speedups.pyx":37
- * 
+ *
  * def _check_1d_object_array(np.ndarray arr):
  *     if arr.ndim != 1:             # <<<<<<<<<<<<<<
  *         raise TypeError("expected a 1d array")
@@ -2128,7 +2128,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_2_check_1d_object_array(CYTHON
     __PYX_ERR(0, 38, __pyx_L1_error)
 
     /* "fastparquet/speedups.pyx":37
- * 
+ *
  * def _check_1d_object_array(np.ndarray arr):
  *     if arr.ndim != 1:             # <<<<<<<<<<<<<<
  *         raise TypeError("expected a 1d array")
@@ -2141,7 +2141,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_2_check_1d_object_array(CYTHON
  *         raise TypeError("expected a 1d array")
  *     if arr.dtype != _obj_dtype:             # <<<<<<<<<<<<<<
  *         raise TypeError("expected an object array")
- * 
+ *
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_arr), __pyx_n_s_dtype); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 39, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -2158,8 +2158,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_2_check_1d_object_array(CYTHON
  *         raise TypeError("expected a 1d array")
  *     if arr.dtype != _obj_dtype:
  *         raise TypeError("expected an object array")             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
     __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 40, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
@@ -2172,13 +2172,13 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_2_check_1d_object_array(CYTHON
  *         raise TypeError("expected a 1d array")
  *     if arr.dtype != _obj_dtype:             # <<<<<<<<<<<<<<
  *         raise TypeError("expected an object array")
- * 
+ *
  */
   }
 
   /* "fastparquet/speedups.pyx":36
- * 
- * 
+ *
+ *
  * def _check_1d_object_array(np.ndarray arr):             # <<<<<<<<<<<<<<
  *     if arr.ndim != 1:
  *         raise TypeError("expected a 1d array")
@@ -2200,8 +2200,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_2_check_1d_object_array(CYTHON
 }
 
 /* "fastparquet/speedups.pyx":43
- * 
- * 
+ *
+ *
  * def array_encode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 encode all elements of a 1d ndarray of "object" dtype.
@@ -2261,10 +2261,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
 
   /* "fastparquet/speedups.pyx":53
  *         np.ndarray[object] result
- * 
+ *
  *     arr = _to_array(inp)             # <<<<<<<<<<<<<<
  *     _check_1d_object_array(arr)
- * 
+ *
  */
   __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_to_array); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -2335,10 +2335,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
   __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":54
- * 
+ *
  *     arr = _to_array(inp)
  *     _check_1d_object_array(arr)             # <<<<<<<<<<<<<<
- * 
+ *
  *     n = len(arr)
  */
   __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_check_1d_object_array); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
@@ -2390,7 +2390,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
 
   /* "fastparquet/speedups.pyx":56
  *     _check_1d_object_array(arr)
- * 
+ *
  *     n = len(arr)             # <<<<<<<<<<<<<<
  *     result = np.empty(n, dtype=object)
  *     for i in range(n):
@@ -2399,7 +2399,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
   __pyx_v_n = __pyx_t_10;
 
   /* "fastparquet/speedups.pyx":57
- * 
+ *
  *     n = len(arr)
  *     result = np.empty(n, dtype=object)             # <<<<<<<<<<<<<<
  *     for i in range(n):
@@ -2464,7 +2464,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
  *     for i in range(n):
  *         # Fast utf-8 encoding, avoiding method call and codec lookup indirection
  *         result[i] = PyUnicode_AsUTF8String(arr[i])             # <<<<<<<<<<<<<<
- * 
+ *
  *     return result
  */
     __pyx_t_14 = __pyx_v_i;
@@ -2502,10 +2502,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
 
   /* "fastparquet/speedups.pyx":62
  *         result[i] = PyUnicode_AsUTF8String(arr[i])
- * 
+ *
  *     return result             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_result));
@@ -2513,8 +2513,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
   goto __pyx_L0;
 
   /* "fastparquet/speedups.pyx":43
- * 
- * 
+ *
+ *
  * def array_encode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 encode all elements of a 1d ndarray of "object" dtype.
@@ -2548,8 +2548,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4array_encode_utf8(CYTHON_UNUS
 }
 
 /* "fastparquet/speedups.pyx":65
- * 
- * 
+ *
+ *
  * def array_decode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 decode all elements of a 1d ndarray of "object" dtype.
@@ -2611,10 +2611,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_6array_decode_utf8(CYTHON_UNUS
 
   /* "fastparquet/speedups.pyx":76
  *         object val
- * 
+ *
  *     arr = _to_array(inp)             # <<<<<<<<<<<<<<
  *     _check_1d_object_array(arr)
- * 
+ *
  */
   __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_to_array); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -2685,10 +2685,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_6array_decode_utf8(CYTHON_UNUS
   __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":77
- * 
+ *
  *     arr = _to_array(inp)
  *     _check_1d_object_array(arr)             # <<<<<<<<<<<<<<
- * 
+ *
  *     n = len(arr)
  */
   __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_check_1d_object_array); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 77, __pyx_L1_error)
@@ -2740,7 +2740,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_6array_decode_utf8(CYTHON_UNUS
 
   /* "fastparquet/speedups.pyx":79
  *     _check_1d_object_array(arr)
- * 
+ *
  *     n = len(arr)             # <<<<<<<<<<<<<<
  *     result = np.empty(n, dtype=object)
  *     for i in range(n):
@@ -2749,7 +2749,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_6array_decode_utf8(CYTHON_UNUS
   __pyx_v_n = __pyx_t_10;
 
   /* "fastparquet/speedups.pyx":80
- * 
+ *
  *     n = len(arr)
  *     result = np.empty(n, dtype=object)             # <<<<<<<<<<<<<<
  *     for i in range(n):
@@ -2893,10 +2893,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_6array_decode_utf8(CYTHON_UNUS
 
   /* "fastparquet/speedups.pyx":92
  *             )
- * 
+ *
  *     return result             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_result));
@@ -2904,8 +2904,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_6array_decode_utf8(CYTHON_UNUS
   goto __pyx_L0;
 
   /* "fastparquet/speedups.pyx":65
- * 
- * 
+ *
+ *
  * def array_decode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 decode all elements of a 1d ndarray of "object" dtype.
@@ -2940,8 +2940,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_6array_decode_utf8(CYTHON_UNUS
 }
 
 /* "fastparquet/speedups.pyx":95
- * 
- * 
+ *
+ *
  * def pack_byte_array(list items):             # <<<<<<<<<<<<<<
  *     """
  *     Pack a variable length byte array column.
@@ -2987,7 +2987,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
   __Pyx_RefNannySetupContext("pack_byte_array", 0);
 
   /* "fastparquet/speedups.pyx":107
- * 
+ *
  *     # Strategy: compute the total output size and allocate it in one go.
  *     n = len(items)             # <<<<<<<<<<<<<<
  *     total_size = 0
@@ -3052,7 +3052,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
  *         if not PyBytes_CheckExact(val):
  *             raise TypeError("expected list of bytes")             # <<<<<<<<<<<<<<
  *         total_size += 4 + PyBytes_GET_SIZE(val)
- * 
+ *
  */
       __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 112, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
@@ -3073,7 +3073,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
  *         if not PyBytes_CheckExact(val):
  *             raise TypeError("expected list of bytes")
  *         total_size += 4 + PyBytes_GET_SIZE(val)             # <<<<<<<<<<<<<<
- * 
+ *
  *     out = PyBytes_FromStringAndSize(NULL, total_size)
  */
     __pyx_v_total_size = (__pyx_v_total_size + (4 + PyBytes_GET_SIZE(__pyx_v_val)));
@@ -3081,10 +3081,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
 
   /* "fastparquet/speedups.pyx":115
  *         total_size += 4 + PyBytes_GET_SIZE(val)
- * 
+ *
  *     out = PyBytes_FromStringAndSize(NULL, total_size)             # <<<<<<<<<<<<<<
  *     start = data = <unsigned char *> PyBytes_AS_STRING(out)
- * 
+ *
  */
   __pyx_t_4 = PyBytes_FromStringAndSize(NULL, __pyx_v_total_size); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
@@ -3092,10 +3092,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
   __pyx_t_4 = 0;
 
   /* "fastparquet/speedups.pyx":116
- * 
+ *
  *     out = PyBytes_FromStringAndSize(NULL, total_size)
  *     start = data = <unsigned char *> PyBytes_AS_STRING(out)             # <<<<<<<<<<<<<<
- * 
+ *
  *     # Copy data to output.
  */
   __pyx_t_6 = ((unsigned char *)PyBytes_AS_STRING(__pyx_v_out));
@@ -3103,7 +3103,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
   __pyx_v_data = __pyx_t_6;
 
   /* "fastparquet/speedups.pyx":119
- * 
+ *
  *     # Copy data to output.
  *     for i in range(n):             # <<<<<<<<<<<<<<
  *         val = items[i]
@@ -3189,7 +3189,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
  *         data += 4
  *         memcpy(data, PyBytes_AS_STRING(val), itemlen)             # <<<<<<<<<<<<<<
  *         data += itemlen
- * 
+ *
  */
     (void)(memcpy(__pyx_v_data, PyBytes_AS_STRING(__pyx_v_val), __pyx_v_itemlen));
 
@@ -3197,7 +3197,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
  *         data += 4
  *         memcpy(data, PyBytes_AS_STRING(val), itemlen)
  *         data += itemlen             # <<<<<<<<<<<<<<
- * 
+ *
  *     assert (data - start) == total_size
  */
     __pyx_v_data = (__pyx_v_data + __pyx_v_itemlen);
@@ -3205,10 +3205,10 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
 
   /* "fastparquet/speedups.pyx":131
  *         data += itemlen
- * 
+ *
  *     assert (data - start) == total_size             # <<<<<<<<<<<<<<
  *     return out
- * 
+ *
  */
   #ifndef CYTHON_WITHOUT_ASSERTIONS
   if (unlikely(!Py_OptimizeFlag)) {
@@ -3220,11 +3220,11 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
   #endif
 
   /* "fastparquet/speedups.pyx":132
- * 
+ *
  *     assert (data - start) == total_size
  *     return out             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_out);
@@ -3232,8 +3232,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
   goto __pyx_L0;
 
   /* "fastparquet/speedups.pyx":95
- * 
- * 
+ *
+ *
  * def pack_byte_array(list items):             # <<<<<<<<<<<<<<
  *     """
  *     Pack a variable length byte array column.
@@ -3253,8 +3253,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_8pack_byte_array(CYTHON_UNUSED
 }
 
 /* "fastparquet/speedups.pyx":135
- * 
- * 
+ *
+ *
  * def unpack_byte_array(bytes raw_bytes, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     """
  *     Unpack a variable length byte array column.
@@ -3348,7 +3348,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
 
   /* "fastparquet/speedups.pyx":147
  *         list out
- * 
+ *
  *     start = data = <unsigned char *> PyBytes_AS_STRING(raw_bytes)             # <<<<<<<<<<<<<<
  *     remaining = PyBytes_GET_SIZE(raw_bytes)
  *     out = [None] * n
@@ -3358,11 +3358,11 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
   __pyx_v_data = __pyx_t_1;
 
   /* "fastparquet/speedups.pyx":148
- * 
+ *
  *     start = data = <unsigned char *> PyBytes_AS_STRING(raw_bytes)
  *     remaining = PyBytes_GET_SIZE(raw_bytes)             # <<<<<<<<<<<<<<
  *     out = [None] * n
- * 
+ *
  */
   __pyx_v_remaining = PyBytes_GET_SIZE(__pyx_v_raw_bytes);
 
@@ -3370,7 +3370,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
  *     start = data = <unsigned char *> PyBytes_AS_STRING(raw_bytes)
  *     remaining = PyBytes_GET_SIZE(raw_bytes)
  *     out = [None] * n             # <<<<<<<<<<<<<<
- * 
+ *
  *     for i in range(n):
  */
   __pyx_t_2 = PyList_New(1 * ((__pyx_v_n<0) ? 0:__pyx_v_n)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L1_error)
@@ -3387,7 +3387,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
 
   /* "fastparquet/speedups.pyx":151
  *     out = [None] * n
- * 
+ *
  *     for i in range(n):             # <<<<<<<<<<<<<<
  *         remaining -= 4
  *         # It is required to check this inside the loop to avoid
@@ -3398,7 +3398,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
     __pyx_v_i = __pyx_t_5;
 
     /* "fastparquet/speedups.pyx":152
- * 
+ *
  *     for i in range(n):
  *         remaining -= 4             # <<<<<<<<<<<<<<
  *         # It is required to check this inside the loop to avoid
@@ -3449,7 +3449,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
  *         itemlen = (data[0] + (data[1] << 8) +
  *                    (data[2] << 16) + (data[3] << 24))             # <<<<<<<<<<<<<<
  *         data += 4
- * 
+ *
  */
     __pyx_v_itemlen = ((((__pyx_v_data[0]) + ((__pyx_v_data[1]) << 8)) + ((__pyx_v_data[2]) << 16)) + ((__pyx_v_data[3]) << 24));
 
@@ -3457,14 +3457,14 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
  *         itemlen = (data[0] + (data[1] << 8) +
  *                    (data[2] << 16) + (data[3] << 24))
  *         data += 4             # <<<<<<<<<<<<<<
- * 
+ *
  *         remaining -= itemlen
  */
     __pyx_v_data = (__pyx_v_data + 4);
 
     /* "fastparquet/speedups.pyx":161
  *         data += 4
- * 
+ *
  *         remaining -= itemlen             # <<<<<<<<<<<<<<
  *         if remaining < 0:
  *             raise RuntimeError("Ran out of input after %i items" % i)
@@ -3472,7 +3472,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
     __pyx_v_remaining = (__pyx_v_remaining - __pyx_v_itemlen);
 
     /* "fastparquet/speedups.pyx":162
- * 
+ *
  *         remaining -= itemlen
  *         if remaining < 0:             # <<<<<<<<<<<<<<
  *             raise RuntimeError("Ran out of input after %i items" % i)
@@ -3501,7 +3501,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
       __PYX_ERR(0, 163, __pyx_L1_error)
 
       /* "fastparquet/speedups.pyx":162
- * 
+ *
  *         remaining -= itemlen
  *         if remaining < 0:             # <<<<<<<<<<<<<<
  *             raise RuntimeError("Ran out of input after %i items" % i)
@@ -3514,7 +3514,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
  *             raise RuntimeError("Ran out of input after %i items" % i)
  *         out[i] = PyBytes_FromStringAndSize(<char *> data, itemlen)             # <<<<<<<<<<<<<<
  *         data += itemlen
- * 
+ *
  */
     __pyx_t_2 = PyBytes_FromStringAndSize(((char *)__pyx_v_data), __pyx_v_itemlen); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 164, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
@@ -3525,7 +3525,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
  *             raise RuntimeError("Ran out of input after %i items" % i)
  *         out[i] = PyBytes_FromStringAndSize(<char *> data, itemlen)
  *         data += itemlen             # <<<<<<<<<<<<<<
- * 
+ *
  *     return out
  */
     __pyx_v_data = (__pyx_v_data + __pyx_v_itemlen);
@@ -3533,7 +3533,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
 
   /* "fastparquet/speedups.pyx":167
  *         data += itemlen
- * 
+ *
  *     return out             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
@@ -3542,8 +3542,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_10unpack_byte_array(CYTHON_UNU
   goto __pyx_L0;
 
   /* "fastparquet/speedups.pyx":135
- * 
- * 
+ *
+ *
  * def unpack_byte_array(bytes raw_bytes, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     """
  *     Unpack a variable length byte array column.
@@ -3611,11 +3611,11 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __Pyx_GIVEREF(__pyx_v_info->obj);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":222
- * 
+ *
  *             cdef int i, ndim
  *             cdef int endian_detector = 1             # <<<<<<<<<<<<<<
  *             cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)
- * 
+ *
  */
   __pyx_v_endian_detector = 1;
 
@@ -3623,23 +3623,23 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  *             cdef int i, ndim
  *             cdef int endian_detector = 1
  *             cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)             # <<<<<<<<<<<<<<
- * 
+ *
  *             ndim = PyArray_NDIM(self)
  */
   __pyx_v_little_endian = ((((char *)(&__pyx_v_endian_detector))[0]) != 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":225
  *             cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)
- * 
+ *
  *             ndim = PyArray_NDIM(self)             # <<<<<<<<<<<<<<
- * 
+ *
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)
  */
   __pyx_v_ndim = PyArray_NDIM(__pyx_v_self);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":227
  *             ndim = PyArray_NDIM(self)
- * 
+ *
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)             # <<<<<<<<<<<<<<
  *                 and not PyArray_CHKFLAGS(self, NPY_C_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not C contiguous")
@@ -3652,11 +3652,11 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   }
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":228
- * 
+ *
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_C_CONTIGUOUS)):             # <<<<<<<<<<<<<<
  *                 raise ValueError(u"ndarray is not C contiguous")
- * 
+ *
  */
   __pyx_t_2 = ((!(PyArray_CHKFLAGS(__pyx_v_self, NPY_C_CONTIGUOUS) != 0)) != 0);
   __pyx_t_1 = __pyx_t_2;
@@ -3664,7 +3664,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":227
  *             ndim = PyArray_NDIM(self)
- * 
+ *
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)             # <<<<<<<<<<<<<<
  *                 and not PyArray_CHKFLAGS(self, NPY_C_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not C contiguous")
@@ -3675,7 +3675,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_C_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not C contiguous")             # <<<<<<<<<<<<<<
- * 
+ *
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  */
     __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 229, __pyx_L1_error)
@@ -3686,7 +3686,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":227
  *             ndim = PyArray_NDIM(self)
- * 
+ *
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)             # <<<<<<<<<<<<<<
  *                 and not PyArray_CHKFLAGS(self, NPY_C_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not C contiguous")
@@ -3695,7 +3695,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":231
  *                 raise ValueError(u"ndarray is not C contiguous")
- * 
+ *
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)             # <<<<<<<<<<<<<<
  *                 and not PyArray_CHKFLAGS(self, NPY_F_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not Fortran contiguous")
@@ -3708,11 +3708,11 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   }
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":232
- * 
+ *
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_F_CONTIGUOUS)):             # <<<<<<<<<<<<<<
  *                 raise ValueError(u"ndarray is not Fortran contiguous")
- * 
+ *
  */
   __pyx_t_2 = ((!(PyArray_CHKFLAGS(__pyx_v_self, NPY_F_CONTIGUOUS) != 0)) != 0);
   __pyx_t_1 = __pyx_t_2;
@@ -3720,7 +3720,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":231
  *                 raise ValueError(u"ndarray is not C contiguous")
- * 
+ *
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)             # <<<<<<<<<<<<<<
  *                 and not PyArray_CHKFLAGS(self, NPY_F_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not Fortran contiguous")
@@ -3731,7 +3731,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_F_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not Fortran contiguous")             # <<<<<<<<<<<<<<
- * 
+ *
  *             info.buf = PyArray_DATA(self)
  */
     __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 233, __pyx_L1_error)
@@ -3742,7 +3742,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":231
  *                 raise ValueError(u"ndarray is not C contiguous")
- * 
+ *
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)             # <<<<<<<<<<<<<<
  *                 and not PyArray_CHKFLAGS(self, NPY_F_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not Fortran contiguous")
@@ -3751,7 +3751,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":235
  *                 raise ValueError(u"ndarray is not Fortran contiguous")
- * 
+ *
  *             info.buf = PyArray_DATA(self)             # <<<<<<<<<<<<<<
  *             info.ndim = ndim
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):
@@ -3759,7 +3759,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_v_info->buf = PyArray_DATA(__pyx_v_self);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":236
- * 
+ *
  *             info.buf = PyArray_DATA(self)
  *             info.ndim = ndim             # <<<<<<<<<<<<<<
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):
@@ -3871,7 +3871,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  *             info.suboffsets = NULL
  *             info.itemsize = PyArray_ITEMSIZE(self)             # <<<<<<<<<<<<<<
  *             info.readonly = not PyArray_ISWRITEABLE(self)
- * 
+ *
  */
   __pyx_v_info->itemsize = PyArray_ITEMSIZE(__pyx_v_self);
 
@@ -3879,13 +3879,13 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  *             info.suboffsets = NULL
  *             info.itemsize = PyArray_ITEMSIZE(self)
  *             info.readonly = not PyArray_ISWRITEABLE(self)             # <<<<<<<<<<<<<<
- * 
+ *
  *             cdef int t
  */
   __pyx_v_info->readonly = (!(PyArray_ISWRITEABLE(__pyx_v_self) != 0));
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":253
- * 
+ *
  *             cdef int t
  *             cdef char* f = NULL             # <<<<<<<<<<<<<<
  *             cdef dtype descr = self.descr
@@ -3898,7 +3898,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  *             cdef char* f = NULL
  *             cdef dtype descr = self.descr             # <<<<<<<<<<<<<<
  *             cdef int offset
- * 
+ *
  */
   __pyx_t_3 = ((PyObject *)__pyx_v_self->descr);
   __Pyx_INCREF(__pyx_t_3);
@@ -3907,9 +3907,9 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":257
  *             cdef int offset
- * 
+ *
  *             info.obj = self             # <<<<<<<<<<<<<<
- * 
+ *
  *             if not PyDataType_HASFIELDS(descr):
  */
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
@@ -3920,7 +3920,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":259
  *             info.obj = self
- * 
+ *
  *             if not PyDataType_HASFIELDS(descr):             # <<<<<<<<<<<<<<
  *                 t = descr.type_num
  *                 if ((descr.byteorder == c'>' and little_endian) or
@@ -3929,7 +3929,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   if (__pyx_t_1) {
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":260
- * 
+ *
  *             if not PyDataType_HASFIELDS(descr):
  *                 t = descr.type_num             # <<<<<<<<<<<<<<
  *                 if ((descr.byteorder == c'>' and little_endian) or
@@ -4237,7 +4237,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":259
  *             info.obj = self
- * 
+ *
  *             if not PyDataType_HASFIELDS(descr):             # <<<<<<<<<<<<<<
  *                 t = descr.type_num
  *                 if ((descr.byteorder == c'>' and little_endian) or
@@ -4286,7 +4286,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
  *                                       info.format + _buffer_format_string_len,
  *                                       &offset)
  *                 f[0] = c'\0' # Terminate format string             # <<<<<<<<<<<<<<
- * 
+ *
  *         def __releasebuffer__(ndarray self, Py_buffer* info):
  */
     (__pyx_v_f[0]) = '\x00';
@@ -4326,7 +4326,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":294
  *                 f[0] = c'\0' # Terminate format string
- * 
+ *
  *         def __releasebuffer__(ndarray self, Py_buffer* info):             # <<<<<<<<<<<<<<
  *             if PyArray_HASFIELDS(self):
  *                 PyObject_Free(info.format)
@@ -4349,7 +4349,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
   __Pyx_RefNannySetupContext("__releasebuffer__", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":295
- * 
+ *
  *         def __releasebuffer__(ndarray self, Py_buffer* info):
  *             if PyArray_HASFIELDS(self):             # <<<<<<<<<<<<<<
  *                 PyObject_Free(info.format)
@@ -4368,7 +4368,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
     PyObject_Free(__pyx_v_info->format);
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":295
- * 
+ *
  *         def __releasebuffer__(ndarray self, Py_buffer* info):
  *             if PyArray_HASFIELDS(self):             # <<<<<<<<<<<<<<
  *                 PyObject_Free(info.format)
@@ -4391,7 +4391,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
  *             if sizeof(npy_intp) != sizeof(Py_ssize_t):
  *                 PyObject_Free(info.strides)             # <<<<<<<<<<<<<<
  *                 # info.shape was stored after info.strides in the same block
- * 
+ *
  */
     PyObject_Free(__pyx_v_info->strides);
 
@@ -4406,7 +4406,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":294
  *                 f[0] = c'\0' # Terminate format string
- * 
+ *
  *         def __releasebuffer__(ndarray self, Py_buffer* info):             # <<<<<<<<<<<<<<
  *             if PyArray_HASFIELDS(self):
  *                 PyObject_Free(info.format)
@@ -4418,10 +4418,10 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":775
  * ctypedef npy_cdouble     complex_t
- * 
+ *
  * cdef inline object PyArray_MultiIterNew1(a):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(1, <void*>a)
- * 
+ *
  */
 
 static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__pyx_v_a) {
@@ -4431,10 +4431,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew1", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":776
- * 
+ *
  * cdef inline object PyArray_MultiIterNew1(a):
  *     return PyArray_MultiIterNew(1, <void*>a)             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline object PyArray_MultiIterNew2(a, b):
  */
   __Pyx_XDECREF(__pyx_r);
@@ -4446,10 +4446,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":775
  * ctypedef npy_cdouble     complex_t
- * 
+ *
  * cdef inline object PyArray_MultiIterNew1(a):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(1, <void*>a)
- * 
+ *
  */
 
   /* function exit code */
@@ -4465,10 +4465,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":778
  *     return PyArray_MultiIterNew(1, <void*>a)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew2(a, b):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
- * 
+ *
  */
 
 static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__pyx_v_a, PyObject *__pyx_v_b) {
@@ -4478,10 +4478,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew2", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":779
- * 
+ *
  * cdef inline object PyArray_MultiIterNew2(a, b):
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline object PyArray_MultiIterNew3(a, b, c):
  */
   __Pyx_XDECREF(__pyx_r);
@@ -4493,10 +4493,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":778
  *     return PyArray_MultiIterNew(1, <void*>a)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew2(a, b):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
- * 
+ *
  */
 
   /* function exit code */
@@ -4512,10 +4512,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":781
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew3(a, b, c):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
- * 
+ *
  */
 
 static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__pyx_v_a, PyObject *__pyx_v_b, PyObject *__pyx_v_c) {
@@ -4525,10 +4525,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew3", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":782
- * 
+ *
  * cdef inline object PyArray_MultiIterNew3(a, b, c):
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):
  */
   __Pyx_XDECREF(__pyx_r);
@@ -4540,10 +4540,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":781
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew3(a, b, c):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
- * 
+ *
  */
 
   /* function exit code */
@@ -4559,10 +4559,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":784
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
- * 
+ *
  */
 
 static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__pyx_v_a, PyObject *__pyx_v_b, PyObject *__pyx_v_c, PyObject *__pyx_v_d) {
@@ -4572,10 +4572,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew4", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":785
- * 
+ *
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):
  */
   __Pyx_XDECREF(__pyx_r);
@@ -4587,10 +4587,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":784
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
- * 
+ *
  */
 
   /* function exit code */
@@ -4606,10 +4606,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":787
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
- * 
+ *
  */
 
 static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__pyx_v_a, PyObject *__pyx_v_b, PyObject *__pyx_v_c, PyObject *__pyx_v_d, PyObject *__pyx_v_e) {
@@ -4619,10 +4619,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew5", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":788
- * 
+ *
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  */
   __Pyx_XDECREF(__pyx_r);
@@ -4634,10 +4634,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":787
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
- * 
+ *
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):             # <<<<<<<<<<<<<<
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
- * 
+ *
  */
 
   /* function exit code */
@@ -4653,7 +4653,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":790
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
- * 
+ *
  * cdef inline tuple PyDataType_SHAPE(dtype d):             # <<<<<<<<<<<<<<
  *     if PyDataType_HASSUBARRAY(d):
  *         return <tuple>d.subarray.shape
@@ -4666,7 +4666,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
   __Pyx_RefNannySetupContext("PyDataType_SHAPE", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":791
- * 
+ *
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):             # <<<<<<<<<<<<<<
  *         return <tuple>d.subarray.shape
@@ -4688,7 +4688,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
     goto __pyx_L0;
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":791
- * 
+ *
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):             # <<<<<<<<<<<<<<
  *         return <tuple>d.subarray.shape
@@ -4700,7 +4700,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
  *         return <tuple>d.subarray.shape
  *     else:
  *         return ()             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline char* _util_dtypestring(dtype descr, char* f, char* end, int* offset) except NULL:
  */
   /*else*/ {
@@ -4712,7 +4712,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":790
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
- * 
+ *
  * cdef inline tuple PyDataType_SHAPE(dtype d):             # <<<<<<<<<<<<<<
  *     if PyDataType_HASSUBARRAY(d):
  *         return <tuple>d.subarray.shape
@@ -4727,7 +4727,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":796
  *         return ()
- * 
+ *
  * cdef inline char* _util_dtypestring(dtype descr, char* f, char* end, int* offset) except NULL:             # <<<<<<<<<<<<<<
  *     # Recursive utility function used in __getbuffer__ to get format
  *     # string. The new location in the format string is returned.
@@ -4755,7 +4755,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
   __Pyx_RefNannySetupContext("_util_dtypestring", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":801
- * 
+ *
  *     cdef dtype child
  *     cdef int endian_detector = 1             # <<<<<<<<<<<<<<
  *     cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)
@@ -4768,13 +4768,13 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *     cdef int endian_detector = 1
  *     cdef bint little_endian = ((<char*>&endian_detector)[0] != 0)             # <<<<<<<<<<<<<<
  *     cdef tuple fields
- * 
+ *
  */
   __pyx_v_little_endian = ((((char *)(&__pyx_v_endian_detector))[0]) != 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":805
  *     cdef tuple fields
- * 
+ *
  *     for childname in descr.names:             # <<<<<<<<<<<<<<
  *         fields = descr.fields[childname]
  *         child, new_offset = fields
@@ -4796,11 +4796,11 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __pyx_t_3 = 0;
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":806
- * 
+ *
  *     for childname in descr.names:
  *         fields = descr.fields[childname]             # <<<<<<<<<<<<<<
  *         child, new_offset = fields
- * 
+ *
  */
     if (unlikely(__pyx_v_descr->fields == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
@@ -4816,7 +4816,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *     for childname in descr.names:
  *         fields = descr.fields[childname]
  *         child, new_offset = fields             # <<<<<<<<<<<<<<
- * 
+ *
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:
  */
     if (likely(__pyx_v_fields != Py_None)) {
@@ -4828,8 +4828,8 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
         __PYX_ERR(1, 807, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      __pyx_t_3 = PyTuple_GET_ITEM(sequence, 0); 
-      __pyx_t_4 = PyTuple_GET_ITEM(sequence, 1); 
+      __pyx_t_3 = PyTuple_GET_ITEM(sequence, 0);
+      __pyx_t_4 = PyTuple_GET_ITEM(sequence, 1);
       __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_4);
       #else
@@ -4849,10 +4849,10 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":809
  *         child, new_offset = fields
- * 
+ *
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:             # <<<<<<<<<<<<<<
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
- * 
+ *
  */
     __pyx_t_4 = __Pyx_PyInt_From_int((__pyx_v_offset[0])); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 809, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
@@ -4865,10 +4865,10 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     if (unlikely(__pyx_t_6)) {
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":810
- * 
+ *
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")             # <<<<<<<<<<<<<<
- * 
+ *
  *         if ((child.byteorder == c'>' and little_endian) or
  */
       __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 810, __pyx_L1_error)
@@ -4879,16 +4879,16 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":809
  *         child, new_offset = fields
- * 
+ *
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:             # <<<<<<<<<<<<<<
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
- * 
+ *
  */
     }
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":812
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
- * 
+ *
  *         if ((child.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
  *             (child.byteorder == c'<' and not little_endian)):
  *             raise ValueError(u"Non-native byte order not supported")
@@ -4907,7 +4907,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     __pyx_L8_next_or:;
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":813
- * 
+ *
  *         if ((child.byteorder == c'>' and little_endian) or
  *             (child.byteorder == c'<' and not little_endian)):             # <<<<<<<<<<<<<<
  *             raise ValueError(u"Non-native byte order not supported")
@@ -4925,7 +4925,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":812
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
- * 
+ *
  *         if ((child.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
  *             (child.byteorder == c'<' and not little_endian)):
  *             raise ValueError(u"Non-native byte order not supported")
@@ -4947,7 +4947,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":812
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")
- * 
+ *
  *         if ((child.byteorder == c'>' and little_endian) or             # <<<<<<<<<<<<<<
  *             (child.byteorder == c'<' and not little_endian)):
  *             raise ValueError(u"Non-native byte order not supported")
@@ -4955,7 +4955,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     }
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":824
- * 
+ *
  *         # Output padding bytes
  *         while offset[0] < new_offset:             # <<<<<<<<<<<<<<
  *             f[0] = 120 # "x"; pad byte
@@ -4984,7 +4984,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *             f[0] = 120 # "x"; pad byte
  *             f += 1             # <<<<<<<<<<<<<<
  *             offset[0] += 1
- * 
+ *
  */
       __pyx_v_f = (__pyx_v_f + 1);
 
@@ -4992,7 +4992,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *             f[0] = 120 # "x"; pad byte
  *             f += 1
  *             offset[0] += 1             # <<<<<<<<<<<<<<
- * 
+ *
  *         offset[0] += child.itemsize
  */
       __pyx_t_8 = 0;
@@ -5001,9 +5001,9 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":829
  *             offset[0] += 1
- * 
+ *
  *         offset[0] += child.itemsize             # <<<<<<<<<<<<<<
- * 
+ *
  *         if not PyDataType_HASFIELDS(child):
  */
     __pyx_t_8 = 0;
@@ -5011,7 +5011,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":831
  *         offset[0] += child.itemsize
- * 
+ *
  *         if not PyDataType_HASFIELDS(child):             # <<<<<<<<<<<<<<
  *             t = child.type_num
  *             if end - f < 5:
@@ -5020,7 +5020,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     if (__pyx_t_6) {
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":832
- * 
+ *
  *         if not PyDataType_HASFIELDS(child):
  *             t = child.type_num             # <<<<<<<<<<<<<<
  *             if end - f < 5:
@@ -5036,7 +5036,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *             t = child.type_num
  *             if end - f < 5:             # <<<<<<<<<<<<<<
  *                 raise RuntimeError(u"Format string allocated too short.")
- * 
+ *
  */
       __pyx_t_6 = (((__pyx_v_end - __pyx_v_f) < 5) != 0);
       if (unlikely(__pyx_t_6)) {
@@ -5045,7 +5045,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *             t = child.type_num
  *             if end - f < 5:
  *                 raise RuntimeError(u"Format string allocated too short.")             # <<<<<<<<<<<<<<
- * 
+ *
  *             # Until ticket #99 is fixed, use integers to avoid warnings
  */
         __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 834, __pyx_L1_error)
@@ -5059,12 +5059,12 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *             t = child.type_num
  *             if end - f < 5:             # <<<<<<<<<<<<<<
  *                 raise RuntimeError(u"Format string allocated too short.")
- * 
+ *
  */
       }
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":837
- * 
+ *
  *             # Until ticket #99 is fixed, use integers to avoid warnings
  *             if   t == NPY_BYTE:        f[0] =  98 #"b"             # <<<<<<<<<<<<<<
  *             elif t == NPY_UBYTE:       f[0] =  66 #"B"
@@ -5405,7 +5405,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":831
  *         offset[0] += child.itemsize
- * 
+ *
  *         if not PyDataType_HASFIELDS(child):             # <<<<<<<<<<<<<<
  *             t = child.type_num
  *             if end - f < 5:
@@ -5418,7 +5418,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *             # so don't output it
  *             f = _util_dtypestring(child, f, end, offset)             # <<<<<<<<<<<<<<
  *     return f
- * 
+ *
  */
     /*else*/ {
       __pyx_t_9 = __pyx_f_5numpy__util_dtypestring(__pyx_v_child, __pyx_v_f, __pyx_v_end, __pyx_v_offset); if (unlikely(__pyx_t_9 == ((char *)NULL))) __PYX_ERR(1, 860, __pyx_L1_error)
@@ -5428,7 +5428,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":805
  *     cdef tuple fields
- * 
+ *
  *     for childname in descr.names:             # <<<<<<<<<<<<<<
  *         fields = descr.fields[childname]
  *         child, new_offset = fields
@@ -5440,15 +5440,15 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
  *             # so don't output it
  *             f = _util_dtypestring(child, f, end, offset)
  *     return f             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __pyx_r = __pyx_v_f;
   goto __pyx_L0;
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":796
  *         return ()
- * 
+ *
  * cdef inline char* _util_dtypestring(dtype descr, char* f, char* end, int* offset) except NULL:             # <<<<<<<<<<<<<<
  *     # Recursive utility function used in __getbuffer__ to get format
  *     # string. The new location in the format string is returned.
@@ -5472,8 +5472,8 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
 }
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":977
- * 
- * 
+ *
+ *
  * cdef inline void set_array_base(ndarray arr, object base):             # <<<<<<<<<<<<<<
  *      cdef PyObject* baseptr
  *      if base is None:
@@ -5542,7 +5542,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
  *          baseptr = <PyObject*>base
  *      Py_XDECREF(arr.base)             # <<<<<<<<<<<<<<
  *      arr.base = baseptr
- * 
+ *
  */
   Py_XDECREF(__pyx_v_arr->base);
 
@@ -5550,14 +5550,14 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
  *          baseptr = <PyObject*>base
  *      Py_XDECREF(arr.base)
  *      arr.base = baseptr             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline object get_array_base(ndarray arr):
  */
   __pyx_v_arr->base = __pyx_v_baseptr;
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":977
- * 
- * 
+ *
+ *
  * cdef inline void set_array_base(ndarray arr, object base):             # <<<<<<<<<<<<<<
  *      cdef PyObject* baseptr
  *      if base is None:
@@ -5569,7 +5569,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":987
  *      arr.base = baseptr
- * 
+ *
  * cdef inline object get_array_base(ndarray arr):             # <<<<<<<<<<<<<<
  *     if arr.base is NULL:
  *         return None
@@ -5582,7 +5582,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   __Pyx_RefNannySetupContext("get_array_base", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":988
- * 
+ *
  * cdef inline object get_array_base(ndarray arr):
  *     if arr.base is NULL:             # <<<<<<<<<<<<<<
  *         return None
@@ -5603,7 +5603,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
     goto __pyx_L0;
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":988
- * 
+ *
  * cdef inline object get_array_base(ndarray arr):
  *     if arr.base is NULL:             # <<<<<<<<<<<<<<
  *         return None
@@ -5615,8 +5615,8 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
  *         return None
  *     else:
  *         return <object>arr.base             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -5627,7 +5627,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":987
  *      arr.base = baseptr
- * 
+ *
  * cdef inline object get_array_base(ndarray arr):             # <<<<<<<<<<<<<<
  *     if arr.base is NULL:
  *         return None
@@ -5705,7 +5705,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
  *         _import_array()
  *     except Exception:             # <<<<<<<<<<<<<<
  *         raise ImportError("numpy.core.multiarray failed to import")
- * 
+ *
  */
     __pyx_t_4 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])));
     if (__pyx_t_4) {
@@ -5719,7 +5719,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
  *         _import_array()
  *     except Exception:
  *         raise ImportError("numpy.core.multiarray failed to import")             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline int import_umath() except -1:
  */
       __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 1000, __pyx_L5_except_error)
@@ -5771,7 +5771,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1002
  *         raise ImportError("numpy.core.multiarray failed to import")
- * 
+ *
  * cdef inline int import_umath() except -1:             # <<<<<<<<<<<<<<
  *     try:
  *         _import_umath()
@@ -5791,7 +5791,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
   __Pyx_RefNannySetupContext("import_umath", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1003
- * 
+ *
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
  *         _import_umath()
@@ -5816,7 +5816,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
       __pyx_t_4 = _import_umath(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 1004, __pyx_L3_error)
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1003
- * 
+ *
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
  *         _import_umath()
@@ -5834,7 +5834,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
  *         _import_umath()
  *     except Exception:             # <<<<<<<<<<<<<<
  *         raise ImportError("numpy.core.umath failed to import")
- * 
+ *
  */
     __pyx_t_4 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])));
     if (__pyx_t_4) {
@@ -5848,7 +5848,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline int import_ufunc() except -1:
  */
       __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 1006, __pyx_L5_except_error)
@@ -5861,7 +5861,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     __pyx_L5_except_error:;
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1003
- * 
+ *
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
  *         _import_umath()
@@ -5877,7 +5877,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1002
  *         raise ImportError("numpy.core.multiarray failed to import")
- * 
+ *
  * cdef inline int import_umath() except -1:             # <<<<<<<<<<<<<<
  *     try:
  *         _import_umath()
@@ -5900,7 +5900,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
 
 /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1008
  *         raise ImportError("numpy.core.umath failed to import")
- * 
+ *
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
  *     try:
  *         _import_umath()
@@ -5920,7 +5920,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
   __Pyx_RefNannySetupContext("import_ufunc", 0);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1009
- * 
+ *
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
  *         _import_umath()
@@ -5945,7 +5945,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
       __pyx_t_4 = _import_umath(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 1010, __pyx_L3_error)
 
       /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1009
- * 
+ *
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
  *         _import_umath()
@@ -5987,7 +5987,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     __pyx_L5_except_error:;
 
     /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1009
- * 
+ *
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
  *         _import_umath()
@@ -6003,7 +6003,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1008
  *         raise ImportError("numpy.core.umath failed to import")
- * 
+ *
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
  *     try:
  *         _import_umath()
@@ -6149,8 +6149,8 @@ static int __Pyx_InitCachedConstants(void) {
  *         raise TypeError("expected a 1d array")
  *     if arr.dtype != _obj_dtype:
  *         raise TypeError("expected an object array")             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_s_expected_an_object_array); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
@@ -6172,7 +6172,7 @@ static int __Pyx_InitCachedConstants(void) {
  *         if not PyBytes_CheckExact(val):
  *             raise TypeError("expected list of bytes")             # <<<<<<<<<<<<<<
  *         total_size += 4 + PyBytes_GET_SIZE(val)
- * 
+ *
  */
   __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_s_expected_list_of_bytes); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 112, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
@@ -6182,7 +6182,7 @@ static int __Pyx_InitCachedConstants(void) {
  *             if ((flags & pybuf.PyBUF_C_CONTIGUOUS == pybuf.PyBUF_C_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_C_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not C contiguous")             # <<<<<<<<<<<<<<
- * 
+ *
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  */
   __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_ndarray_is_not_C_contiguous); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(1, 229, __pyx_L1_error)
@@ -6193,7 +6193,7 @@ static int __Pyx_InitCachedConstants(void) {
  *             if ((flags & pybuf.PyBUF_F_CONTIGUOUS == pybuf.PyBUF_F_CONTIGUOUS)
  *                 and not PyArray_CHKFLAGS(self, NPY_F_CONTIGUOUS)):
  *                 raise ValueError(u"ndarray is not Fortran contiguous")             # <<<<<<<<<<<<<<
- * 
+ *
  *             info.buf = PyArray_DATA(self)
  */
   __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_ndarray_is_not_Fortran_contiguou); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(1, 233, __pyx_L1_error)
@@ -6212,10 +6212,10 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__7);
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":810
- * 
+ *
  *         if (end - f) - <int>(new_offset - offset[0]) < 15:
  *             raise RuntimeError(u"Format string allocated too short, see comment in numpy.pxd")             # <<<<<<<<<<<<<<
- * 
+ *
  *         if ((child.byteorder == c'>' and little_endian) or
  */
   __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_Format_string_allocated_too_shor); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(1, 810, __pyx_L1_error)
@@ -6237,7 +6237,7 @@ static int __Pyx_InitCachedConstants(void) {
  *             t = child.type_num
  *             if end - f < 5:
  *                 raise RuntimeError(u"Format string allocated too short.")             # <<<<<<<<<<<<<<
- * 
+ *
  *             # Until ticket #99 is fixed, use integers to avoid warnings
  */
   __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_Format_string_allocated_too_shor_2); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(1, 834, __pyx_L1_error)
@@ -6248,7 +6248,7 @@ static int __Pyx_InitCachedConstants(void) {
  *         _import_array()
  *     except Exception:
  *         raise ImportError("numpy.core.multiarray failed to import")             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline int import_umath() except -1:
  */
   __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_s_numpy_core_multiarray_failed_to); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(1, 1000, __pyx_L1_error)
@@ -6259,7 +6259,7 @@ static int __Pyx_InitCachedConstants(void) {
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
- * 
+ *
  * cdef inline int import_ufunc() except -1:
  */
   __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_s_numpy_core_umath_failed_to_impor); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(1, 1006, __pyx_L1_error)
@@ -6276,19 +6276,19 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__13);
 
   /* "fastparquet/speedups.pyx":18
- * 
- * 
+ *
+ *
  * _obj_dtype = np.dtype('object')             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __pyx_tuple__14 = PyTuple_Pack(1, __pyx_n_s_object); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__14);
   __Pyx_GIVEREF(__pyx_tuple__14);
 
   /* "fastparquet/speedups.pyx":21
- * 
- * 
+ *
+ *
  * def _to_array(obj):             # <<<<<<<<<<<<<<
  *     """
  *     Convert *obj* (a ndarray-compatible object, e.g. pandas Series)
@@ -6299,8 +6299,8 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_speedups_pyx, __pyx_n_s_to_array, 21, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 21, __pyx_L1_error)
 
   /* "fastparquet/speedups.pyx":36
- * 
- * 
+ *
+ *
  * def _check_1d_object_array(np.ndarray arr):             # <<<<<<<<<<<<<<
  *     if arr.ndim != 1:
  *         raise TypeError("expected a 1d array")
@@ -6311,8 +6311,8 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_speedups_pyx, __pyx_n_s_check_1d_object_array, 36, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 36, __pyx_L1_error)
 
   /* "fastparquet/speedups.pyx":43
- * 
- * 
+ *
+ *
  * def array_encode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 encode all elements of a 1d ndarray of "object" dtype.
@@ -6323,8 +6323,8 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_speedups_pyx, __pyx_n_s_array_encode_utf8, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 43, __pyx_L1_error)
 
   /* "fastparquet/speedups.pyx":65
- * 
- * 
+ *
+ *
  * def array_decode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 decode all elements of a 1d ndarray of "object" dtype.
@@ -6335,8 +6335,8 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(1, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_speedups_pyx, __pyx_n_s_array_decode_utf8, 65, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 65, __pyx_L1_error)
 
   /* "fastparquet/speedups.pyx":95
- * 
- * 
+ *
+ *
  * def pack_byte_array(list items):             # <<<<<<<<<<<<<<
  *     """
  *     Pack a variable length byte array column.
@@ -6347,8 +6347,8 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(1, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_speedups_pyx, __pyx_n_s_pack_byte_array, 95, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 95, __pyx_L1_error)
 
   /* "fastparquet/speedups.pyx":135
- * 
- * 
+ *
+ *
  * def unpack_byte_array(bytes raw_bytes, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     """
  *     Unpack a variable length byte array column.
@@ -6415,7 +6415,7 @@ static int __Pyx_modinit_type_import_code(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_import_code", 0);
   /*--- Type import code ---*/
-  __pyx_ptype_7cpython_4type_type = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "type", 
+  __pyx_ptype_7cpython_4type_type = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "type",
   #if CYTHON_COMPILING_IN_PYPY
   sizeof(PyTypeObject),
   #else
@@ -6627,10 +6627,10 @@ if (!__Pyx_RefNanny) {
 
   /* "fastparquet/speedups.pyx":14
  *                       PyBytes_GET_SIZE, PyBytes_AS_STRING)
- * 
+ *
  * import numpy as np             # <<<<<<<<<<<<<<
  * cimport numpy as np
- * 
+ *
  */
   __pyx_t_1 = __Pyx_Import(__pyx_n_s_numpy, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 14, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -6638,11 +6638,11 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":18
- * 
- * 
+ *
+ *
  * _obj_dtype = np.dtype('object')             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_5numpy_dtype), __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -6650,8 +6650,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":21
- * 
- * 
+ *
+ *
  * def _to_array(obj):             # <<<<<<<<<<<<<<
  *     """
  *     Convert *obj* (a ndarray-compatible object, e.g. pandas Series)
@@ -6662,8 +6662,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":36
- * 
- * 
+ *
+ *
  * def _check_1d_object_array(np.ndarray arr):             # <<<<<<<<<<<<<<
  *     if arr.ndim != 1:
  *         raise TypeError("expected a 1d array")
@@ -6674,8 +6674,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":43
- * 
- * 
+ *
+ *
  * def array_encode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 encode all elements of a 1d ndarray of "object" dtype.
@@ -6686,8 +6686,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":65
- * 
- * 
+ *
+ *
  * def array_decode_utf8(inp):             # <<<<<<<<<<<<<<
  *     """
  *     utf-8 decode all elements of a 1d ndarray of "object" dtype.
@@ -6698,8 +6698,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":95
- * 
- * 
+ *
+ *
  * def pack_byte_array(list items):             # <<<<<<<<<<<<<<
  *     """
  *     Pack a variable length byte array column.
@@ -6710,8 +6710,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/speedups.pyx":135
- * 
- * 
+ *
+ *
  * def unpack_byte_array(bytes raw_bytes, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     """
  *     Unpack a variable length byte array column.
@@ -6733,7 +6733,7 @@ if (!__Pyx_RefNanny) {
 
   /* "../../anaconda/envs/py36/lib/python3.6/site-packages/Cython/Includes/numpy/__init__.pxd":1008
  *         raise ImportError("numpy.core.umath failed to import")
- * 
+ *
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
  *     try:
  *         _import_umath()

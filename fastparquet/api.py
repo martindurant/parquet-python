@@ -596,8 +596,7 @@ def filter_out_stats(rg, filters, schema):
                     vmin = encoding.read_plain(b, column.meta_data.type, 1)
                     if se.converted_type is not None:
                         vmin = converted_types.convert(vmin, se)
-                out = filter_val(op, val, vmin, vmax)
-                if out is True:
+                if filter_val(op, val, vmin, vmax):
                     return True
     return False
 
@@ -764,8 +763,7 @@ def filter_out_cats(rg, filters):
                 v0 = v
             else:
                 v0 = val_to_num(v)
-            out = filter_val(op, val, v0, v0)
-            if out is True:
+            if filter_val(op, val, v0, v0):
                 return True
     return False
 
@@ -782,33 +780,85 @@ def filter_val(op, val, vmin=None, vmax=None):
     -------
     True or False
     """
-    if (op == 'in' and vmax is not None and vmin is not None and
-            vmax == vmin and vmax not in val):
-        return True
+    vmin = _handle_np_array(vmin)
+    vmax = _handle_np_array(vmax)
+    if op == 'in':
+        return filter_in(val, vmin, vmax)
+    if op == 'not in':
+        return filter_not_in(val, vmin, vmax)
     if vmax is not None:
-        if isinstance(vmax, np.ndarray):
-            vmax = vmax[0]
         if op in ['==', '>='] and val > vmax:
             return True
         if op == '>' and val >= vmax:
             return True
-        if op == 'in' and min(val) > vmax:
-            return True
     if vmin is not None:
-        if isinstance(vmin, np.ndarray):
-            vmin = vmin[0]
         if op in ['==', '<='] and val < vmin:
             return True
         if op == '<' and val <= vmin:
             return True
-        if op == 'in' and max(val) < vmin:
-            return True
     if (op == '!=' and vmax is not None and vmin is not None and
             vmax == vmin and val == vmax):
-        return True
-    if (op == 'not in' and vmax is not None and vmin is not None and
-            vmax == vmin and vmax in val):
         return True
 
     # keep this row_group
     return False
+
+
+def _handle_np_array(v):
+    if v is not None and isinstance(v, np.ndarray):
+        v = v[0]
+    return v
+
+
+def filter_in(values, vmin=None, vmax=None):
+    """
+    Handles 'in' filters
+
+    op: ['in', 'not in']
+    values: iterable of values
+    vmin, vmax: the range to compare within
+
+    Returns
+    -------
+    True or False
+    """
+    if len(values) == 0:
+        return True
+    if vmax == vmin and vmax is not None and vmax not in values:
+        return True
+    if vmin is None and vmax is None:
+        return False
+
+    sorted_values = sorted(values)
+    if vmin is None and vmax is not None:
+        return sorted_values[0] > vmax
+    elif vmax is None and vmin is not None:
+        return sorted_values[-1] < vmin
+
+    vmin_insert = np.searchsorted(sorted_values, vmin, side='left')
+    vmax_insert = np.searchsorted(sorted_values, vmax, side='right')
+
+    # if the indexes are equal, then there are no values within the range
+    return vmin_insert == vmax_insert
+
+
+def filter_not_in(values, vmin=None, vmax=None):
+    """
+    Handles 'not in' filters
+
+    op: ['in', 'not in']
+    values: iterable of values
+    vmin, vmax: the range to compare within
+
+    Returns
+    -------
+    True or False
+    """
+    if len(values) == 0:
+        return False
+    if vmax is not None and vmax in values:
+        return True
+    elif vmin is not None and vmin in values:
+        return True
+    else:
+        return False

@@ -40,19 +40,19 @@ def time_column():
                 write(fn, df, has_nulls=False)
 
             pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+            pf.to_pandas()  # warm-up
 
             with measure('%s: read, no nulls' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf.to_pandas()
 
             with measure('%s: write, no nulls, has_null=True' % d.dtypes[col], result):
                 write(fn, df, has_nulls=True)
 
             pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+            pf.to_pandas()  # warm-up
 
             with measure('%s: read, no nulls, has_null=True' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf.to_pandas()
 
             if d.dtypes[col].kind == 'm':
                 d.loc[n//2, col] = pd.to_datetime('NaT')
@@ -66,19 +66,19 @@ def time_column():
                 write(fn, df, has_nulls=True)
 
             pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+            pf.to_pandas()  # warm-up
 
             with measure('%s: read, with null, has_null=True' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf.to_pandas()
 
             with measure('%s: write, with null, has_null=False' % d.dtypes[col], result):
                 write(fn, df, has_nulls=False)
 
             pf = ParquetFile(fn)
-            pf.to_pandas(categories={'w': 3})  # warm-up
+            pf.to_pandas()  # warm-up
 
             with measure('%s: read, with null, has_null=False' % d.dtypes[col], result):
-                pf.to_pandas(categories={'w': 3})
+                pf.to_pandas()
 
         return result
 

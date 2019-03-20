@@ -6,7 +6,6 @@ Requirements
 
 Required:
 
-- python 3
 - numba
 - numpy
 - pandas

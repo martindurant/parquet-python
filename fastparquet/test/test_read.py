@@ -187,8 +187,9 @@ def test_stat_filters():
     filters = [('num', 'in', [0, 1500])]
     assert l < len(pf.to_pandas(filters=filters)) < base_shape
 
-    filters = [('num', 'in', [-1, 2000])]
-    assert len(pf.to_pandas(filters=filters)) == base_shape
+    filters = [('num', 'in', [-1, 1999])]
+    l = len(pf.to_pandas(filters=filters))
+    assert 0 < l < base_shape
 
 
 def test_cat_filters():
@@ -319,7 +320,7 @@ def test_multi_index(tempdir):
     assert dg.index.levels[0].name == 'a'
     assert dg.index.levels[0].dtype == '<M8[ns]'
     assert dg.index.levels[1].name == 'b'
-    assert dg.index.levels[1].dtype == int
+    assert dg.index.levels[1].dtype == np.int64
 
 
 def test_multi_index_category(tempdir):

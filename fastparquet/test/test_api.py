@@ -6,11 +6,15 @@ import os
 
 import numpy as np
 import pandas as pd
+try:
+    from pandas.tslib import Timestamp
+except ImportError:
+    from pandas import Timestamp
 import pytest
 
 from fastparquet.test.util import tempdir
 from fastparquet import write, ParquetFile
-from fastparquet.api import statistics, sorted_partitioned_columns
+from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, filter_not_in
 from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
@@ -47,7 +51,7 @@ def test_logical_types(tempdir):
 
     s = statistics(p)
 
-    assert isinstance(s['min']['D'][0], (np.datetime64, pd.tslib.Timestamp))
+    assert isinstance(s['min']['D'][0], (np.datetime64, Timestamp))
 
 
 def test_empty_statistics(tempdir):
@@ -415,6 +419,66 @@ def test_filter_stats(tempdir):
     assert out.x.tolist() == [5, 6, 7]
 
 
+@pytest.mark.parametrize("vals,vmin,vmax,expected_in, expected_not_in", [
+    # no stats
+    ([3, 6], None, None, False, False),
+
+    # unique values
+    ([3, 6], 3, 3, False, True),
+    ([3, 6], 2, 2, True, False),
+
+    # open-ended intervals
+    ([3, 6], None, 7, False, False),
+    ([3, 6], None, 2, True, False),
+    ([3, 6], 2, None, False, False),
+    ([3, 6], 7, None, True, False),
+
+    # partial matches
+    ([3, 6], 2, 4, False, False),
+    ([3, 6], 5, 6, False, True),
+    ([3, 6], 2, 3, False, True),
+    ([3, 6], 6, 7, False, True),
+
+    # non match
+    ([3, 6], 1, 2, True, False),
+    ([3, 6], 7, 8, True, False),
+
+    # spanning interval
+    ([3, 6], 1, 8, False, False),
+
+    # empty values
+    ([], 1, 8, True, False),
+
+])
+def test_in_filters(vals, vmin, vmax, expected_in, expected_not_in):
+    assert filter_in(vals, vmin, vmax) == expected_in
+    assert filter_in(list(reversed(vals)), vmin, vmax) == expected_in
+
+    assert filter_not_in(vals, vmin, vmax) == expected_not_in
+    assert filter_not_in(list(reversed(vals)), vmin, vmax) == expected_not_in
+
+
+def test_in_filter_rowgroups(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    df = pd.DataFrame({
+        'x': range(10),
+    })
+    write(fn, df, row_group_offsets=2)
+    pf = ParquetFile(fn)
+    row_groups = list(pf.iter_row_groups(filters=[('x', 'in', [2])]))
+    assert len(row_groups) == 1
+    assert row_groups[0].x.tolist() == [2, 3]
+
+    row_groups = list(pf.iter_row_groups(filters=[('x', 'in', [9])]))
+    assert len(row_groups) == 1
+    assert row_groups[0].x.tolist() == [8, 9]
+
+    row_groups = list(pf.iter_row_groups(filters=[('x', 'in', [2, 9])]))
+    assert len(row_groups) == 2
+    assert row_groups[0].x.tolist() == [2, 3]
+    assert row_groups[1].x.tolist() == [8, 9]
+
+
 def test_index_not_in_columns(tempdir):
     df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]}).set_index('a')
     write(tempdir, df, file_scheme='hive')
@@ -668,7 +732,7 @@ def test_int96_stats(tempdir):
     p = ParquetFile(fn)
 
     s = statistics(p)
-    assert isinstance(s['min']['D'][0], (np.datetime64, pd.tslib.Timestamp))
+    assert isinstance(s['min']['D'][0], (np.datetime64, Timestamp))
     assert 'D' in sorted_partitioned_columns(p)
 
 

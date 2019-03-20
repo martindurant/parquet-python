@@ -39,7 +39,7 @@ def default_open(f, mode='rb'):
 
 
 def val_to_num(x):
-    """Parse a string as a number, date or timedelta if possible, otherwise return the string"""
+    """Parse a string as a number, date or timedelta if possible"""
     if isinstance(x, numbers.Real):
         return x
     if x in ['now', 'NOW', 'TODAY', '']:
@@ -61,8 +61,8 @@ def val_to_num(x):
     except:
         pass
     try:
-        # TODO: determine the valid usecases for this, then try to limit the set of
-        # strings which may get inadvertently converted to timedeltas
+        # TODO: determine the valid usecases for this, then try to limit the set
+        #  ofstrings which may get inadvertently converted to timedeltas
         return pd.to_timedelta(x)
     except:
         return x
@@ -159,6 +159,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
     fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
     return basepath, fmd
 
+
 # simple cache to avoid re compile every time
 seps = {}
 
@@ -204,15 +205,17 @@ def analyse_paths(file_list, root=False):
 
 def infer_dtype(column):
     try:
-        return pd.api.types.infer_dtype(column)
+        return pd.api.types.infer_dtype(column, skipna=False)
     except AttributeError:
         return pd.lib.infer_dtype(column)
+
 
 def groupby_types(iterable):
     groups = defaultdict(list)
     for x in iterable:
         groups[type(x)].append(x)
     return groups
+
 
 def get_column_metadata(column, name):
     """Produce pandas column metadata block"""
