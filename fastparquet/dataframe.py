@@ -2,12 +2,28 @@ import re
 from collections import OrderedDict
 from distutils.version import LooseVersion
 import numpy as np
+import pandas as pd
 from pandas.core.index import CategoricalIndex, RangeIndex, Index, MultiIndex
 from pandas.core.internals import BlockManager
 from pandas import Categorical, DataFrame, Series, __version__ as pdver
 from pandas.api.types import is_categorical_dtype
+from itertools import zip_longest
+import ast
+import operator
+import collections
 import six
 from .util import STR_TYPE
+
+
+_pandas_logical_type_map = {
+    'date': 'datetime64[D]',
+    'unicode': np.unicode_,
+    'bytes': np.bytes_,
+    'string': np.str_,
+    'empty': np.object_,
+    'mixed': np.object_,
+    'mixed-integer': np.object_
+}
 
 
 class Dummy(object):
@@ -15,7 +31,7 @@ class Dummy(object):
 
 
 def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
-          timezones=None):
+          timezones=None, md=None):
     """
     Create empty DataFrame to assign into
 
@@ -191,4 +207,208 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             None if re.match(r'__index_level_\d+__', n) else n
             for n in index_names
         ]
+
+    # Make sure dataframe has correct column index as specified by metdata (#409)
+    if md is not None:
+        column_index = _construct_column_index(df.columns, md['columns'],
+                                               md.get('column_indexes', None))
+        df.columns = column_index
+
     return df, views
+
+
+def _construct_column_index(column_strings, all_columns, column_indexes):
+    """Return pandas index reconstructed from metadata for desired columns
+
+    Parameters
+    ----------
+    column_strings : list of strings
+        Names of desired columns
+
+    all_columns : list of dicts
+        Dictionary of column metadata
+
+    column_indexes : list of dicts
+        Column_index metadata.not
+
+    Returns
+    -------
+    columns : pandas index of columns
+    """
+    # Create default for column_indexes, if not provided
+    if column_indexes is None:
+        column_indexes = [{"name": None, "field_name": None,
+                           "pandas_type": "empty",
+                           "numpy_type": "object",
+                           "metadata": None}]
+
+    if all_columns:
+        columns_name_dict = {
+            c.get('field_name', _column_name_to_strings(c['name'])): c['name']
+            for c in all_columns
+        }
+        columns_values = [
+            columns_name_dict.get(name, name) for name in column_strings
+        ]
+    else:
+        columns_values = column_strings
+
+    # If we're passed multiple column indexes then evaluate with
+    # ast.literal_eval, since the column index values show up as a list of
+    # tuples
+    to_pair = ast.literal_eval if len(column_indexes) > 1 else lambda x: (x,)
+
+    # Create the column index
+
+    # Construct the base index
+    if not isinstance(columns_values, pd.Index) and not columns_values:
+        columns = pd.Index(columns_values)
+    else:
+        columns = pd.MultiIndex.from_tuples(
+            list(map(to_pair, columns_values)),
+            names=[col_index['name'] for col_index in column_indexes] or None,
+        )
+
+    # if we're reconstructing the index
+    if len(column_indexes) > 0:
+        columns = _reconstruct_columns_from_metadata(columns, column_indexes)
+
+    # ARROW-1751: flatten a single level column MultiIndex for pandas 0.21.0
+    columns = _flatten_single_level_multiindex(columns)
+
+    return columns
+
+
+def _flatten_single_level_multiindex(index):
+    if isinstance(index, pd.MultiIndex) and index.nlevels == 1:
+        levels, = index.levels
+        labels, = _get_multiindex_codes(index)
+
+        # Cheaply check that we do not somehow have duplicate column names
+        if not index.is_unique:
+            raise ValueError('Found non-unique column index')
+
+        return pd.Index([levels[_label] if _label != -1 else None
+                         for _label in labels],
+                        name=index.names[0])
+    return index
+
+
+def _reconstruct_columns_from_metadata(columns, column_indexes):
+    """Construct a pandas MultiIndex from `columns` and column index metadata
+    in `column_indexes`.
+
+
+    Parameters
+    ----------
+    columns : List[pd.Index]
+        Desired columns
+    column_indexes : List[Dict[str, str]]
+        The column index metadata.
+
+    Returns
+    -------
+    result : MultiIndex
+        The index reconstructed using `column_indexes` metadata with levels of
+        the correct type.
+
+    Notes
+    -----
+    * adapted from pyarrow/pandas_compat
+   """
+    # Get levels and labels, and provide sane defaults if the index has a
+    # single level to avoid if/else spaghetti.
+    levels = getattr(columns, 'levels', None) or [columns]
+    labels = _get_multiindex_codes(columns) or [
+        pd.RangeIndex(len(level)) for level in levels
+    ]
+
+    # Convert each level to the dtype provided in the metadata
+    levels_dtypes = [
+        (level, col_index.get('pandas_type', str(level.dtype)))
+        for level, col_index in zip_longest(
+            levels, column_indexes, fillvalue={}
+        )
+    ]
+
+    new_levels = []
+    encoder = operator.methodcaller('encode', 'UTF-8')
+    for level, pandas_dtype in levels_dtypes:
+        dtype = _pandas_type_to_numpy_type(pandas_dtype)
+
+        # Since our metadata is UTF-8 encoded, Python turns things that were
+        # bytes into unicode strings when json.loads-ing them. We need to
+        # convert them back to bytes to preserve metadata.
+        if dtype == np.bytes_:
+            level = level.map(encoder)
+        elif level.dtype != dtype:
+            level = level.astype(dtype)
+
+        new_levels.append(level)
+
+    return pd.MultiIndex(new_levels, labels, names=columns.names)
+
+def _column_name_to_strings(name):
+    """Convert a column name (or level) to either a string or a recursive
+    collection of strings.
+
+    Parameters
+    ----------
+    name : str or tuple
+
+    Returns
+    -------
+    value : str or tuple
+
+    Examples
+    --------
+    >>> name = 'foo'
+    >>> _column_name_to_strings(name)
+    'foo'
+    >>> name = ('foo', 'bar')
+    >>> _column_name_to_strings(name)
+    ('foo', 'bar')
+    >>> import pandas as pd
+    >>> name = (1, pd.Timestamp('2017-02-01 00:00:00'))
+    >>> _column_name_to_strings(name)
+    ('1', '2017-02-01 00:00:00')
+    """
+    if isinstance(name, six.string_types):
+        return name
+    elif isinstance(name, six.binary_type):
+        # XXX: should we assume that bytes in Python 3 are UTF-8?
+        return name.decode('utf8')
+    elif isinstance(name, tuple):
+        return str(tuple(map(_column_name_to_strings, name)))
+    elif isinstance(name, collections.Sequence):
+        raise TypeError("Unsupported type for MultiIndex level")
+    elif name is None:
+        return None
+    return str(name)
+
+
+def _pandas_type_to_numpy_type(pandas_type):
+    """Get the numpy dtype that corresponds to a pandas type.
+
+    Parameters
+    ----------
+    pandas_type : str
+        The result of a call to pandas.lib.infer_dtype.
+
+    Returns
+    -------
+    dtype : np.dtype
+        The dtype that corresponds to `pandas_type`.
+    """
+    try:
+        return _pandas_logical_type_map[pandas_type]
+    except KeyError:
+        return np.dtype(pandas_type)
+
+def _get_multiindex_codes(mi):
+    # compat for pandas < 0.24 (MI labels renamed to codes).
+    if isinstance(mi, pd.MultiIndex):
+        return mi.codes if hasattr(mi, 'codes') else mi.labels
+    else:
+        return None
+

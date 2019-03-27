@@ -235,7 +235,7 @@ def get_column_metadata(column, name):
     else:
         extra_metadata = None
 
-    if not isinstance(name, six.string_types):
+    if not isinstance(name, six.string_types) and name is not None:
         raise TypeError(
             'Column name must be a string. Got column {} of type {}'.format(
                 name, type(name).__name__

@@ -10,6 +10,7 @@ import numpy as np
 import os
 
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 import pytest
 
 import fastparquet
@@ -421,3 +422,14 @@ def test_map_last_row_split(tempdir):
     assert sorted(df["topics"].iloc[1210].keys()) == sorted(first_split_row_keys)
     assert sorted(df["topics"].iloc[2427].keys()) == sorted(second_split_row_keys)
     assert df.isnull().sum().sum() == 0
+
+
+def test_column_index(tempdir):
+    from fastparquet import write, ParquetFile
+    column_index = pd.Index(['a', 'b'], name='column')
+    df = pd.DataFrame(np.random.random((4, 2)), columns=column_index)
+    output_file = os.path.join(tempdir, 'test_column_index.parq')
+    write(output_file, df)
+    pf = ParquetFile(output_file)
+    df2 = pf.to_pandas()
+    assert_frame_equal(df, df2)

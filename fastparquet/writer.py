@@ -690,6 +690,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
             se.repetition_type = parquet_thrift.FieldRepetitionType.OPTIONAL
         fmd.schema.append(se)
         root.num_children += 1
+
+    pandas_metadata['column_indexes'] = [get_column_metadata(data.columns, data.columns.name)]
+
     meta.value = json.dumps(pandas_metadata, sort_keys=True)
     return fmd
 

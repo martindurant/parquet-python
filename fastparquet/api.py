@@ -377,6 +377,25 @@ class ParquetFile(object):
             index = [index]
         return index
 
+    def _get_column_index(self, column_strings, all_columns, column_indexes):
+        """Return pandas index reconstructed from metadata for desired columns
+
+        Parameters
+        ----------
+        column_strings : list of strings
+            Names of desired columns
+
+        all_columns : list of dicts
+            Dictionary of column metadata
+
+        column_indexes : list of dicts
+            Column_index metadata.not
+
+        Returns
+        -------
+        columns : pandas index of columns
+        """
+
     def to_pandas(self, columns=None, categories=None, filters=[],
                   index=None):
         """
@@ -419,6 +438,7 @@ class ParquetFile(object):
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
+
         df, views = self.pre_allocate(size, columns, categories, index)
         start = 0
         if self.file_scheme == 'simple':
@@ -438,12 +458,17 @@ class ParquetFile(object):
                 self.read_row_group_file(rg, columns, categories, index,
                                          assign=parts)
                 start += rg.num_rows
+
         return df
 
     def pre_allocate(self, size, columns, categories, index):
         categories = self.check_categories(categories)
+        if 'pandas' in self.key_value_metadata:
+            md = json.loads(self.key_value_metadata['pandas'])
+        else:
+            md = None
         return _pre_allocate(size, columns, categories, index, self.cats,
-                             self._dtypes(categories), self.tz)
+                             self._dtypes(categories), self.tz, md=md)
 
     @property
     def count(self):
@@ -540,7 +565,9 @@ class ParquetFile(object):
     __repr__ = __str__
 
 
-def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
+
+
+def _pre_allocate(size, columns, categories, index, cs, dt, tz=None, md=None):
     index = [index] if isinstance(index, str) else (index or [])
     cols = [c for c in columns if c not in index]
     categories = categories or {}
@@ -557,8 +584,10 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     index_types = [get_type(i) for i in index]
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
+
     df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
-                                index_types=index_types, cats=cats, timezones=tz)
+                                index_types=index_types, cats=cats, timezones=tz,
+                                md=md)
     return df, views
 
 
@@ -869,3 +898,6 @@ def filter_not_in(values, vmin=None, vmax=None):
         return True
     else:
         return False
+
+
+
