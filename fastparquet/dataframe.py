@@ -7,7 +7,10 @@ from pandas.core.index import CategoricalIndex, RangeIndex, Index, MultiIndex
 from pandas.core.internals import BlockManager
 from pandas import Categorical, DataFrame, Series, __version__ as pdver
 from pandas.api.types import is_categorical_dtype
-from itertools import zip_longest
+try:
+    from itertools import zip_longest
+except ImportError:  # For python 2.7
+    from itertools import izip_longest as zip_longest
 import ast
 import operator
 import collections
@@ -78,6 +81,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     timezones: dict {col: timezone_str}
         for timestamp type columns, apply this timezone to the pandas series;
         the numpy view will be UTC.
+    md: dict
+        Pandas metadata dictionary.  Used to reconstruct column index, if present.
 
     Returns
     -------
