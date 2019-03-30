@@ -90,6 +90,9 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             df[six.text_type(col)] = Categorical([], categories=cat(col),
                                                  fastpath=True)
         else:
+            if hasattr(t, 'base'):
+                # funky pandas not-dtype
+                t = t.base
             d = np.empty(0, dtype=t)
             if d.dtype.kind == "M" and six.text_type(col) in timezones:
                 d = Series(d).dt.tz_localize(timezones[six.text_type(col)])

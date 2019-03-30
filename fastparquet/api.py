@@ -442,13 +442,8 @@ class ParquetFile(object):
 
     def pre_allocate(self, size, columns, categories, index):
         categories = self.check_categories(categories)
-        tz = None
-        if 'pandas' in self.key_value_metadata:
-            md = json.loads(self.key_value_metadata['pandas'])['columns']
-            tz = {c['name']: c['metadata']['timezone'] for c in md
-                  if (c.get('metadata', {}) or {}).get('timezone', None)}
         return _pre_allocate(size, columns, categories, index, self.cats,
-                             self._dtypes(categories), tz)
+                             self._dtypes(categories), self.tz)
 
     @property
     def count(self):
@@ -492,6 +487,14 @@ class ParquetFile(object):
 
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
+        import pandas as pd
+        if 'pandas' in self.key_value_metadata:
+            md = json.loads(self.key_value_metadata['pandas'])['columns']
+            tz = {c['name']: c['metadata']['timezone'] for c in md
+                  if (c.get('metadata', {}) or {}).get('timezone', None)}
+            self.tz = tz
+        else:
+            self.tz = None
         categories = self.check_categories(categories)
         dtype = OrderedDict((name, (converted_types.typemap(f)
                             if f.num_children in [None, 0] else np.dtype("O")))
@@ -518,6 +521,10 @@ class ParquetFile(object):
                         dtype[col] = np.dtype('f4')
                     else:
                         dtype[col] = np.dtype('f8')
+            elif dt.kind == "M":
+                if tz.get(col, False):
+                    dtype[col] = pd.Series([], dtype='M8[ns]'
+                                           ).dt.tz_localize(tz[col]).dtype
             elif dt == 'S12':
                 dtype[col] = 'M8[ns]'
         for field in categories:
