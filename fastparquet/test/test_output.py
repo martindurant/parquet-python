@@ -125,14 +125,6 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
         assert isinstance(data[col][0], type(df[col][0]))
 
 
-def test_bad_coltype(tempdir):
-    df = pd.DataFrame({'0': [1, 2], (0, 1): [3, 4]})
-    fn = os.path.join(tempdir, 'temp.parq')
-    with pytest.raises((ValueError, TypeError)) as e:
-        write(fn, df)
-        assert "tuple" in str(e)
-
-
 def test_bad_col(tempdir):
     df = pd.DataFrame({'x': [1, 2]})
     fn = os.path.join(tempdir, 'temp.parq')

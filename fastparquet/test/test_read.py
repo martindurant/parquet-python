@@ -433,3 +433,13 @@ def test_column_index(tempdir):
     pf = ParquetFile(output_file)
     df2 = pf.to_pandas()
     assert_frame_equal(df, df2)
+
+def test_multilevel_column_index(tempdir):
+    from fastparquet import write, ParquetFile
+    column_index_multi = pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')], names=['level1', 'level2'])
+    df = pd.DataFrame(np.random.random((4,2)), columns=column_index_multi)
+    output_file = os.path.join(tempdir, 'test_column_index_multi.parq')
+    write(output_file, df)
+    pf = ParquetFile(output_file)
+    df2 = pf.to_pandas()
+    assert_frame_equal(df, df2)

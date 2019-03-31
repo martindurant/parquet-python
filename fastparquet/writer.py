@@ -5,6 +5,7 @@ import json
 import re
 import struct
 import warnings
+import ast
 
 import numba
 import numpy as np
@@ -146,8 +147,12 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
+
+    # Stringify multi-index column name if necessary
+    name = '{}'.format(data.name) if isinstance(data.name, tuple) else data.name
+
     se = parquet_thrift.SchemaElement(
-            name=data.name, type_length=width,
+            name=name, type_length=width,
             converted_type=converted_type, type=type,
             repetition_type=parquet_thrift.FieldRepetitionType.REQUIRED)
     return se, type
@@ -601,10 +606,10 @@ def make_row_group(f, data, schema, compression=None):
     rows = len(data)
     if rows == 0:
         return
-    if any(not isinstance(c, (bytes, STR_TYPE)) for c in data):
-        raise ValueError('Column names must be str or bytes:',
+    if any(not isinstance(c, (bytes, STR_TYPE, tuple)) for c in data):
+        raise ValueError('Column names must be str, bytes, or tuple:',
                          {c: type(c) for c in data.columns
-                          if not isinstance(c, (bytes, STR_TYPE))})
+                          if not isinstance(c, (bytes, STR_TYPE, tuple))})
     rg = parquet_thrift.RowGroup(num_rows=rows, total_byte_size=0, columns=[])
 
     for column in schema:
@@ -615,6 +620,7 @@ def make_row_group(f, data, schema, compression=None):
                     comp = compression.get('_default', None)
             else:
                 comp = compression
+
             chunk = write_column(f, data[column.name], column,
                                  compression=comp)
             rg.columns.append(chunk)
@@ -844,6 +850,10 @@ def write(filename, data, row_group_offsets=50000000,
         index_cols = [c for c in data if c not in cols]
     else:
         index_cols = []
+
+    # Check for multi-index columns; stringify them if so.
+    data.columns = [str(c) if isinstance(c, tuple) else c for c in data.columns]
+
     check_column_names(data.columns, partition_on, fixed_text, object_encoding,
                        has_nulls)
     ignore = partition_on if file_scheme != 'simple' else []
