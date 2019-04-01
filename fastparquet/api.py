@@ -492,9 +492,9 @@ class ParquetFile(object):
             md = json.loads(self.key_value_metadata['pandas'])['columns']
             tz = {c['name']: c['metadata']['timezone'] for c in md
                   if (c.get('metadata', {}) or {}).get('timezone', None)}
-            self.tz = tz
         else:
-            self.tz = None
+            tz = None
+        self.tz = tz
         categories = self.check_categories(categories)
         dtype = OrderedDict((name, (converted_types.typemap(f)
                             if f.num_children in [None, 0] else np.dtype("O")))
