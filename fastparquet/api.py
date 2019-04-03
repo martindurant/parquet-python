@@ -522,7 +522,7 @@ class ParquetFile(object):
                     else:
                         dtype[col] = np.dtype('f8')
             elif dt.kind == "M":
-                if tz.get(col, False):
+                if tz is not None and tz.get(col, False):
                     dtype[col] = pd.Series([], dtype='M8[ns]'
                                            ).dt.tz_localize(tz[col]).dtype
             elif dt == 'S12':
