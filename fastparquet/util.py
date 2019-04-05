@@ -89,10 +89,13 @@ def check_column_names(columns, *args):
     """Ensure that parameters listing column names have corresponding columns"""
     for arg in args:
         if isinstance(arg, (tuple, list)):
-            if set(arg) - set(columns):
-                raise ValueError("Column name not in list.\n"
-                                 "Requested %s\n"
-                                 "Allowed %s" % (arg, columns))
+            missing = set(arg) - set(columns)
+            if missing:
+                raise ValueError("Following columns were requested but are "
+                                 "not available: %s.\n"
+                                 "All requested columns: %s\n"
+                                 "Available columns: %s"
+                                 "" % (missing, arg, columns))
 
 
 def byte_buffer(raw_bytes):
