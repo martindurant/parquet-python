@@ -113,7 +113,12 @@ def convert(data, se, timestamp96=True):
             if PY2:
                 def from_bytes(d):
                     return int(binascii.b2a_hex(d), 16) if len(d) else 0
-                return np.array([from_bytes(d) * scale_factor for d in data])
+                by = data.tostring()
+                its = data.dtype.itemsize
+                return np.array([
+                    from_bytes(by[i * its:(i + 1) * its] * scale_factor)
+                    for i in range(len(data))
+                ])
             else:
                 # NB: `from_bytes` may be py>=3.4 only
                 return np.array([
