@@ -116,7 +116,7 @@ def convert(data, se, timestamp96=True):
                 by = data.tostring()
                 its = data.dtype.itemsize
                 return np.array([
-                    from_bytes(by[i * its:(i + 1) * its] * scale_factor)
+                    from_bytes(by[i * its:(i + 1) * its]) * scale_factor
                     for i in range(len(data))
                 ])
             else:
