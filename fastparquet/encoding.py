@@ -262,13 +262,15 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
     for de, re in zip(defi, rep):
         if not re:
             # new row - save what we have
-            if started:
+            if started and i < len(assign) - 1:
                 assign[i] = None if have_null else part
                 part = []
                 i += 1
             else:
                 # first time: no row to save yet, unless it's a row continued from previous page
                 if vali > 0:
+                    if assign[i - 1] is None:
+                        assign[i - 1] = []
                     assign[i - 1].extend(part) # add the items to previous row
                     part = []
                     # don't increment i since we only filled i-1
@@ -282,9 +284,11 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
             part.append(None)
         # next object is None as opposed to an object
         have_null = de == 0 and null
-    if started: # normal case - add the leftovers to the next row
+    if started and i < len(assign): # normal case - add the leftovers to the next row
         assign[i] = None if have_null else part
     else: # can only happen if the only elements in this page are the continuation of the last row from previous page
+        if assign[i - 1] is None:
+            assign[i - 1] = []
         assign[i - 1].extend(part)
     return i
 
