@@ -224,7 +224,7 @@ spec32 = [('data', numba.uint32[:]), ('loc', numba.int64), ('len', numba.int64)]
 Numpy32 = numba.jitclass(spec32)(NumpyIO)
 
 
-def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, prev_i):
+def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, prev_i, ph):
     """Dremel-assembly of arrays of values into lists
 
     Parameters
@@ -247,6 +247,8 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
         value of definition level that corresponds to non-null
     prev_i: int
         1 + index where the last row in the previous page was inserted (0 if first page)
+    ph: PageHeader
+        page header
     """
     ## TODO: good case for cython
     if d:
@@ -265,6 +267,11 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
             if started and i < len(assign) - 1:
                 assign[i] = None if have_null else part
                 part = []
+                try:
+                    if ph.data_page_header_v2.num_rows < 2:
+                        continue
+                except:
+                    pass
                 i += 1
             else:
                 # first time: no row to save yet, unless it's a row continued from previous page

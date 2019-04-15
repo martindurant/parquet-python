@@ -421,14 +421,3 @@ def test_map_last_row_split(tempdir):
     assert sorted(df["topics"].iloc[1210].keys()) == sorted(first_split_row_keys)
     assert sorted(df["topics"].iloc[2427].keys()) == sorted(second_split_row_keys)
     assert df.isnull().sum().sum() == 0
-
-
-def test_truncated_decimal():
-    # protect against numpy truncation of fixed-length-bytes
-    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "decimals.parquet"))
-    df = pf.to_pandas()
-    expected = pd.Series(
-        [93, 155, 102, 80, 85.5, 109, 105, 139, 91, 105],
-        name='weight measure:WEIGHT(KG, 0)')
-    out = df['weight measure:WEIGHT(KG, 0)']
-    assert np.allclose(expected, out)

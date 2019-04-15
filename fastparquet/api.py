@@ -312,7 +312,7 @@ class ParquetFile(object):
                 not(filter_out_cats(rg, filters))]
 
     def iter_row_groups(self, columns=None, categories=None, filters=[],
-                        index=None):
+                        index=None, skip_groups=0):
         """
         Read data from parquet into a Pandas dataframe.
 
@@ -341,6 +341,8 @@ class ParquetFile(object):
         assign: dict {cols: array}
             Pre-allocated memory to write to. If None, will allocate memory
             here.
+        skip_groups: int
+            Skip this amount of groups
 
         Returns
         -------
@@ -355,14 +357,18 @@ class ParquetFile(object):
         if all(column.file_path is None for rg in self.row_groups
                for column in rg.columns):
             with self.open(self.fn, 'rb') as f:
-                for rg in rgs:
+                for i, rg in enumerate(rgs):
+                    if i < skip_groups:
+                        continue
                     df, views = self.pre_allocate(rg.num_rows, columns,
                                                   categories, index)
                     self.read_row_group(rg, columns, categories, infile=f,
                                         index=index, assign=views)
                     yield df
         else:
-            for rg in rgs:
+            for i, rg in enumerate(rgs):
+                if i < skip_groups:
+                    continue
                 df, views = self.pre_allocate(rg.num_rows, columns,
                                               categories, index)
                 self.read_row_group_file(rg, columns, categories, index,
@@ -492,9 +498,9 @@ class ParquetFile(object):
             md = json.loads(self.key_value_metadata['pandas'])['columns']
             tz = {c['name']: c['metadata']['timezone'] for c in md
                   if (c.get('metadata', {}) or {}).get('timezone', None)}
+            self.tz = tz
         else:
-            tz = None
-        self.tz = tz
+            self.tz = None
         categories = self.check_categories(categories)
         dtype = OrderedDict((name, (converted_types.typemap(f)
                             if f.num_children in [None, 0] else np.dtype("O")))
@@ -522,7 +528,7 @@ class ParquetFile(object):
                     else:
                         dtype[col] = np.dtype('f8')
             elif dt.kind == "M":
-                if tz is not None and tz.get(col, False):
+                if tz.get(col, False):
                     dtype[col] = pd.Series([], dtype='M8[ns]'
                                            ).dt.tz_localize(tz[col]).dtype
             elif dt == 'S12':
