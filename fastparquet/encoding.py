@@ -257,6 +257,7 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
     part = []
     started = False
     have_null = False
+    new_rows_observed = False
     if defi is None:
         defi = value_maker(max_defi)
     for de, re in zip(defi, rep):
@@ -266,6 +267,7 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
                 assign[i] = None if have_null else part
                 part = []
                 i += 1
+                new_rows_observed = True
             else:
                 # first time: no row to save yet, unless it's a row continued from previous page
                 if vali > 0:
@@ -290,7 +292,7 @@ def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, 
         if assign[i - 1] is None:
             assign[i - 1] = []
         assign[i - 1].extend(part)
-    return i
+    return i if new_rows_observed else i - 1
 
 
 def value_maker(val):
