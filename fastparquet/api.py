@@ -147,10 +147,6 @@ class ParquetFile(object):
         self.key_value_metadata = {k.key: k.value
                                    for k in fmd.key_value_metadata or []}
         self.created_by = fmd.created_by
-        self.group_files = {}
-        for i, rg in enumerate(self.row_groups):
-            for chunk in rg.columns:
-                self.group_files.setdefault(i, set()).add(chunk.file_path)
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python"
         files = [rg.columns[0].file_path
@@ -458,7 +454,7 @@ class ParquetFile(object):
 
     def check_categories(self, cats):
         categ = self.categories
-        if (self.fmd.key_value_metadata is None
+        if (self.key_value_metadata is None
                 or self.key_value_metadata.get('pandas', None) is None):
             return cats or {}
         if cats is None:

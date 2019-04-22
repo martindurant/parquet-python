@@ -341,7 +341,7 @@ def encode_rle_bp(data, width, o, withlength=False):
     if withlength:
         end = o.loc
         o.loc = start
-        write_length(wnd - start, o)
+        write_length(end - start, o)
         o.loc = end
 
 
