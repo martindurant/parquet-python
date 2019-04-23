@@ -58,3 +58,10 @@ def test_schema_ne_converted(tempdir):
     dfs["B"]["i32"] = dfs["B"]["i32"].astype(np.int64)
     parquet_files = _convert_to_parquet(dfs, tempdir, "test_scheme_ne_convert")
     assert parquet_files["A"].schema != parquet_files["B"].schema
+
+def test_schema_ne_different_order(tempdir):
+    # schemas don't match, column order is different
+    dfs = {key: _generate_random_dataframe() for key in ("A", "B")}
+    dfs["B"] = dfs["B"][dfs["B"].columns[::-1]]
+    parquet_files = _convert_to_parquet(dfs, tempdir, "test_scheme_ne_order")
+    assert parquet_files["A"].schema != parquet_files["B"].schema
