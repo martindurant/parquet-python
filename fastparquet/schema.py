@@ -80,6 +80,12 @@ class SchemaHelper(object):
         self.text = schema_to_text(self.schema_elements[0])
         flatten(self.root, self.root)
 
+    def __eq__(self, other):
+        return self.schema_elements == other.schema_elements
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __str__(self):
         return self.text
 
