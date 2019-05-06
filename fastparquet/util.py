@@ -234,7 +234,12 @@ def get_column_metadata(column, name):
         }
         dtype = column.cat.codes.dtype
     elif hasattr(dtype, 'tz'):
-        extra_metadata = {'timezone': str(dtype.tz)}
+        try:
+            pd.Series([pd.to_datetime('now')]).dt.tz_localize(str(dtype.tz))
+            extra_metadata = {'timezone': str(dtype.tz)}
+        except Exception:
+            raise ValueError("Time-zone information could not be serialised: "
+                             "%s, please use another" % str(dtype.tz))
     else:
         extra_metadata = None
 

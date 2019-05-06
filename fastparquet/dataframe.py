@@ -7,6 +7,7 @@ from pandas.core.internals import BlockManager
 from pandas import Categorical, DataFrame, Series, __version__ as pdver
 from pandas.api.types import is_categorical_dtype
 import six
+import warnings
 from .util import STR_TYPE
 
 
@@ -95,7 +96,12 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 t = t.base
             d = np.empty(0, dtype=t)
             if d.dtype.kind == "M" and six.text_type(col) in timezones:
-                d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                try:
+                    d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                except:
+                    warnings.warn("Inferring time-zone from %s in column %s "
+                                  "failed, using time-zone-agnostic"
+                                  "" % (timezones[six.text_type(col)], col))
             df[six.text_type(col)] = d
 
     df = DataFrame(df)
