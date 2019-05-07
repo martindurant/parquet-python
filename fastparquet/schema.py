@@ -65,6 +65,7 @@ def flatten(schema, root, name_parts=[]):
             root.children['.'.join(name_parts + [name])] = item
         else:
             flatten(item, root, name_parts)
+            item.isflat = True
 
 
 class SchemaHelper(object):

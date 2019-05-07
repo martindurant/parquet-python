@@ -494,7 +494,8 @@ class ParquetFile(object):
         categories = self.check_categories(categories)
         dtype = OrderedDict((name, (converted_types.typemap(f)
                             if f.num_children in [None, 0] else np.dtype("O")))
-                            for name, f in self.schema.root.children.items())
+                            for name, f in self.schema.root.children.items()
+                            if getattr(f, 'isflat', False) is False)
         for i, (col, dt) in enumerate(dtype.copy().items()):
             if dt.kind in ['i', 'b']:
                 # int/bool columns that may have nulls become float columns

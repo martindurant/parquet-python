@@ -839,3 +839,13 @@ def test_multi(tempdir):
     df1 = pf.to_pandas()
     assert df1.equals(df)
     assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+
+
+def test_simple_nested():
+    fn = os.path.join(TEST_DATA, 'nested1.parquet')
+    pf = ParquetFile(fn)
+    assert len(pf.dtypes) == 5
+    out = pf.to_pandas()
+    assert len(out.columns) == 5
+    assert '_adobe_corpnew' not in out.columns
+    assert all('_adobe_corpnew' + '.' in c for c in out.columns)
