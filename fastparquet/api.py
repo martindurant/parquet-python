@@ -368,7 +368,7 @@ class ParquetFile(object):
     def _get_index(self, index=None):
         if index is None:
             index = [i for i in self.pandas_metadata.get('index_columns', [])
-                     if isinstance(i, str)]
+                     if isinstance(i, six.text_type)]
         if isinstance(index, STR_TYPE):
             index = [index]
         return index
@@ -570,7 +570,7 @@ class ParquetFile(object):
 
 
 def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
-    index = [index] if isinstance(index, str) else (index or [])
+    index = [index] if isinstance(index, six.text_type) else (index or [])
     cols = [c for c in columns if c not in index]
     categories = categories or {}
     cats = cs.copy()
