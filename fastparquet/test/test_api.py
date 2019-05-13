@@ -849,3 +849,20 @@ def test_simple_nested():
     assert len(out.columns) == 5
     assert '_adobe_corpnew' not in out.columns
     assert all('_adobe_corpnew' + '.' in c for c in out.columns)
+
+
+def test_pandas_metadata_inference():
+    fn = os.path.join(TEST_DATA, 'metas.parq')
+    df = ParquetFile(fn).to_pandas()
+    assert df.columns.name == 'colindex'
+    assert df.index.name == 'rowindex'
+    assert df.index.tolist() == [2, 3]
+
+    df = ParquetFile(fn).to_pandas(index='a')
+    assert df.index.name == 'a'
+    assert df.columns.name == 'colindex'
+
+    df = ParquetFile(fn).to_pandas(index=False)
+    assert df.index.tolist() == [0, 1]
+    assert df.index.name is None
+

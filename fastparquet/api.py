@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 from collections import OrderedDict
 import json
-import os
+import re
 import six
 import struct
 import warnings
@@ -367,8 +367,8 @@ class ParquetFile(object):
 
     def _get_index(self, index=None):
         if index is None:
-            index = json.loads(self.key_value_metadata.get('pandas', '{}')).get(
-                'index_columns', [])
+            index = [i for i in self.pandas_metadata.get('index_columns', [])
+                     if isinstance(i, str)]
         if isinstance(index, STR_TYPE):
             index = [index]
         return index
@@ -438,8 +438,31 @@ class ParquetFile(object):
 
     def pre_allocate(self, size, columns, categories, index):
         categories = self.check_categories(categories)
-        return _pre_allocate(size, columns, categories, index, self.cats,
-                             self._dtypes(categories), self.tz)
+        df, arrs = _pre_allocate(size, columns, categories, index, self.cats,
+                                 self._dtypes(categories), self.tz)
+        i_no_name = re.compile(r"__index_level_\d+__")
+        if self.has_pandas_metadata:
+            md = self.pandas_metadata
+            if md.get('column_indexes', False):
+                names = [(c['name'] if isinstance(c, dict) else c)
+                         for c in md['column_indexes']]
+                names = [None if n is None or i_no_name.match(n) else n
+                         for n in names]
+                df.columns.names = names
+            if md.get('index_columns', False) and not (index or index is False):
+                if len(md['index_columns']) == 1:
+                    ic = md['index_columns'][0]
+                    if isinstance(ic, dict) and ic['kind'] == 'range':
+                        from pandas import RangeIndex
+                        df.index = RangeIndex(
+                            start=ic['start'], stop=ic['stop'], step=ic['step']
+                        )
+                names = [(c['name'] if isinstance(c, dict) else c)
+                         for c in md['index_columns']]
+                names = [None if n is None or i_no_name.match(n) else n
+                         for n in names]
+                df.index.names = names
+        return df, arrs
 
     @property
     def count(self):
@@ -454,8 +477,7 @@ class ParquetFile(object):
 
     def check_categories(self, cats):
         categ = self.categories
-        if (self.key_value_metadata is None
-                or self.key_value_metadata.get('pandas', None) is None):
+        if not self.has_pandas_metadata:
             return cats or {}
         if cats is None:
             return categ or {}
@@ -465,12 +487,22 @@ class ParquetFile(object):
         return cats
 
     @property
-    def categories(self):
+    def has_pandas_metadata(self):
         if self.fmd.key_value_metadata is None:
+            return False
+        return bool(self.key_value_metadata.get('pandas', False))
+
+    @property
+    def pandas_metadata(self):
+        if self.has_pandas_metadata:
+            return json.loads(self.key_value_metadata['pandas'])
+        else:
             return {}
-        vals = self.key_value_metadata.get('pandas', None)
-        if vals:
-            metadata = json.loads(vals)
+
+    @property
+    def categories(self):
+        if self.has_pandas_metadata:
+            metadata = self.pandas_metadata
             cats = {m['name']: m['metadata']['num_categories'] for m in
                     metadata['columns'] if m['pandas_type'] == 'categorical'}
             return cats
@@ -484,8 +516,8 @@ class ParquetFile(object):
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
         import pandas as pd
-        if 'pandas' in self.key_value_metadata:
-            md = json.loads(self.key_value_metadata['pandas'])['columns']
+        if self.has_pandas_metadata:
+            md = self.pandas_metadata['columns']
             tz = {c['name']: c['metadata']['timezone'] for c in md
                   if (c.get('metadata', {}) or {}).get('timezone', None)}
         else:
