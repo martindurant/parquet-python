@@ -214,7 +214,7 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
-            base = self.fn.replace('_metadata', '').rstrip('/')
+            base = re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
             if base:
                 return join_path(base, rg.columns[0].file_path)
             else:
