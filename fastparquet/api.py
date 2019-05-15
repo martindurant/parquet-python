@@ -455,8 +455,10 @@ class ParquetFile(object):
                     if isinstance(ic, dict) and ic['kind'] == 'range':
                         from pandas import RangeIndex
                         df.index = RangeIndex(
-                            start=ic['start'], stop=ic['stop'], step=ic['step']
-                        )
+                            start=ic['start'],
+                            stop=ic['start'] + size * ic['step'] + 1,
+                            step=ic['step']
+                        )[:size]
                 names = [(c['name'] if isinstance(c, dict) else c)
                          for c in md['index_columns']]
                 names = [None if n is None or i_no_name.match(n) else n

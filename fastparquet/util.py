@@ -75,16 +75,6 @@ else:
         return s.encode('utf-8') if isinstance(s, str) else s
 
 
-def index_like(index):
-    """
-    Does index look like a default range index?
-    """
-    return not (isinstance(index, pd.RangeIndex) and
-                index._start == 0 and
-                index._stop == len(index) and
-                index._step == 1 and index.name is None)
-
-
 def check_column_names(columns, *args):
     """Ensure that parameters listing column names have corresponding columns"""
     for arg in args:

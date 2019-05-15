@@ -24,7 +24,7 @@ from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api
 from .util import (default_open, default_mkdirs,
-                   index_like, PY2, STR_TYPE,
+                   PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata)
 from .speedups import array_encode_utf8, pack_byte_array
@@ -651,8 +651,17 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
     if not data.columns.is_unique:
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
+    if not isinstance(index_cols, list):
+        index_cols = [{'name': index_cols.name, 'start': index_cols._start,
+                       'stop': index_cols._stop, 'step': index_cols._step,
+                       'kind': 'range'}]
     pandas_metadata = {'index_columns': index_cols,
-                       'columns': [], 'pandas_version': pd.__version__}
+                       'columns': [], 'pandas_version': pd.__version__,
+                       'column_indexes': [{'name': data.columns.name,
+                                           'field_name': data.columns.name,
+                                           'pandas_type': 'mixed-integer',
+                                           'numpy_type': 'object',
+                                           'metadata': None}]}
     root = parquet_thrift.SchemaElement(name='schema',
                                         num_children=0)
 
@@ -835,11 +844,15 @@ def write(filename, data, row_group_offsets=50000000,
         nparts = max((l - 1) // row_group_offsets + 1, 1)
         chunksize = max(min((l - 1) // nparts + 1, l), 1)
         row_group_offsets = list(range(0, l, chunksize))
-    if write_index or write_index is None and index_like(data.index):
+    if (write_index or write_index is None
+            and not isinstance(data.index, pd.RangeIndex)):
         cols = set(data)
         data = data.reset_index()
         index_cols = [c for c in data if c not in cols]
-    else:
+    elif isinstance(data.index, pd.RangeIndex):
+        # write_index=None, range to metadata
+        index_cols = data.index
+    else:  # write_index=False
         index_cols = []
     check_column_names(data.columns, partition_on, fixed_text, object_encoding,
                        has_nulls)
