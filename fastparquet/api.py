@@ -520,7 +520,7 @@ class ParquetFile(object):
                     if chunk.meta_data.statistics.null_count:
                         num_nulls = True
                         break
-                if num_nulls:
+                if num_nulls or dt.kind == 'i':
                     if dtype[col].itemsize == 1:
                         dtype[col] = np.dtype('f2')
                     elif dtype[col].itemsize == 2:
