@@ -44,6 +44,8 @@ def val_to_num(x):
         return x
     if x in ['now', 'NOW', 'TODAY', '']:
         return x
+    if type(x) == str and x.lower() == 'nan':
+        return x
     if x == "True":
         return True
     if x == "False":

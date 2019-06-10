@@ -90,6 +90,8 @@ def test_val_to_num():
     assert val_to_num('now') == 'now'
     assert val_to_num('TODAY') == 'TODAY'
     assert val_to_num('') == ''
+    assert val_to_num('nan') == 'nan'
+    assert val_to_num('NaN') == 'NaN'
     assert val_to_num('2018-10-10') == pd.to_datetime('2018-10-10')
     assert val_to_num('2018-10-09') == pd.to_datetime('2018-10-09')
     assert val_to_num('2017-12') == pd.to_datetime('2017-12')
