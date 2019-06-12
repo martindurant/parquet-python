@@ -119,7 +119,17 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col] = vals
             views[col+'-catdef'] = index._data
         else:
+            if hasattr(t, 'base'):
+                # funky pandas not-dtype
+                t = t.base
             d = np.empty(size, dtype=t)
+            if d.dtype.kind == "M" and six.text_type(col) in timezones:
+                try:
+                    d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                except:
+                    warnings.warn("Inferring time-zone from %s in column %s "
+                                  "failed, using time-zone-agnostic"
+                                  "" % (timezones[six.text_type(col)], col))
             index = Index(d)
             views[col] = index.values
     else:
