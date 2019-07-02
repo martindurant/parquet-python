@@ -175,7 +175,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             new_shape = (size, )
             values = np.empty(shape=new_shape, dtype='M8[ns]')
             new_block = block.make_block_same_class(
-                    values=values, dtype=block.values.dtype)
+                type(block.values)(values, dtype=block.values.dtype)
+            )
         else:
             new_shape = (block.values.shape[0], size)
             values = np.empty(shape=new_shape, dtype=block.values.dtype)

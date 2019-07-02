@@ -1,3 +1,7 @@
+import warnings
+import pytest
+import pandas as pd
+
 from fastparquet.dataframe import empty
 
 
@@ -22,6 +26,16 @@ def test_empty():
                       cols=['i4', 'i8', 'f8_1', 'f8_2', 'O'])
     assert df.shape == (n, 5)
     assert len(views) == 5
+
+
+def test_empty_tz():
+    warnings.simplefilter("error", DeprecationWarning)
+
+    with pytest.warns(None) as e:
+        empty([pd.DatetimeTZDtype(tz="UTC")], 10, cols=['a'],
+              timezones={'a': 'UTC'})
+
+    assert len(e) == 0, e
 
 
 def test_timestamps():
