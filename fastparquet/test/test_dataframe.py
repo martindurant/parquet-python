@@ -40,7 +40,7 @@ def test_empty_tz():
     warnings.simplefilter("error", DeprecationWarning)
 
     with pytest.warns(None) as e:
-        empty([pd.DatetimeTZDtype(unit="ns", tz="UTC")], 10, cols=['a'],
+        empty([DatetimeTZDtype(unit="ns", tz="UTC")], 10, cols=['a'],
               timezones={'a': 'UTC'})
 
     assert len(e) == 0, e
