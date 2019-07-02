@@ -1,8 +1,16 @@
+import distutils
 import warnings
+
 import pytest
 import pandas as pd
 
 from fastparquet.dataframe import empty
+
+
+if distutils.version.LooseVersion(pd.__version__) >= "0.24.0":
+    DatetimeTZDtype = pd.DatetimeTZDtype
+else:
+    DatetimeTZDtype = pd.api.types.DatetimeTZDtype
 
 
 def test_empty():
@@ -32,7 +40,7 @@ def test_empty_tz():
     warnings.simplefilter("error", DeprecationWarning)
 
     with pytest.warns(None) as e:
-        empty([pd.DatetimeTZDtype(tz="UTC")], 10, cols=['a'],
+        empty([pd.DatetimeTZDtype(unit="ns", tz="UTC")], 10, cols=['a'],
               timezones={'a': 'UTC'})
 
     assert len(e) == 0, e
