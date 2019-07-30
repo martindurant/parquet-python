@@ -184,7 +184,7 @@ def test_datetime_roundtrip(tempdir, df, capsys):
     r = ParquetFile(fname)
 
     if w:
-        assert "UTC" in str(w.list[0].message)
+        assert any("UTC" in str(wm.message) for wm in w.list)
 
     df2 = r.to_pandas()
 
