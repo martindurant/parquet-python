@@ -116,6 +116,7 @@ class ParquetFile(object):
                     self._parse_header(f, verify)
         self.open = open_with
         self.sep = sep
+        self._statistics = None
 
     def _parse_header(self, f, verify=True):
         try:
@@ -170,7 +171,9 @@ class ParquetFile(object):
 
     @property
     def statistics(self):
-        return statistics(self)
+        if self._statistics is None:
+            self._statistics = statistics(self)
+        return self._statistics
 
     def _read_partitions(self):
         if self.file_scheme in ['simple', 'flat', 'other']:
