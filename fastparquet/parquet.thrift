@@ -366,6 +366,7 @@ enum CompressionCodec {
   BROTLI = 4;
   LZ4 = 5;
   ZSTD = 6;
+  BLOSC = 7;
 }
 
 enum PageType {

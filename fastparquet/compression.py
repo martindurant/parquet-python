@@ -104,13 +104,23 @@ if 'ZSTD' not in compressions:
         decompressions['ZSTD'] = zstd_decompress
     except ImportError:
         pass
+try:
+    import blosc
+    def blosc_compress(data, **kwargs):
+        return blosc.compress(data, **kwargs)
+    def blosc_decompress(data, uncompressed_size):
+        return blosc.decompress(data)
+    compressions['BLOSC'] = blosc_compress
+    decompressions['BLOSC'] = blosc_decompress
+except ImportError:
+    pass
 
 compressions = {k.upper(): v for k, v in compressions.items()}
 decompressions = {k.upper(): v for k, v in decompressions.items()}
 
 rev_map = {getattr(parquet_thrift.CompressionCodec, key): key for key in
            dir(parquet_thrift.CompressionCodec) if key in
-           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4', 'ZSTD']}
+           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4', 'ZSTD', 'BLOSC']}
 
 
 def compress_data(data, compression='gzip'):

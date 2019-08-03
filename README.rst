@@ -52,6 +52,7 @@ Optional (compression algorithms; gzip is always available):
 - brotli
 - lz4
 - zstandard
+- blosc
 
 
 Installation

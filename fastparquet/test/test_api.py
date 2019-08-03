@@ -722,6 +722,45 @@ def test_compression_snappy(tempdir):
 
     pd.util.testing.assert_frame_equal(df, df2)
 
+def test_compression_blosc(tempdir):
+    pytest.importorskip('blosc')
+
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "blosc",
+            "args": {
+                "cname": "blosclz",
+            }
+        },
+        "_default": {
+            "type": "gzip",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    pd.util.testing.assert_frame_equal(df, df2)
+
 
 def test_int96_stats(tempdir):
     df = pd.util.testing.makeMixedDataFrame()

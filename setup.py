@@ -78,6 +78,7 @@ setup(
         [p for p in install_requires if p.startswith('numpy')][0]
     ],
     extras_require={
+        'blosc': ['blosc'],
         'brotli': ['brotli'],
         'lz4': ['lz4 >= 0.19.1'],
         'lzo': ['python-lzo'],
@@ -85,6 +86,7 @@ setup(
         'zstandard': ['zstandard']
     },
     tests_require=[
+        'blosc',
         'pytest',
         'python-snappy',
         'lz4 >= 0.19.1',

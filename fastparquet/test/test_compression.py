@@ -72,6 +72,23 @@ def test_compress_decompress_roundtrip_args_zstd():
     decompressed = decompress_data(compressed, len(data), algorithm="zstd")
     assert data == decompressed
 
+def test_compress_decompress_roundtrip_args_blosc():
+    pytest.importorskip('blosc')
+    data = b'123' * 1000
+    compressed = compress_data(
+        data,
+        compression={
+            "type": "blosc",
+            "args": {
+                "cname": "blosclz"
+            }
+        }
+    )
+    assert len(compressed) < len(data)
+
+    decompressed = decompress_data(compressed, len(data), algorithm="blosc")
+    assert data == decompressed
+
 def test_errors():
     with pytest.raises(RuntimeError) as e:
         compress_data(b'123', compression='not-an-algorithm')
