@@ -244,6 +244,7 @@ def get_column_metadata(column, name):
 
     return {
         'name': name,
+        'field_name': name,
         'pandas_type': {
             'string': 'bytes' if PY2 else 'unicode',
             'datetime64': (

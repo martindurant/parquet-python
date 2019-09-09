@@ -22,7 +22,7 @@ except ImportError:
 from .thrift_structures import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
-from . import encoding, api
+from . import encoding, api, __version__
 from .util import (default_open, default_mkdirs,
                    PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
@@ -656,12 +656,15 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
                        'stop': index_cols._stop, 'step': index_cols._step,
                        'kind': 'range'}]
     pandas_metadata = {'index_columns': index_cols,
-                       'columns': [], 'pandas_version': pd.__version__,
+                       'columns': [],
                        'column_indexes': [{'name': data.columns.name,
                                            'field_name': data.columns.name,
                                            'pandas_type': 'mixed-integer',
                                            'numpy_type': 'object',
-                                           'metadata': None}]}
+                                           'metadata': None}],
+                       'creator': {'library': 'fastparquet',
+                                   'version': __version__},
+                       'pandas_version': pd.__version__,}
     root = parquet_thrift.SchemaElement(name='schema',
                                         num_children=0)
 
