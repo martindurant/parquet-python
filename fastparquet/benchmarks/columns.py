@@ -140,10 +140,7 @@ def time_find_nulls(N=10000000):
     df.loc[:, 'x'] = pd.to_datetime('NaT')
     run_find_nulls(df, result)
 
-    [(k + (v, )) for k, v in result.items()]
-    df = pd.DataFrame(out, columns=('type', 'nvalid', 'op', 'time'))
-    df.groupby(('type', 'nvalid', 'op')).sum()
-    return df
+    return df.groupby(('type', 'nvalid', 'op')).sum()
 
 
 def run_find_nulls(df, res):

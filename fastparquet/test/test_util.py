@@ -2,7 +2,8 @@ import os
 import pandas as pd
 import pytest
 
-from fastparquet.util import analyse_paths, get_file_scheme, val_to_num, join_path, groupby_types
+from fastparquet.util import (analyse_paths, get_file_scheme, val_to_num,
+                              join_path, groupby_types, get_column_metadata)
 
 
 def test_analyse_paths():
@@ -89,6 +90,8 @@ def test_val_to_num():
     assert val_to_num('now') == 'now'
     assert val_to_num('TODAY') == 'TODAY'
     assert val_to_num('') == ''
+    assert val_to_num('nan') == 'nan'
+    assert val_to_num('NaN') == 'NaN'
     assert val_to_num('2018-10-10') == pd.to_datetime('2018-10-10')
     assert val_to_num('2018-10-09') == pd.to_datetime('2018-10-09')
     assert val_to_num('2017-12') == pd.to_datetime('2017-12')
@@ -108,3 +111,9 @@ def test_groupby_types():
     assert len(groupby_types([1, 2, 3.0])) == 2
     assert len(groupby_types([1, "2", "3.0"])) == 2 
     assert len(groupby_types([pd.to_datetime("2000"), "2000"])) == 2
+
+
+def test_bad_tz():
+    idx = pd.date_range('2012-01-01', periods=3, tz='dateutil/Europe/London')
+    with pytest.raises(ValueError):
+        get_column_metadata(idx, 'tz')

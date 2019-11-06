@@ -113,11 +113,20 @@ def convert(data, se, timestamp96=True):
             if PY2:
                 def from_bytes(d):
                     return int(binascii.b2a_hex(d), 16) if len(d) else 0
-                return np.array([from_bytes(d) * scale_factor for d in data])
+                by = data.tostring()
+                its = data.dtype.itemsize
+                return np.array([
+                    from_bytes(by[i * its:(i + 1) * its]) * scale_factor
+                    for i in range(len(data))
+                ])
             else:
                 # NB: `from_bytes` may be py>=3.4 only
-                return np.array([int.from_bytes(d, byteorder='big', signed=True) *
-                                 scale_factor for d in data])
+                return np.array([
+                    int.from_bytes(
+                        data.data[i:i + 1], byteorder='big', signed=True
+                    ) * scale_factor
+                    for i in range(len(data))
+                ])
     elif ctype == parquet_thrift.ConvertedType.DATE:
         return (data * DAYS_TO_MILLIS).view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:

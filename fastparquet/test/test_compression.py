@@ -76,8 +76,8 @@ def test_errors():
     with pytest.raises(RuntimeError) as e:
         compress_data(b'123', compression='not-an-algorithm')
 
-    assert 'not-an-algorithm' in str(e)
-    assert 'gzip' in str(e).lower()
+    assert 'not-an-algorithm' in str(e.value)
+    assert 'gzip' in str(e.value).lower()
 
 
 def test_not_installed():

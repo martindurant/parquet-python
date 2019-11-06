@@ -130,7 +130,7 @@ def test_bad_coltype(tempdir):
     fn = os.path.join(tempdir, 'temp.parq')
     with pytest.raises((ValueError, TypeError)) as e:
         write(fn, df)
-        assert "tuple" in str(e)
+        assert "tuple" in str(e.value)
 
 
 def test_bad_col(tempdir):
@@ -184,7 +184,7 @@ def test_datetime_roundtrip(tempdir, df, capsys):
     r = ParquetFile(fname)
 
     if w:
-        assert "UTC" in str(w.list[0].message)
+        assert any("UTC" in str(wm.message) for wm in w.list)
 
     df2 = r.to_pandas()
 
@@ -356,7 +356,7 @@ def test_too_many_partition_columns(tempdir):
                        'c': np.random.choice([True, False], size=1000)})
     with pytest.raises(ValueError) as ve:
         writer.write(tempdir, df, partition_on=['a', 'c'], file_scheme='hive')
-    assert "Cannot include all columns" in str(ve)
+    assert "Cannot include all columns" in str(ve.value)
 
 
 def test_read_partitioned_and_write_with_empty_partions(tempdir):
@@ -433,7 +433,7 @@ def test_duplicate_columns(tempdir):
     df = pd.DataFrame(np.arange(12).reshape(4, 3), columns=list('aaa'))
     with pytest.raises(ValueError) as e:
         write(fn, df)
-    assert 'duplicate' in str(e)
+    assert 'duplicate' in str(e.value)
 
 
 @pytest.mark.parametrize('cmp', [None, 'gzip'])
@@ -714,7 +714,7 @@ def test_merge_fail(tempdir):
 
     with pytest.raises(ValueError) as e:
         writer.merge([fn0, fn1])
-    assert 'schemas' in str(e)
+    assert 'schemas' in str(e.value)
 
 
 def test_append_simple(tempdir):
@@ -785,13 +785,13 @@ def test_append_fail(tempdir):
     write(fn, df0, file_scheme='hive')
     with pytest.raises(ValueError) as e:
         write(fn, df1, file_scheme='simple', append=True)
-    assert 'existing file scheme' in str(e)
+    assert 'existing file scheme' in str(e.value)
 
     fn2 = os.path.join(fn, 'temp.parq')
     write(fn2, df0, file_scheme='simple')
     with pytest.raises(ValueError) as e:
         write(fn2, df1, file_scheme='hive', append=True)
-    assert 'existing file scheme' in str(e)
+    assert 'existing file scheme' in str(e.value)
 
 
 def test_append_w_partitioning(tempdir):
@@ -817,7 +817,7 @@ def test_bad_object_encoding(tempdir):
     df = pd.DataFrame({'x': ['a', 'ab']})
     with pytest.raises(ValueError) as e:
         write(str(tempdir), df, object_encoding='utf-8')
-    assert "utf-8" in str(e)
+    assert "utf-8" in str(e.value)
 
 
 def test_empty_dataframe(tempdir):
@@ -897,16 +897,16 @@ def test_bad_object_encoding(tempdir):
     df = pd.DataFrame({'a': [b'00']})
     with pytest.raises(ValueError) as e:
         write(tempdir, df, file_scheme='hive', object_encoding='utf8')
-    assert "UTF8" in str(e)
-    assert "bytes" in str(e)
-    assert '"a"' in str(e)
+    assert "UTF8" in str(e.value)
+    assert "bytes" in str(e.value)
+    assert '"a"' in str(e.value)
 
     df = pd.DataFrame({'a': [0, "hello", 0]})
     with pytest.raises(ValueError) as e:
         write(tempdir, df, file_scheme='hive', object_encoding='int')
-    assert "INT64" in str(e)
-    assert "primitive" in str(e)
-    assert '"a"' in str(e)
+    assert "INT64" in str(e.value)
+    assert "primitive" in str(e.value)
+    assert '"a"' in str(e.value)
 
 def test_object_encoding_int32(tempdir):
     df = pd.DataFrame({'a': ['15', None, '2']})

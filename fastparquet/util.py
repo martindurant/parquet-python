@@ -44,6 +44,8 @@ def val_to_num(x):
         return x
     if x in ['now', 'NOW', 'TODAY', '']:
         return x
+    if type(x) == str and x.lower() == 'nan':
+        return x
     if x == "True":
         return True
     if x == "False":
@@ -75,24 +77,17 @@ else:
         return s.encode('utf-8') if isinstance(s, str) else s
 
 
-def index_like(index):
-    """
-    Does index look like a default range index?
-    """
-    return not (isinstance(index, pd.RangeIndex) and
-                index._start == 0 and
-                index._stop == len(index) and
-                index._step == 1 and index.name is None)
-
-
 def check_column_names(columns, *args):
     """Ensure that parameters listing column names have corresponding columns"""
     for arg in args:
         if isinstance(arg, (tuple, list)):
-            if set(arg) - set(columns):
-                raise ValueError("Column name not in list.\n"
-                                 "Requested %s\n"
-                                 "Allowed %s" % (arg, columns))
+            missing = set(arg) - set(columns)
+            if missing:
+                raise ValueError("Following columns were requested but are "
+                                 "not available: %s.\n"
+                                 "All requested columns: %s\n"
+                                 "Available columns: %s"
+                                 "" % (missing, arg, columns))
 
 
 def byte_buffer(raw_bytes):
@@ -231,7 +226,12 @@ def get_column_metadata(column, name):
         }
         dtype = column.cat.codes.dtype
     elif hasattr(dtype, 'tz'):
-        extra_metadata = {'timezone': str(dtype.tz)}
+        try:
+            pd.Series([pd.to_datetime('now')]).dt.tz_localize(str(dtype.tz))
+            extra_metadata = {'timezone': str(dtype.tz)}
+        except Exception:
+            raise ValueError("Time-zone information could not be serialised: "
+                             "%s, please use another" % str(dtype.tz))
     else:
         extra_metadata = None
 
@@ -244,6 +244,7 @@ def get_column_metadata(column, name):
 
     return {
         'name': name,
+        'field_name': name,
         'pandas_type': {
             'string': 'bytes' if PY2 else 'unicode',
             'datetime64': (

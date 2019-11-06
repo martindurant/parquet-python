@@ -1,4 +1,16 @@
+import distutils
+import warnings
+
+import pytest
+import pandas as pd
+
 from fastparquet.dataframe import empty
+
+
+if distutils.version.LooseVersion(pd.__version__) >= "0.24.0":
+    DatetimeTZDtype = pd.DatetimeTZDtype
+else:
+    DatetimeTZDtype = pd.api.types.DatetimeTZDtype
 
 
 def test_empty():
@@ -22,6 +34,16 @@ def test_empty():
                       cols=['i4', 'i8', 'f8_1', 'f8_2', 'O'])
     assert df.shape == (n, 5)
     assert len(views) == 5
+
+
+def test_empty_tz():
+    warnings.simplefilter("error", DeprecationWarning)
+
+    with pytest.warns(None) as e:
+        empty([DatetimeTZDtype(unit="ns", tz="UTC")], 10, cols=['a'],
+              timezones={'a': 'UTC'})
+
+    assert len(e) == 0, e
 
 
 def test_timestamps():

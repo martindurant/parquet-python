@@ -370,14 +370,14 @@ def test_filter_dates(tempdir):
     df = pd.DataFrame({
         'x': [1, 2, 3, 4, 5, 6, 7],
         'date': [
-            '2015-05-09', '2017-05-15', '2017-05-14', 
+            '2015-05-09', '2017-05-15', '2017-05-14',
             '2017-05-13', '2015-05-10', '2015-05-11', '2017-05-12'
         ]
     })
     write(tempdir, df, file_scheme='hive', partition_on=['date'])
     pf = ParquetFile(tempdir)
     out_1 = pf.to_pandas(filters=[('date', '>', '2017-01-01')])
-    
+
     assert set(out_1.x.tolist()) == {2, 3, 4, 7}
     expected_dates = set(pd.to_datetime(['2017-05-15', '2017-05-14', '2017-05-13', '2017-05-12']))
     assert set(out_1.date.tolist()) == expected_dates
@@ -761,6 +761,12 @@ def test_only_partition_columns(tempdir):
         write(tempdir, df[['b']], file_scheme='hive', partition_on=['b'])
 
 
+def test_path_containing_metadata_df():
+    p = ParquetFile(os.path.join(TEST_DATA, "dir_metadata", "empty.parquet"))
+    df = p.to_pandas()
+    assert list(p.columns) == ['a', 'b', 'c', '__index_level_0__']
+    assert len(df) == 0
+
 def test_empty_df():
     p = ParquetFile(os.path.join(TEST_DATA, "empty.parquet"))
     df = p.to_pandas()
@@ -839,3 +845,30 @@ def test_multi(tempdir):
     df1 = pf.to_pandas()
     assert df1.equals(df)
     assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+
+
+def test_simple_nested():
+    fn = os.path.join(TEST_DATA, 'nested1.parquet')
+    pf = ParquetFile(fn)
+    assert len(pf.dtypes) == 5
+    out = pf.to_pandas()
+    assert len(out.columns) == 5
+    assert '_adobe_corpnew' not in out.columns
+    assert all('_adobe_corpnew' + '.' in c for c in out.columns)
+
+
+def test_pandas_metadata_inference():
+    fn = os.path.join(TEST_DATA, 'metas.parq')
+    df = ParquetFile(fn).to_pandas()
+    assert df.columns.name == 'colindex'
+    assert df.index.name == 'rowindex'
+    assert df.index.tolist() == [2, 3]
+
+    df = ParquetFile(fn).to_pandas(index='a')
+    assert df.index.name == 'a'
+    assert df.columns.name == 'colindex'
+
+    df = ParquetFile(fn).to_pandas(index=False)
+    assert df.index.tolist() == [0, 1]
+    assert df.index.name is None
+

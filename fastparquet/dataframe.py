@@ -7,6 +7,7 @@ from pandas.core.internals import BlockManager
 from pandas import Categorical, DataFrame, Series, __version__ as pdver
 from pandas.api.types import is_categorical_dtype
 import six
+import warnings
 from .util import STR_TYPE
 
 
@@ -90,9 +91,17 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             df[six.text_type(col)] = Categorical([], categories=cat(col),
                                                  fastpath=True)
         else:
+            if hasattr(t, 'base'):
+                # funky pandas not-dtype
+                t = t.base
             d = np.empty(0, dtype=t)
             if d.dtype.kind == "M" and six.text_type(col) in timezones:
-                d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                try:
+                    d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                except:
+                    warnings.warn("Inferring time-zone from %s in column %s "
+                                  "failed, using time-zone-agnostic"
+                                  "" % (timezones[six.text_type(col)], col))
             df[six.text_type(col)] = d
 
     df = DataFrame(df)
@@ -110,7 +119,17 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col] = vals
             views[col+'-catdef'] = index._data
         else:
+            if hasattr(t, 'base'):
+                # funky pandas not-dtype
+                t = t.base
             d = np.empty(size, dtype=t)
+            if d.dtype.kind == "M" and six.text_type(col) in timezones:
+                try:
+                    d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                except:
+                    warnings.warn("Inferring time-zone from %s in column %s "
+                                  "failed, using time-zone-agnostic"
+                                  "" % (timezones[six.text_type(col)], col))
             index = Index(d)
             views[col] = index.values
     else:
@@ -156,7 +175,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             new_shape = (size, )
             values = np.empty(shape=new_shape, dtype='M8[ns]')
             new_block = block.make_block_same_class(
-                    values=values, dtype=block.values.dtype)
+                type(block.values)(values, dtype=block.values.dtype)
+            )
         else:
             new_shape = (block.values.shape[0], size)
             values = np.empty(shape=new_shape, dtype=block.values.dtype)
