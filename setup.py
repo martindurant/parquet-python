@@ -82,7 +82,8 @@ setup(
         'lz4': ['lz4 >= 0.19.1'],
         'lzo': ['python-lzo'],
         'snappy': ['python-snappy'],
-        'zstandard': ['zstandard']
+        'zstandard': ['zstandard'],
+        'zstd': ['zstd'],
     },
     tests_require=[
         'pytest',

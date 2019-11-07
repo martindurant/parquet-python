@@ -1,33 +1,28 @@
-sudo: False
-
+dist: bionic
+sudo: false
 language: python
+
+addons:
+  apt:
+    packages:
+      - liblzo2-dev
+      - libsnappy-dev
+
+python:
+  - 2.7
+  - 3.5
+  - 3.6
+  - 3.7
 
 matrix:
   include:
-    - python: 2.7
-    - python: 3.5
-    - python: 3.6
+    - python: 3.7
+      env: TOXENV=alternate-zstd
 
 install:
-  # Install conda
-  - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update conda
+  - pip install tox tox-travis
 
-  # Install dependencies
-  - conda create -n test python=$TRAVIS_PYTHON_VERSION pytest
-  - source activate test
-  - conda install -c conda-forge thrift python-snappy
-  - conda install numpy pandas numba cython setuptools
-  - pip install bson
-  - pip install lz4
-  - pip install zstandard
-
-script:
-  - python setup.py install
-  - python setup.py test
+script: tox
 
 notifications:
   email: false
