@@ -93,7 +93,7 @@ if 'ZSTD' not in compressions:
             if level is not None:
                 return zstd.compress(data, level)
             return zstd.compress(data)
-        def zstd_decompress(data):
+        def zstd_decompress(data, _uncompressed_size=None):
             return zstd.decompress(data)
         compressions['ZSTD'] = zstd_compress
         decompressions['ZSTD'] = zstd_decompress

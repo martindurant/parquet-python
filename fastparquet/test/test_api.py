@@ -602,7 +602,7 @@ def test_bad_file_paths(tempdir):
 
 
 def test_compression_zstandard(tempdir):
-    pytest.importorskip('zstd')
+    pytest.importorskip('zstandard')
 
     df = pd.DataFrame(
         {
@@ -644,6 +644,47 @@ def test_compression_zstandard(tempdir):
     df2 = p.to_pandas()
 
     pd.util.testing.assert_frame_equal(df, df2)
+
+
+def test_compression_zstd(tempdir):
+    pytest.importorskip('zstd')
+
+    df = pd.DataFrame(
+        {
+            'x': np.arange(1000),
+            'y': np.arange(1, 1001),
+            'z': np.arange(2, 1002),
+        }
+    )
+
+    fn = os.path.join(tempdir, 'foocomp.parquet')
+
+    c = {
+        "x": {
+            "type": "gzip",
+            "args": {
+                "compresslevel": 5,
+            }
+        },
+        "y": {
+            "type": "zstd",
+            "args": {
+                "level": 5,
+            }
+        },
+        "_default": {
+            "type": "gzip",
+            "args": None
+        }
+    }
+    write(fn, df, compression=c)
+
+    p = ParquetFile(fn)
+
+    df2 = p.to_pandas()
+
+    pd.util.testing.assert_frame_equal(df, df2)
+
 
 def test_compression_lz4(tempdir):
     pytest.importorskip('lz4')
