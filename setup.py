@@ -75,8 +75,7 @@ setup(
     install_requires=install_requires,
     setup_requires=[
         'pytest-runner',
-        [p for p in install_requires if p.startswith('numpy')][0]
-    ],
+    ] + [p for p in install_requires if p.startswith('numpy')],
     extras_require={
         'brotli': ['brotli'],
         'lz4': ['lz4 >= 0.19.1'],
