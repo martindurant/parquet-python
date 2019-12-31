@@ -7,7 +7,7 @@ import re
 import six
 import numbers
 from collections import defaultdict
-from itertools import filterfalse
+import itertools
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -33,7 +33,6 @@ if PY2:
 else:
     def default_mkdirs(f):
         os.makedirs(f, exist_ok=True)
-
 
 def default_open(f, mode='rb'):
     return open(f, mode)
@@ -362,6 +361,12 @@ def join_path(*path):
     else:
         joined = abs_prefix + ('/'.join(simpler))
     return joined
+
+
+if PY2:
+    filterfalse = itertools.ifilterfalse
+else:
+    filterfalse = itertools.filterfalse
 
 
 def unique_everseen(iterable, key=None):
