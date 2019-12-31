@@ -19,7 +19,8 @@ from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
 from .util import (default_open, ParquetException, val_to_num,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, get_file_scheme, STR_TYPE, groupby_types)
+                   ex_from_sep, get_file_scheme, STR_TYPE, groupby_types,
+                   unique_everseen)
 
 
 class ParquetFile(object):
@@ -181,20 +182,31 @@ class ParquetFile(object):
             return
         cats = OrderedDict()
         raw_cats = OrderedDict()
-        for rg in self.row_groups:
-            for col in rg.columns:
-                s = ex_from_sep('/')
-                path = col.file_path or ""
-                if self.file_scheme == 'hive':
-                    partitions = s.findall(path)
-                    for key, val in partitions:
-                        cats.setdefault(key, set()).add(val_to_num(val))
-                        raw_cats.setdefault(key, set()).add(val)
-                else:
-                    for i, val in enumerate(col.file_path.split('/')[:-1]):
-                        key = 'dir%i' % i
-                        cats.setdefault(key, set()).add(val_to_num(val))
-                        raw_cats.setdefault(key, set()).add(val)
+        s = ex_from_sep('/')
+        paths = unique_everseen(
+            col.file_path or "" 
+            for rg in self.row_groups
+            for col in rg.columns
+        )
+        if self.file_scheme == 'hive':
+            partitions = unique_everseen(
+                (k, v)
+                for path in paths
+                for k, v in s.findall(path)
+            )
+            for key, val in partitions:
+                cats.setdefault(key, set()).add(val_to_num(val))
+                raw_cats.setdefault(key, set()).add(val)
+        else:
+            i_val = unique_everseen(
+                (i, val)
+                for path in paths
+                for i, val in enumerate(path.split('/')[:-1])
+            )
+            for i, val in i_val:
+                key = 'dir%i' % i
+                cats.setdefault(key, set()).add(val_to_num(val))
+                raw_cats.setdefault(key, set()).add(val)
 
         for key, v in cats.items():
             # Check that no partition names map to the same value after transformation by val_to_num
