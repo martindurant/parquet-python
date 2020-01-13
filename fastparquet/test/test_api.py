@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import io
 import os
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,10 @@ from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, f
 from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
+
+
+def test_import_without_warning():
+    subprocess.check_call(["python", "-Werror", "-c", "import fastparquet"])
 
 
 def test_statistics(tempdir):

@@ -2,7 +2,6 @@ import re
 from collections import OrderedDict
 from distutils.version import LooseVersion
 import numpy as np
-from pandas.core.index import CategoricalIndex, RangeIndex, Index, MultiIndex
 from pandas.core.internals import BlockManager
 from pandas import (
     Categorical, DataFrame, Series,
