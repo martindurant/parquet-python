@@ -4,7 +4,11 @@ from distutils.version import LooseVersion
 import numpy as np
 from pandas.core.index import CategoricalIndex, RangeIndex, Index, MultiIndex
 from pandas.core.internals import BlockManager
-from pandas import Categorical, DataFrame, Series, __version__ as pdver
+from pandas import (
+    Categorical, DataFrame, Series,
+    CategoricalIndex, RangeIndex, Index, MultiIndex,
+    __version__ as pdver
+)
 from pandas.api.types import is_categorical_dtype
 import six
 import warnings
