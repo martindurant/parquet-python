@@ -4,7 +4,9 @@ from __future__ import unicode_literals
 import io
 import os
 import subprocess
+from distutils.version import LooseVersion
 
+import numba
 import numpy as np
 import pandas as pd
 try:
@@ -21,7 +23,9 @@ from fastparquet.util import join_path
 TEST_DATA = "test-data"
 
 
+@pytest.mark.skipif(numba.__version__ <= LooseVersion("0.39.0"), reason="Warning from numba.")
 def test_import_without_warning():
+    # in a subprocess to avoid import chacing issues.
     subprocess.check_call(["python", "-Werror", "-c", "import fastparquet"])
 
 
