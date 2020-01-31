@@ -652,8 +652,8 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
     if not isinstance(index_cols, list):
-        index_cols = [{'name': index_cols.name, 'start': index_cols._start,
-                       'stop': index_cols._stop, 'step': index_cols._step,
+        index_cols = [{'name': index_cols.name, 'start': index_cols.start,
+                       'stop': index_cols.stop, 'step': index_cols.step,
                        'kind': 'range'}]
     pandas_metadata = {'index_columns': index_cols,
                        'columns': [],
