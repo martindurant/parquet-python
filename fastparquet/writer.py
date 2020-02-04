@@ -630,16 +630,17 @@ def make_part_file(f, data, schema, compression=None, fmd=None):
         f.write(MARKER)
         rg = make_row_group(f, data, schema, compression=compression)
         if fmd is None:
-            fmd = parquet_thrift.FileMetaData(num_rows=len(data),
+            fmd = parquet_thrift.FileMetaData(num_rows=rg.num_rows,
                                               schema=schema,
                                               version=1,
                                               created_by=created_by,
-                                              row_groups=[rg])
+                                              row_groups=[rg],)
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<i", foot_size))
         else:
             fmd = copy(fmd)
             fmd.row_groups = [rg]
+            fmd.num_rows = rg.num_rows
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<i", foot_size))
         f.write(MARKER)
