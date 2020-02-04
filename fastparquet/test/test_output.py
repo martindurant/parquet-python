@@ -298,7 +298,7 @@ def test_groups_roundtrip(tempdir, scheme):
     r = ParquetFile(tempdir)
     assert r.columns == ['b']
     assert r.fmd.num_rows == r.count == 1000
-    
+
     out = r.to_pandas()
     if scheme == 'drill':
         assert set(r.cats) == {'dir0', 'dir1'}
