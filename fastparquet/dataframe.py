@@ -141,6 +141,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         index._levels = list()
         index._labels = list()
         index._codes = list()
+        index._names = list(index_names)
         for i, col in enumerate(index_names):
             index._levels.append(Index([None]))
 
