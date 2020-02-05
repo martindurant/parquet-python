@@ -7,7 +7,9 @@ import re
 import six
 import numbers
 from collections import defaultdict
+from distutils.version import LooseVersion
 import itertools
+import pandas
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -17,8 +19,10 @@ except ImportError:
 
 PY2 = six.PY2
 PY3 = six.PY3
+PANDAS_VERSION = LooseVersion(pandas.__version__)
 STR_TYPE = six.string_types[0]  # 'str' for Python3, 'basestring' for Python2
 created_by = "fastparquet-python version 1.0.0 (build 111)"
+
 
 class ParquetException(Exception):
     """Generic Exception related to unexpected data format when
