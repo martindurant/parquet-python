@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from six import integer_types
 
-from fastparquet.util import join_path
+from fastparquet.util import join_path, PANDAS_VERSION
 from .thrift_structures import write_thrift
 
 try:
@@ -630,16 +630,17 @@ def make_part_file(f, data, schema, compression=None, fmd=None):
         f.write(MARKER)
         rg = make_row_group(f, data, schema, compression=compression)
         if fmd is None:
-            fmd = parquet_thrift.FileMetaData(num_rows=len(data),
+            fmd = parquet_thrift.FileMetaData(num_rows=rg.num_rows,
                                               schema=schema,
                                               version=1,
                                               created_by=created_by,
-                                              row_groups=[rg])
+                                              row_groups=[rg],)
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<i", foot_size))
         else:
             fmd = copy(fmd)
             fmd.row_groups = [rg]
+            fmd.num_rows = rg.num_rows
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<i", foot_size))
         f.write(MARKER)
@@ -652,8 +653,19 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
     if not isinstance(index_cols, list):
-        index_cols = [{'name': index_cols.name, 'start': index_cols.start,
-                       'stop': index_cols.stop, 'step': index_cols.step,
+        if PANDAS_VERSION >= "0.25.0":
+            start = index_cols.start
+            stop = index_cols.stop
+            step = index_cols.step
+        else:
+            start = index_cols._start
+            stop = index_cols._stop
+            step = index_cols._step
+
+        index_cols = [{'name': index_cols.name,
+                       'start': start,
+                       'stop': stop,
+                       'step': step,
                        'kind': 'range'}]
     pandas_metadata = {'index_columns': index_cols,
                        'columns': [],
@@ -903,6 +915,7 @@ def write(filename, data, row_group_offsets=50000000,
 
                 fmd.row_groups.append(rg)
 
+        fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
         write_common_metadata(fn, fmd, open_with, no_row_groups=False)
         write_common_metadata(join_path(filename, '_common_metadata'), fmd,
                               open_with)

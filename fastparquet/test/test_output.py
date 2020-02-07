@@ -114,6 +114,7 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
           compression=comp)
 
     r = ParquetFile(fname)
+    assert r.fmd.num_rows == r.count == 1000
 
     df = r.to_pandas()
 
@@ -296,6 +297,7 @@ def test_groups_roundtrip(tempdir, scheme):
 
     r = ParquetFile(tempdir)
     assert r.columns == ['b']
+
     out = r.to_pandas()
     if scheme == 'drill':
         assert set(r.cats) == {'dir0', 'dir1'}
@@ -309,7 +311,7 @@ def test_groups_roundtrip(tempdir, scheme):
                  file_scheme=scheme)
 
     r = ParquetFile(tempdir)
-    assert r.count == sum(~df.a.isnull())
+    assert r.fmd.num_rows == r.count == sum(~df.a.isnull())
     assert len(r.row_groups) == 8
     out = r.to_pandas()
 
