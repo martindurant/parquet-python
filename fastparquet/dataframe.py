@@ -9,6 +9,7 @@ from pandas import (
     __version__ as pdver
 )
 from pandas.api.types import is_categorical_dtype
+import pandas as pd
 import six
 import warnings
 from .util import STR_TYPE
@@ -73,6 +74,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     - list of numpy views, in order, of the columns of the dataframe. Assign
         to this.
     """
+
     views = {}
     timezones = timezones or {}
 
@@ -94,10 +96,13 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             df[six.text_type(col)] = Categorical([], categories=cat(col),
                                                  fastpath=True)
         else:
-            if hasattr(t, 'base'):
+            if hasattr(t, 'base') and t.base is not None:
                 # funky pandas not-dtype
                 t = t.base
-            d = np.empty(0, dtype=t)
+            if hasattr(t,'na_value'):
+                d = pd.array([], dtype=t)
+            else:
+                d = np.empty(0, dtype=t)
             if d.dtype.kind == "M" and six.text_type(col) in timezones:
                 try:
                     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
@@ -181,6 +186,9 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             new_block = block.make_block_same_class(
                 type(block.values)(values, dtype=block.values.dtype)
             )
+        elif hasattr(block.values.dtype,'na_value'):
+            values = pd.array([None]*size, dtype=block.values.dtype)
+            new_block = block.make_block_same_class(values=values)
         else:
             new_shape = (block.values.shape[0], size)
             values = np.empty(shape=new_shape, dtype=block.values.dtype)
@@ -205,7 +213,10 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             elif getattr(block.dtype, 'tz', None):
                 views[col] = np.asarray(block.values, dtype='M8[ns]')
             else:
-                views[col] = block.values[i]
+                if hasattr(block.values.dtype,'na_value'):
+                    views[col] = block.values
+                else:
+                    views[col] = block.values[i]
 
     if index_names:
         df.index.names = [

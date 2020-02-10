@@ -223,7 +223,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
             my_nan = -9223372036854775808  # int64 version of NaT
         else:
             my_nan = None
-
     num = 0
     row_idx = 0
     while True:

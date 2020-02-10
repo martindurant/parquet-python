@@ -46,13 +46,22 @@ typemap = {  # primitive type, converted type, bit width
     'float32': (parquet_thrift.Type.FLOAT, None, 32),
     'float64': (parquet_thrift.Type.DOUBLE, None, 64),
     'float16': (parquet_thrift.Type.FLOAT, None, 16),
+    # Nullable pandas types
+    'boolean': (parquet_thrift.Type.BOOLEAN, None, 1),
+    'Int32': (parquet_thrift.Type.INT32, None, 32),
+    'Int64': (parquet_thrift.Type.INT64, None, 64),
+    'Int8': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.INT_8, 8),
+    'Int16': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.INT_16, 16),
+    'UInt8': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_8, 8),
+    'UInt16': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_16, 16),
+    'UInt32': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_32, 32),
+    'UInt64': (parquet_thrift.Type.INT64, parquet_thrift.ConvertedType.UINT_64, 64),
 }
 
 revmap = {parquet_thrift.Type.INT32: np.int32,
           parquet_thrift.Type.INT64: np.int64,
           parquet_thrift.Type.FLOAT: np.float32,
           parquet_thrift.Type.DOUBLE: np.float64}
-
 
 def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     """ Get appropriate typecodes for column dtype
@@ -90,6 +99,10 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     elif "S" in str(dtype)[:2] or "U" in str(dtype)[:2]:
         type, converted_type, width = (parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY,
                                        None, dtype.itemsize)
+    elif str(dtype)=="string":
+            type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY,
+                                           parquet_thrift.ConvertedType.UTF8,
+                                           None)
     elif dtype == "O":
         if object_encoding == 'infer':
             object_encoding = infer_object_encoding(data)
@@ -162,6 +175,8 @@ def convert(data, se):
         if type in revmap:
             out = data.values.astype(revmap[type], copy=False)
         elif type == parquet_thrift.Type.BOOLEAN:
+            if data.dtype != "b":
+                data = data.astype('b')
             padded = np.lib.pad(data.values, (0, 8 - (len(data) % 8)),
                                 'constant', constant_values=(0, 0))
             out = np.packbits(padded.reshape(-1, 8)[:, ::-1].ravel())
@@ -169,13 +184,16 @@ def convert(data, se):
             out = data.values
     elif "S" in str(dtype)[:2] or "U" in str(dtype)[:2]:
         out = data.values
-    elif dtype == "O":
+    elif dtype == "O" or str(dtype) == "string":
         try:
             if converted_type == parquet_thrift.ConvertedType.UTF8:
                 out = array_encode_utf8(data)
             elif converted_type is None:
                 if type in revmap:
-                    out = data.values.astype(revmap[type], copy=False)
+                    if hasattr(revmap[type],'numpy_dtype'):
+                        out = pd.array(data.values,revmap[type])
+                    else:
+                        out = data.values.astype(revmap[type], copy=False)
                 elif type == parquet_thrift.Type.BOOLEAN:
                     padded = np.lib.pad(data.values, (0, 8 - (len(data) % 8)),
                                         'constant', constant_values=(0, 0))
@@ -254,7 +272,6 @@ def encode_plain(data, se):
         return pack_byte_array(list(out))
     else:
         return out.tobytes()
-
 
 @numba.njit(nogil=True)
 def encode_unsigned_varint(x, o):  # pragma: no cover
@@ -433,12 +450,12 @@ def write_column(f, data, selement, compression=None):
     has_nulls = selement.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     tot_rows = len(data)
     encoding = "PLAIN"
-
     if has_nulls:
         if is_categorical_dtype(data.dtype):
             num_nulls = (data.cat.codes == -1).sum()
-        elif data.dtype.kind in ['i', 'b']:
-            num_nulls = 0
+        # Support nullable pandas integer and boolean data
+        # elif data.dtype.kind in ['i', 'b']:
+        #     num_nulls = 0
         else:
             num_nulls = len(data) - data.count()
         definition_data, data = make_definitions(data, num_nulls == 0)
@@ -457,7 +474,6 @@ def write_column(f, data, selement, compression=None):
     else:
         definition_data = b""
         num_nulls = 0
-
     # No nested field handling (encode those as J/BSON)
     repetition_data = b""
 
@@ -504,17 +520,27 @@ def write_column(f, data, selement, compression=None):
         data = data.cat.codes
         cats = True
         encoding = "PLAIN_DICTIONARY"
-    elif str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
+    elif str(data.dtype).lower() in ['int8', 'int16', 'uint8', 'uint16']:
         # encoding = "RLE"
         # disallow bitpacking for compatability
         data = data.astype('int32')
+
 
     bdata = definition_data + repetition_data + encode[encoding](
             data, selement)
     bdata += 8 * b'\x00'
     try:
         if encoding != 'PLAIN_DICTIONARY' and num_nulls == 0:
-            max, min = data.values.max(), data.values.min()
+            
+            if str(data.dtype) == "boolean":
+                v = data.unique().astype('int8')
+                max,min = v.max(), v.min()
+            elif hasattr(data,'to_numpy'):
+                v=data.dropna()
+                max, min = v.max(), v.min()
+            else:
+                max, min = data.values.max(), data.values.min()
+
             if selement.type == parquet_thrift.Type.BYTE_ARRAY:
                 if selement.converted_type is not None:
                     max = encode['PLAIN'](pd.Series([max]), selement)[4:]
@@ -706,7 +732,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
                                  object_encoding=oencoding, times=times)
         col_has_nulls = has_nulls
         if has_nulls is None:
-            se.repetition_type = data[column].dtype == "O"
+            se.repetition_type = data[column].dtype == "O" or str(data[column].dtype) == "boolean"
         elif has_nulls is not True and has_nulls is not False:
             col_has_nulls = column in has_nulls
         if col_has_nulls:
