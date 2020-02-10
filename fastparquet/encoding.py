@@ -7,6 +7,7 @@ from __future__ import print_function
 import array
 import numba
 import numpy as np
+import pandas as pd
 
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
@@ -26,9 +27,9 @@ def read_plain_boolean(raw_bytes, count):
     """Read `count` booleans using the plain encoding."""
     data = np.frombuffer(raw_bytes, dtype='uint8')
     padded = len(raw_bytes) * 8
-    out = np.empty(padded, dtype=bool)
+    out = np.empty(padded, dtype=bool) ### CHECK THIS MIGHT NEED dtype="b"
     unpack_boolean(data, out)
-    return out[:count]
+    return pd.array(out[:count],dtype="boolean")
 
 
 DECODE_TYPEMAP = {
