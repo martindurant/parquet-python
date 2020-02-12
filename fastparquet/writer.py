@@ -273,6 +273,7 @@ def encode_plain(data, se):
     else:
         return out.tobytes()
 
+
 @numba.njit(nogil=True)
 def encode_unsigned_varint(x, o):  # pragma: no cover
     while x > 127:
@@ -733,7 +734,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=[], fixed_text=None,
                                  object_encoding=oencoding, times=times)
         col_has_nulls = has_nulls
         if has_nulls is None:
-            se.repetition_type = data[column].dtype == "O" or str(data[column].dtype) == "boolean"
+            # NB: any extension array should be nullable, since we don't know
+            se.repetition_type = (data[column].dtype == "O" or str(data[column].dtype) == "boolean"
+                                  or isinstance(data[column].dtype, pd.core.dtypes.base.ExtensionDtype))
         elif has_nulls is not True and has_nulls is not False:
             col_has_nulls = column in has_nulls
         if col_has_nulls:

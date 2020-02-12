@@ -27,9 +27,9 @@ def read_plain_boolean(raw_bytes, count):
     """Read `count` booleans using the plain encoding."""
     data = np.frombuffer(raw_bytes, dtype='uint8')
     padded = len(raw_bytes) * 8
-    out = np.empty(padded, dtype=bool) ### CHECK THIS MIGHT NEED dtype="b"
+    out = np.empty(padded, dtype=bool)
     unpack_boolean(data, out)
-    return pd.array(out[:count],dtype="boolean")
+    return pd.array(out[:count], dtype="boolean")
 
 
 DECODE_TYPEMAP = {

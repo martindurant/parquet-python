@@ -5,11 +5,10 @@ import datetime
 import numpy as np
 import os
 import pandas as pd
-import pandas.util.testing as tm
+import pandas.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding
-from pandas.testing import assert_frame_equal
 import pytest
 
 from fastparquet.util import default_mkdirs
@@ -385,6 +384,7 @@ def test_read_partitioned_and_write_with_empty_partions(tempdir):
 def test_write_compression_dict(tempdir, compression):
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1., 2., 3.]})
+    df['x'] = df.x.astype(pd.Int64Dtype())
     fn = os.path.join(tempdir, 'tmp.parq')
     writer.write(fn, df, compression=compression)
     r = ParquetFile(fn)
@@ -396,6 +396,7 @@ def test_write_compression_dict(tempdir, compression):
 def test_write_compression_schema(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3],
                        'y': [1., 2., 3.]})
+    df['x'] = df.x.astype(pd.Int64Dtype())
     fn = os.path.join(tempdir, 'tmp.parq')
     writer.write(fn, df, compression={'x': 'gzip'})
     r = ParquetFile(fn)
@@ -415,6 +416,7 @@ def test_index(tempdir):
                        'y': [1., 2., 3.]},
                        index=pd.Index([10, 20, 30], name='z'))
 
+    df['x'] = df.x.astype(pd.Int64Dtype())
     writer.write(fn, df)
 
     pf = ParquetFile(fn)
@@ -548,10 +550,15 @@ def test_auto_null(tempdir):
                        'd': ['a', 'b', 'c', None],
                        'f': [True, False, True, True],
                        'ff': [True, False, None, True]})
+    df['a'] = df.a.astype(pd.Int64Dtype())
+    df['aa'] = df.aa.astype(pd.Int64Dtype())
+    df['b'] = df.b.astype(pd.Int64Dtype())
+    df['f'] = df.f.astype(pd.BooleanDtype())
+    df['ff'] = df.b.astype(pd.BooleanDtype())
     df['e'] = df['d'].astype('category')
     df['bb'] = df['b'].astype('object')
     df['aaa'] = df['a'].astype('object')
-    object_cols = ['d', 'ff', 'bb', 'aaa']
+    object_cols = ['d', 'ff', 'bb', 'aaa', 'a', 'aa', 'b', 'f', 'ff', 'e']
     test_cols = list(set(df) - set(object_cols)) + ['d']
     fn = os.path.join(tmp, "test.parq")
 
@@ -565,9 +572,9 @@ def test_auto_null(tempdir):
     df2 = pf.to_pandas(categories=['e'])
 
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
-    tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['ff']], df2[['ff']])
+    tm.assert_frame_equal(df[['bb']].astype(pd.Int64Dtype()), df2[['bb']])
+    tm.assert_frame_equal(df[['aaa']].astype(pd.Int64Dtype()), df2[['aaa']])
 
     # not giving any value same as has_nulls=True
     write(fn, df)
@@ -577,9 +584,9 @@ def test_auto_null(tempdir):
     df2 = pf.to_pandas(categories=['e'])
 
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
-    tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['ff']], df2[['ff']])
+    tm.assert_frame_equal(df[['bb']].astype(pd.Int64Dtype()), df2[['bb']])
+    tm.assert_frame_equal(df[['aaa']].astype(pd.Int64Dtype()), df2[['aaa']])
 
     # 'infer' is new recommended auto-null
     write(fn, df, has_nulls='infer')
@@ -591,9 +598,9 @@ def test_auto_null(tempdir):
             assert col.repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
-    tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['ff']], df2[['ff']])
+    tm.assert_frame_equal(df[['bb']].astype(pd.Int64Dtype()), df2[['bb']])
+    tm.assert_frame_equal(df[['aaa']].astype(pd.Int64Dtype()), df2[['aaa']])
 
     # nut legacy None still works
     write(fn, df, has_nulls=None)
@@ -605,9 +612,9 @@ def test_auto_null(tempdir):
             assert col.repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
-    tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['ff']], df2[['ff']])
+    tm.assert_frame_equal(df[['bb']].astype(pd.Int64Dtype()), df2[['bb']])
+    tm.assert_frame_equal(df[['aaa']].astype(pd.Int64Dtype()), df2[['aaa']])
 
 
 @pytest.mark.parametrize('n', (10, 127, 2**8 + 1, 2**16 + 1))
@@ -616,6 +623,7 @@ def test_many_categories(tempdir, n):
     cats = np.arange(n)
     codes = np.random.randint(0, n, size=1000000)
     df = pd.DataFrame({'x': pd.Categorical.from_codes(codes, cats), 'y': 1})
+    df['y'] = df.y.astype(pd.Int64Dtype())
     fn = os.path.join(tmp, "test.parq")
 
     write(fn, df, has_nulls=False)
@@ -723,6 +731,7 @@ def test_append_simple(tempdir):
     fn = os.path.join(str(tempdir), 'test.parq')
     df = pd.DataFrame({'a': [1, 2, 3, 0],
                        'b': ['a', 'a', 'b', 'b']})
+    df['a'] = df.a.astype(pd.Int64Dtype())
     write(fn, df, write_index=False)
     write(fn, df, append=True, write_index=False)
 
@@ -737,6 +746,7 @@ def test_append_empty(tempdir, scheme):
     fn = os.path.join(str(tempdir), 'test.parq')
     df = pd.DataFrame({'a': [1, 2, 3, 0],
                        'b': ['a', 'a', 'b', 'b']})
+    df['a'] = df.a.astype(pd.Int64Dtype())
     write(fn, df.head(0), write_index=False, file_scheme=scheme)
     pf = ParquetFile(fn)
     assert pf.count == 0
@@ -756,9 +766,13 @@ def test_append(tempdir, row_groups, partition):
     df0 = pd.DataFrame({'a': [1, 2, 3, 0],
                         'b': ['a', 'b', 'a', 'b'],
                         'c': True})
+    df0['a'] = df0.a.astype(pd.Int64Dtype())
+    df0['c'] = df0.c.astype(pd.Int64Dtype())
     df1 = pd.DataFrame({'a': [4, 5, 6, 7],
                         'b': ['a', 'b', 'a', 'b'],
                         'c': False})
+    df1['a'] = df1.a.astype(pd.Int64Dtype())
+    df1['c'] = df1.c.astype(pd.Int64Dtype())
     write(fn, df0, partition_on=partition, file_scheme='hive',
           row_group_offsets=row_groups)
     write(fn, df1, partition_on=partition, file_scheme='hive',
@@ -781,9 +795,13 @@ def test_append_fail(tempdir):
     df0 = pd.DataFrame({'a': [1, 2, 3, 0],
                         'b': ['a', 'b', 'a', 'b'],
                         'c': True})
+    df0['a'] = df0.a.astype(pd.Int64Dtype())
+    df0['c'] = df0.c.astype(pd.Int64Dtype())
     df1 = pd.DataFrame({'a': [4, 5, 6, 7],
                         'b': ['a', 'b', 'a', 'b'],
                         'c': False})
+    df1['a'] = df1.a.astype(pd.Int64Dtype())
+    df1['c'] = df1.c.astype(pd.Int64Dtype())
     write(fn, df0, file_scheme='hive')
     with pytest.raises(ValueError) as e:
         write(fn, df1, file_scheme='simple', append=True)
@@ -801,6 +819,8 @@ def test_append_w_partitioning(tempdir):
     df = pd.DataFrame({'a': np.random.choice([1, 2, 3], size=50),
                        'b': np.random.choice(['hello', 'world'], size=50),
                        'c': np.random.randint(50, size=50)})
+    df['a'] = df.a.astype(pd.Int64Dtype())
+    df['c'] = df.c.astype(pd.Int64Dtype())
     write(fn, df, file_scheme='hive', partition_on=['a', 'b'])
     write(fn, df, file_scheme='hive', partition_on=['a', 'b'], append=True)
     write(fn, df, file_scheme='hive', partition_on=['a', 'b'], append=True)

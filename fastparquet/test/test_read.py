@@ -261,9 +261,12 @@ def test_index(tempdir):
     s = pd.Series(['a', 'c', 'b']*20)
     df = pd.DataFrame({'a': s, 'b': s.astype('category'),
                        'c': range(60, 0, -1)})
+    df['c'] = df.c.astype(pd.Int64Dtype())
 
     for column in df:
         d2 = df.set_index(column)
+        if column == 'c':
+            d2.index = pd.Int64Index(d2.index)
         fastparquet.write(tempdir, d2, file_scheme='hive', write_index=True)
         pf = fastparquet.ParquetFile(tempdir)
         out = pf.to_pandas(index=column, categories=['b'])
@@ -305,8 +308,8 @@ def test_null_sizes(tempdir):
     df = pd.DataFrame({'a': [True, None], 'b': [3000, np.nan]}, dtype="O")
     fastparquet.write(tempdir, df, has_nulls=True, file_scheme='hive')
     pf = fastparquet.ParquetFile(tempdir)
-    assert pf.dtypes['a'] == 'float16'
-    assert pf.dtypes['b'] == 'float64'
+    assert isinstance(pf.dtypes['a'], pd.BooleanDtype)
+    assert isinstance(pf.dtypes['b'], pd.Int64Dtype)
 
 
 def test_multi_index(tempdir):

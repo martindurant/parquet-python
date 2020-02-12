@@ -144,6 +144,8 @@ def test_iter(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3, 4],
                        'y': [1.0, 2.0, 1.0, 2.0],
                        'z': ['a', 'b', 'c', 'd']})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     df.index.name = 'index'
 
     fn = os.path.join(tempdir, 'foo.parquet')
@@ -151,9 +153,9 @@ def test_iter(tempdir):
     pf = ParquetFile(fn)
     out = iter(pf.iter_row_groups(index='index'))
     d1 = next(out)
-    pd.util.testing.assert_frame_equal(d1, df[:2])
+    pd.testing.assert_frame_equal(d1, df[:2])
     d2 = next(out)
-    pd.util.testing.assert_frame_equal(d2, df[2:])
+    pd.testing.assert_frame_equal(d2, df[2:])
     with pytest.raises(StopIteration):
         next(out)
 
@@ -162,6 +164,8 @@ def test_attributes(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3, 4],
                        'y': [1.0, 2.0, 1.0, 2.0],
                        'z': ['a', 'b', 'c', 'd']})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
 
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2])
@@ -179,6 +183,8 @@ def test_open_standard(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3, 4],
                        'y': [1.0, 2.0, 1.0, 2.0],
                        'z': ['a', 'b', 'c', 'd']})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2], file_scheme='hive',
           open_with=open)
@@ -191,6 +197,8 @@ def test_filelike(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3, 4],
                        'y': [1.0, 2.0, 1.0, 2.0],
                        'z': ['a', 'b', 'c', 'd']})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2])
     with open(fn, 'rb') as f:
@@ -255,6 +263,8 @@ def test_request_nonexistent_column(tempdir):
 
 def test_read_multiple_no_metadata(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5]})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     write(tempdir, df, file_scheme='hive', row_group_offsets=[0, 2])
     os.unlink(os.path.join(tempdir, '_metadata'))
     os.unlink(os.path.join(tempdir, '_common_metadata'))
@@ -268,6 +278,8 @@ def test_read_multiple_no_metadata(tempdir):
 
 def test_single_upper_directory(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5], 'y': ['aa'] * 4})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     write(tempdir, df, file_scheme='hive', partition_on='y')
     pf = ParquetFile(tempdir)
     out = pf.to_pandas()
@@ -354,6 +366,8 @@ def test_filter_without_paths(tempdir):
         'x': [1, 2, 3, 4, 5, 6, 7],
         'letter': ['a', 'b', 'c', 'd', 'e', 'f', 'g']
     })
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     write(fn, df)
 
     pf = ParquetFile(fn)
@@ -368,6 +382,8 @@ def test_filter_special(tempdir):
         'x': [1, 2, 3, 4, 5, 6, 7],
         'symbol': ['NOW', 'OI', 'OI', 'OI', 'NOW', 'NOW', 'OI']
     })
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     write(tempdir, df, file_scheme='hive', partition_on=['symbol'])
     pf = ParquetFile(tempdir)
     out = pf.to_pandas(filters=[('symbol', '==', 'NOW')])
@@ -383,6 +399,8 @@ def test_filter_dates(tempdir):
             '2017-05-13', '2015-05-10', '2015-05-11', '2017-05-12'
         ]
     })
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     write(tempdir, df, file_scheme='hive', partition_on=['date'])
     pf = ParquetFile(tempdir)
     out_1 = pf.to_pandas(filters=[('date', '>', '2017-01-01')])
@@ -400,6 +418,8 @@ def test_in_filter(tempdir):
     symbols = ['a', 'a', 'b', 'c', 'c', 'd']
     values = [1, 2, 3, 4, 5, 6]
     df = pd.DataFrame(data={'symbols': symbols, 'values': values})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['values'] = df['values'].astype(pd.Int64Dtype())
     write(tempdir, df, file_scheme='hive', partition_on=['symbols'])
     pf = ParquetFile(tempdir)
     out = pf.to_pandas(filters=[('symbols', 'in', ['a', 'c'])])
@@ -410,6 +430,8 @@ def test_in_filter_numbers(tempdir):
     symbols = ['a', 'a', 'b', 'c', 'c', 'd']
     values = [1, 2, 3, 4, 5, 6]
     df = pd.DataFrame(data={'symbols': symbols, 'values': values})
+    # expect the type to come back as optional, since all cols are optional by default
+    df['values'] = df['values'].astype(pd.Int64Dtype())
     write(tempdir, df, file_scheme='hive', partition_on=['values'])
     pf = ParquetFile(tempdir)
     out = pf.to_pandas(filters=[('values', 'in', ['1', '4'])])
@@ -422,6 +444,8 @@ def test_filter_stats(tempdir):
     df = pd.DataFrame({
         'x': [1, 2, 3, 4, 5, 6, 7],
     })
+    # expect the type to come back as optional, since all cols are optional by default
+    df['x'] = df.x.astype(pd.Int64Dtype())
     write(tempdir, df, file_scheme='hive', row_group_offsets=[0, 4])
     pf = ParquetFile(tempdir)
     out = pf.to_pandas(filters=[('x', '>=', 5)])
@@ -702,7 +726,8 @@ def test_compression_snappy(tempdir):
             'x': np.arange(1000),
             'y': np.arange(1, 1001),
             'z': np.arange(2, 1002),
-        }
+        },
+        dtype=pd.Int64Dtype()
     )
 
     fn = os.path.join(tempdir, 'foocomp.parquet')
@@ -776,6 +801,7 @@ def test_path_containing_metadata_df():
     assert list(p.columns) == ['a', 'b', 'c', '__index_level_0__']
     assert len(df) == 0
 
+
 def test_empty_df():
     p = ParquetFile(os.path.join(TEST_DATA, "empty.parquet"))
     df = p.to_pandas()
@@ -800,6 +826,7 @@ def test_multi_cat(tempdir):
          'c': np.arange(200)})
     df['a'] = df.a.astype('category')
     df['b'] = df.b.astype('category')
+    df['c'] = df.c.astype(pd.Int64Dtype())
     df = df.set_index(['a', 'b'])
     write(fn, df)
 
@@ -816,6 +843,7 @@ def test_multi_cat_single(tempdir):
         {'a': np.random.randint(10, size=N),
          'b': np.random.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
+    df['c'] = df.c.astype(pd.Int64Dtype())
     df = df.set_index(['a', 'b'])
     write(fn, df)
 
@@ -832,6 +860,7 @@ def test_multi_cat_fail(tempdir):
         {'a': np.random.randint(10, size=N),
          'b': np.random.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
+    df['c'] = df.c.astype(pd.Int64Dtype())
     df = df.set_index(['a', 'b'])
     write(fn, df, row_group_offsets=25)
 
@@ -847,6 +876,7 @@ def test_multi(tempdir):
         {'a': np.random.randint(10, size=N),
          'b': np.random.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
+    df['c'] = df.c.astype(pd.Int64Dtype())
     df = df.set_index(['a', 'b'])
     write(fn, df)
 

@@ -46,12 +46,14 @@ def test_fixed():
     assert data[3:] == fastparquet.encoding.read_plain(
             data, parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY, -1, 3)[1]
 
+
 def test_boolean():
     """Test reading bytes containing boolean data."""
     data = 0b1101
     d = struct.pack(b"<i", data)
+    # need `_data` here because we make a pandas bool array (no bool in numpy)
     assert ([True, False, True, True] == fastparquet.encoding.read_plain(
-            d, parquet_thrift.Type.BOOLEAN, 4)).all(0)
+            d, parquet_thrift.Type.BOOLEAN, 4)._data).all(0)
 
 
 def testFourByteValue():
@@ -67,6 +69,7 @@ def testSingleByte():
     fo = fastparquet.encoding.Numpy8(np.frombuffer(struct.pack(b"<i", 0x7F), np.uint8))
     out = fastparquet.encoding.read_unsigned_var_int(fo)
     assert 0x7F == out
+
 
 def testFourByte():
     """Test reading a four byte value."""
