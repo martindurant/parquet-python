@@ -642,7 +642,8 @@ def test_compression_zstandard(tempdir):
             'x': np.arange(1000),
             'y': np.arange(1, 1001),
             'z': np.arange(2, 1002),
-        }
+        },
+        dtype=pd.Int64Dtype()
     )
 
     fn = os.path.join(tempdir, 'foocomp.parquet')
@@ -678,6 +679,7 @@ def test_compression_zstandard(tempdir):
 
     pd.util.testing.assert_frame_equal(df, df2)
 
+
 def test_compression_lz4(tempdir):
     pytest.importorskip('lz4')
 
@@ -686,7 +688,8 @@ def test_compression_lz4(tempdir):
             'x': np.arange(1000),
             'y': np.arange(1, 1001),
             'z': np.arange(2, 1002),
-        }
+        },
+        dtype=pd.Int64Dtype()
     )
 
     fn = os.path.join(tempdir, 'foocomp.parquet')
@@ -717,6 +720,7 @@ def test_compression_lz4(tempdir):
     df2 = p.to_pandas()
 
     pd.util.testing.assert_frame_equal(df, df2)
+
 
 def test_compression_snappy(tempdir):
     pytest.importorskip('snappy')
