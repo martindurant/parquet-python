@@ -1,4 +1,7 @@
 *.pyc
+*.pyo
+__pycache__/
+dask-worker-space/
 *.so
 *.dll
 fastparquet/speedups.c

@@ -16,8 +16,8 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test python=$TRAVIS_PYTHON_VERSION -c defaults -c conda-forge thrift python-snappy numpy pandas numba cython setuptools bson lz4 zstandard pytest
-  - source activate test
+  - conda create -n test python=$TRAVIS_PYTHON_VERSION thrift python-snappy numpy pandas numba cython setuptools bson lz4 zstandard pytest -c defaults -c conda-forge
+  - conda activate test
 
 script:
   - python setup.py install
