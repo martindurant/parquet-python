@@ -99,7 +99,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             if hasattr(t, 'base') and t.base is not None:
                 # funky pandas not-dtype
                 t = t.base
-            if pd.api.extensions.is_extension_array_dtype(t):
+            if pd.api.types.is_extension_array_dtype(t):
                 d = pd.array([], dtype=t)
             else:
                 d = np.empty(0, dtype=t)
