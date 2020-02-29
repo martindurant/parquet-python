@@ -99,7 +99,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             if hasattr(t, 'base') and t.base is not None:
                 # funky pandas not-dtype
                 t = t.base
-            if hasattr(t,'na_value'):
+            if pd.api.extensions.is_extension_array_dtype(t):
                 d = pd.array([], dtype=t)
             else:
                 d = np.empty(0, dtype=t)
@@ -187,7 +187,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 type(block.values)(values, dtype=block.values.dtype)
             )
         elif hasattr(block.values.dtype,'na_value'):
-            values = pd.array([None]*size, dtype=block.values.dtype)
+            values = pd.array([block.values.dtype.na_value]*size, dtype=block.values.dtype)
             new_block = block.make_block_same_class(values=values)
         else:
             new_shape = (block.values.shape[0], size)
