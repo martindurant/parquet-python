@@ -782,8 +782,8 @@ def write(filename, data, row_group_offsets=50000000,
                 col1: {
                     "type": "LZ4",
                     "args": {
-                        "compression_level": 6,
-                        "content_checksum": True
+                        "mode": "high_compression",
+                        "compression": 9
                      }
                 },
                 col2: {
