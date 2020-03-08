@@ -83,13 +83,15 @@ setup(
         'lz4': ['lz4 >= 0.19.1'],
         'lzo': ['python-lzo'],
         'snappy': ['python-snappy'],
-        'zstandard': ['zstandard']
+        'zstandard': ['zstandard'],
+        'cramjam': ['cramjam']
     },
     tests_require=[
         'pytest',
         'python-snappy',
         'lz4 >= 0.19.1',
         'zstandard',
+        'cramjam'
     ],
     long_description=(open('README.rst').read() if os.path.exists('README.rst')
                       else ''),

@@ -39,51 +39,84 @@ else:
     decompressions['GZIP'] = gzip_decompress
 
 try:
-    import snappy
+    import cramjam  # supports: snappy, brotli, lz4, zstd, deflate, gzip
     def snappy_decompress(data, uncompressed_size):
-        return snappy.decompress(data)
-    compressions['SNAPPY'] = snappy.compress
+        return cramjam.snappy_decompress(data)
+    compressions['SNAPPY'] = cramjam.snappy_compress
     decompressions['SNAPPY'] = snappy_decompress
+
+    def brotli_decompress(data, uncompressed_size):
+        return cramjam.brotli_decompress(data)
+    compressions['BROTLI'] = cramjam.brotli_compress
+    decompressions['BROTLI'] = brotli_decompress
+
+    def lz4_compress(data, **kwargs):
+        return cramjam.lz4_compress(data)
+    def lz4_decompress(data, uncompressed_size):
+        return cramjam.lz4_decompress(data)
+    compressions['LZ4'] = lz4_compress
+    decompressions['LZ4'] = lz4_decompress
+
+    def zstd_compress(data, **kwargs):
+        return cramjam.zstd_compress(data)
+    def zstd_decompress(data, uncompressed_size):
+        return cramjam.zstd_decompress(data)
+    compressions['ZSTD'] = zstd_compress
+    decompressions['ZSTD'] = zstd_decompress
+
+    def deflate_decompress(data, *args, **kwargs):
+        return cramjam.deflate_decompress(data)
+    compressions['DEFLATE'] = cramjam.deflate_compress
+    decompressions['DEFLATE'] = deflate_decompress
+
+# Fallback to specific install compression support
 except ImportError:
-    pass
+    try:
+        import snappy
+        def snappy_decompress(data, uncompressed_size):
+            return snappy.decompress(data)
+        compressions['SNAPPY'] = snappy.compress
+        decompressions['SNAPPY'] = snappy_decompress
+    except ImportError:
+        pass
+    try:
+        import brotli
+        def brotli_decompress(data, uncompressed_size):
+            return brotli.decompress(data)
+        compressions['BROTLI'] = brotli.compress
+        decompressions['BROTLI'] = brotli_decompress
+    except ImportError:
+        pass
+    try:
+        import lz4.block
+        def lz4_compress(data, **kwargs):
+            kwargs['store_size'] = False
+            return lz4.block.compress(data, **kwargs)
+        def lz4_decompress(data, uncompressed_size):
+            return lz4.block.decompress(data, uncompressed_size=uncompressed_size)
+        compressions['LZ4'] = lz4_compress
+        decompressions['LZ4'] = lz4_decompress
+    except ImportError:
+        pass
+    try:
+        import zstandard
+        def zstd_compress(data, **kwargs):
+            kwargs['write_content_size'] = False
+            cctx = zstandard.ZstdCompressor(**kwargs)
+            return cctx.compress(data)
+        def zstd_decompress(data, uncompressed_size):
+            dctx = zstandard.ZstdDecompressor()
+            return dctx.decompress(data, max_output_size=uncompressed_size)
+        compressions['ZSTD'] = zstd_compress
+        decompressions['ZSTD'] = zstd_decompress
+    except ImportError:
+        pass
 try:
     import lzo
     def lzo_decompress(data, uncompressed_size):
         return lzo.decompress(data)
     compressions['LZO'] = lzo.compress
     decompressions['LZO'] = lzo_decompress
-except ImportError:
-    pass
-try:
-    import brotli
-    def brotli_decompress(data, uncompressed_size):
-        return brotli.decompress(data)
-    compressions['BROTLI'] = brotli.compress
-    decompressions['BROTLI'] = brotli_decompress
-except ImportError:
-    pass
-try:
-    import lz4.block
-    def lz4_compress(data, **kwargs):
-        kwargs['store_size'] = False
-        return lz4.block.compress(data, **kwargs)
-    def lz4_decompress(data, uncompressed_size):
-        return lz4.block.decompress(data, uncompressed_size=uncompressed_size)
-    compressions['LZ4'] = lz4_compress
-    decompressions['LZ4'] = lz4_decompress
-except ImportError:
-    pass
-try:
-    import zstandard
-    def zstd_compress(data, **kwargs):
-        kwargs['write_content_size'] = False
-        cctx = zstandard.ZstdCompressor(**kwargs)
-        return cctx.compress(data)
-    def zstd_decompress(data, uncompressed_size):
-        dctx = zstandard.ZstdDecompressor()
-        return dctx.decompress(data, max_output_size=uncompressed_size)
-    compressions['ZSTD'] = zstd_compress
-    decompressions['ZSTD'] = zstd_decompress
 except ImportError:
     pass
 if 'ZSTD' not in compressions:
