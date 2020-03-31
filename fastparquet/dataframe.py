@@ -2,9 +2,12 @@ import re
 from collections import OrderedDict
 from distutils.version import LooseVersion
 import numpy as np
-from pandas.core.index import CategoricalIndex, RangeIndex, Index, MultiIndex
 from pandas.core.internals import BlockManager
-from pandas import Categorical, DataFrame, Series, __version__ as pdver
+from pandas import (
+    Categorical, DataFrame, Series,
+    CategoricalIndex, RangeIndex, Index, MultiIndex,
+    __version__ as pdver
+)
 from pandas.api.types import is_categorical_dtype
 import six
 import warnings
@@ -138,6 +141,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         index._levels = list()
         index._labels = list()
         index._codes = list()
+        index._names = list(index_names)
         for i, col in enumerate(index_names):
             index._levels.append(Index([None]))
 

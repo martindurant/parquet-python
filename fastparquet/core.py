@@ -220,7 +220,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
         if assign.dtype.kind in ['f', 'i']:
             my_nan = np.nan
         elif assign.dtype.kind in ["M", 'm']:
-            my_nan = -9223372036854775808  # int64 version of NaT
+            # GH#489 use a NaT representation compatible with ExtensionArray
+            my_nan = assign.dtype.type("NaT")
         else:
             my_nan = None
 

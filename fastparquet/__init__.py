@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 from .thrift_structures import parquet_thrift
 from .core import read_thrift

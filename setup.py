@@ -51,7 +51,7 @@ install_requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='fastparquet',
-    version='0.3.2',
+    version='0.3.3',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@continuum.io',
@@ -68,6 +68,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     packages=['fastparquet'],

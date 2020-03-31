@@ -131,7 +131,7 @@ Data Types
 ----------
 
 There is fairly good correspondence between pandas data-types and Parquet
-simple and logical data types. The `types documentation <https://github.com/Parquet/parquet-format/blob/master/LogicalTypes.md>`_
+simple and logical data types. The `types documentation <https://github.com/apache/parquet-format/blob/master/LogicalTypes.md>`_
 gives details of the implementation spec.
 
 A couple of caveats should be noted:

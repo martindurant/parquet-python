@@ -7,6 +7,9 @@ import re
 import six
 import numbers
 from collections import defaultdict
+from distutils.version import LooseVersion
+import itertools
+import pandas
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -16,8 +19,10 @@ except ImportError:
 
 PY2 = six.PY2
 PY3 = six.PY3
+PANDAS_VERSION = LooseVersion(pandas.__version__)
 STR_TYPE = six.string_types[0]  # 'str' for Python3, 'basestring' for Python2
 created_by = "fastparquet-python version 1.0.0 (build 111)"
+
 
 class ParquetException(Exception):
     """Generic Exception related to unexpected data format when
@@ -32,7 +37,6 @@ if PY2:
 else:
     def default_mkdirs(f):
         os.makedirs(f, exist_ok=True)
-
 
 def default_open(f, mode='rb'):
     return open(f, mode)
@@ -361,3 +365,30 @@ def join_path(*path):
     else:
         joined = abs_prefix + ('/'.join(simpler))
     return joined
+
+
+if PY2:
+    filterfalse = itertools.ifilterfalse
+else:
+    filterfalse = itertools.filterfalse
+
+
+def unique_everseen(iterable, key=None):
+    """List unique elements, preserving order. Remember all elements ever seen.
+
+    unique_everseen('AAAABBBCCDAABBB') --> A B C D
+    unique_everseen('ABBCcAD', str.lower) --> A B C D
+    """
+    
+    seen = set()
+    seen_add = seen.add
+    if key is None:
+        for element in filterfalse(seen.__contains__, iterable):
+            seen_add(element)
+            yield element
+    else:
+        for element in iterable:
+            k = key(element)
+            if k not in seen:
+                seen_add(k)
+                yield element
