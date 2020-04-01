@@ -36,7 +36,7 @@ else:
         def fix_exts(sources):
             return sources
     except ImportError:
-        def cythonize(modules):
+        def cythonize(modules, language_level):
             return modules
         def fix_exts(sources):
             return [s.replace('.pyx', '.c') for s in sources]
@@ -44,8 +44,7 @@ else:
     modules = [
         Extension(mod, fix_exts(sources))
         for mod, sources in modules_to_build.items()]
-
-    extra = {'ext_modules': cythonize(modules)}
+    extra = {'ext_modules': cythonize(modules, language_level=3)}
 
 install_requires = open('requirements.txt').read().strip().split('\n')
 
