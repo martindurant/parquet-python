@@ -227,9 +227,9 @@ class NumpyIO(object):  # pragma: no cover
         return self.data[:self.loc]
 
 spec8 = [('data', numba.uint8[:]), ('loc', numba.int64), ('len', numba.int64)]
-Numpy8 = numba.jitclass(spec8)(NumpyIO)
+Numpy8 = jitclass(spec8)(NumpyIO)
 spec32 = [('data', numba.uint32[:]), ('loc', numba.int64), ('len', numba.int64)]
-Numpy32 = numba.jitclass(spec32)(NumpyIO)
+Numpy32 = jitclass(spec32)(NumpyIO)
 
 
 def _assemble_objects(assign, defi, rep, val, dic, d, null, null_val, max_defi, prev_i):
