@@ -4,9 +4,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 import array
-import numba
+
 import numpy as np
+
+from packaging import version
+import numba
+if version.parse(numba.__version__) < version.parse("0.49"):
+    from numba import jitclass
+else:
+    from numba.experimental import jitclass
 
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
