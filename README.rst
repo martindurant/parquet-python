@@ -107,7 +107,7 @@ History
 
 Since early October 2016, this fork of `parquet-python`_ has been
 undergoing considerable redevelopment. The aim is to have a small and simple
-and performant library for reading and writing the parquet format from python.
+and performant library for reading and writing the parquet format from python..
 
 .. _parquet-python: https://github.com/jcrobak/parquet-python
 
