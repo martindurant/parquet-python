@@ -22,6 +22,7 @@ class build_ext(_build_ext):
         import numpy
         self.include_dirs.append(numpy.get_include())
 
+
 allowed = ('--help-commands', '--version', 'egg_info', 'clean')
 if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or sys.argv[1] in allowed):
     # NumPy and cython are not required for these actions. They must succeed
@@ -50,7 +51,7 @@ install_requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='fastparquet',
-    version='0.3.3',
+    version='0.4.0',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@continuum.io',

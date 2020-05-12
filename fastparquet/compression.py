@@ -14,29 +14,18 @@ decompressions = {
 
 # Gzip is present regardless
 COMPRESSION_LEVEL = 6
-if PY2:
-    def gzip_compress_v2(data, compresslevel=COMPRESSION_LEVEL):
-        from io import BytesIO
-        bio = BytesIO()
-        f = gzip.GzipFile(mode='wb',
-                          compresslevel=compresslevel,
-                          fileobj=bio)
-        f.write(data)
-        f.close()
-        return bio.getvalue()
-    def gzip_decompress_v2(data, uncompressed_size):
-        import zlib
-        return zlib.decompress(data,
-                               16+15)
-    compressions['GZIP'] = gzip_compress_v2
-    decompressions['GZIP'] = gzip_decompress_v2
-else:
-    def gzip_compress_v3(data, compresslevel=COMPRESSION_LEVEL):
-        return gzip.compress(data, compresslevel=compresslevel)
-    def gzip_decompress(data, uncompressed_size):
-        return gzip.decompress(data)
-    compressions['GZIP'] = gzip_compress_v3
-    decompressions['GZIP'] = gzip_decompress
+
+
+def gzip_compress_v3(data, compresslevel=COMPRESSION_LEVEL):
+    return gzip.compress(data, compresslevel=compresslevel)
+
+
+def gzip_decompress(data, uncompressed_size):
+    return gzip.decompress(data)
+
+
+compressions['GZIP'] = gzip_compress_v3
+decompressions['GZIP'] = gzip_decompress
 
 try:
     import snappy
