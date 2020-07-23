@@ -95,12 +95,14 @@ def test_timestamps():
     assert df.t2.dt.tz.zone == z2
 
 
-def test_pandas_hive_serialization():
+def test_pandas_hive_serialization(tmpdir):
+    hive_test_temp_dir = tmpdir.mkdir("pandas_hive_test")
+    parquet_dir = hive_test_temp_dir.join("test.par")
     column = "data"
     df = pd.DataFrame(
         columns=[column], data=[("42",), ("",), ("0",), ("1",), ("0.0",)]
     )
-    df.to_parquet("test.par", file_scheme="hive", row_group_offsets=[0, 2, 4])
-    df_ = pd.read_parquet("test.par")
+    df.to_parquet(parquet_dir, file_scheme="hive", row_group_offsets=[0, 2, 4])
+    
+    df_ = pd.read_parquet(parquet_dir)
     assert_frame_equal(df, df_)
-    shutil.rmtree("test.par")
