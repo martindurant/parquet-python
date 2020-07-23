@@ -1,8 +1,10 @@
 import distutils
+import shutil
 import warnings
 
 import pytest
 import pandas as pd
+from pandas.testing import assert_frame_equal
 
 from fastparquet.dataframe import empty
 
@@ -91,3 +93,14 @@ def test_timestamps():
                                                                   't2': z2})
     assert df.t1.dt.tz.zone == z
     assert df.t2.dt.tz.zone == z2
+
+
+def test_pandas_hive_serialization():
+    column = "data"
+    df = pd.DataFrame(
+        columns=[column], data=[("42",), ("",), ("0",), ("1",), ("0.0",)]
+    )
+    df.to_parquet("test.par", file_scheme="hive", row_group_offsets=[0, 2, 4])
+    df_ = pd.read_parquet("test.par")
+    assert_frame_equal(df, df_)
+    shutil.rmtree("test.par")
