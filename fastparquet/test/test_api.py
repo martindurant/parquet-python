@@ -136,7 +136,7 @@ def test_sorted_row_group_columns_with_filters(tempdir):
 
     # with filters both columns are sorted
     result = sorted_partitioned_columns(pf, filters=filters)
-    expected = {'index': {'min': [0, 2], 'max': [1, 3]},
+    expected = {'__null_dask_index__': {'min': [0, 2], 'max': [1, 3]},
                 'unique': {'min': [0, 2], 'max': [1, 3]}}
     assert result == expected
 

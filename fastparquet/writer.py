@@ -352,7 +352,7 @@ def encode_rle(data, se, fixed_text=None):
         o = encoding.Numpy8(np.empty(10, dtype=np.uint8))
         bit_packed_count = (len(data) + 7) // 8
         encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
-        return o.so_far().tostring() + data.values.tostring()
+        return o.so_far().tobytes() + data.values.tostring()
     else:
         m = data.max()
         width = 0
@@ -362,7 +362,7 @@ def encode_rle(data, se, fixed_text=None):
         l = (len(data) * width + 7) // 8 + 10
         o = encoding.Numpy8(np.empty(l, dtype='uint8'))
         encode_rle_bp(data, width, o)
-        return o.so_far().tostring()
+        return o.so_far().tobytes()
 
 
 def encode_dict(data, se):
@@ -373,7 +373,7 @@ def encode_dict(data, se):
     o.write_byte(width)
     bit_packed_count = (len(data) + 7) // 8
     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
-    return o.so_far().tostring() + data.values.tostring()
+    return o.so_far().tobytes() + data.values.tobytes()
 
 encode = {
     'PLAIN': encode_plain,
@@ -394,14 +394,14 @@ def make_definitions(data, no_nulls):
         l = len(data)
         encode_unsigned_varint(l << 1, temp)
         temp.write_byte(1)
-        block = struct.pack('<i', temp.loc) + temp.so_far().tostring()
+        block = struct.pack('<i', temp.loc) + temp.so_far().tobytes()
         out = data
     else:
         se = parquet_thrift.SchemaElement(type=parquet_thrift.Type.BOOLEAN)
         out = encode_plain(data.notnull(), se)
 
         encode_unsigned_varint(len(out) << 1 | 1, temp)
-        head = temp.so_far().tostring()
+        head = temp.so_far().tobytes()
 
         block = struct.pack('<i', len(head + out)) + head + out
         out = data.dropna()  # better, data[data.notnull()], from above ?
