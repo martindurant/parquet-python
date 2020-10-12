@@ -11,3 +11,4 @@ include MANIFEST.in
 include requirements.txt
 
 prune docs/_build
+prune fastparquet/test
