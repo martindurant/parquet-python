@@ -205,6 +205,24 @@ def test_nulls_roundtrip(tempdir):
         assert (df[col] == data[col])[~data[col].isnull()].all()
         assert (data[col].isnull() == df[col].isnull()).all()
 
+def test_decimal_roundtrip(tempdir):
+    import decimal
+    def decimal_convert(x):
+        return decimal.Decimal(x)
+
+    fname = os.path.join(tempdir, 'decitemp.parq')
+    data = pd.DataFrame({'f64': np.arange(10000000, 10001000, dtype=np.float64) / 100000,
+                         'f16': np.arange(1000, dtype=np.float16) /10000
+                        })
+    data['f64']=data['f64'].apply(decimal_convert)
+    data['f16']=data['f16'].apply(decimal_convert)
+    writer.write(fname, data)
+
+    r = ParquetFile(fname)
+    df = r.to_pandas()
+    for col in r.columns:
+        assert (data[col] == df[col]).all()
+
 
 def test_make_definitions_with_nulls():
     for _ in range(10):
