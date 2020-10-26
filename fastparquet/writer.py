@@ -850,10 +850,11 @@ def write(filename, data, row_group_offsets=50000000,
         and the schema must match the input data.
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
-        be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32,
+        be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
         where bytes is assumed if not specified (i.e., no conversion). The
         special value 'infer' will cause the type to be guessed from the first
-        ten non-null values.
+        ten non-null values. The decimal.Decimal type is a valid choice, but will
+        result in float encoding with possible loss of accuracy.
     times: 'int64' (default), or 'int96':
         In "int64" mode, datetimes are written as 8-byte integers, us
         resolution; in "int96" mode, they are written as 12-byte blocks, with
