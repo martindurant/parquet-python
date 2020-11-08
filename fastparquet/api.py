@@ -503,8 +503,8 @@ class ParquetFile(object):
                             for name, f in self.schema.root.children.items()
                             if getattr(f, 'isflat', False) is False)
         for i, (col, dt) in enumerate(dtype.copy().items()):
-            if dt.kind in ['i', 'b']:
-                # int/bool columns that may have nulls become float columns
+            if dt.kind in ['i', 'b', 'u']:
+                # uint/int/bool columns that may have nulls become float columns
                 num_nulls = 0
                 for rg in self.row_groups:
                     chunk = rg.columns[i]

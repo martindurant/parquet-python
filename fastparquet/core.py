@@ -217,7 +217,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
         my_nan = -1
         do_convert = False
     else:
-        if assign.dtype.kind in ['f', 'i']:
+        if assign.dtype.kind in ['f', 'i', 'u']:
             my_nan = np.nan
         elif assign.dtype.kind in ["M", 'm']:
             # GH#489 use a NaT representation compatible with ExtensionArray
@@ -263,7 +263,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
             row_idx = 1 + encoding._assemble_objects(assign, defi, rep, val, dic, d,
                                              null, null_val, max_defi, row_idx)
         elif defi is not None:
-            max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
             part = assign[num:num+len(defi)]
             part[defi != max_defi] = my_nan
             if d and not use_cat:
