@@ -752,7 +752,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                                       created_by=created_by,
                                       row_groups=[],
                                       key_value_metadata=[meta])
-
+    
     object_encoding = object_encoding or {}
     for column in data.columns:
         if column in ignore_columns:
@@ -940,7 +940,6 @@ def write(filename, data, row_group_offsets=50000000,
     fmd = make_metadata(data, has_nulls=has_nulls, ignore_columns=ignore,
                         fixed_text=fixed_text, object_encoding=object_encoding,
                         times=times, index_cols=index_cols)
-
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
                      compression, open_with, has_nulls, append)
@@ -979,7 +978,6 @@ def write(filename, data, row_group_offsets=50000000,
                     chunk.file_path = part
 
                 fmd.row_groups.append(rg)
-
         fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
         write_common_metadata(fn, fmd, open_with, no_row_groups=False)
         write_common_metadata(join_path(filename, '_common_metadata'), fmd,
@@ -1017,10 +1015,12 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     if not remaining:
         raise ValueError("Cannot include all columns in partition_on")
     rgs = []
-    for key, group in zip(sorted(gb.indices), sorted(gb)):
-        if group[1].empty:
+    for key, group in sorted(gb):
+        if group.empty:
+            print(f'group is empty for key: {key}')
+            print(group)
             continue
-        df = group[1][remaining]
+        df = group[remaining]
         if not isinstance(key, tuple):
             key = (key,)
         if with_field:
