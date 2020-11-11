@@ -1,5 +1,6 @@
 import ast
 import copy
+import numpy as np
 import os
 import os.path
 import pandas as pd
@@ -38,12 +39,33 @@ else:
     def default_mkdirs(f):
         os.makedirs(f, exist_ok=True)
 
+PATH_DATE_FMT = '%Y%m%d_%H%M%S.%f'
+
+
+def path_string(o):
+    if isinstance(o, pd.Timestamp):
+        return o.strftime(PATH_DATE_FMT)
+    return str(o)
+
+
 def default_open(f, mode='rb'):
     return open(f, mode)
 
 
-def val_to_num(x):
+def val_from_meta(x, meta):
+    try:
+        return np.dtype(meta['numpy_type']).type(x)
+    except ValueError:
+        if meta['numpy_type'] == 'datetime64[ns]':
+            return pd.to_datetime(x, format=PATH_DATE_FMT)
+        else:
+            raise
+
+
+def val_to_num(x, meta=None):
     """Parse a string as a number, date or timedelta if possible"""
+    if meta:
+        return val_from_meta(x, meta)
     if isinstance(x, numbers.Real):
         return x
     if x in ['now', 'NOW', 'TODAY', '']:

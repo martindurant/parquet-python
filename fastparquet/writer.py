@@ -26,7 +26,7 @@ from . import encoding, api, __version__
 from .util import (default_open, default_mkdirs,
                    PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
-                   get_column_metadata)
+                   get_column_metadata, path_string)
 from .speedups import array_encode_utf8, pack_byte_array
 from decimal import Decimal
 
@@ -656,11 +656,13 @@ def make_part_file(f, data, schema, compression=None, fmd=None):
 
 
 def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
-                  object_encoding=None, times='int64', index_cols=None):
+                  object_encoding=None, times='int64', index_cols=None, partition_cols=None):
     if ignore_columns is None:
         ignore_columns = []
     if index_cols is None:
         index_cols = []
+    if partition_cols is None:
+        partition_cols = []
     if not data.columns.is_unique:
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
@@ -680,6 +682,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                        'step': step,
                        'kind': 'range'}]
     pandas_metadata = {'index_columns': index_cols,
+                       'partition_columns': [],
                        'columns': [],
                        'column_indexes': [{'name': data.columns.name,
                                            'field_name': data.columns.name,
@@ -702,6 +705,8 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                                       key_value_metadata=[meta])
 
     object_encoding = object_encoding or {}
+    for column in partition_cols:
+        pandas_metadata['partition_columns'].append(get_column_metadata(data[column], column))
     for column in data.columns:
         if column in ignore_columns:
             continue
@@ -887,7 +892,7 @@ def write(filename, data, row_group_offsets=50000000,
     ignore = partition_on if file_scheme != 'simple' else []
     fmd = make_metadata(data, has_nulls=has_nulls, ignore_columns=ignore,
                         fixed_text=fixed_text, object_encoding=object_encoding,
-                        times=times, index_cols=index_cols)
+                        times=times, index_cols=index_cols, partition_cols=partition_on)
 
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
@@ -973,7 +978,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
             key = (key,)
         if with_field:
             path = join_path(*(
-                "%s=%s" % (name, val)
+                "%s=%s" % (name, path_string(val))
                 for name, val in zip(columns, key)
             ))
         else:

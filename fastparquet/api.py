@@ -176,13 +176,17 @@ class ParquetFile(object):
             self._statistics = statistics(self)
         return self._statistics
 
+    @property
+    def partition_meta(self):
+        return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
+
     def _read_partitions(self):
         paths = (
             col.file_path or "" 
             for rg in self.row_groups
             for col in rg.columns
         )
-        self.cats = paths_to_cats(paths, self.file_scheme)
+        self.cats = paths_to_cats(paths, self.file_scheme, self.partition_meta)
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
@@ -195,7 +199,7 @@ class ParquetFile(object):
             return self.fn
 
     def read_row_group_file(self, rg, columns, categories, index=None,
-                            assign=None):
+                            assign=None, partition_meta=None):
         """ Open file for reading, and process it as a row-group """
         categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
@@ -207,7 +211,7 @@ class ParquetFile(object):
         core.read_row_group_file(
                 fn, rg, columns, categories, self.schema, self.cats,
                 open=self.open, selfmade=self.selfmade, index=index,
-                assign=assign, scheme=self.file_scheme)
+                assign=assign, scheme=self.file_scheme, partition_meta=partition_meta)
         if ret:
             return df
 
@@ -404,7 +408,7 @@ class ParquetFile(object):
                                 else v[start:start + rg.num_rows])
                          for (name, v) in views.items()}
                 self.read_row_group_file(rg, columns, categories, index,
-                                         assign=parts)
+                                         assign=parts, partition_meta=self.partition_meta)
                 start += rg.num_rows
         return df
 
@@ -565,19 +569,21 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     return df, views
 
 
-def paths_to_cats(paths, file_scheme):
+def paths_to_cats(paths, file_scheme, partition_meta=None):
     """
     Extract categorical fields and labels from hive- or drill-style paths.
 
     Parameters
     ----------
     paths (Iterable[str]): file paths relative to root
-    file_scheme (str): 
+    file_scheme (str):
+    partition_meta (Dict[str, dict]):
 
     Returns
     -------
     cats (OrderedDict[str, List[Any]]): a dict of field names and their values
     """
+    partition_meta = partition_meta or {}
     if file_scheme in ['simple', 'flat', 'other']:
         cats = {}
         return cats
@@ -593,7 +599,7 @@ def paths_to_cats(paths, file_scheme):
             for k, v in s.findall(path)
         )
         for key, val in partitions:
-            cats.setdefault(key, set()).add(val_to_num(val))
+            cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
             raw_cats.setdefault(key, set()).add(val)
     else:
         i_val = unique_everseen(
@@ -603,7 +609,7 @@ def paths_to_cats(paths, file_scheme):
         )
         for i, val in i_val:
             key = 'dir%i' % i
-            cats.setdefault(key, set()).add(val_to_num(val))
+            cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
             raw_cats.setdefault(key, set()).add(val)
 
     for key, v in cats.items():

@@ -292,6 +292,7 @@ def test_numerical_partition_name(tempdir):
     assert out[out.y1 == 'aa'].x.tolist() == [1, 5, 5]
     assert out[out.y1 == 'bb'].x.tolist() == [2]
 
+
 def test_floating_point_partition_name(tempdir):
     df = pd.DataFrame({'x': [1e99, 5e-10, 2e+2, -0.1], 'y1': ['aa', 'aa', 'bb', 'aa']})
     write(tempdir, df, file_scheme='hive', partition_on=['y1'])
@@ -300,7 +301,22 @@ def test_floating_point_partition_name(tempdir):
     assert out[out.y1 == 'aa'].x.tolist() == [1e99, 5e-10, -0.1]
     assert out[out.y1 == 'bb'].x.tolist() == [200.0]
 
+
 def test_datetime_partition_names(tempdir):
+    dates = pd.to_datetime(['2015-05-09', '2018-10-15', '2020-10-17', '2015-05-09'])
+    df = pd.DataFrame({
+        'date': dates,
+        'x': [1, 5, 2, 5]
+    })
+    write(tempdir, df, file_scheme='hive', partition_on=['date'])
+    pf = ParquetFile(tempdir)
+    out = pf.to_pandas()
+    assert set(out.date.tolist()) == set(dates.tolist())
+    assert out[out.date == '2015-05-09'].x.tolist() == [1, 5]
+    assert out[out.date == '2020-10-17'].x.tolist() == [2]
+
+
+def test_string_partition_names(tempdir):
     date_strings = ['2015-05-09', '2018-10-15', '2020-10-17', '2015-05-09']
     df = pd.DataFrame({
         'date': date_strings,
@@ -309,7 +325,7 @@ def test_datetime_partition_names(tempdir):
     write(tempdir, df, file_scheme='hive', partition_on=['date'])
     pf = ParquetFile(tempdir)
     out = pf.to_pandas()
-    assert set(out.date.tolist()) == set(pd.to_datetime(date_strings).tolist())
+    assert set(out.date.tolist()) == set(date_strings)
     assert out[out.date == '2015-05-09'].x.tolist() == [1, 5]
     assert out[out.date == '2020-10-17'].x.tolist() == [2]
 

@@ -299,11 +299,11 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
 def read_row_group_file(fn, rg, columns, categories, schema_helper, cats,
                         open=open, selfmade=False, index=None, assign=None,
-                        scheme='hive'):
+                        scheme='hive', partition_meta=None):
     with open(fn, mode='rb') as f:
         return read_row_group(f, rg, columns, categories, schema_helper, cats,
                               selfmade=selfmade, index=index, assign=assign,
-                              scheme=scheme)
+                              scheme=scheme, partition_meta=partition_meta)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -345,10 +345,11 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
                    selfmade=False, index=None, assign=None,
-                   scheme='hive'):
+                   scheme='hive', partition_meta=None):
     """
     Access row-group in a file and read some columns into a data-frame.
     """
+    partition_meta = partition_meta or {}
     if assign is None:
         raise RuntimeError('Going with pre-allocation!')
     read_row_group_arrays(file, rg, columns, categories, schema_helper,
@@ -361,5 +362,6 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
         else:
             partitions = [('dir%i' % i, v) for (i, v) in enumerate(
                 rg.columns[0].file_path.split('/')[:-1])]
-        val = val_to_num([p[1] for p in partitions if p[0] == cat][0])
+        key, val = [p for p in partitions if p[0] == cat][0]
+        val = val_to_num(val, meta=partition_meta.get(key))
         assign[cat][:] = cats[cat].index(val)
