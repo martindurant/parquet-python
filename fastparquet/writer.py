@@ -1017,8 +1017,6 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     rgs = []
     for key, group in sorted(gb):
         if group.empty:
-            print(f'group is empty for key: {key}')
-            print(group)
             continue
         df = group[remaining]
         if not isinstance(key, tuple):

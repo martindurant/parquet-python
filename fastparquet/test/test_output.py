@@ -10,6 +10,7 @@ from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding
 from pandas.testing import assert_frame_equal
+from pandas.api.types import CategoricalDtype
 import pytest
 
 from fastparquet.util import default_mkdirs
@@ -650,7 +651,17 @@ def test_many_categories(tempdir, n):
     assert (out.index == df.index).all()
     assert (out.y == df.y).all()
 
-
+def test_write_partitioned_with_empty_categories(tempdir):
+    df = pd.DataFrame({
+        'b': np.random.random(size=1000),
+        'a': pd.Series(np.random.choice(['x', 'z'], size=1000)).astype(
+                CategoricalDtype(categories=['x', 'y', 'z'])
+             ),
+    })
+    write(tempdir, df, partition_on=['a'], file_scheme='hive', write_index=True)
+    out = ParquetFile(tempdir).to_pandas()
+    assert_frame_equal(out, df, check_like=True, check_categorical=False, check_names=False)
+    
 def test_autocat(tempdir):
     tmp = str(tempdir)
     fn = os.path.join(tmp, "test.parq")
