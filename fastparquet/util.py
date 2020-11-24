@@ -44,7 +44,7 @@ PATH_DATE_FMT = '%Y%m%d_%H%M%S.%f'
 
 def path_string(o):
     if isinstance(o, pd.Timestamp):
-        return o.strftime(PATH_DATE_FMT)
+        return o.isoformat()
     return str(o)
 
 
@@ -54,7 +54,12 @@ def default_open(f, mode='rb'):
 
 def val_from_meta(x, meta):
     try:
-        return np.dtype(meta['numpy_type']).type(x)
+        if meta['pandas_type'] == 'categorical':
+            return x
+        t = np.dtype(meta['numpy_type'])
+        if t == "bool":
+            return x in [True, "true", "True", 't', "T", 1, "1"]
+        return np.dtype(t).type(x)
     except ValueError:
         if meta['numpy_type'] == 'datetime64[ns]':
             return pd.to_datetime(x, format=PATH_DATE_FMT)

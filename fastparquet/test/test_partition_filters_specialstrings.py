@@ -12,7 +12,6 @@ try:
     from pandas.tslib import Timestamp
 except ImportError:
     from pandas import Timestamp
-from six import PY2
 
 from fastparquet import write, ParquetFile
 from fastparquet.test.util import tempdir
@@ -27,12 +26,13 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
     tuple_list = []
     for x in symbols:
         for y in date_list:
-            tuple_list.append((x, y.year, y))
+            tuple_list.append((x, y.year, pd.Timestamp(y)))
     index = pd.MultiIndex.from_tuples(tuple_list, names=('symbol', 'year', 'dtTrade'))
     np.random.seed(seed=0)
     df = pd.DataFrame(np.random.randn(index.size, numbercolumns),
                       index=index, columns=[x for x in string.ascii_uppercase[0:numbercolumns]])
     return df
+
 
 @pytest.mark.parametrize('input_symbols,input_days,file_scheme,input_columns,'
                          'partitions,filters',

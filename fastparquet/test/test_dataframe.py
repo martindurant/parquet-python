@@ -101,7 +101,7 @@ def test_pandas_hive_serialization(tmpdir):
     df = pd.DataFrame(
         columns=[column], data=[("42",), ("",), ("0",), ("1",), ("0.0",)]
     )
-    df.to_parquet(parquet_dir, file_scheme="hive", row_group_offsets=[0, 2, 4])
+    df.to_parquet(parquet_dir, file_scheme="hive", row_group_offsets=[0, 2, 4], engine='fastparquet')
 
-    df_ = pd.read_parquet(parquet_dir)
+    df_ = pd.read_parquet(parquet_dir, engine='fastparquet')
     assert_frame_equal(df, df_)

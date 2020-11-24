@@ -281,7 +281,7 @@ class ParquetFile(object):
         """
         return [rg for rg in self.row_groups if
                 not(filter_out_stats(rg, filters, self.schema)) and
-                not(filter_out_cats(rg, filters))]
+                not(filter_out_cats(rg, filters, self.partition_meta))]
 
     def iter_row_groups(self, columns=None, categories=None, filters=[],
                         index=None):
@@ -507,8 +507,8 @@ class ParquetFile(object):
                             for name, f in self.schema.root.children.items()
                             if getattr(f, 'isflat', False) is False)
         for i, (col, dt) in enumerate(dtype.copy().items()):
-            if dt.kind in ['i', 'b']:
-                # int/bool columns that may have nulls become float columns
+            if dt.kind in ['i', 'b', 'u']:
+                # uint/int/bool columns that may have nulls become float columns
                 num_nulls = 0
                 for rg in self.row_groups:
                     chunk = rg.columns[i]
@@ -785,7 +785,7 @@ def sorted_partitioned_columns(pf, filters=None):
     if (filters is not None) & (filters != []):
         idx_list = [i for i, rg in enumerate(pf.row_groups) if
                     not(filter_out_stats(rg, filters, pf.schema)) and
-                    not(filter_out_cats(rg, filters))]
+                    not(filter_out_cats(rg, filters, pf.partition_meta))]
         for stat in s.keys():
             for col in s[stat].keys():
                 s[stat][col] = [s[stat][col][i] for i in idx_list]
@@ -806,7 +806,7 @@ def sorted_partitioned_columns(pf, filters=None):
     return out
 
 
-def filter_out_cats(rg, filters):
+def filter_out_cats(rg, filters, partition_meta={}):
     """
     According to the filters, should this row-group be excluded
 
@@ -840,6 +840,9 @@ def filter_out_cats(rg, filters):
                 v0 = v
             else:
                 v0 = val_to_num(v)
+            if cat in partition_meta:
+                val = val_to_num(val, meta=partition_meta.get(cat))
+                v0 = val_to_num(v0, meta=partition_meta.get(cat))
             if filter_val(op, val, v0, v0):
                 return True
     return False

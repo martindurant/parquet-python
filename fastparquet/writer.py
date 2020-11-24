@@ -9,6 +9,7 @@ import warnings
 import numba
 import numpy as np
 import pandas as pd
+from pandas.core.arrays.masked import BaseMaskedDtype
 from six import integer_types
 
 from fastparquet.util import join_path, PANDAS_VERSION
@@ -35,6 +36,15 @@ NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
 nat = np.datetime64('NaT').view('int64')
 
 typemap = {  # primitive type, converted type, bit width
+    'boolean': (parquet_thrift.Type.BOOLEAN, None, 1),
+    'Int32': (parquet_thrift.Type.INT32, None, 32),
+    'Int64': (parquet_thrift.Type.INT64, None, 64),
+    'Int8': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.INT_8, 8),
+    'Int16': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.INT_16, 16),
+    'UInt8': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_8, 8),
+    'UInt16': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_16, 16),
+    'UInt32': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_32, 32),
+    'UInt64': (parquet_thrift.Type.INT64, parquet_thrift.ConvertedType.UINT_64, 64),
     'bool': (parquet_thrift.Type.BOOLEAN, None, 1),
     'int32': (parquet_thrift.Type.INT32, None, 32),
     'int64': (parquet_thrift.Type.INT64, None, 64),
@@ -54,6 +64,17 @@ revmap = {parquet_thrift.Type.INT32: np.int32,
           parquet_thrift.Type.FLOAT: np.float32,
           parquet_thrift.Type.DOUBLE: np.float64}
 
+pdoptional_to_numpy_typemap = {
+    pd.Int8Dtype(): np.int8,
+    pd.Int16Dtype(): np.int16,
+    pd.Int32Dtype(): np.int32,
+    pd.Int64Dtype(): np.int64,
+    pd.UInt8Dtype(): np.uint8,
+    pd.UInt16Dtype(): np.uint16,
+    pd.UInt32Dtype(): np.uint32,
+    pd.UInt64Dtype(): np.uint64,
+    pd.BooleanDtype(): np.bool
+}
 
 def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     """ Get appropriate typecodes for column dtype
@@ -148,6 +169,19 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     elif dtype.kind == "m":
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
+    elif str(dtype) == 'string': 
+        if object_encoding == 'infer':
+            object_encoding = infer_object_encoding(data)
+        
+        if object_encoding == 'utf8':
+            type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY,
+                                           parquet_thrift.ConvertedType.UTF8,
+                                           None)
+        elif object_encoding in ['bytes', None]:
+            type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY, None,
+                                           None)
+        else:
+            raise ValueError('Object Encoding (%s) not one of infer|utf8|bytes' % object_encoding)
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
     se = parquet_thrift.SchemaElement(
@@ -201,6 +235,21 @@ def convert(data, se):
             raise ValueError('Error converting column "%s" to bytes using '
                              'encoding %s. Original error: '
                              '%s' % (data.name, ct, e))
+    elif str(dtype) == "string":
+        try:
+            if converted_type == parquet_thrift.ConvertedType.UTF8:
+                out = array_encode_utf8(data)
+            elif converted_type is None:
+                out = data.values
+            if type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                out = out.astype('S%i' % se.type_length)
+        except Exception as e:
+            ct = parquet_thrift.ConvertedType._VALUES_TO_NAMES[
+                converted_type] if converted_type is not None else None
+            raise ValueError('Error converting column "%s" to bytes using '
+                             'encoding %s. Original error: '
+                             '%s' % (data.name, ct, e))
+
     elif converted_type == parquet_thrift.ConvertedType.TIMESTAMP_MICROS:
         out = np.empty(len(data), 'int64')
         time_shift(data.values.view('int64'), out)
@@ -445,11 +494,14 @@ def write_column(f, data, selement, compression=None):
     if has_nulls:
         if is_categorical_dtype(data.dtype):
             num_nulls = (data.cat.codes == -1).sum()
-        elif data.dtype.kind in ['i', 'b']:
-            num_nulls = 0
         else:
             num_nulls = len(data) - data.count()
         definition_data, data = make_definitions(data, num_nulls == 0)
+        # make_definitions returns `data` with all nulls dropped
+        # the null-stripped `data` can be converted from Optional Types to
+        # their numpy counterparts
+        if isinstance(data.dtype, BaseMaskedDtype):
+            data = data.astype(pdoptional_to_numpy_typemap[data.dtype])
         if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
             try:
                 if selement.type == parquet_thrift.Type.INT64:
@@ -703,7 +755,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                                       created_by=created_by,
                                       row_groups=[],
                                       key_value_metadata=[meta])
-
+    
     object_encoding = object_encoding or {}
     for column in partition_cols:
         pandas_metadata['partition_columns'].append(get_column_metadata(data[column], column))
@@ -932,7 +984,6 @@ def write(filename, data, row_group_offsets=50000000,
                     chunk.file_path = part
 
                 fmd.row_groups.append(rg)
-
         fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
         write_common_metadata(fn, fmd, open_with, no_row_groups=False)
         write_common_metadata(join_path(filename, '_common_metadata'), fmd,
@@ -970,10 +1021,10 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     if not remaining:
         raise ValueError("Cannot include all columns in partition_on")
     rgs = []
-    for key, group in zip(sorted(gb.indices), sorted(gb)):
-        if group[1].empty:
+    for key, group in sorted(gb):
+        if group.empty:
             continue
-        df = group[1][remaining]
+        df = group[remaining]
         if not isinstance(key, tuple):
             key = (key,)
         if with_field:

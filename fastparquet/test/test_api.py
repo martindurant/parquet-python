@@ -330,39 +330,15 @@ def test_string_partition_names(tempdir):
     assert out[out.date == '2020-10-17'].x.tolist() == [2]
 
 
-@pytest.mark.parametrize('partitions', [['2017-05-09', 'may 9 2017'], ['0.7', '.7']])
-def test_datetime_partition_no_dupilcates(tempdir, partitions):
-    df = pd.DataFrame({
-        'partitions': partitions,
-        'x': [1, 2]
-    })
-    write(tempdir, df, file_scheme='hive', partition_on=['partitions'])
-    with pytest.raises(ValueError, match=r'Partition names map to the same value.*'):
-        ParquetFile(tempdir)
-
-
-@pytest.mark.parametrize('categories', [['2017-05-09', 'may 9 2017'], ['0.7', '.7']])
-def test_datetime_category_no_dupilcates(tempdir, categories):
-    # The purpose of this test is to ensure that the changes made for the previous test
-    # haven't broken categories in general.
-    df = pd.DataFrame({
-        'categories': categories,
-        'x': [1, 2]
-    }).astype({'categories': 'category'})
-    fn = os.path.join(tempdir, 'foo.parquet')
-    write(fn, df)
-    assert ParquetFile(fn).to_pandas().categories.tolist() == categories
-
-
 @pytest.mark.parametrize('partitions', [['2017-01-05', '1421'], ['0.7', '10']])
-def test_mixed_partition_types_warning(tempdir, partitions):
+def test_mixed_partition_types(tempdir, partitions):
     df = pd.DataFrame({
         'partitions': partitions,
         'x': [1, 2]
     })
     write(tempdir, df, file_scheme='hive', partition_on=['partitions'])
-    with pytest.warns(UserWarning, match=r'Partition names coerce to values of different types.*'):
-        ParquetFile(tempdir)
+    out = ParquetFile(tempdir).to_pandas()
+    assert (out.sort_values("x").set_index("x").partitions == df.sort_values("x").set_index("x").partitions).all()
 
 
 def test_filter_without_paths(tempdir):
@@ -405,12 +381,12 @@ def test_filter_dates(tempdir):
     out_1 = pf.to_pandas(filters=[('date', '>', '2017-01-01')])
 
     assert set(out_1.x.tolist()) == {2, 3, 4, 7}
-    expected_dates = set(pd.to_datetime(['2017-05-15', '2017-05-14', '2017-05-13', '2017-05-12']))
+    expected_dates = set(['2017-05-15', '2017-05-14', '2017-05-13', '2017-05-12'])
     assert set(out_1.date.tolist()) == expected_dates
 
     out_2 = pf.to_pandas(filters=[('date', '==', pd.to_datetime('may 9 2015'))])
     assert out_2.x.tolist() == [1]
-    assert out_2.date.tolist() == pd.to_datetime(['2015-05-09']).tolist()
+    assert out_2.date.tolist() == ['2015-05-09']
 
 
 def test_in_filter(tempdir):
