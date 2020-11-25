@@ -266,7 +266,7 @@ class ParquetFile(object):
                                           grab_dict=True)
         return out
 
-    def filter_row_groups(self, filters):
+    def filter_row_groups(self, filters, partition_meta=None):
         """
         Select row groups using set of filters
 
@@ -381,7 +381,7 @@ class ParquetFile(object):
         -------
         Pandas data-frame
         """
-        rgs = self.filter_row_groups(filters)
+        rgs = self.filter_row_groups(filters, partition_meta=self.partition_meta)
         size = sum(rg.num_rows for rg in rgs)
         index = self._get_index(index)
         if columns is not None:
