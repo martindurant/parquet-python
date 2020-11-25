@@ -1,4 +1,4 @@
-pandas>=0.19
+pandas>=1.0.0
 numba>=0.28
 numpy>=1.11
 packaging
