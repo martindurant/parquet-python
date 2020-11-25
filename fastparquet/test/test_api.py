@@ -387,8 +387,8 @@ def test_filter_dates(tempdir):
     assert set(out_1.date.tolist()) == expected_dates
 
     out_2 = pf.to_pandas(filters=[('date', '==', 'may 9 2015')])
-    assert out_2.x.tolist() == [1]
-    assert out_2.date.tolist() == pd.to_datetime(['2015-05-09']).tolist()
+    assert out_2.x.tolist() == []
+    assert out_2.date.tolist() == []
 
 
 def test_in_filter(tempdir):

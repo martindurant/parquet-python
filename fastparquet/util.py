@@ -54,6 +54,10 @@ def default_open(f, mode='rb'):
 
 def val_from_meta(x, meta):
     try:
+        if meta['pandas_type'] == 'categorical':
+            return x
+        if meta['numpy_type'] == 'bool':
+            return x != 'False'
         return np.dtype(meta['numpy_type']).type(x)
     except ValueError:
         if meta['numpy_type'] == 'datetime64[ns]':
