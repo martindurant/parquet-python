@@ -6,7 +6,7 @@ from pandas.core.internals import BlockManager
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    __version__ as pdver
+    __version__ as pdver, DatetimeIndex
 )
 from pandas.api.types import is_categorical_dtype
 import six
@@ -127,9 +127,12 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 t = t.base
             d = np.empty(size, dtype=t)
             if d.dtype.kind == "M" and six.text_type(col) in timezones:
-                d.fill(0)
-                d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
-            index = Index(d)
+                # 1) create the DatetimeIndex in UTC as no datetime conversion is needed and
+                # it works with d uninitialised data (no NonExistentTimeError or AmbiguousTimeError)
+                # 2) convert to timezone (if UTC=noop, if None=remove tz, if other=change tz)
+                index = DatetimeIndex(d, tz="UTC").tz_convert(timezones[six.text_type(col)])
+            else:
+                index = Index(d)
             views[col] = index.values
     else:
         index = MultiIndex([[]], [[]])
