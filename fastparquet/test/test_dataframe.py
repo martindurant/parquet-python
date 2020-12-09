@@ -66,13 +66,10 @@ def np_empty_mock(shape, dtype):
 
 @mock.patch("numpy.empty", np_empty_mock)
 def test_empty_tz_nonutc():
-    warnings.simplefilter("error", DeprecationWarning)
-
-    with pytest.warns(None) as e:
-        empty(types=[DatetimeTZDtype(unit="ns", tz="CET")], size=8784, cols=['a'],
-              timezones={'a': 'CET', 'index': 'CET'}, index_types=["datetime64[ns]"], index_names=["index"])
-
-    assert len(e) == 0, e
+    df, views = empty(types=[DatetimeTZDtype(unit="ns", tz="CET")], size=8784, cols=['a'],
+                      timezones={'a': 'CET', 'index': 'CET'}, index_types=["datetime64[ns]"], index_names=["index"])
+    assert df.index.tz.zone == "CET"
+    assert df.a.dtype.tz.zone == "CET"
 
 
 def test_timestamps():
