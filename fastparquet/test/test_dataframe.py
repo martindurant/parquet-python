@@ -1,9 +1,11 @@
 import distutils
 import shutil
 import warnings
+from unittest import mock
 
 import pytest
 import pandas as pd
+from numpy import empty as np_empty
 from pandas.testing import assert_frame_equal
 
 from fastparquet.dataframe import empty
@@ -38,12 +40,37 @@ def test_empty():
     assert len(views) == 5
 
 
-def test_empty_tz():
+def test_empty_tz_utc():
     warnings.simplefilter("error", DeprecationWarning)
 
     with pytest.warns(None) as e:
         empty([DatetimeTZDtype(unit="ns", tz="UTC")], 10, cols=['a'],
               timezones={'a': 'UTC'})
+
+    assert len(e) == 0, e
+
+
+# non regression test for https://github.com/dask/fastparquet/issues/532
+def np_empty_mock(shape, dtype):
+    """mock numpy empty to return an initialised array with all hours in 2020 if shape is 365 and dtype.kind is M.
+    The objective is to simulate a numpy.empty that returns an uninitialized array with random content that
+    can cause issues when tz_localize is applied with a timezone with DST"""
+    import numpy
+    dtype = numpy.dtype(dtype)
+    if shape == 8784 and dtype.kind == "M":
+        a = numpy.arange(start="2020-01-01", stop="2021-01-01", dtype="M8[h]").astype(dtype)
+    else:
+        a = np_empty(shape, dtype)
+    return a
+
+
+@mock.patch("numpy.empty", np_empty_mock)
+def test_empty_tz_nonutc():
+    warnings.simplefilter("error", DeprecationWarning)
+
+    with pytest.warns(None) as e:
+        empty(types=[DatetimeTZDtype(unit="ns", tz="CET")], size=8784, cols=['a'],
+              timezones={'a': 'CET', 'index': 'CET'}, index_types=["datetime64[ns]"], index_names=["index"])
 
     assert len(e) == 0, e
 

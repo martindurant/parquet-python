@@ -128,6 +128,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             d = np.empty(size, dtype=t)
             if d.dtype.kind == "M" and six.text_type(col) in timezones:
                 try:
+                    d.fill(0)
                     d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
                 except:
                     warnings.warn("Inferring time-zone from %s in column %s "
