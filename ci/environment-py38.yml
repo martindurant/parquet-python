@@ -15,3 +15,7 @@ dependencies:
   - pandas
   - dask
   - pytest-cov
+  - thrift
+  - numpy
+  - packaging
+  - six
