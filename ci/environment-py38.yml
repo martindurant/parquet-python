@@ -1,0 +1,16 @@
+name: test_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - brotli
+  - bson
+  - lz4
+  - lzo
+  - snappy
+  - zstandard
+  - pytest
+  - numa
+  - cython
+  - pandas
+  - dask
