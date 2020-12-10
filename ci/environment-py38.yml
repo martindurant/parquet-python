@@ -19,3 +19,4 @@ dependencies:
   - numpy
   - packaging
   - six
+  - python-snappy
