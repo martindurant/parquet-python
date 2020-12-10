@@ -9,7 +9,7 @@ dependencies:
   - lz4
   - lzo
   - snappy
-  - zst
+  - zstd
   - pytest
   - numba
   - cython
