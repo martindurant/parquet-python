@@ -10,7 +10,7 @@ dependencies:
   - snappy
   - zstandard
   - pytest
-  - numa
+  - numba
   - cython
   - pandas
   - dask
