@@ -1,16 +1,15 @@
 """setup.py - build script for parquet-python."""
 
+import fnmatch
 import os
 import sys
-try:
-    from setuptools import setup, Extension
-    from setuptools.command.build_ext import build_ext as _build_ext
-except ImportError:
-    from distutils.core import setup, Extension
-    from distutils.command.build_ext import build_ext as _build_ext
+from setuptools import setup, Extension, find_packages
+from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.build_py import build_py as build_py_orig
 
-# Kudos to https://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py/21621689
+
 class build_ext(_build_ext):
+    # Kudos to https://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py/21621689
     def finalize_options(self):
         if sys.version_info[0] >= 3:
             import builtins
@@ -51,7 +50,7 @@ install_requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='fastparquet',
-    version='0.4.1',
+    version='0.4.2',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@continuum.io',
@@ -94,6 +93,7 @@ setup(
                       else ''),
     package_data={'fastparquet': ['*.thrift']},
     include_package_data=True,
+    exclude_package_data={'fastparquet': ['test/*']},
     python_requires=">=3.6,",
     **extra
 )
