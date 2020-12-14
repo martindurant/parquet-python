@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from pandas.core.arrays.masked import BaseMaskedDtype
 
-from fastparquet.util import join_path, PANDAS_VERSION
+from fastparquet.util import join_path
 from .thrift_structures import write_thrift
 
 from pandas.api.types import is_categorical_dtype
@@ -709,14 +709,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
     if not isinstance(index_cols, list):
-        if PANDAS_VERSION >= "0.25.0":
-            start = index_cols.start
-            stop = index_cols.stop
-            step = index_cols.step
-        else:
-            start = index_cols._start
-            stop = index_cols._stop
-            step = index_cols._step
+        start = index_cols.start
+        stop = index_cols.stop
+        step = index_cols.step
 
         index_cols = [{'name': index_cols.name,
                        'start': start,
