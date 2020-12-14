@@ -1,7 +1,6 @@
 
 import gzip
 from .thrift_structures import parquet_thrift
-from .util import PY2
 
 # TODO: use stream/direct-to-buffer conversions instead of memcopy
 

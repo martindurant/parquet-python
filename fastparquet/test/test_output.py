@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import datetime
 import numpy as np
 import os
 import pandas as pd
-import pandas.util.testing as tm
+import pandas.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding

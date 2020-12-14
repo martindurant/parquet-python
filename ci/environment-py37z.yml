@@ -19,5 +19,4 @@ dependencies:
   - thrift
   - numpy
   - packaging
-  - six
   - python-snappy

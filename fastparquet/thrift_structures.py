@@ -63,10 +63,12 @@ def write_thrift(fobj, thrift):
         name = variables['fname']
         fail = True
     if fail:
-        raise ParquetException('Thrift parameter validation failure %s'
-                               ' when writing: %s-> Field: %s' % (
-            val.args[0], obj, name
-        ))
+        raise ParquetException(
+            'Thrift parameter validation failure %s'
+            ' when writing: %s-> Field: %s' % (
+                val.args[0], obj, name
+            )
+        )
     return fobj.tell() - t0
 
 

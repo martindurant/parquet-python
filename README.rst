@@ -41,7 +41,6 @@ Required:
 - numpy
 - pandas
 - cython
-- six
 
 .. _LLVM 4.0.x: https://github.com/llvm-mirror/llvm 
 

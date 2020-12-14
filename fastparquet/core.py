@@ -12,7 +12,7 @@ from .converted_types import convert, typemap
 from .schema import _is_list_like, _is_map_like
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift, read_thrift
-from .util import val_to_num, byte_buffer, ex_from_sep
+from .util import val_to_num, ex_from_sep
 
 
 def _read_page(file_obj, page_header, column_metadata):
@@ -97,7 +97,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     """
     daph = header.data_page_header
     raw_bytes = _read_page(f, header, metadata)
-    io_obj = encoding.Numpy8(np.frombuffer(byte_buffer(raw_bytes),
+    io_obj = encoding.Numpy8(np.frombuffer(memoryview(raw_bytes),
                                            dtype=np.uint8))
 
     repetition_levels = read_rep(io_obj, daph, helper, metadata)

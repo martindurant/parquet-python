@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import json
 import re
-import six
 import struct
 import warnings
 
@@ -19,7 +18,7 @@ from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
 from .util import (default_open, ParquetException, val_to_num,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, get_file_scheme, STR_TYPE, groupby_types,
+                   ex_from_sep, get_file_scheme, groupby_types,
                    unique_everseen)
 
 
@@ -344,8 +343,8 @@ class ParquetFile(object):
     def _get_index(self, index=None):
         if index is None:
             index = [i for i in self.pandas_metadata.get('index_columns', [])
-                     if isinstance(i, six.text_type)]
-        if isinstance(index, STR_TYPE):
+                     if isinstance(i, str)]
+        if isinstance(index, str):
             index = [index]
         return index
 
@@ -548,7 +547,7 @@ class ParquetFile(object):
 
 
 def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
-    index = [index] if isinstance(index, six.text_type) else (index or [])
+    index = [index] if isinstance(index, str) else (index or [])
     cols = [c for c in columns if c not in index]
     categories = categories or {}
     cats = cs.copy()
@@ -834,9 +833,8 @@ def filter_out_cats(rg, filters, partition_meta={}):
 
         app_filters = [f[1:] for f in filters if f[0] == cat]
         for op, val in app_filters:
-            tstr = six.string_types + (six.text_type, )
-            if isinstance(val, tstr) or (isinstance(val, (tuple, list)) and
-                                         all(isinstance(x, tstr) for x in val)):
+            if isinstance(val, str) or (isinstance(val, (tuple, list)) and
+                                        all(isinstance(x, str) for x in val)):
                 v0 = v
             else:
                 v0 = val_to_num(v)

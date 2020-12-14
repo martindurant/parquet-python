@@ -1,27 +1,18 @@
-import ast
 import copy
 import numpy as np
 import os
 import os.path
 import pandas as pd
 import re
-import six
 import numbers
 from collections import defaultdict
 from distutils.version import LooseVersion
 import itertools
 import pandas
 
-try:
-    from pandas.api.types import is_categorical_dtype
-except ImportError:
-    # Pandas <= 0.18.1
-    from pandas.core.common import is_categorical_dtype
+from pandas.api.types import is_categorical_dtype
 
-PY2 = six.PY2
-PY3 = six.PY3
 PANDAS_VERSION = LooseVersion(pandas.__version__)
-STR_TYPE = six.string_types[0]  # 'str' for Python3, 'basestring' for Python2
 created_by = "fastparquet-python version 1.0.0 (build 111)"
 
 
@@ -31,13 +22,9 @@ class ParquetException(Exception):
     pass
 
 
-if PY2:
-    def default_mkdirs(f):
-        if not os.path.exists(f):
-            os.makedirs(f)
-else:
-    def default_mkdirs(f):
-        os.makedirs(f, exist_ok=True)
+def default_mkdirs(f):
+    os.makedirs(f, exist_ok=True)
+
 
 PATH_DATE_FMT = '%Y%m%d_%H%M%S.%f'
 
@@ -100,12 +87,8 @@ def val_to_num(x, meta=None):
     except:
         return x
 
-if PY2:
-    def ensure_bytes(s):
-        return s.encode('utf-8') if isinstance(s, unicode) else s
-else:
-    def ensure_bytes(s):
-        return s.encode('utf-8') if isinstance(s, str) else s
+def ensure_bytes(s):
+    return s.encode('utf-8') if isinstance(s, str) else s
 
 
 def check_column_names(columns, *args):
@@ -119,10 +102,6 @@ def check_column_names(columns, *args):
                                  "All requested columns: %s\n"
                                  "Available columns: %s"
                                  "" % (missing, arg, columns))
-
-
-def byte_buffer(raw_bytes):
-    return buffer(raw_bytes) if PY2 else memoryview(raw_bytes)
 
 
 def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
@@ -194,7 +173,7 @@ def ex_from_sep(sep):
     """Generate regex for category folder matching"""
     if sep not in seps:
         if sep in r'\^$.|?*+()[]':
-            s = re.compile(r"([a-zA-Z_0-9]+)=([^\{}]+)".format(sep))
+            s = re.compile(r"([a-zA-Z_0-9]+)=([^\\{}]+)".format(sep))
         else:
             s = re.compile("([a-zA-Z_0-9]+)=([^{}]+)".format(sep))
         seps[sep] = s
@@ -266,7 +245,7 @@ def get_column_metadata(column, name):
     else:
         extra_metadata = None
 
-    if not isinstance(name, six.string_types):
+    if not isinstance(name, str):
         raise TypeError(
             'Column name must be a string. Got column {} of type {}'.format(
                 name, type(name).__name__
@@ -277,7 +256,7 @@ def get_column_metadata(column, name):
         'name': name,
         'field_name': name,
         'pandas_type': {
-            'string': 'bytes' if PY2 else 'unicode',
+            'string': 'unicode',
             'datetime64': (
                 'datetimetz' if hasattr(dtype, 'tz')
                 else 'datetime'
@@ -394,10 +373,7 @@ def join_path(*path):
     return joined
 
 
-if PY2:
-    filterfalse = itertools.ifilterfalse
-else:
-    filterfalse = itertools.filterfalse
+filterfalse = itertools.filterfalse
 
 
 def unique_everseen(iterable, key=None):
