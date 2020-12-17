@@ -8,17 +8,10 @@ from __future__ import print_function
 import array
 
 import numpy as np
-
-from packaging import version
 import numba
-if version.parse(numba.__version__) < version.parse("0.49"):
-    from numba import jitclass
-else:
-    from numba.experimental import jitclass
-
+from numba.experimental import jitclass
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
-from .util import byte_buffer
 
 
 @numba.njit(nogil=True)
@@ -51,12 +44,12 @@ DECODE_TYPEMAP = {
 def read_plain(raw_bytes, type_, count, width=0):
     if type_ in DECODE_TYPEMAP:
         dtype = DECODE_TYPEMAP[type_]
-        return np.frombuffer(byte_buffer(raw_bytes), dtype=dtype, count=count)
+        return np.frombuffer(memoryview(raw_bytes), dtype=dtype, count=count)
     if type_ == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
         if count == 1:
             width = len(raw_bytes)
         dtype = np.dtype('S%i' % width)
-        return np.frombuffer(byte_buffer(raw_bytes), dtype=dtype, count=count)
+        return np.frombuffer(memoryview(raw_bytes), dtype=dtype, count=count)
     if type_ == parquet_thrift.Type.BOOLEAN:
         return read_plain_boolean(raw_bytes, count)
     # variable byte arrays (rare)

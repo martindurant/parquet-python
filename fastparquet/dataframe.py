@@ -9,9 +9,7 @@ from pandas import (
     __version__ as pdver, DatetimeIndex
 )
 from pandas.api.types import is_categorical_dtype
-import six
 import warnings
-from .util import STR_TYPE
 
 
 class Dummy(object):
@@ -76,7 +74,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     views = {}
     timezones = timezones or {}
 
-    if isinstance(types, STR_TYPE):
+    if isinstance(types, str):
         types = types.split(',')
     cols = cols if cols is not None else range(len(types))
 
@@ -91,21 +89,21 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     df = OrderedDict()
     for t, col in zip(types, cols):
         if str(t) == 'category':
-            df[six.text_type(col)] = Categorical([], categories=cat(col),
+            df[str(col)] = Categorical([], categories=cat(col),
                                                  fastpath=True)
         else:
             if hasattr(t, 'base'):
                 # funky pandas not-dtype
                 t = t.base
             d = np.empty(0, dtype=t)
-            if d.dtype.kind == "M" and six.text_type(col) in timezones:
+            if d.dtype.kind == "M" and str(col) in timezones:
                 try:
-                    d = Series(d).dt.tz_localize(timezones[six.text_type(col)])
+                    d = Series(d).dt.tz_localize(timezones[str(col)])
                 except:
                     warnings.warn("Inferring time-zone from %s in column %s "
                                   "failed, using time-zone-agnostic"
-                                  "" % (timezones[six.text_type(col)], col))
-            df[six.text_type(col)] = d
+                                  "" % (timezones[str(col)], col))
+            df[str(col)] = d
 
     df = DataFrame(df)
     if not index_types:
@@ -126,11 +124,11 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 # funky pandas not-dtype
                 t = t.base
             d = np.empty(size, dtype=t)
-            if d.dtype.kind == "M" and six.text_type(col) in timezones:
+            if d.dtype.kind == "M" and str(col) in timezones:
                 # 1) create the DatetimeIndex in UTC as no datetime conversion is needed and
                 # it works with d uninitialised data (no NonExistentTimeError or AmbiguousTimeError)
                 # 2) convert to timezone (if UTC=noop, if None=remove tz, if other=change tz)
-                index = DatetimeIndex(d, tz="UTC").tz_convert(timezones[six.text_type(col)])
+                index = DatetimeIndex(d, tz="UTC").tz_convert(timezones[str(col)])
             else:
                 index = Index(d)
             views[col] = index.values

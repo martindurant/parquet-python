@@ -1,0 +1,22 @@
+name: test_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - brotli
+  - bson
+  - lz4
+  - lzo
+  - snappy
+  - zstandard
+  - pytest
+  - numba
+  - cython
+  - pandas
+  - dask
+  - pytest-cov
+  - thrift
+  - numpy
+  - packaging
+  - python-snappy

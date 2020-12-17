@@ -10,22 +10,16 @@ import numba
 import numpy as np
 import pandas as pd
 from pandas.core.arrays.masked import BaseMaskedDtype
-from six import integer_types
 
-from fastparquet.util import join_path, PANDAS_VERSION
+from fastparquet.util import join_path
 from .thrift_structures import write_thrift
 
-try:
-    from pandas.api.types import is_categorical_dtype
-except ImportError:
-    # Pandas <= 0.18.1
-    from pandas.core.common import is_categorical_dtype
+from pandas.api.types import is_categorical_dtype
 from .thrift_structures import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__
 from .util import (default_open, default_mkdirs,
-                   PY2, STR_TYPE,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata, path_string)
 from .speedups import array_encode_utf8, pack_byte_array
@@ -273,12 +267,8 @@ def convert(data, se):
 
 def infer_object_encoding(data):
     head = data[:10] if isinstance(data, pd.Index) else data.dropna()[:10]
-    if all(isinstance(i, STR_TYPE) for i in head) and not PY2:
+    if all(isinstance(i, str) for i in head):
         return "utf8"
-    elif PY2 and all(isinstance(i, unicode) for i in head):
-        return "utf8"
-    elif PY2 and all(isinstance(i, (str, bytes)) for i in head):
-        return "bytes"
     elif all(isinstance(i, bytes) for i in head):
         return 'bytes'
     elif all(isinstance(i, (list, dict)) for i in head):
@@ -287,7 +277,7 @@ def infer_object_encoding(data):
         return 'bool'
     elif all(isinstance(i, Decimal) for i in head):
         return 'decimal'
-    elif all(isinstance(i, integer_types) for i in head):
+    elif all(isinstance(i, int) for i in head):
         return 'int'
     elif all(isinstance(i, float) or isinstance(i, np.floating)
              for i in head):
@@ -664,10 +654,10 @@ def make_row_group(f, data, schema, compression=None):
     rows = len(data)
     if rows == 0:
         return
-    if any(not isinstance(c, (bytes, STR_TYPE)) for c in data):
+    if any(not isinstance(c, (bytes, str)) for c in data):
         raise ValueError('Column names must be str or bytes:',
                          {c: type(c) for c in data.columns
-                          if not isinstance(c, (bytes, STR_TYPE))})
+                          if not isinstance(c, (bytes, str))})
     rg = parquet_thrift.RowGroup(num_rows=rows, total_byte_size=0, columns=[])
 
     for column in schema:
@@ -722,14 +712,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
     if not isinstance(index_cols, list):
-        if PANDAS_VERSION >= "0.25.0":
-            start = index_cols.start
-            stop = index_cols.stop
-            step = index_cols.step
-        else:
-            start = index_cols._start
-            stop = index_cols._stop
-            step = index_cols._step
+        start = index_cols.start
+        stop = index_cols.stop
+        step = index_cols.step
 
         index_cols = [{'name': index_cols.name,
                        'start': start,
@@ -767,7 +752,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
             continue
         pandas_metadata['columns'].append(
             get_column_metadata(data[column], column))
-        oencoding = (object_encoding if isinstance(object_encoding, STR_TYPE)
+        oencoding = (object_encoding if isinstance(object_encoding, str)
                      else object_encoding.get(column, None))
         fixed = None if fixed_text is None else fixed_text.get(column, None)
         if is_categorical_dtype(data[column].dtype):

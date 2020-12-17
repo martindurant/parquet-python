@@ -5,7 +5,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from collections import OrderedDict
-from six import text_type
 
 from .thrift_structures import parquet_thrift
 
@@ -97,7 +96,7 @@ class SchemaHelper(object):
     def schema_element(self, name):
         """Get the schema element with the given name or path"""
         root = self.root
-        if isinstance(name, text_type):
+        if isinstance(name, str):
             name = name.split('.')
         for part in name:
             root = root.children[part]
@@ -106,7 +105,7 @@ class SchemaHelper(object):
     def is_required(self, name):
         """Return true if the schema element with the given name is required."""
         required = True
-        if isinstance(name, text_type):
+        if isinstance(name, str):
             name = name.split('.')
         parts = []
         for part in name:
@@ -120,7 +119,7 @@ class SchemaHelper(object):
     def max_repetition_level(self, parts):
         """Get the max repetition level for the given schema path."""
         max_level = 0
-        if isinstance(parts, text_type):
+        if isinstance(parts, str):
             parts = parts.split('.')
         for i in range(len(parts)):
             element = self.schema_element(parts[:i+1])
@@ -131,7 +130,7 @@ class SchemaHelper(object):
     def max_definition_level(self, parts):
         """Get the max definition level for the given schema path."""
         max_level = 0
-        if isinstance(parts, text_type):
+        if isinstance(parts, str):
             parts = parts.split('.')
         for i in range(len(parts)):
             element = self.schema_element(parts[:i+1])

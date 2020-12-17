@@ -7,13 +7,11 @@ import pytest
 import numpy as np
 
 import pandas as pd
-import pandas.util.testing as tm
 
 from fastparquet.speedups import (
     array_encode_utf8, array_decode_utf8,
     pack_byte_array, unpack_byte_array
     )
-from fastparquet.util import PY2, PY3
 
 strings = [u"abc", u"a\x00c", u"héhé", u"プログラミング"]
 
@@ -32,19 +30,10 @@ def test_array_encode_utf8():
     assert got.dtype == np.dtype('object')
     assert list(got) == expected
 
-    # Wrong array type
-    arr = np.array(strings, dtype='U')
-    with pytest.raises((TypeError, ValueError)):
+    invalid_string = u"\uDE80"
+    arr = np.array(strings + [invalid_string], dtype='object')
+    with pytest.raises(UnicodeEncodeError):
         array_encode_utf8(arr)
-
-    # Disabled for v2
-    if PY3:
-        # Non-encodable string (lone surrogate)
-        # on py2 this works anyway
-        invalid_string = u"\uDE80"
-        arr = np.array(strings + [invalid_string], dtype='object')
-        with pytest.raises(UnicodeEncodeError):
-            array_encode_utf8(arr)
 
     # Wrong object type
     arr = np.array([b"foo"], dtype='object')

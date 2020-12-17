@@ -1,8 +1,7 @@
 """
 Native accelerators for Parquet encoding and decoding.
 """
-
-from __future__ import absolute_import
+# cython: c_string_encoding=utf8
 
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
