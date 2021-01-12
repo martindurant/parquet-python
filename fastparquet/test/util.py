@@ -66,7 +66,7 @@ def sql():
     return sql
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def tempdir():
     d = tempfile.mkdtemp()
     yield d
