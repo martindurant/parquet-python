@@ -395,3 +395,70 @@ def unique_everseen(iterable, key=None):
             if k not in seen:
                 seen_add(k)
                 yield element
+
+
+def previous_date_offset(time_marker, offset: str, check_mod24: bool = False,
+                         check_sup1s = False) -> pd.Timestamp:
+    """Return timestamp immediately preceding `time_marker`, on offset with
+       `offset`, and anchored to midnight.
+
+    Parameters
+    ----------
+    time_marker: pd.Timestamp or pd.Period
+        Time marker from which is assessed closest earlier on offset timestamp.
+    offset: str
+        Acceptable freq string according pandas library,
+        see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+    check_mod24 : bool, default False
+        In case offset duration is below 24 hours, flag to check if input
+        offset is compatible with midnight anchoring (modulo 24 hours).
+        If offset duration is above 24 hours, it checks a single unit of
+        offset is requested.
+        If not, an exception is raised.
+    check_sup1s : bool, default False
+        Flag to check if offset duration is above or equal to 1s. If below,
+        raise an error.
+
+    Returns
+    -------
+    pd.Timestamp
+        Closest earlier timestamp on offset considering midnight anchoring
+        from input time marker.
+    """
+
+    if isinstance(time_marker, pd.Period):
+        # Case `time_marker` is a period.
+        time_marker = time_marker.start_time
+    # Assess offset duration.
+    offset_period = pd.Period(time_marker, freq = offset) 
+    start_time = offset_period.start_time
+    end_time = (offset_period+1).start_time
+    per_duration = end_time - start_time
+    if check_sup1s and per_duration < pd.Timedelta('1S'):
+        raise ValueError('Duration of offset {!s} is shorter than 1s.'.format(offset))
+    # Duration to be compared to 24 hours.
+    td1d = pd.Timedelta('1D')
+    if per_duration < td1d:
+        if check_mod24 and td1d % per_duration:
+            # If offset duration does not divide exactly 24 hours, raise an
+            # exception.
+            raise ValueError('Offset {!s} does not divide exactly 24 hours.'
+                             .format(offset))
+        # Transform to pd.DateOffset
+        offset = pd.tseries.frequencies.to_offset(offset)
+        midnight = start_time.normalize()
+        n=(start_time-midnight)//offset
+        return midnight + n*offset
+    else:
+        if check_mod24:
+            error = False
+            try:
+                if int(offset[0]) > 1:
+                    # If offset is more than a single unit, raise an exception.
+                    error = True
+            except ValueError:
+                pass
+            if error:
+                raise ValueError('Offset {!s} is larger than a single unit.'
+                                 .format(offset))
+        return start_time

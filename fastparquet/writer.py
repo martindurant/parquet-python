@@ -5,6 +5,7 @@ import json
 import re
 import struct
 import warnings
+from bisect import bisect
 
 import numba
 import numpy as np
@@ -21,7 +22,7 @@ from .converted_types import tobson
 from . import encoding, api, __version__
 from .util import (default_open, default_mkdirs,
                    check_column_names, metadata_from_many, created_by,
-                   get_column_metadata, path_string)
+                   get_column_metadata, path_string, previous_date_offset)
 from .speedups import array_encode_utf8, pack_byte_array
 from decimal import Decimal
 
@@ -789,6 +790,7 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         mode = 'rb+'
     else:
         mode = 'wb'
+
     with open_with(fn, mode) as f:
         if append:
             f.seek(-8, 2)
@@ -796,6 +798,7 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
             f.seek(-(head_size+8), 2)
         else:
             f.write(MARKER)
+
         for i, start in enumerate(row_group_offsets):
             end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
                    else None)
@@ -809,11 +812,13 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         f.write(MARKER)
 
 
-def write(filename, data, row_group_offsets=50000000,
-          compression=None, file_scheme='simple', open_with=default_open,
-          mkdirs=default_mkdirs, has_nulls=True, write_index=None,
-          partition_on=[], fixed_text=None, append=False,
-          object_encoding='infer', times='int64'):
+def write(filename: str, data: pd.DataFrame, row_group_offsets = 50000000,
+          compression = None, file_scheme: str = 'simple',
+          open_with = default_open,
+          mkdirs = default_mkdirs, has_nulls = True, write_index = None,
+          partition_on = [], fixed_text = None, append : bool = False,
+          date_col: str = None, drop_duplicates_on : str = None,
+          object_encoding: str = 'infer', times : str = 'int64'):
     """ Write Pandas DataFrame to filename as Parquet Format
 
     Parameters
@@ -823,10 +828,22 @@ def write(filename, data, row_group_offsets=50000000,
         is simple) or a directory containing the metadata and data-files.
     data: pandas dataframe
         The table to write
-    row_group_offsets: int or list of ints
-        If int, row-groups will be approximately this many rows, rounded down
+    row_group_offsets: int, list of ints, or str
+        - If int, row-groups will be approximately this many rows, rounded down
         to make row groups about the same size; if a list, the explicit index
         values to start new row groups.
+        - If str, it has to map to a pd.DateOffset. it is then used to group
+        rows every this offset. In this case, either a date time column has
+        to be specified or the index to be a pd.DatetimeIndex.
+        Provided date group offset is automatically anchored to midnight.
+        Because of this midnight anchoring,
+          * if a set of hours/minutes/seconds , it has to divide 24 hours
+            in complete hours/minutes/seconds, so that 2 consecutive days split
+            the same way.
+          * if counted in day, week, month or year, it has to be a single unit
+            (because no anchoring is provided for these larger timeframes)
+          Examples of valid values: '2H', 'D', 'W', 'M'
+          Examples of invalid values: '5H', '2D', '2W'...
     compression: str, dict
         compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
         ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
@@ -893,6 +910,24 @@ def write(filename, data, row_group_offsets=50000000,
         If False, construct data-set from scratch; if True, add new row-group(s)
         to existing data-set. In the latter case, the data-set must exist,
         and the schema must match the input data.
+    date_col: str (None)
+        Name of the column to use for grouping by date in case of a date row
+        grouping. If `None`, index is used.
+    drop_duplicates_on (str or list, None)
+        Parameter used in case of a date row grouping.
+        Either `None`, or a str or list of str specifying names of the columns
+        to be used to identify duplicates.
+          * if a str or list of str, date column (or index) for grouping is
+            necessarily added to this list. It can be only the name of the
+            column/index embedding the dates to restrict to this data.
+          * if `None`, both date column (or index) for grouping and all columns
+            are used to identify duplicates.
+        Dropping duplicates on column values without the date used for grouping
+        is not within the scope of the 'append' mode.
+        The main reason is that duplicates are only searched within the same
+        row group (partition), that is defined according the date. Would two
+        rows be identified as duplicates only by use of their column values,
+        they could be on two different partitions (not same dates).
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
         be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
@@ -912,21 +947,58 @@ def write(filename, data, row_group_offsets=50000000,
     """
     if str(has_nulls) == 'infer':
         has_nulls = None
+
+    # Boolean to flag row grouping by date.
+    rgp_by_date = True if (isinstance(row_group_offsets, str) or
+       isinstance(row_group_offsets, pd.tseries.offsets.DateOffset)) else False
+
     if isinstance(row_group_offsets, int):
         l = len(data)
         nparts = max((l - 1) // row_group_offsets + 1, 1)
         chunksize = max(min((l - 1) // nparts + 1, l), 1)
         row_group_offsets = list(range(0, l, chunksize))
+    elif rgp_by_date:
+        # Setup in case of date row grouping.
+        # Sort & store index in generic variable.
+        if date_col:
+            # Case user specifies a column to be used for date grouping.
+            data = data.sort_values(date_col)
+            date_index = pd.Index(data[date_col])
+        else:
+            # Case DataFrame index is to be used.
+            data = data.sort_index()
+            date_index = data.index   
+        # Check `date_index` is a DatetimeIndex or PeriodIndex
+        if (not (isinstance(date_index, pd.DatetimeIndex)
+            or isinstance(date_index, pd.PeriodIndex))):
+            raise ValueError('Specified date column or index {!s} to be used \
+for row grouping does not appear to contain date-like or period-like data.'\
+                             .format(date_index.name))
+        # Generate period range corresponding to provided offset.
+        # If offset duration is shorter than 1s, raise an error because timestamps
+        # are floored when used in filenames.
+        start_time = previous_date_offset(date_index[0], row_group_offsets,
+                                          check_mod24 = True, check_sup1s = True)
+        if isinstance(date_index, pd.PeriodIndex):
+            # Case data is a `PeriodIndex`.
+            date_index = date_index.start_time
+        row_group_offsets = pd.period_range(start = start_time,
+                                            end = date_index[-1],
+                                            freq = row_group_offsets)
+
     if (write_index or write_index is None
-            and not isinstance(data.index, pd.RangeIndex)):
+            and (not isinstance(data.index, pd.RangeIndex)
+                 or (rgp_by_date and not date_col))):
         cols = set(data)
         data = data.reset_index()
         index_cols = [c for c in data if c not in cols]
     elif isinstance(data.index, pd.RangeIndex):
         # write_index=None, range to metadata
         index_cols = data.index
-    else:  # write_index=False
+    else:
+        # write_index=False
         index_cols = []
+
     check_column_names(data.columns, partition_on, fixed_text, object_encoding,
                        has_nulls)
     ignore = partition_on if file_scheme != 'simple' else []
@@ -935,6 +1007,9 @@ def write(filename, data, row_group_offsets=50000000,
                         times=times, index_cols=index_cols, partition_cols=partition_on)
 
     if file_scheme == 'simple':
+        if rgp_by_date:
+            raise ValueError('Requested file scheme {!s} cannot be used along \
+with row date grouping.'.format(file_scheme))
         write_simple(filename, data, fmd, row_group_offsets,
                      compression, open_with, has_nulls, append)
     elif file_scheme in ['hive', 'drill']:
@@ -944,18 +1019,60 @@ def write(filename, data, row_group_offsets=50000000,
                 raise ValueError('Requested file scheme is %s, but '
                                  'existing file scheme is not.' % file_scheme)
             fmd = pf.fmd
-            i_offset = find_max_part(fmd.row_groups)
+            if rgp_by_date:
+                if date_col:
+                    # Use date column provided.
+                    date_index_name = date_col
+                else:
+                    # Date index is 1st column
+                    date_index_name = index_cols[0]
+
+                # Formatting `drop_duplicates_on` for use in `pd.concat()`.
+                if drop_duplicates_on:
+                    if isinstance(drop_duplicates_on, str):
+                        # Case `drop_duplicates_on` is a single column name.
+                        drop_duplicates_on = [drop_duplicates_on]
+                    if not date_index_name in drop_duplicates_on:
+                        drop_duplicates_on.append(date_index_name)
+                    # Check all values in `drop_duplicates_on` exist
+                    # in column list.
+                    if not all(item in pf.columns for item in drop_duplicates_on):
+                        raise ValueError('At least one value in {!s} is not a \
+column/index name as in {!s}.'.format(str(drop_duplicates_on),
+                                      str(list(pf.columns))))
+                # Retrieving list of existing parquet part number. It is used
+                # to determine position of updated/added row group in
+                # `ParquetFile.row_groups` (list of row groups).
+                # Dict maintains order. This feature is used to keep track
+                # where to insert or replace row groups appropriately in the list.
+                part_number_to_rgp = {\
+        int(rg.columns[0].file_path.split('.')[1]): rg for rg in pf.row_groups}
+                part_numbers = list(part_number_to_rgp.keys())
+            else:
+                i_offset = find_max_part(fmd.row_groups)
+
             if tuple(partition_on) != tuple(pf.cats):
                 raise ValueError('When appending, partitioning columns must'
                                  ' match existing data')
         else:
             i_offset = 0
-        fn = join_path(filename, '_metadata')
+
         mkdirs(filename)
+
         for i, start in enumerate(row_group_offsets):
-            end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
-                   else None)
-            part = 'part.%i.parquet' % (i + i_offset)
+            if rgp_by_date:
+                # Get `end` before `start` pd.Period is then overwritten as
+                # a pd.Timestamp
+                end = start.end_time
+                start = start.start_time
+                part_number = int(start.timestamp())
+            else:
+                end = (row_group_offsets[i+1]
+                       if i < (len(row_group_offsets) - 1) else None)
+                part_number = i + i_offset
+
+            part = 'part.%i.parquet' % part_number
+
             if partition_on:
                 rgs = partition_on_columns(
                     data[start:end], partition_on, filename, part, fmd,
@@ -965,14 +1082,70 @@ def write(filename, data, row_group_offsets=50000000,
                 fmd.row_groups.extend(rgs)
             else:
                 partname = join_path(filename, part)
+                row_group_index = 'last'
+                if rgp_by_date:
+                    # Case row grouping by date offset with possible concat.
+                    data_slice = data.loc[(date_index >= start)
+                                          & (date_index <= end)]
+                    if data_slice.empty:
+                        # Do nothing
+                        continue
+                    if append:
+                        if part_number in part_numbers:
+                            # Load already existing row group in a file.
+                            existing = pf\
+                    .read_row_group_file(rg = part_number_to_rgp[part_number],
+                                         columns = pf.columns,
+                                         categories = None,
+                                         index = False,
+                                         assign = None,
+                                         partition_meta = pf.partition_meta)
+                            # Concat
+                            data_slice = pd.concat([existing, data_slice])\
+                                  .drop_duplicates(subset = drop_duplicates_on,
+                                                   keep='last')\
+                                  .sort_values(date_index_name)
+                            if np.array_equal(existing.values,
+                                              data_slice.values):
+                                # If no new DataFrame resulting from the merge,
+                                # skip writing step.
+                                # Do not consider index that cannot be compared.
+                                continue
+                            # Setup for `ParquetFile.row_groups` / case 'replace'
+                            replace_row_group = True
+                            row_group_index = part_numbers.index(part_number)
+                        else:
+                            # Creation of a new file / case 'insert'
+                            replace_row_group = False
+                            # Get index at which the new row group has to be
+                            # inserted.
+                            row_group_index = bisect(part_numbers, part_number)
+                            # Keep part number list clean for next 'replace' or
+                            # 'insert' cases.
+                            part_numbers.insert(row_group_index, part_number)
+                else:
+                    # Case row grouping by int offset / case 'append'
+                    data_slice = data[start:end]
+
                 with open_with(partname, 'wb') as f2:
-                    rg = make_part_file(f2, data[start:end], fmd.schema,
+                    rg = make_part_file(f2, data_slice, fmd.schema,
                                         compression=compression, fmd=fmd)
                 for chunk in rg.columns:
                     chunk.file_path = part
 
-                fmd.row_groups.append(rg)
+                # Update row group metadata.
+                if row_group_index == 'last':
+                    # Case 'append'
+                    fmd.row_groups.append(rg)
+                elif replace_row_group:
+                    # Case 'replace'
+                    fmd.row_groups[row_group_index] = rg
+                else:
+                    # Case 'insert'
+                    fmd.row_groups.insert(row_group_index, rg)
+
         fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
+        fn = join_path(filename, '_metadata')
         write_common_metadata(fn, fmd, open_with, no_row_groups=False)
         write_common_metadata(join_path(filename, '_common_metadata'), fmd,
                               open_with)
