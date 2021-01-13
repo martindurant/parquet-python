@@ -65,11 +65,10 @@ def test_hybrid_extra_bytes():
                 break
             (data, width, length, res) = eval(l)
             if length is not None:
-                data += b'extra bytes'
-                length += len(b'extra bytes')
+                data2 = data + b'extra bytes'
             else:
                 continue
-            i = encoding.Numpy8(np.frombuffer(memoryview(data), dtype=np.uint8))
+            i = encoding.Numpy8(np.frombuffer(memoryview(data2), dtype=np.uint8))
             o = encoding.Numpy32(results)
             encoding.read_rle_bit_packed_hybrid(i, width, length, o)
             assert (res == o.so_far()[:len(res)]).all()

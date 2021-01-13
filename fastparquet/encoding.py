@@ -156,7 +156,7 @@ def read_rle_bit_packed_hybrid(io_obj, width, length=None, o=None):  # pragma: n
     if length is None:
         length = read_length(io_obj)
     start = io_obj.loc
-    while io_obj.loc-start < length and o.loc < o.len:
+    while io_obj.loc - start < length and o.loc < o.len:
         header = read_unsigned_var_int(io_obj)
         if header & 1 == 0:
             read_rle(io_obj, header, width, o)
@@ -188,6 +188,8 @@ class NumpyIO(object):  # pragma: no cover
         self.loc = 0
 
     def read(self, x):
+        if self.loc + x > self.len:
+            x = self.len - self.loc
         self.loc += x
         return self.data[self.loc-x:self.loc]
 
