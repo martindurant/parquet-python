@@ -832,7 +832,7 @@ def write(filename: str, data: pd.DataFrame, row_group_offsets = 50000000,
         - If int, row-groups will be approximately this many rows, rounded down
         to make row groups about the same size; if a list, the explicit index
         values to start new row groups.
-        - If str, it has to map to a pd.DateOffset. it is then used to group
+        - If str, it has to map to a pd.DateOffset. It is then used to group
         rows every this offset. In this case, either a date time column has
         to be specified or the index to be a pd.DatetimeIndex.
         Provided date group offset is automatically anchored to midnight.
@@ -913,7 +913,7 @@ def write(filename: str, data: pd.DataFrame, row_group_offsets = 50000000,
     date_col: str (None)
         Name of the column to use for grouping by date in case of a date row
         grouping. If `None`, index is used.
-    drop_duplicates_on (str or list, None)
+    drop_duplicates_on: str, list of str or None (None)
         Parameter used in case of a date row grouping.
         Either `None`, or a str or list of str specifying names of the columns
         to be used to identify duplicates.
@@ -925,9 +925,9 @@ def write(filename: str, data: pd.DataFrame, row_group_offsets = 50000000,
         Dropping duplicates on column values without the date used for grouping
         is not within the scope of the 'append' mode.
         The main reason is that duplicates are only searched within the same
-        row group (partition), that is defined according the date. Would two
-        rows be identified as duplicates only by use of their column values,
-        they could be on two different partitions (not same dates).
+        row group, that is defined according the date. Two rows identified as
+        duplicates only by use of their column values, cannot be removed if
+        they are in two different row groups (if not same dates).
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
         be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
@@ -1096,9 +1096,8 @@ column/index name as in {!s}.'.format(str(drop_duplicates_on),
                             existing = pf\
                     .read_row_group_file(rg = part_number_to_rgp[part_number],
                                          columns = pf.columns,
-                                         categories = None,
+                                         categories = pf.categories,
                                          index = False,
-                                         assign = None,
                                          partition_meta = pf.partition_meta)
                             # Concat
                             data_slice = pd.concat([existing, data_slice])\
