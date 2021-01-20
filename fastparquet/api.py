@@ -594,6 +594,7 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
         return cats
 
     cats = OrderedDict()
+    paths = set(path.rsplit("/", 1)[0] for path in paths)
     s = ex_from_sep('/')
     seen = set()
     if file_scheme == 'hive':
