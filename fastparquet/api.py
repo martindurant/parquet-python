@@ -602,6 +602,9 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
             for path in paths
             for k, v in s.findall(path)
         ):
+            if (key, val) in seen:
+                continue
+            seen.add((key, val))
             cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
     else:
         for i, val in (
