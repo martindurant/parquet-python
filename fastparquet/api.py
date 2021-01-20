@@ -611,7 +611,7 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
         for i, val in (
             (i, val)
             for path in paths
-            for i, val in enumerate(path.split('/')[:-1])
+            for i, val in enumerate(path.split('/'))
         ):
             if (i, val) in seen:
                 continue
