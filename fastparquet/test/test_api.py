@@ -159,6 +159,20 @@ def test_iter(tempdir):
         next(out)
 
 
+def test_pickle(tempdir):
+    import pickle
+    df = pd.DataFrame({'x': [1, 2, 3, 4],
+                       'y': [1.0, 2.0, 1.0, 2.0],
+                       'z': ['a', 'b', 'c', 'd']})
+    df.index.name = 'index'
+
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df, row_group_offsets=[0, 2], write_index=True)
+    pf = ParquetFile(fn)
+    pf2 = pickle.loads(pickle.dumps(pf))
+    assert pf.to_pandas().equals(pf2.to_pandas())
+
+
 def test_attributes(tempdir):
     df = pd.DataFrame({'x': [1, 2, 3, 4],
                        'y': [1.0, 2.0, 1.0, 2.0],

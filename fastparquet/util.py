@@ -77,13 +77,13 @@ def val_to_num(x, meta=None):
     except:
         pass
     try:
-        return pd.to_datetime(x)
+        return pd.Timestamp(x)
     except:
         pass
     try:
         # TODO: determine the valid usecases for this, then try to limit the set
         #  ofstrings which may get inadvertently converted to timedeltas
-        return pd.to_timedelta(x)
+        return pd.Timedelta(x)
     except:
         return x
 
@@ -308,14 +308,20 @@ def get_file_scheme(paths):
     if set(lens) == {1}:
         return 'flat'
     s = ex_from_sep('/')
-    dirs = [p.rsplit('/', 1)[0] for p in paths]
-    matches = [s.findall(d) for d in dirs]
-    if all(len(m) == (l - 1) for (m, l) in
-           zip(matches, lens)):
-        keys = (tuple(m[0] for m in parts) for parts in matches)
-        if len(set(keys)) == 1:
-            return 'hive'
-    return 'drill'
+    matches = (s.findall(p.rsplit('/', 1)[0]) for p in paths)
+    out = "hive"
+    keys = None
+    for m, l in zip(matches, lens):
+        if len(m) != (l - 1):
+            out = "drill"
+            break
+        t = tuple(part[0] for part in m)
+        if keys and keys != t:
+            out = "drill"
+            break
+        elif keys is None:
+            keys = t
+    return out
 
 
 def join_path(*path):
@@ -371,27 +377,3 @@ def join_path(*path):
     else:
         joined = abs_prefix + ('/'.join(simpler))
     return joined
-
-
-filterfalse = itertools.filterfalse
-
-
-def unique_everseen(iterable, key=None):
-    """List unique elements, preserving order. Remember all elements ever seen.
-
-    unique_everseen('AAAABBBCCDAABBB') --> A B C D
-    unique_everseen('ABBCcAD', str.lower) --> A B C D
-    """
-    
-    seen = set()
-    seen_add = seen.add
-    if key is None:
-        for element in filterfalse(seen.__contains__, iterable):
-            seen_add(element)
-            yield element
-    else:
-        for element in iterable:
-            k = key(element)
-            if k not in seen:
-                seen_add(k)
-                yield element

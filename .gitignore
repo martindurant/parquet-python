@@ -1,4 +1,5 @@
 *.pyc
+*.pyo
 *.so
 *.dll
 fastparquet/speedups.c

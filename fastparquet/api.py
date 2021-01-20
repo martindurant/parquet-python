@@ -18,8 +18,7 @@ from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
 from .util import (default_open, ParquetException, val_to_num,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, get_file_scheme, groupby_types,
-                   unique_everseen)
+                   ex_from_sep, get_file_scheme, groupby_types)
 
 
 class ParquetFile(object):
@@ -540,6 +539,13 @@ class ParquetFile(object):
         self.dtypes = dtype
         return dtype
 
+    def __getstate__(self):
+        return {"fn": self.fn, "open": self.open, "sep": self.sep, "fmd": self.fmd}
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._set_attrs()
+
     def __str__(self):
         return "<Parquet File: %s>" % self.info
 
@@ -590,42 +596,24 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
     cats = OrderedDict()
     raw_cats = OrderedDict()
     s = ex_from_sep('/')
-    paths = unique_everseen(paths)
+    paths = set(paths)
     if file_scheme == 'hive':
-        partitions = unique_everseen(
+        for key, val in set(
             (k, v)
             for path in paths
             for k, v in s.findall(path)
-        )
-        for key, val in partitions:
+        ):
             cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
             raw_cats.setdefault(key, set()).add(val)
     else:
-        i_val = unique_everseen(
+        for i, val in set(
             (i, val)
             for path in paths
             for i, val in enumerate(path.split('/')[:-1])
-        )
-        for i, val in i_val:
+        ):
             key = 'dir%i' % i
             cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
             raw_cats.setdefault(key, set()).add(val)
-
-    for key, v in cats.items():
-        # Check that no partition names map to the same value after transformation by val_to_num
-        raw = raw_cats[key]
-        if len(v) != len(raw):
-            conflicts_by_value = OrderedDict()
-            for raw_val in raw_cats[key]:
-                conflicts_by_value.setdefault(val_to_num(raw_val), set()).add(raw_val)
-            conflicts = [c for k in conflicts_by_value.values() if len(k) > 1 for c in k]
-            raise ValueError("Partition names map to the same value: %s" % conflicts)
-        vals_by_type = groupby_types(v)
-
-        # Check that all partition names map to the same type after transformation by val_to_num
-        if len(vals_by_type) > 1:
-            examples = [x[0] for x in vals_by_type.values()]
-            warnings.warn("Partition names coerce to values of different types, e.g. %s" % examples)
 
     cats = OrderedDict([(key, list(v)) for key, v in cats.items()])
     return cats
