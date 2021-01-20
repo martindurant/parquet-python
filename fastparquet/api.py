@@ -595,19 +595,23 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
 
     cats = OrderedDict()
     s = ex_from_sep('/')
+    seen = set()
     if file_scheme == 'hive':
-        for key, val in set(
+        for key, val in (
             (k, v)
             for path in paths
             for k, v in s.findall(path)
         ):
             cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
     else:
-        for i, val in set(
+        for i, val in (
             (i, val)
             for path in paths
             for i, val in enumerate(path.split('/')[:-1])
         ):
+            if (i, val) in seen:
+                continue
+            seen.add((i, val))
             key = 'dir%i' % i
             cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
 
