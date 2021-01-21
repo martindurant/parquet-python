@@ -67,7 +67,7 @@ pdoptional_to_numpy_typemap = {
     pd.UInt16Dtype(): np.uint16,
     pd.UInt32Dtype(): np.uint32,
     pd.UInt64Dtype(): np.uint64,
-    pd.BooleanDtype(): np.bool
+    pd.BooleanDtype(): np.bool_
 }
 
 def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
@@ -166,10 +166,10 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     elif dtype.kind == "m":
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
-    elif str(dtype) == 'string': 
+    elif str(dtype) == 'string':
         if object_encoding == 'infer':
             object_encoding = infer_object_encoding(data)
-        
+
         if object_encoding == 'utf8':
             type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY,
                                            parquet_thrift.ConvertedType.UTF8,
@@ -743,7 +743,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                                       created_by=created_by,
                                       row_groups=[],
                                       key_value_metadata=[meta])
-    
+
     object_encoding = object_encoding or {}
     for column in partition_cols:
         pandas_metadata['partition_columns'].append(get_column_metadata(data[column], column))
