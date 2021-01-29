@@ -927,8 +927,7 @@ def write(filename, data, row_group_offsets=50000000,
         has_nulls = None
     if isinstance(row_group_offsets, int):
         l = len(data)
-        nparts = max((l - 1) // row_group_offsets + 1, 1) if row_group_offsets\
-                                                          else 1
+        nparts = max((l - 1) // row_group_offsets + 1, 1) if row_group_offsets else 1
         chunksize = max(min((l - 1) // nparts + 1, l), 1)
         row_group_offsets = list(range(0, l, chunksize))
     if (write_index or write_index is None
@@ -948,8 +947,7 @@ def write(filename, data, row_group_offsets=50000000,
                         fixed_text=fixed_text, object_encoding=object_encoding,
                         times=times, index_cols=index_cols,
                         partition_cols=partition_on)
-    # Variable 'exist_rgps' is initialized if 'write' is used in 'overwrite'
-    # mode.
+    # Variable 'exist_rgps' is initialized if 'write' is used in 'overwrite' mode.
     exist_rgps = None
 
     if file_scheme == 'simple':
@@ -1007,8 +1005,8 @@ def write(filename, data, row_group_offsets=50000000,
                             # in the 1st place.
                             row_group_index = bisect(exist_rgps, part_val)
                             fmd.row_groups.insert(row_group_index, new_rgps[part_val])
-                            # Keep part number list clean for next 'replace' or
-                            # 'insert' cases.
+                            # Keep 'exist_rgps' list clean for next 'replace'
+                            # or 'insert' cases.
                             exist_rgps.insert(row_group_index, part_val)
                     
             else:

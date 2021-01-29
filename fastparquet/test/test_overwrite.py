@@ -1,6 +1,6 @@
 """
-   test_rgp_by_date.py
-   Tests for row grouping by date in parquet data writing.
+   test_overwrite.py
+   Tests for overwriting parquet files.
 """
 
 import pandas as pd
