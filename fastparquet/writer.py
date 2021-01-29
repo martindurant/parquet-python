@@ -5,6 +5,7 @@ import json
 import re
 import struct
 import warnings
+from bisect import bisect
 
 import numba
 import numpy as np
@@ -814,7 +815,19 @@ def write(filename, data, row_group_offsets=50000000,
           mkdirs=default_mkdirs, has_nulls=True, write_index=None,
           partition_on=[], fixed_text=None, append=False,
           object_encoding='infer', times='int64'):
-    """ Write Pandas DataFrame to filename as Parquet Format
+    """ Write Pandas DataFrame to filename as Parquet Format.
+
+        3 writing modes can be identified:
+            - create file(s),
+            - append data by creating new files without removing existing ones,
+            - overwrite over existing files.
+        This latter mode is enabled with a specific combination of parameters.
+        `row_group_offsets` = 0 AND `file_scheme` = 'hive' or 'drill' AND
+        `partition_on` != '' or [] basically mean that there will be a single
+        file per folder. At this moment, if `append` is `True`, if data has to
+        be written in an existing combination of folders as per `location_on`,
+        the existing file is overwritten, and its metadata block is replaced
+        with that of the new data.
 
     Parameters
     ----------
@@ -822,7 +835,7 @@ def write(filename, data, row_group_offsets=50000000,
         Parquet collection to write to, either a single file (if file_scheme
         is simple) or a directory containing the metadata and data-files.
     data: pandas dataframe
-        The table to write
+        The table to write.
     row_group_offsets: int or list of ints
         If int, row-groups will be approximately this many rows, rounded down
         to make row groups about the same size; if a list, the explicit index
@@ -858,10 +871,10 @@ def write(filename, data, row_group_offsets=50000000,
         the compressor.
         If the dictionary contains a "_default" entry, this will be used for any
         columns not explicitly specified in the dictionary.
-    file_scheme: 'simple'|'hive'
+    file_scheme: 'simple'|'hive'|'drill'
         If simple: all goes in a single file
-        If hive: each row group is in a separate file, and a separate file
-        (called "_metadata") contains the metadata.
+        If hive or drill: each row group is in a separate file, and a separate
+        file (called "_metadata") contains the metadata.
     open_with: function
         When called with a f(path, mode), returns an open file-like object
     mkdirs: function
@@ -914,7 +927,8 @@ def write(filename, data, row_group_offsets=50000000,
         has_nulls = None
     if isinstance(row_group_offsets, int):
         l = len(data)
-        nparts = max((l - 1) // row_group_offsets + 1, 1)
+        nparts = max((l - 1) // row_group_offsets + 1, 1) if row_group_offsets\
+                                                          else 1
         chunksize = max(min((l - 1) // nparts + 1, l), 1)
         row_group_offsets = list(range(0, l, chunksize))
     if (write_index or write_index is None
@@ -932,7 +946,11 @@ def write(filename, data, row_group_offsets=50000000,
     ignore = partition_on if file_scheme != 'simple' else []
     fmd = make_metadata(data, has_nulls=has_nulls, ignore_columns=ignore,
                         fixed_text=fixed_text, object_encoding=object_encoding,
-                        times=times, index_cols=index_cols, partition_cols=partition_on)
+                        times=times, index_cols=index_cols,
+                        partition_cols=partition_on)
+    # Variable 'exist_rgps' is initialized if 'write' is used in 'overwrite'
+    # mode.
+    exist_rgps = None
 
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
@@ -944,13 +962,20 @@ def write(filename, data, row_group_offsets=50000000,
                 raise ValueError('Requested file scheme is %s, but '
                                  'existing file scheme is not.' % file_scheme)
             fmd = pf.fmd
-            i_offset = find_max_part(fmd.row_groups)
             if tuple(partition_on) != tuple(pf.cats):
                 raise ValueError('When appending, partitioning columns must'
                                  ' match existing data')
+            if row_group_offsets == [0] and partition_on:
+                # Build list of 'path' from existing files
+                # (to have partition values).
+                exist_rgps = ['_'.join(rg.columns[0].file_path.split('/')[:-1])
+                              for rg in fmd.row_groups]
+                i_offset = 0
+            else:
+                i_offset = find_max_part(fmd.row_groups)                
         else:
             i_offset = 0
-        fn = join_path(filename, '_metadata')
+
         mkdirs(filename)
         for i, start in enumerate(row_group_offsets):
             end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
@@ -962,7 +987,30 @@ def write(filename, data, row_group_offsets=50000000,
                     compression, open_with, mkdirs,
                     with_field=file_scheme == 'hive'
                 )
-                fmd.row_groups.extend(rgs)
+                if not exist_rgps:
+                    # Append or 'standard' write mode.
+                    fmd.row_groups.extend(rgs)
+                else:
+                    # 'overwrite' mode -> update fmd in place.
+                    # Get 'new' combinations of values from columns listed in
+                    # 'partition_on',along with corresponding row groups.
+                    new_rgps = {'_'.join(rg.columns[0].file_path.split('/')[:-1]): rg \
+                              for rg in rgs}
+                    for part_val in new_rgps:
+                        if part_val in exist_rgps:
+                            # Replace existing row group metadata with new ones.
+                            row_group_index = exist_rgps.index(part_val)
+                            fmd.row_groups[row_group_index] = new_rgps[part_val]
+                        else:
+                            # Insert new rg metadata among existing ones,
+                            # preserving order, if the existing list is sorted
+                            # in the 1st place.
+                            row_group_index = bisect(exist_rgps, part_val)
+                            fmd.row_groups.insert(row_group_index, new_rgps[part_val])
+                            # Keep part number list clean for next 'replace' or
+                            # 'insert' cases.
+                            exist_rgps.insert(row_group_index, part_val)
+                    
             else:
                 partname = join_path(filename, part)
                 with open_with(partname, 'wb') as f2:
@@ -970,9 +1018,10 @@ def write(filename, data, row_group_offsets=50000000,
                                         compression=compression, fmd=fmd)
                 for chunk in rg.columns:
                     chunk.file_path = part
-
                 fmd.row_groups.append(rg)
+
         fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
+        fn = join_path(filename, '_metadata')
         write_common_metadata(fn, fmd, open_with, no_row_groups=False)
         write_common_metadata(join_path(filename, '_common_metadata'), fmd,
                               open_with)
