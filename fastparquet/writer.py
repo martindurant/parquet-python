@@ -925,13 +925,15 @@ def write(filename, data, row_group_offsets=50000000,
     """
     if str(has_nulls) == 'infer':
         has_nulls = None
-
+    # Variable 'exist_rgps' is initialized if 'write' is used in 'overwrite' mode.
+    exist_rgps = None
+    rgo_zero_flag = False
     if isinstance(row_group_offsets, int):
         if not row_group_offsets:
             # To keep track row_group_offsets was initially 0.
             rgo_zero_flag = True
             row_group_offsets = [0]
-        else:
+        else: 
             l = len(data)
             nparts = max((l - 1) // row_group_offsets + 1, 1)
             chunksize = max(min((l - 1) // nparts + 1, l), 1)
@@ -953,8 +955,6 @@ def write(filename, data, row_group_offsets=50000000,
                         fixed_text=fixed_text, object_encoding=object_encoding,
                         times=times, index_cols=index_cols,
                         partition_cols=partition_on)
-    # Variable 'exist_rgps' is initialized if 'write' is used in 'overwrite' mode.
-    exist_rgps = None
 
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
