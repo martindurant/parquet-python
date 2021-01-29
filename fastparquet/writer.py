@@ -925,11 +925,17 @@ def write(filename, data, row_group_offsets=50000000,
     """
     if str(has_nulls) == 'infer':
         has_nulls = None
+
     if isinstance(row_group_offsets, int):
-        l = len(data)
-        nparts = max((l - 1) // row_group_offsets + 1, 1) if row_group_offsets else 1
-        chunksize = max(min((l - 1) // nparts + 1, l), 1)
-        row_group_offsets = list(range(0, l, chunksize))
+        if not row_group_offsets:
+            # To keep track row_group_offsets was initially 0.
+            rgo_zero_flag = True
+            row_group_offsets = [0]
+        else:
+            l = len(data)
+            nparts = max((l - 1) // row_group_offsets + 1, 1)
+            chunksize = max(min((l - 1) // nparts + 1, l), 1)
+            row_group_offsets = list(range(0, l, chunksize))
     if (write_index or write_index is None
             and not isinstance(data.index, pd.RangeIndex)):
         cols = set(data)
@@ -963,11 +969,12 @@ def write(filename, data, row_group_offsets=50000000,
             if tuple(partition_on) != tuple(pf.cats):
                 raise ValueError('When appending, partitioning columns must'
                                  ' match existing data')
-            if row_group_offsets == [0] and partition_on:
+            if rgo_zero_flag and partition_on:
                 # Build list of 'path' from existing files
                 # (to have partition values).
                 exist_rgps = ['_'.join(rg.columns[0].file_path.split('/')[:-1])
                               for rg in fmd.row_groups]
+                row_group_offsets = [0]
                 i_offset = 0
             else:
                 i_offset = find_max_part(fmd.row_groups)                
