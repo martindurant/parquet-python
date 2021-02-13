@@ -974,7 +974,11 @@ def write(filename, data, row_group_offsets=50000000,
                 # (to have partition values).
                 exist_rgps = ['_'.join(rg.columns[0].file_path.split('/')[:-1])
                               for rg in fmd.row_groups]
-                row_group_offsets = [0]
+                if len(exist_rgps) > len(set(exist_rgps)):
+                    # Some groups are in the same folder (partition). This case
+                    # is not handled.
+                    raise ValueError('Some partition folders contain several \
+part files, while overwrite of data is requested. This case is not handled.')
                 i_offset = 0
             else:
                 i_offset = find_max_part(fmd.row_groups)                
@@ -1001,6 +1005,9 @@ def write(filename, data, row_group_offsets=50000000,
                     # 'partition_on',along with corresponding row groups.
                     new_rgps = {'_'.join(rg.columns[0].file_path.split('/')[:-1]): rg \
                               for rg in rgs}
+#R
+                    print(new_rgps.keys())
+                    
                     for part_val in new_rgps:
                         if part_val in exist_rgps:
                             # Replace existing row group metadata with new ones.
