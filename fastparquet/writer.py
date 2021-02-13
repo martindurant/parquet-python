@@ -1004,10 +1004,7 @@ part files, while overwrite of data is requested. This case is not handled.')
                     # Get 'new' combinations of values from columns listed in
                     # 'partition_on',along with corresponding row groups.
                     new_rgps = {'_'.join(rg.columns[0].file_path.split('/')[:-1]): rg \
-                              for rg in rgs}
-#R
-                    print(new_rgps.keys())
-                    
+                              for rg in rgs}                    
                     for part_val in new_rgps:
                         if part_val in exist_rgps:
                             # Replace existing row group metadata with new ones.
