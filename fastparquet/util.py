@@ -307,21 +307,8 @@ def get_file_scheme(paths):
         return 'other'
     if set(lens) == {1}:
         return 'flat'
-    s = ex_from_sep('/')
-    matches = (s.findall(p.rsplit('/', 1)[0]) for p in paths)
-    out = "hive"
-    keys = None
-    for m, l in zip(matches, lens):
-        if len(m) != (l - 1):
-            out = "drill"
-            break
-        t = tuple(part[0] for part in m)
-        if keys and keys != t:
-            out = "drill"
-            break
-        elif keys is None:
-            keys = t
-    return out
+    matches = all(all("=" in p[1:-1] for p in part[:-1]) for part in parts)
+    return "hive" if matches else "drill"
 
 
 def join_path(*path):

@@ -5,10 +5,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from collections import OrderedDict
+import io
 import json
 import re
 import struct
-import warnings
 
 import numpy as np
 from fastparquet.util import join_path
@@ -96,12 +96,12 @@ class ParquetFile(object):
             self._set_attrs()
         elif hasattr(fn, 'read'):
             # file-like
+            self.fn = None
             self._parse_header(fn, verify)
             if self.file_scheme not in ['simple', 'empty']:
                 raise ValueError('Cannot use file-like input '
                                  'with multi-file data')
             open_with = lambda *args, **kwargs: fn
-            self.fn = None
         else:
             try:
                 fn2 = join_path(fn, '_metadata')
@@ -118,24 +118,29 @@ class ParquetFile(object):
         self._statistics = None
 
     def _parse_header(self, f, verify=True):
-        try:
-            f.seek(0)
-            if verify:
-                assert f.read(4) == b'PAR1'
-            f.seek(-8, 2)
-            head_size = struct.unpack('<i', f.read(4))[0]
-            if verify:
-                assert f.read() == b'PAR1'
-        except (AssertionError, struct.error):
-            raise ParquetException('File parse failed: %s' % self.fn)
+        if self.fn and self.fn.endswith("_metadata"):
+            #  no point attempting to read footer only for pure metadata
+            data = f.read()[4:-8]
+        else:
+            try:
+                f.seek(0)
+                if verify:
+                    assert f.read(4) == b'PAR1'
+                f.seek(-8, 2)
+                head_size = struct.unpack('<i', f.read(4))[0]
+                if verify:
+                    assert f.read() == b'PAR1'
+                f.seek(-(head_size + 8), 2)
+                data = f.read(head_size)
+            except (AssertionError, struct.error):
+                raise ParquetException('File parse failed: %s' % self.fn)
 
-        f.seek(-(head_size+8), 2)
+        f = io.BytesIO(data)
         try:
             fmd = read_thrift(f, parquet_thrift.FileMetaData)
         except Exception:
             raise ParquetException('Metadata parse failed: %s' %
                                    self.fn)
-        self.head_size = head_size
         self.fmd = fmd
         self._set_attrs()
 
@@ -596,6 +601,8 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
     cats = OrderedDict()
     paths = set(path.rsplit("/", 1)[0] for path in paths)
     s = ex_from_sep('/')
+    string_types = set()
+    meta = {"pandas_type": "string", "numpy_type": "object"}
     seen = set()
     if file_scheme == 'hive':
         for key, val in (
@@ -606,7 +613,10 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
             if (key, val) in seen:
                 continue
             seen.add((key, val))
-            cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
+            tp = val_to_num(val, meta if key in string_types else partition_meta.get(key))
+            if isinstance(tp, str):
+                string_types.add(key)
+            cats.setdefault(key, set()).add(tp)
     else:
         for i, val in (
             (i, val)

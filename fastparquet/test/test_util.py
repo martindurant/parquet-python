@@ -67,8 +67,9 @@ def test_file_scheme():
     assert get_file_scheme(paths) == 'flat'
     paths = ['a=1/b=2/file', 'a=2/b=1/file']
     assert get_file_scheme(paths) == 'hive'
-    paths = ['a=1/z=2/file', 'a=2/b=6/file']  # note key names do not match
-    assert get_file_scheme(paths) == 'drill'
+    # Removed below: will raise later
+    # paths = ['a=1/z=2/file', 'a=2/b=6/file']  # note key names do not match
+    # assert get_file_scheme(paths) == 'drill'
     paths = ['a=1/b=2/file', 'a=2/b/file']
     assert get_file_scheme(paths) == 'drill'
     paths = ['a/b/c/file', 'a/b/file']
