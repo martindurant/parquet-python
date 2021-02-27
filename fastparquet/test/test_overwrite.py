@@ -4,7 +4,7 @@
 """
 
 import pandas as pd
-
+import pytest
 from fastparquet import write, ParquetFile
 from fastparquet.test.util import tempdir
 
@@ -29,7 +29,7 @@ def test_write_with_rgp_by_date_as_index(tempdir):
                         'location': ['Milan', 'Paris', 'Paris', 'Paris', 'Paris'],
                         'color': ['red', 'black', 'black', 'green', 'green' ]})
 
-    write(tempdir, df2, row_group_offsets=0, file_scheme='hive', append=True,
+    write(tempdir, df2, row_group_offsets=0, file_scheme='hive', append='overwrite',
           partition_on=['location', 'color'])
 
     expected = pd.DataFrame({'humidity': [0.9, 0.5, 0.3, 0.4, 0.8, 1.1, 0.3],
@@ -43,3 +43,19 @@ def test_write_with_rgp_by_date_as_index(tempdir):
     # resulting df contains for this combination values of df2 and not that of
     # df1. Total resulting number of rows is 7.
     assert expected.equals(recorded)
+
+def test_several_existing_parts_in_folder_exception(tempdir):
+
+    df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
+                        'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
+                        'location': ['Paris', 'Paris', 'Milan', 'Paris'],
+                        'exterior': ['yes', 'no', 'yes', 'yes']})
+
+    write(tempdir, df1, row_group_offsets = 1, file_scheme='hive',
+          write_index=False, partition_on=['location', 'exterior'])
+
+    with pytest.raises(ValueError, match="^Some partition folders"):
+        write(tempdir, df1, row_group_offsets = 0, file_scheme='hive',
+              write_index=False, partition_on=['location', 'exterior'],
+              append='overwrite')
+

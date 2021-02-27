@@ -817,18 +817,6 @@ def write(filename, data, row_group_offsets=50000000,
           object_encoding='infer', times='int64'):
     """ Write Pandas DataFrame to filename as Parquet Format.
 
-        3 writing modes can be identified:
-            - create file(s),
-            - append data by creating new files without removing existing ones,
-            - overwrite over existing files.
-        This latter mode is enabled with a specific combination of parameters.
-        `row_group_offsets` = 0 AND `file_scheme` = 'hive' or 'drill' AND
-        `partition_on` != '' or [] basically mean that there will be a single
-        file per folder. At this moment, if `append` is `True`, if data has to
-        be written in an existing combination of folders as per `location_on`,
-        the existing file is overwritten, and its metadata block is replaced
-        with that of the new data.
-
     Parameters
     ----------
     filename: string
@@ -902,10 +890,15 @@ def write(filename, data, row_group_offsets=50000000,
         before writing, potentially providing a large speed
         boost. The length applies to the binary representation *after*
         conversion for utf8, json or bson.
-    append: bool (False)
-        If False, construct data-set from scratch; if True, add new row-group(s)
-        to existing data-set. In the latter case, the data-set must exist,
-        and the schema must match the input data.
+    append: bool (False) or 'overwrite'
+        - If False, construct data-set from scratch; if True, add new row-group(s)
+          to existing data-set. In the latter case, the data-set must exist,
+          and the schema must match the input data.
+        - If 'overwrite', existing data can be replaced. To enable this, these other
+          parameters have to be set to specific values:
+           * ``row_group_offsets=0``
+           * ``file_scheme='hive'``
+           * ``partition_on`` has to be used, set to at least a column name
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
         be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
@@ -925,13 +918,8 @@ def write(filename, data, row_group_offsets=50000000,
     """
     if str(has_nulls) == 'infer':
         has_nulls = None
-    # Variable 'exist_rgps' is initialized if 'write' is used in 'overwrite' mode.
-    exist_rgps = None
-    rgo_zero_flag = False
     if isinstance(row_group_offsets, int):
         if not row_group_offsets:
-            # To keep track row_group_offsets was initially 0.
-            rgo_zero_flag = True
             row_group_offsets = [0]
         else: 
             l = len(data)
@@ -960,7 +948,7 @@ def write(filename, data, row_group_offsets=50000000,
         write_simple(filename, data, fmd, row_group_offsets,
                      compression, open_with, has_nulls, append)
     elif file_scheme in ['hive', 'drill']:
-        if append:
+        if append: # can be True or 'overwrite'
             pf = api.ParquetFile(filename, open_with=open_with)
             if pf.file_scheme not in ['hive', 'empty', 'flat']:
                 raise ValueError('Requested file scheme is %s, but '
@@ -969,7 +957,7 @@ def write(filename, data, row_group_offsets=50000000,
             if tuple(partition_on) != tuple(pf.cats):
                 raise ValueError('When appending, partitioning columns must'
                                  ' match existing data')
-            if rgo_zero_flag and partition_on:
+            if append == 'overwrite' and partition_on:
                 # Build list of 'path' from existing files
                 # (to have partition values).
                 exist_rgps = ['_'.join(rg.columns[0].file_path.split('/')[:-1])
@@ -977,8 +965,8 @@ def write(filename, data, row_group_offsets=50000000,
                 if len(exist_rgps) > len(set(exist_rgps)):
                     # Some groups are in the same folder (partition). This case
                     # is not handled.
-                    raise ValueError('Some partition folders contain several \
-part files, while overwrite of data is requested. This case is not handled.')
+                    raise ValueError("Some partition folders contain several \
+part files. This situation is not allowed with use of `append='overwrite'`.")
                 i_offset = 0
             else:
                 i_offset = find_max_part(fmd.row_groups)                
@@ -996,7 +984,7 @@ part files, while overwrite of data is requested. This case is not handled.')
                     compression, open_with, mkdirs,
                     with_field=file_scheme == 'hive'
                 )
-                if not exist_rgps:
+                if append != 'overwrite':
                     # Append or 'standard' write mode.
                     fmd.row_groups.extend(rgs)
                 else:
@@ -1016,7 +1004,7 @@ part files, while overwrite of data is requested. This case is not handled.')
                             # in the 1st place.
                             row_group_index = bisect(exist_rgps, part_val)
                             fmd.row_groups.insert(row_group_index, new_rgps[part_val])
-                            # Keep 'exist_rgps' list clean for next 'replace'
+                            # Keep 'exist_rgps' list representative for next 'replace'
                             # or 'insert' cases.
                             exist_rgps.insert(row_group_index, part_val)
                     
