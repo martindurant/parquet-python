@@ -66,8 +66,8 @@ Further options that may be of interest are:
 
 - the compression algorithms (typically "snappy", for fast, but not too space-efficient), which can vary by column
 - the row-group splits to apply, which may lead to efficiencies on loading, if some row-groups can be skipped. Statistics (min/max) are calculated for each column in each row-group on the fly.
-- multi-file saving can be enabled with the ``file_scheme`` keyword: hive-style output is a directory with a single metadata file and several data-files.
-- complementing ``file_scheme='hive'``, use of ``partition_on`` spread data in different directories. In this situation, ``append`` can be set to one value among ``False|True|'overwrite'``. With this latter mode, new data written in an existing directory replaces the existing content. 
+- multi-file saving can be enabled with the ``file_scheme="hive"|"drill"``: directory-tree-partitioned output with a single metadata file and several data-files, one or more per leaf directory. The values used for partitioning are encoded into the paths of the data files.
+- append to existing data sets with ``append=True``, adding new row-groups. For the specific case of "hive"-partitioned data and one file per partition, ``append="overwrite"`` is also allowed, which replaces partitions of the data where new data are given, but leaves other existing partitions untouched.
 - options has_nulls, fixed_text and write_index affect efficiency see the `api docs <./api.html#fastparquet.write>`_.
 
 .. code-block:: python

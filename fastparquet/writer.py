@@ -895,7 +895,7 @@ def write(filename, data, row_group_offsets=50000000,
           to existing data-set. In the latter case, the data-set must exist,
           and the schema must match the input data.
         - If 'overwrite', existing data can be replaced. To enable this, these other
-          parameters have to be set to specific values:
+          parameters have to be set to specific values, or will raise ValueError:
            * ``row_group_offsets=0``
            * ``file_scheme='hive'``
            * ``partition_on`` has to be used, set to at least a column name
