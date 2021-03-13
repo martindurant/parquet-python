@@ -2,7 +2,6 @@ import re
 from collections import OrderedDict
 from distutils.version import LooseVersion
 import numpy as np
-from pandas.core.internals import BlockManager
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
@@ -88,14 +87,15 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
     df = OrderedDict()
     for t, col in zip(types, cols):
+        # Create empty arrays of length 1, so we can call `repeat` below
         if str(t) == 'category':
-            df[str(col)] = Categorical([], categories=cat(col),
+            df[str(col)] = Categorical([-1], categories=cat(col),
                                                  fastpath=True)
         else:
             if hasattr(t, 'base'):
                 # funky pandas not-dtype
                 t = t.base
-            d = np.empty(0, dtype=t)
+            d = np.empty(1, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 try:
                     d = Series(d).dt.tz_localize(timezones[str(col)])
@@ -161,48 +161,29 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col] = d
             views[col+'-catdef'] = x
 
-    axes = [df._data.axes[0], index]
-
-    # allocate and create blocks
-    blocks = []
-    for block in df._data.blocks:
-        if block.is_categorical:
-            categories = block.values.categories
-            code = np.zeros(shape=size, dtype=block.values.codes.dtype)
-            values = Categorical(values=code, categories=categories,
-                                 fastpath=True)
-            new_block = block.make_block_same_class(values=values)
-        elif getattr(block.dtype, 'tz', None):
-            new_shape = (size, )
-            values = np.empty(shape=new_shape, dtype='M8[ns]')
-            new_block = block.make_block_same_class(
-                type(block.values)(values, dtype=block.values.dtype)
-            )
-        else:
-            new_shape = (block.values.shape[0], size)
-            values = np.empty(shape=new_shape, dtype=block.values.dtype)
-            new_block = block.make_block_same_class(values=values)
-
-        blocks.append(new_block)
-
-    # create block manager
-    df = DataFrame(BlockManager(blocks, axes))
+    # Create DataFrame with same dtypes and desired length.
+    df = DataFrame(
+        {col: df[col]._values.repeat(size) for col in df.columns},
+        index=index,
+        columns=df.columns,
+    )
 
     # create views
-    for block in df._data.blocks:
-        dtype = block.dtype
-        inds = block.mgr_locs.indexer
-        if isinstance(inds, slice):
-            inds = list(range(inds.start, inds.stop, inds.step))
-        for i, ind in enumerate(inds):
-            col = df.columns[ind]
-            if is_categorical_dtype(dtype):
-                views[col] = block.values._codes
-                views[col+'-catdef'] = block.values
-            elif getattr(block.dtype, 'tz', None):
-                views[col] = np.asarray(block.values, dtype='M8[ns]')
-            else:
-                views[col] = block.values[i]
+    for col in df.columns:
+        vals = df[col]._values
+        if isinstance(vals, np.ndarray):
+            views[col] = vals
+        elif is_categorical_dtype(vals):
+            views[col] = vals._codes
+            views[col+'-catdef'] = vals
+
+        elif hasattr(vals.dtype, "tz"):
+            # datetime64tz, get the ndarray directly backing it
+            views[col] = vals._data
+
+        else:
+            # catchall, anything that gets here will be an ExtensionArray 
+            views[col] = vals
 
     if index_names:
         df.index.names = [
