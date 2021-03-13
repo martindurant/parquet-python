@@ -89,12 +89,15 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     for t, col in zip(types, cols):
         # Create empty arrays of length 1, so we can call `repeat` below
         if str(t) == 'category':
-            df[str(col)] = Categorical([-1], categories=cat(col),
+            categories = cat(col)
+            code = 0 if len(categories) else -1
+            df[str(col)] = Categorical([code], categories=categories,
                                                  fastpath=True)
         else:
             if hasattr(t, 'base'):
                 # funky pandas not-dtype
                 t = t.base
+            t = {"M8": "M8[ns]", "m8": "m8[ns]"}.get(t, t)
             d = np.empty(1, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 try:
