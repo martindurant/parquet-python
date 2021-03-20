@@ -802,8 +802,7 @@ def sorted_partitioned_columns(pf, filters=None):
 
 def filter_row_groups(pf, filters, as_idx: bool = False):
     """
-    Select row groups using set of filters. If `filters` is `None` or an
-    empty list, returns the complete list of row groups.
+    Select row groups using set of filters.
 
     Parameters
     ----------
