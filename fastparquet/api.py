@@ -808,10 +808,18 @@ def filter_row_groups(pf, filters, as_idx: bool = False):
     ----------
     pf: ParquetFile
         `ParquetFile` object.
-    filters: list of tuples
-        See ``filter_out_cats`` and ``filter_out_stats``
+    filters: list of list of tuples
+        To filter out some of the row-groups.
+        Filter syntax: [[(column, op, val), ...],...] where op is
+        [==, >, >=, <, <=, !=, in, not in]
+        The innermost tuples are transposed into a set of filters applied
+        through an `AND` operation.
+        The outer list combines these sets of filters through an `OR`
+        operation.
+        A single list of tuples can also be used, meaning that no `OR`
+        operation between set of filters is to be conducted.
     as_idx: bool, False
-        If `True`, returns a row group list, if `False`, returns row group
+        If `False`, returns a row group list, if `True`, returns row group
         index list.
 
     Returns
