@@ -269,34 +269,6 @@ class ParquetFile(object):
                                           grab_dict=True)
         return out
 
-    def filter_row_groups(self, filters):
-        """
-        Select row groups using set of filters. If `filters` is `None` or an
-        empty list, returns the complete list of row groups.
-
-        Parameters
-        ----------
-        filters: list of tuples
-            See ``filter_out_cats`` and ``filter_out_stats``
-
-        Returns
-        -------
-        Filtered list of row groups
-        """
-        if filters:                            
-            if isinstance(filters[0][0], str):
-                # If 3rd level is already a column name, then transform
-                # `filters` into a list (OR condition) of list (AND condition)
-                # of filters (tuple or list with 1st component being a column
-                # name).
-                filters = [filters]
-            return [rg for rg in self.row_groups if any([
-                    not(filter_out_stats(rg, and_filters, self.schema)) and
-                    not(filter_out_cats(rg, and_filters, self.partition_meta))
-                    for and_filters in filters])]
-        else:
-            return self.row_groups
-
     def iter_row_groups(self, columns=None, categories=None, filters=[],
                         index=None):
         """
@@ -343,8 +315,8 @@ class ParquetFile(object):
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns, columns, categories)
-        rgs = self.filter_row_groups(filters)
-        if all(column.file_path is None for rg in self.row_groups
+        rgs = filter_row_groups(self, filters) if filters else self.row_groups
+        if all(column.file_path is None for rg in rgs
                for column in rg.columns):
             with self.open(self.fn, 'rb') as f:
                 for rg in rgs:
@@ -407,7 +379,7 @@ class ParquetFile(object):
         -------
         Pandas data-frame
         """
-        rgs = self.filter_row_groups(filters)
+        rgs = filter_row_groups(self, filters) if filters else self.row_groups
         size = sum(rg.num_rows for rg in rgs)
         index = self._get_index(index)
         if columns is not None:
@@ -806,13 +778,11 @@ def sorted_partitioned_columns(pf, filters=None):
     statistics
     """
     s = statistics(pf)
-    if (filters is not None) & (filters != []):
-        idx_list = [i for i, rg in enumerate(pf.row_groups) if
-                    not(filter_out_stats(rg, filters, pf.schema)) and
-                    not(filter_out_cats(rg, filters, pf.partition_meta))]
+    if filters:
+        rg_idx_list = filter_row_groups(pf, filters, as_idx = True)
         for stat in s.keys():
             for col in s[stat].keys():
-                s[stat][col] = [s[stat][col][i] for i in idx_list]
+                s[stat][col] = [s[stat][col][i] for i in rg_idx_list]
     columns = pf.columns
     out = dict()
     for c in columns:
@@ -828,6 +798,43 @@ def sorted_partitioned_columns(pf, filters=None):
             # because some types, e.g., dicts cannot be sorted/compared
             continue
     return out
+
+
+def filter_row_groups(pf, filters, as_idx: bool = False):
+    """
+    Select row groups using set of filters. If `filters` is `None` or an
+    empty list, returns the complete list of row groups.
+
+    Parameters
+    ----------
+    pf: ParquetFile
+        `ParquetFile` object.
+    filters: list of tuples
+        See ``filter_out_cats`` and ``filter_out_stats``
+    as_idx: bool, False
+        If `True`, returns a row group list, if `False`, returns row group
+        index list.
+
+    Returns
+    -------
+    Filtered list of row groups (or row group indexes)
+    """
+    if isinstance(filters[0][0], str):
+        # If 3rd level is already a column name, then transform
+        # `filters` into a list (OR condition) of list (AND condition)
+        # of filters (tuple or list with 1st component being a column
+        # name).
+        filters = [filters]
+    if as_idx:
+        return [i for i, rg in enumerate(pf.row_groups) if any([
+                   not(filter_out_stats(rg, and_filters, pf.schema)) and
+                   not(filter_out_cats(rg, and_filters, pf.partition_meta))
+                   for and_filters in filters])]
+    else:
+        return [rg for rg in pf.row_groups if any([
+                   not(filter_out_stats(rg, and_filters, pf.schema)) and
+                   not(filter_out_cats(rg, and_filters, pf.partition_meta))
+                   for and_filters in filters])]            
 
 
 def filter_out_cats(rg, filters, partition_meta={}):
