@@ -271,7 +271,8 @@ class ParquetFile(object):
 
     def filter_row_groups(self, filters):
         """
-        Select row groups using set of filters
+        Select row groups using set of filters. If `filters` is `None` or an
+        empty list, returns the complete list of row groups.
 
         Parameters
         ----------
@@ -282,9 +283,19 @@ class ParquetFile(object):
         -------
         Filtered list of row groups
         """
-        return [rg for rg in self.row_groups if
-                not(filter_out_stats(rg, filters, self.schema)) and
-                not(filter_out_cats(rg, filters, self.partition_meta))]
+        if filters:                            
+            if isinstance(filters[0][0], str):
+                # If 3rd level is already a column name, then transform
+                # `filters` into a list (OR condition) of list (AND condition)
+                # of filters (tuple or list with 1st component being a column
+                # name).
+                filters = [filters]
+            return [rg for rg in self.row_groups if any([
+                    not(filter_out_stats(rg, and_filters, self.schema)) and
+                    not(filter_out_cats(rg, and_filters, self.partition_meta))
+                    for and_filters in filters])]
+        else:
+            return self.row_groups
 
     def iter_row_groups(self, columns=None, categories=None, filters=[],
                         index=None):
@@ -303,11 +314,17 @@ class ParquetFile(object):
             dict {col: int}, the value indicates the number of categories,
             so that the optimal data-dtype can be allocated. If ``None``,
             will automatically set *if* the data was written by fastparquet.
-        filters: list of tuples
+        filters: list of list of tuples or list of tuples
             To filter out (i.e., not read) some of the row-groups.
             (This is not row-level filtering)
-            Filter syntax: [(column, op, val), ...],
+            Filter syntax: [[(column, op, val), ...],...]
             where op is [==, >, >=, <, <=, !=, in, not in]
+            The innermost tuples are transposed into a set of filters applied
+            through an `AND` operation.
+            The outer list combines these sets of filters through an `OR`
+            operation.
+            A single list of tuples can also be used, meaning that no `OR`
+            operation between set of filters is to be conducted.
         index: string or list of strings or False or None
             Column(s) to assign to the (multi-)index. If None, index is
             inferred from the metadata (if this was originally pandas data); if
@@ -369,11 +386,17 @@ class ParquetFile(object):
             dict {col: int}, the value indicates the number of categories,
             so that the optimal data-dtype can be allocated. If ``None``,
             will automatically set *if* the data was written from pandas.
-        filters: list of tuples
+        filters: list of list of tuples or list of tuples
             To filter out (i.e., not read) some of the row-groups.
             (This is not row-level filtering)
-            Filter syntax: [(column, op, val), ...],
+            Filter syntax: [[(column, op, val), ...],...]
             where op is [==, >, >=, <, <=, !=, in, not in]
+            The innermost tuples are transposed into a set of filters applied
+            through an `AND` operation.
+            The outer list combines these sets of filters through an `OR`
+            operation.
+            A single list of tuples can also be used, meaning that no `OR`
+            operation between set of filters is to be conducted.
         index: string or list of strings or False or None
             Column(s) to assign to the (multi-)index. If None, index is
             inferred from the metadata (if this was originally pandas data); if

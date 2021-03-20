@@ -431,3 +431,25 @@ def test_truncated_decimal():
         name='weight measure:WEIGHT(KG, 0)')
     out = df['weight measure:WEIGHT(KG, 0)']
     assert np.allclose(expected, out)
+
+
+def test_or_filtering(tempdir):
+    path = os.path.join(TEST_DATA, 'split')
+    pf = fastparquet.ParquetFile(path)
+    # Defining 2 filters resulting in 2 disjointed row groups.
+    up_filter = [('num', '>=', 1925)]
+    down_filter = [('num', '<=', 18)]
+    # Check disjointed groups.
+    empty_df = pf.to_pandas(filters = up_filter + down_filter)
+    assert empty_df.empty
+    # Reading row groups separately for reference.
+    up_df = pf.to_pandas(filters=up_filter)
+    down_df = pf.to_pandas(filters=down_filter)    
+    cols = list(up_df.columns)
+    ref_df = pd.concat([up_df, down_df]).sort_values(cols)\
+                                        .reset_index(drop=True)
+    # Reading row groups using OR operation in `filters`.
+    or_filter = [up_filter, down_filter]
+    or_df = pf.to_pandas(filters=or_filter).sort_values(cols)\
+                                            .reset_index(drop=True)
+    assert(or_df.equals(ref_df))
