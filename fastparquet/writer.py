@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from copy import copy
 import json
 import re

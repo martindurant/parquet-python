@@ -1,10 +1,4 @@
 """test_read.py - unit and integration tests for reading parquet data."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from itertools import product
 import numpy as np
 import os

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """test_converted_types.py - tests for decoding data to their logical data types."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import datetime
 import sys
 
@@ -149,3 +144,25 @@ def test_big_decimal():
             dtype='|S32')
     assert np.isclose(convert(data, schema),
                       np.array([0., 777.2, 751.6, 345.1, 644.1])).all()
+
+
+def test_tz_nonstring(tmpdir):
+    # https://github.com/dask/fastparquet/issues/578
+    import uuid
+
+    event={}
+    event_id = str(uuid.uuid4())
+    event['id'] = [event_id]
+    event['site_name'] = ['TestString']
+    event['start_time'] = ['2021-01-01T14:58:19.3677-05:00']
+    event['end_time'] = ['2021-01-01T14:59:50.5272-05:00']
+
+    event_df = pd.DataFrame(event)
+    event_df['start_time'] = pd.to_datetime(event_df['start_time'])
+    event_df['end_time'] = pd.to_datetime(event_df['end_time'])
+    event_df.info()
+    fn = '{}/{}.parquet'.format(tmpdir, event_id)
+    event_df.to_parquet(fn, compression='uncompressed', engine='fastparquet')
+
+    round = pd.read_parquet(fn, engine="fastparquet")
+    assert event_df.equals(round)

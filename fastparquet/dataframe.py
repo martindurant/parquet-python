@@ -2,7 +2,6 @@ import re
 from collections import OrderedDict
 from distutils.version import LooseVersion
 import numpy as np
-from pandas.core.internals import BlockManager
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
@@ -98,7 +97,11 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             d = np.empty(0, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 try:
-                    d = Series(d).dt.tz_localize(timezones[str(col)])
+                    z = timezones[str(col)]
+                    if ":" in z:
+                        import pytz
+                        z = pytz.FixedOffset(int(z[:3]) * 60)
+                    d = Series(d).dt.tz_localize(z)
                 except:
                     warnings.warn("Inferring time-zone from %s in column %s "
                                   "failed, using time-zone-agnostic"
@@ -178,7 +181,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                                  fastpath=True)
 
         elif getattr(bvalues.dtype, 'tz', None):
-            values = np.empty(shape=shape, dtype='M8[ns]')
+            values = np.zeros(shape=shape, dtype='M8[ns]')
             values = type(bvalues)(values, dtype=bvalues.dtype)
         else:
             # Note: this will break on any ExtensionDtype other than

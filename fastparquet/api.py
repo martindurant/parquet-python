@@ -1,9 +1,4 @@
 """parquet - read parquet files."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from collections import OrderedDict
 import io
 import json
@@ -533,8 +528,14 @@ class ParquetFile(object):
                         dtype[col] = np.dtype('f8')
             elif dt.kind == "M":
                 if tz is not None and tz.get(col, False):
+                    z = tz[col]
+                    if ":" in z:
+                        import pytz
+                        z = z[:3]
+                        z = z.replace("0", "") if z[1] == '0' else z
+                        z = pytz.timezone(f"Etc/GMT{z}")
                     dtype[col] = pd.Series([], dtype='M8[ns]'
-                                           ).dt.tz_localize(tz[col]).dtype
+                                           ).dt.tz_localize(z).dtype
             elif dt == 'S12':
                 dtype[col] = 'M8[ns]'
         for field in categories:

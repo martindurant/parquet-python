@@ -6,10 +6,6 @@ The implementations in this class are pure python for the widest compatibility,
 but they're not necessarily the most performant.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import json
 import logging
 import numba

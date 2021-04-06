@@ -237,11 +237,18 @@ def get_column_metadata(column, name):
         dtype = column.cat.codes.dtype
     elif hasattr(dtype, 'tz'):
         try:
-            pd.Series([pd.to_datetime('now')]).dt.tz_localize(str(dtype.tz))
-            extra_metadata = {'timezone': str(dtype.tz)}
-        except Exception:
+            stz = str(dtype.tz)
+            if "pytz" not in stz:
+                pd.Series([pd.to_datetime('now')]).dt.tz_localize(stz)
+                extra_metadata = {'timezone': str(dtype.tz)}
+            elif "Offset" in stz:
+                import pytz
+                extra_metadata = {'timezone': f"{dtype.tz._minutes // 60:+03}:00"}
+            else:
+                raise KeyError
+        except Exception as e:
             raise ValueError("Time-zone information could not be serialised: "
-                             "%s, please use another" % str(dtype.tz))
+                             "%s, please use another" % str(dtype.tz)) from e
     else:
         extra_metadata = None
 
