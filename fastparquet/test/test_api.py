@@ -928,3 +928,11 @@ def test_pandas_metadata_inference():
     assert df.index.tolist() == [0, 1]
     assert df.index.name is None
 
+
+def test_write_index_false(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    df = pd.DataFrame(0, columns=['a'], index=range(1,3))
+    write(fn, df, write_index=False)
+    rec_df = ParquetFile(fn).to_pandas()
+    assert rec_df.index[0] == 0
+    
