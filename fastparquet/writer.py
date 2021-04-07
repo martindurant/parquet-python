@@ -931,7 +931,7 @@ def write(filename, data, row_group_offsets=50000000,
         cols = set(data)
         data = data.reset_index()
         index_cols = [c for c in data if c not in cols]
-    elif isinstance(data.index, pd.RangeIndex):
+    elif write_index is None and isinstance(data.index, pd.RangeIndex):
         # write_index=None, range to metadata
         index_cols = data.index
     else:  # write_index=False
