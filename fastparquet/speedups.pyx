@@ -25,11 +25,10 @@ def array_encode_utf8(inp):
     """
     cdef:
         Py_ssize_t i, n
-        np.ndarray[object] arr
+        np.ndarray[object, ndim=1] arr
         np.ndarray[object] result
 
-    arr = _to_array(inp)
-    _check_1d_object_array(arr)
+    arr = np.array(inp)
 
     n = len(arr)
     result = np.empty(n, dtype=object)

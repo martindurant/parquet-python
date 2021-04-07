@@ -206,6 +206,7 @@ def convert(data, se):
     elif dtype == "O":
         try:
             if converted_type == parquet_thrift.ConvertedType.UTF8:
+                # getattr for new pandas StringArray
                 out = array_encode_utf8(data)
             elif converted_type == parquet_thrift.ConvertedType.DECIMAL:
                 out = data.values.astype(np.float64, copy=False)
