@@ -13,10 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        CONDA_ENV: [py37, py38, py37z]
+        CONDA_ENV: [py37, py38, py39]
     steps:
       - name: APT
-        run: sudo apt-get install liblzo2-dev libsnappy-dev
+        run: sudo apt-get install liblzo2-dev
 
       - name: Checkout
         uses: actions/checkout@v2
