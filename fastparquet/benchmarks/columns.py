@@ -37,7 +37,7 @@ def time_column():
             df = d[[col]]
             write(fn, df)
             with measure('%s: write, no nulls' % d.dtypes[col], result):
-                write(fn, df, has_nulls=False)
+                write(fn, df, has_nulls=False, compression="SNAPPY")
 
             pf = ParquetFile(fn)
             pf.to_pandas()  # warm-up
@@ -46,7 +46,7 @@ def time_column():
                 pf.to_pandas()
 
             with measure('%s: write, no nulls, has_null=True' % d.dtypes[col], result):
-                write(fn, df, has_nulls=True)
+                write(fn, df, has_nulls=True, compression="SNAPPY")
 
             pf = ParquetFile(fn)
             pf.to_pandas()  # warm-up
@@ -63,7 +63,7 @@ def time_column():
             else:
                 d.loc[n//2, col] = None
             with measure('%s: write, with null, has_null=True' % d.dtypes[col], result):
-                write(fn, df, has_nulls=True)
+                write(fn, df, has_nulls=True, compression="SNAPPY")
 
             pf = ParquetFile(fn)
             pf.to_pandas()  # warm-up
@@ -72,7 +72,7 @@ def time_column():
                 pf.to_pandas()
 
             with measure('%s: write, with null, has_null=False' % d.dtypes[col], result):
-                write(fn, df, has_nulls=False)
+                write(fn, df, has_nulls=False, compression="SNAPPY")
 
             pf = ParquetFile(fn)
             pf.to_pandas()  # warm-up

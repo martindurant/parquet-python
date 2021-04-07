@@ -95,7 +95,8 @@ def convert(data, se, timestamp96=True):
     if ctype == parquet_thrift.ConvertedType.UTF8:
         if isinstance(data, list) or data.dtype != "O":
             data = np.asarray(data, dtype="O")
-        return array_decode_utf8(data)
+            return array_decode_utf8(data)
+        return data  # was already converted in speedups
     if ctype == parquet_thrift.ConvertedType.DECIMAL:
         scale_factor = 10**-se.scale
         if data.dtype.kind in ['i', 'f']:

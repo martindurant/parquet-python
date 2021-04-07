@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from fastparquet.speedups import (
-    array_encode_utf8, array_decode_utf8,
+    array_encode_utf8,
     pack_byte_array, unpack_byte_array
     )
 
@@ -41,32 +41,6 @@ def test_array_encode_utf8():
         array_encode_utf8(arr)
 
 
-def test_array_decode_utf8():
-    bytestrings = [s.encode('utf-8') for s in strings]
-
-    arr = np.array(bytestrings, dtype='object')
-    expected = list(strings)
-    got = array_decode_utf8(arr)
-
-    assert got.dtype == np.dtype('object')
-    assert list(got) == expected
-
-    # Non-decodable string
-    arr = np.array(bytestrings + [b"\x00\xff"], dtype='object')
-    with pytest.raises(UnicodeDecodeError):
-        array_decode_utf8(arr)
-
-    # Wrong array type
-    arr = np.array(bytestrings, dtype='S')
-    with pytest.raises((TypeError, ValueError)):
-        array_decode_utf8(arr)
-
-    # Wrong object type
-    arr = np.array([u"foo"], dtype='object')
-    with pytest.raises(TypeError):
-        array_decode_utf8(arr)
-
-
 def test_pack_byte_array():
     bytestrings = [b"foo", b"bar\x00" * 256 + b"z"]
 
@@ -96,20 +70,12 @@ def test_unpack_byte_array():
                       for b in bytestrings)
 
     seq = unpack_byte_array(packed, len(bytestrings))
-    assert seq == bytestrings
-
-    def check_invalid_length(b, n):
-        with pytest.raises(RuntimeError):
-            unpack_byte_array(b, n)
-
-    check_invalid_length(packed, len(bytestrings) + 1)
-    check_invalid_length(packed[:-1], len(bytestrings))
-    check_invalid_length(packed[:-1], len(bytestrings))
+    assert list(seq) == bytestrings
 
     # Extra bytes silently ignored
     seq = unpack_byte_array(packed, len(bytestrings) - 1)
-    assert seq == bytestrings[:-1]
+    assert list(seq) == bytestrings[:-1]
     seq = unpack_byte_array(packed + b'\x00', len(bytestrings))
-    assert seq == bytestrings
+    assert list(seq) == bytestrings
     seq = unpack_byte_array(packed + b'\x01\x02\x03\x04', len(bytestrings))
-    assert seq == bytestrings
+    assert list(seq) == bytestrings

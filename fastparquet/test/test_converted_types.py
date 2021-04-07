@@ -66,7 +66,7 @@ def test_utf8():
         name="test",
         converted_type=pt.ConvertedType.UTF8
     )
-    data = b'\xc3\x96rd\xc3\xb6g'
+    data = u"Ördög"  # conversion now happens on read
     assert convert(pd.Series([data]), schema)[0] == u"Ördög"
 
 

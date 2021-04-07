@@ -110,18 +110,20 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
         definition_levels, num_nulls = read_def(io_obj, daph, helper, metadata)
 
     nval = daph.num_values - num_nulls
+    se = helper.schema_element(metadata.path_in_schema)
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
+
         width = helper.schema_element(metadata.path_in_schema).type_length
-        values = encoding.read_plain(raw_bytes[io_obj.loc:],
+        values = encoding.read_plain(bytearray(raw_bytes)[io_obj.loc:],
                                      metadata.type,
                                      int(daph.num_values - num_nulls),
-                                     width=width)
+                                     width=width,
+                                     utf=se.converted_type == 0)
     elif daph.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
                            parquet_thrift.Encoding.RLE]:
         # bit_width is stored as single byte.
         if daph.encoding == parquet_thrift.Encoding.RLE:
-            bit_width = helper.schema_element(
-                    metadata.path_in_schema).type_length
+            bit_width = se.type_length
         else:
             bit_width = io_obj.read_byte()
         if bit_width in [8, 16, 32] and selfmade:
@@ -149,15 +151,15 @@ def skip_definition_bytes(io_obj, num):
         n //= 128
 
 
-def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata):
+def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, utf=False):
     """Read a page containing dictionary data.
 
     Consumes data using the plain encoding and returns an array of values.
     """
     raw_bytes = _read_page(file_obj, page_header, column_metadata)
     if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
-        values = np.array(unpack_byte_array(raw_bytes,
-                          page_header.dictionary_page_header.num_values), dtype='object')
+        values = np.array(unpack_byte_array(bytearray(raw_bytes),
+                          page_header.dictionary_page_header.num_values, utf=utf), dtype='object')
     else:
         width = schema_helper.schema_element(
             column_metadata.path_in_schema).type_length
@@ -196,7 +198,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
     dic = None
     if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-        dic = read_dictionary_page(infile, schema_helper, ph, cmd)
+        dic = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
         ph = read_thrift(infile, parquet_thrift.PageHeader)
         dic = convert(dic, se)
     if grab_dict:
@@ -229,7 +231,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
     row_idx = 0
     while True:
         if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-            dic2 = np.array(read_dictionary_page(infile, schema_helper, ph, cmd))
+            dic2 = np.array(read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0))
             dic2 = convert(dic2, se)
             if use_cat and (dic2 != dic).any():
                 raise RuntimeError("Attempt to read as categorical a column"

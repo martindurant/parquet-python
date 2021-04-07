@@ -640,11 +640,6 @@ def test_compression_zstandard(tempdir):
             "type": "zstd",
             "args": {
                 "level": 5,
-                "write_dict_id": True,
-                "threads": 0,
-                "write_checksum": True,
-                "write_dict_id": True,
-                "write_content_size": False,
             }
         },
         "_default": {

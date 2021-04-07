@@ -662,12 +662,12 @@ def filter_out_stats(rg, filters, schema):
                 s = column.meta_data.statistics
                 if s.max is not None:
                     b = ensure_bytes(s.max)
-                    vmax = encoding.read_plain(b, column.meta_data.type, 1)
+                    vmax = encoding.read_plain(b, column.meta_data.type, 1, stat=True)
                     if se.converted_type is not None:
                         vmax = converted_types.convert(vmax, se)
                 if s.min is not None:
                     b = ensure_bytes(s.min)
-                    vmin = encoding.read_plain(b, column.meta_data.type, 1)
+                    vmin = encoding.read_plain(b, column.meta_data.type, 1, stat=True)
                     if se.converted_type is not None:
                         vmin = converted_types.convert(vmin, se)
                 if filter_val(op, val, vmin, vmax):
@@ -708,7 +708,7 @@ def statistics(obj):
                     rv['max'] = ensure_bytes(s.max)
                 else:
                     rv['max'] = encoding.read_plain(ensure_bytes(s.max),
-                                                    md.type, 1)[0]
+                                                    md.type, 1, stat=True)[0]
             except:
                 rv['max'] = None
         if s.min is not None:
@@ -717,7 +717,7 @@ def statistics(obj):
                     rv['min'] = ensure_bytes(s.min)
                 else:
                     rv['min'] = encoding.read_plain(ensure_bytes(s.min),
-                                                    md.type, 1)[0]
+                                                    md.type, 1, stat=True)[0]
             except:
                 rv['min'] = None
         if s.null_count is not None:

@@ -13,7 +13,7 @@ def test_compress_decompress_roundtrip(fmt):
     else:
         assert len(compressed) < len(data)
 
-    decompressed = decompress_data(compressed, len(data), algorithm=fmt)
+    decompressed = bytes(decompress_data(compressed, len(data), algorithm=fmt))
     assert data == decompressed
 
 
@@ -30,7 +30,7 @@ def test_compress_decompress_roundtrip_args_gzip():
     )
     assert len(compressed) < len(data)
 
-    decompressed = decompress_data(compressed, len(data), algorithm="gzip")
+    decompressed = bytes(decompress_data(compressed, len(data), algorithm="gzip"))
     assert data == decompressed
 
 def test_compress_decompress_roundtrip_args_lz4():
@@ -51,29 +51,7 @@ def test_compress_decompress_roundtrip_args_lz4():
     decompressed = decompress_data(compressed, len(data), algorithm="lz4")
     assert data == decompressed
 
-def test_compress_decompress_roundtrip_args_zstandard():
-    pytest.importorskip('zstandard')
-    data = b'123' * 1000
-    compressed = compress_data(
-        data,
-        compression={
-            "type": "zstd",
-            "args": {
-                "level": 5,
-                "threads": 0,
-                "write_checksum": True,
-                "write_dict_id": True,
-                "write_content_size": False,
-            }
-        }
-    )
-    assert len(compressed) < len(data)
-
-    decompressed = decompress_data(compressed, len(data), algorithm="zstd")
-    assert data == decompressed
-
 def test_compress_decompress_roundtrip_args_zstd():
-    pytest.importorskip('zstd')
     data = b'123' * 1000
     compressed = compress_data(
         data,
@@ -86,7 +64,7 @@ def test_compress_decompress_roundtrip_args_zstd():
     )
     assert len(compressed) < len(data)
 
-    decompressed = decompress_data(compressed, len(data), algorithm="zstd")
+    decompressed = bytes(decompress_data(compressed, len(data), algorithm="zstd"))
     assert data == decompressed
 
 def test_errors():
