@@ -14,13 +14,11 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
     The count is determined from the header and the width is used to grab the
     value that's repeated. Yields the value repeated count times.
     """
-    cdef int count, width, extra
-    cdef char[:] data
+    cdef int count, width, extra, i
     cdef char *inptr, *outptr
     count = header >> 1
     width = (bit_width + 7) // 8
     extra = 4 - width
-    data = file_obj.read(width)
     inptr = file_obj.get_pointer()
     outptr = o.get_pointer()
     for _ in range(count):
@@ -29,11 +27,11 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
         for _ in range(extra):
             outptr[0] = 0
             outptr += 1
-    file_obj.seek(count * width, 1)
+    file_obj.seek(width, 1)
     o.seek(count * 4, 1)
 
 
-cdef int width_from_max_int(long value):
+cpdef int width_from_max_int(long value):
     """Convert the value specified to a bit_width."""
     cdef int i
     for i in range(0, 64):
@@ -51,12 +49,13 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):
     """
     Read values packed into width-bits each (which can be >8)
     """
-    cdef unsigned int count, mask, data
+    cdef unsigned int count, mask, data, offset
     cdef unsigned char left = 8, right = 0, b = 0
     cdef int* ptr
 
     ptr = <int*>o.get_pointer()
-    count = (header >> 1) * 8
+    count = ((<int>header & 0xff) >> 1) * 8
+    offset = count * 4
     mask = _mask_for_bits(width)
     data = 0xff & <unsigned int>file_obj.read_byte()
     while count:
@@ -73,10 +72,10 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):
             ptr += 1
             count -= 1
             right += width
-    o.seek(<char*>ptr - o.get_pointer(), 0)  # sets .loc
+    o.seek(offset, 1)  # sets .loc
 
 
-cpdef long read_unsigned_var_int(NumpyIO file_obj):
+cpdef unsigned long read_unsigned_var_int(NumpyIO file_obj):
     """Read a value using the unsigned, variable int encoding.
     file-obj is a NumpyIO of bytes; avoids struct to allow numba-jit
     """
@@ -103,17 +102,21 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
     at .tell().
     """
     cdef int start
-    cdef long header
+    cdef unsigned long header
     if length is False:
         length = read_length(io_obj)
     start = io_obj.tell()
+    print("START",start)
     while io_obj.tell() - start < length and o.tell() < o.nbytes:
         header = read_unsigned_var_int(io_obj)
+        print("header", bin(header))
         if header & 1 == 0:
+            print("rle")
             read_rle(io_obj, header, width, o)
         else:
+            print("bitpack")
             read_bitpacked(io_obj, header, width, o)
-    io_obj.seek(start + length, 0)  # this should be moot
+        print(io_obj.tell(), o.tell())
 
 
 cpdef int read_length(NumpyIO file_obj):
@@ -145,7 +148,7 @@ cdef class NumpyIO(object):
         self.itemsize = self.data.itemsize
 
     cdef char* get_pointer(self):
-        return self.ptr
+        return self.ptr + self.loc
 
     @property
     def len(self):
@@ -153,7 +156,7 @@ cdef class NumpyIO(object):
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
-    cdef char[:] read(self, int x):
+    cpdef char[:] read(self, int x):
         if self.loc + x > self.nbytes:
             x = self.nbytes - self.loc
         if x > 0:

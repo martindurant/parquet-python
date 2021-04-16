@@ -40,10 +40,10 @@ def read_data(fobj, coding, count, bit_width):
     Reads with RLE/bitpacked hybrid, where length is given by first byte.
     """
     out = np.empty(count, dtype=np.int32)
-    o = encoding.NumpyIO(out)
+    o = encoding.NumpyIO(bytearray(out))
     if coding == parquet_thrift.Encoding.RLE:
-        while o.loc < count:
-            encoding.read_rle_bit_packed_hybrid(fobj, bit_width, o=o)
+        while o.tell() < count * 4:
+            encoding.read_rle_bit_packed_hybrid(fobj, bit_width, 0, o)
     else:
         raise NotImplementedError('Encoding %s' % coding)
     return out
@@ -129,7 +129,8 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
             bit_width = io_obj.read_byte()
         if bit_width in [8, 16, 32] and selfmade:
             num = (encoding.read_unsigned_var_int(io_obj) >> 1) * 8
-            values = io_obj.read(num * bit_width // 8).view('int%i' % bit_width)
+            values = np.frombuffer(io_obj.read(num * bit_width // 8),
+                                   dtype='int%i' % bit_width)
         elif bit_width:
             values = np.empty(daph.num_values-num_nulls+7, dtype=np.int32)
             o = encoding.NumpyIO(values.view('uint8'))

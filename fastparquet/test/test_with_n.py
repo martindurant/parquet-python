@@ -25,7 +25,6 @@ def test_rle():
     results = np.empty(1000000, dtype=np.int32)
     with open(os.path.join(TEST_DATA, 'rle')) as f:
         for i, l in enumerate(f):
-            print(i)
             if i > count:
                 break
             data, head, width, res = eval(l)
@@ -50,14 +49,17 @@ def test_uvarint():
 def test_hybrid():
     results = np.empty(1000000, dtype=np.int32)
     with open(os.path.join(TEST_DATA, 'hybrid')) as f:
-        for i, l in enumerate(f):
-            if i > count // 20:
+        for counter, l in enumerate(f):
+            if counter > count // 20:
                 break
             (data, width, length, res) = eval(l)
+            print("TEST", counter, width, length)
             i = encoding.NumpyIO(bytearray(data))
             o = encoding.NumpyIO(results.view('uint8'))
-            encoding.read_rle_bit_packed_hybrid(i, width, length, o)
-            assert (res == o.so_far()).all()
+            encoding.read_rle_bit_packed_hybrid(i, width, length or 0, o)
+            out = np.frombuffer(o.so_far(), dtype="int32")
+            cond = (res == out).all()
+            assert cond
 
 
 def test_hybrid_extra_bytes():
