@@ -1,6 +1,7 @@
 import io
 import numpy as np
 import os
+
 from fastparquet import encoding, core, ParquetFile, schema, util
 import fastparquet.cencoding as encoding
 

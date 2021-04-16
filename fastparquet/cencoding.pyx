@@ -48,9 +48,8 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o): 
     ptr = <int*>o.get_pointer()
     count = (header >> 1) * 8
     mask = _mask_for_bits(width)
-    data = <unsigned int>file_obj.read_byte()
+    data = 0xff & <unsigned int>file_obj.read_byte()
     while count:
-        #print(bin(data), left, right)
         if right > 8:
             data >>= 8
             left -= 8
