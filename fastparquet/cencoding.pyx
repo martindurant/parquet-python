@@ -4,21 +4,33 @@
 # cython: language_level=3
 
 import cython
+cdef extern from "string.h":
+    void *memcpy(void *dest, const void *src, size_t n)
 
 
-cpdef void read_rle(NumpyIO file_obj, char header, int bit_width, NumpyIO o):
+cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
     """Read a run-length encoded run from the given fo with the given header and bit_width.
 
     The count is determined from the header and the width is used to grab the
     value that's repeated. Yields the value repeated count times.
     """
-    cdef int count
+    cdef int count, width, extra
     cdef char[:] data
+    cdef char *inptr, *outptr
     count = header >> 1
     width = (bit_width + 7) // 8
+    extra = 4 - width
     data = file_obj.read(width)
+    inptr = file_obj.get_pointer()
+    outptr = o.get_pointer()
     for _ in range(count):
-        o.write(data)
+        memcpy(outptr, inptr, width)
+        outptr += width
+        for _ in range(extra):
+            outptr[0] = 0
+            outptr += 1
+    file_obj.seek(count * width, 1)
+    o.seek(count * 4, 1)
 
 
 cdef int width_from_max_int(long value):
@@ -79,13 +91,16 @@ cpdef long read_unsigned_var_int(NumpyIO file_obj):
     return result
 
 
-cpdef char[:] read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, NumpyIO o):
+cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, NumpyIO o):
     """Read values from `io_obj` using the rel/bit-packed hybrid encoding.
 
     If length is not specified, then a 32-bit int is read first to grab the
     length of the encoded data.
 
     file-obj is a NumpyIO of bytes; o if an output NumpyIO of int32
+
+    The caller can tell the number of elements in the output by lookint
+    at .tell().
     """
     cdef int start
     cdef long header
@@ -98,8 +113,7 @@ cpdef char[:] read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, 
             read_rle(io_obj, header, width, o)
         else:
             read_bitpacked(io_obj, header, width, o)
-    io_obj.seek(start + length, 0)
-    return o.so_far()
+    io_obj.seek(start + length, 0)  # this should be moot
 
 
 cpdef int read_length(NumpyIO file_obj):

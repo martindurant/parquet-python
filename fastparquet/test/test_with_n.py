@@ -25,13 +25,15 @@ def test_rle():
     results = np.empty(1000000, dtype=np.int32)
     with open(os.path.join(TEST_DATA, 'rle')) as f:
         for i, l in enumerate(f):
+            print(i)
             if i > count:
                 break
             data, head, width, res = eval(l)
             i = encoding.NumpyIO(bytearray(data))
-            o = encoding.NumpyIO(results.view('unit8'))
+            o = encoding.NumpyIO(results.view('uint8'))
             encoding.read_rle(i, head, width, o)
-            assert (res == o.so_far()).all()
+            out = np.frombuffer(o.so_far(), dtype='int32')
+            assert (res == out).all()
 
 
 def test_uvarint():
