@@ -21,7 +21,7 @@ cpdef void read_rle(NumpyIO file_obj, char header, int bit_width, NumpyIO o):
         o.write(data)
 
 
-cdef int width_from_max_int(long value):  # pragma: no cover
+cdef int width_from_max_int(long value):
     """Convert the value specified to a bit_width."""
     cdef int i
     for i in range(0, 64):
@@ -30,14 +30,12 @@ cdef int width_from_max_int(long value):  # pragma: no cover
         value >>= 1
 
 
-cdef int _mask_for_bits(int i):  # pragma: no cover
+cdef int _mask_for_bits(int i):
     """Generate a mask to grab `i` bits from an int value."""
     return (1 << i) - 1
 
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
-cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):  # pragma: no cover
+cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):
     """
     Read values packed into width-bits each (which can be >8)
     """
@@ -56,7 +54,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o): 
             right -= 8
         elif left - right < width:
             b = file_obj.read_byte()
-            data |= (<unsigned int>b) << 8
+            data |= (<unsigned int>b & 0xff) << 8
             left += 8
         else:
             ptr[0] = <int>(data >> right & mask)
@@ -66,7 +64,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o): 
     o.seek(<char*>ptr - o.get_pointer(), 0)  # sets .loc
 
 
-cpdef long read_unsigned_var_int(NumpyIO file_obj):  # pragma: no cover
+cpdef long read_unsigned_var_int(NumpyIO file_obj):
     """Read a value using the unsigned, variable int encoding.
     file-obj is a NumpyIO of bytes; avoids struct to allow numba-jit
     """
@@ -74,7 +72,7 @@ cpdef long read_unsigned_var_int(NumpyIO file_obj):  # pragma: no cover
     cdef char byte
     while True:
         byte = file_obj.read_byte()
-        result |= ((byte & 0x7F) << shift)
+        result |= (<int>(byte & 0x7F) << shift)
         if (byte & 0x80) == 0:
             break
         shift += 7
@@ -104,7 +102,7 @@ cpdef char[:] read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, 
     return o.so_far()
 
 
-cpdef int read_length(NumpyIO file_obj):  # pragma: no cover
+cpdef int read_length(NumpyIO file_obj):
     """ Numpy trick to get a 32-bit length from four bytes
 
     Equivalent to struct.unpack('<i'), but suitable for numba-jit
@@ -115,7 +113,7 @@ cpdef int read_length(NumpyIO file_obj):  # pragma: no cover
     return out
 
 
-cdef class NumpyIO(object):  # pragma: no cover
+cdef class NumpyIO(object):
     """
     Read or write from a numpy arra like a file object
 
@@ -150,8 +148,6 @@ cdef class NumpyIO(object):  # pragma: no cover
             x = self.nbytes - self.loc
         return self.data[self.loc - x:self.loc]
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
     cpdef char read_byte(self):
         cdef char out
         out = self.ptr[self.loc]
@@ -166,8 +162,6 @@ cdef class NumpyIO(object):  # pragma: no cover
         self.loc += l
         self.ptr[self.loc-l:self.loc] = d
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
     cdef void write_byte(self, char b):
         if self.loc >= self.nbytes:
             # ignore attempt to write past end of buffer
@@ -184,8 +178,6 @@ cdef class NumpyIO(object):  # pragma: no cover
     cpdef int tell(self):
         return self.loc
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
     cpdef void seek(self, int loc, int whence):
         if whence == 0:
             self.loc = loc

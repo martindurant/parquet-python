@@ -1,7 +1,6 @@
 import io
 import numpy as np
 import os
-
 from fastparquet import encoding, core, ParquetFile, schema, util
 import fastparquet.cencoding as encoding
 
@@ -12,8 +11,8 @@ count = 1000
 def test_read_bitpacked():
     results = np.empty(1000000, dtype=np.int32)
     with open(os.path.join(TEST_DATA, 'bitpack')) as f:
-        for i, l in enumerate(f):
-            if i > count:
+        for counter, l in enumerate(f):
+            if counter > count:
                 break
             raw, head, wid, res = eval(l)
             i = encoding.NumpyIO(bytearray(raw))
