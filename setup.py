@@ -29,7 +29,8 @@ if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or sys.argv[1] in allowed):
     extra = {}
 else:
     modules_to_build = {
-        'fastparquet.speedups': ['fastparquet/speedups.pyx']
+        'fastparquet.speedups': ['fastparquet/speedups.pyx'],
+        'fastparquet.cencoding': ['fastparquet/cencoding.pyx']
     }
     try:
         from Cython.Build import cythonize
@@ -44,7 +45,7 @@ else:
     modules = [
         Extension(mod, fix_exts(sources))
         for mod, sources in modules_to_build.items()]
-    extra = {'ext_modules': cythonize(modules, language_level=3)}
+    extra = {'ext_modules': cythonize(modules, language_level=3, annotate=True)}
 
 install_requires = open('requirements.txt').read().strip().split('\n')
 

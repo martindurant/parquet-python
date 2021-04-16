@@ -7,6 +7,8 @@ except ImportError:
     from thrift.protocol.TCompactProtocol import TCompactProtocol
 
 from . import encoding
+from . encoding import read_plain, _assemble_objects
+import fastparquet.cencoding as encoding
 from .compression import decompress_data
 from .converted_types import convert, typemap
 from .schema import _is_list_like, _is_map_like
@@ -38,7 +40,7 @@ def read_data(fobj, coding, count, bit_width):
     Reads with RLE/bitpacked hybrid, where length is given by first byte.
     """
     out = np.empty(count, dtype=np.int32)
-    o = encoding.Numpy32(out)
+    o = encoding.NumpyIO(out)
     if coding == parquet_thrift.Encoding.RLE:
         while o.loc < count:
             encoding.read_rle_bit_packed_hybrid(fobj, bit_width, o=o)
@@ -97,8 +99,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     """
     daph = header.data_page_header
     raw_bytes = _read_page(f, header, metadata)
-    io_obj = encoding.Numpy8(np.frombuffer(memoryview(raw_bytes),
-                                           dtype=np.uint8))
+    io_obj = encoding.NumpyIO(bytearray(raw_bytes))
 
     repetition_levels = read_rep(io_obj, daph, helper, metadata)
 
@@ -114,7 +115,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
 
         width = helper.schema_element(metadata.path_in_schema).type_length
-        values = encoding.read_plain(bytearray(raw_bytes)[io_obj.loc:],
+        values = read_plain(bytearray(raw_bytes)[io_obj.tell():],
                                      metadata.type,
                                      int(daph.num_values - num_nulls),
                                      width=width,
@@ -130,11 +131,11 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
             num = (encoding.read_unsigned_var_int(io_obj) >> 1) * 8
             values = io_obj.read(num * bit_width // 8).view('int%i' % bit_width)
         elif bit_width:
-            values = encoding.Numpy32(np.empty(daph.num_values-num_nulls+7,
-                                               dtype=np.int32))
+            values = np.empty(daph.num_values-num_nulls+7, dtype=np.int32)
+            o = encoding.NumpyIO(values.view('uint8'))
             # length is simply "all data left in this page"
             encoding.read_rle_bit_packed_hybrid(
-                        io_obj, bit_width, io_obj.len-io_obj.loc, o=values)
+                        io_obj, bit_width, io_obj.len-io_obj.tell(), o=o)
             values = values.data[:nval]
         else:
             values = np.zeros(nval, dtype=np.int8)
@@ -144,10 +145,10 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
 
 
 def skip_definition_bytes(io_obj, num):
-    io_obj.loc += 6
+    io_obj.seek(6, 1)
     n = num // 64
     while n:
-        io_obj.loc += 1
+        io_obj.seek(1, 1)
         n //= 128
 
 
@@ -163,7 +164,7 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, 
     else:
         width = schema_helper.schema_element(
             column_metadata.path_in_schema).type_length
-        values = encoding.read_plain(
+        values = read_plain(
                 raw_bytes, column_metadata.type,
                 page_header.dictionary_page_header.num_values, width)
     return values
@@ -262,7 +263,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             null = not schema_helper.is_required(cmd.path_in_schema[0])
             null_val = (se.repetition_type !=
                         parquet_thrift.FieldRepetitionType.REQUIRED)
-            row_idx = 1 + encoding._assemble_objects(assign, defi, rep, val, dic, d,
+            row_idx = 1 + _assemble_objects(assign, defi, rep, val, dic, d,
                                              null, null_val, max_defi, row_idx)
         elif defi is not None:
             part = assign[num:num+len(defi)]

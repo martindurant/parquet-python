@@ -2,6 +2,7 @@ import io
 import numpy as np
 import os
 from fastparquet import encoding, core, ParquetFile, schema, util
+import fastparquet.cencoding as encoding
 
 TEST_DATA = 'test-data'
 count = 1000
@@ -14,10 +15,10 @@ def test_read_bitpacked():
             if i > count:
                 break
             raw, head, wid, res = eval(l)
-            i = encoding.Numpy8(np.frombuffer(memoryview(raw), dtype=np.uint8))
-            o = encoding.Numpy32(results)
+            i = encoding.NumpyIO(bytearray(raw))
+            o = encoding.NumpyIO(results.view('uint8'))
             encoding.read_bitpacked(i, head, wid, o)
-            assert (res == o.so_far()).all()
+            assert (res == results[:len(res)]).all()
 
 
 def test_rle():
@@ -27,8 +28,8 @@ def test_rle():
             if i > count:
                 break
             data, head, width, res = eval(l)
-            i = encoding.Numpy8(np.frombuffer(memoryview(data), dtype=np.uint8))
-            o = encoding.Numpy32(results)
+            i = encoding.NumpyIO(bytearray(data))
+            o = encoding.NumpyIO(results.view('unit8'))
             encoding.read_rle(i, head, width, o)
             assert (res == o.so_far()).all()
 
@@ -39,7 +40,7 @@ def test_uvarint():
             if i > count:
                 break
             data, res = eval(l)
-            i = encoding.Numpy8(np.frombuffer(memoryview(data), dtype=np.uint8))
+            i = encoding.NumpyIO(bytearray(data))
             o = encoding.read_unsigned_var_int(i)
             assert (res == o)
 
@@ -51,8 +52,8 @@ def test_hybrid():
             if i > count // 20:
                 break
             (data, width, length, res) = eval(l)
-            i = encoding.Numpy8(np.frombuffer(memoryview(data), dtype=np.uint8))
-            o = encoding.Numpy32(results)
+            i = encoding.NumpyIO(bytearray(data))
+            o = encoding.NumpyIO(results.view('uint8'))
             encoding.read_rle_bit_packed_hybrid(i, width, length, o)
             assert (res == o.so_far()).all()
 
@@ -68,8 +69,8 @@ def test_hybrid_extra_bytes():
                 data2 = data + b'extra bytes'
             else:
                 continue
-            i = encoding.Numpy8(np.frombuffer(memoryview(data2), dtype=np.uint8))
-            o = encoding.Numpy32(results)
+            i = encoding.NumpyIO(np.frombuffer(memoryview(data2), dtype=np.uint8))
+            o = encoding.NumpyIO(results.view('uint8'))
             encoding.read_rle_bit_packed_hybrid(i, width, length, o)
             assert (res == o.so_far()[:len(res)]).all()
             assert i.loc == len(data)
@@ -79,7 +80,7 @@ def test_read_data():
     with open(os.path.join(TEST_DATA, 'read_data')) as f:
         for i, l in enumerate(f):
             (data, fo_encoding, value_count, bit_width, res) = eval(l)
-            i = encoding.Numpy8(np.frombuffer(memoryview(data), dtype=np.uint8))
+            i = encoding.NumpyIO(np.frombuffer(memoryview(data), dtype=np.uint8))
             out = core.read_data(i, fo_encoding, value_count,
                                    bit_width)
             for o, r in zip(out, res):
