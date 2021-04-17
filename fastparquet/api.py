@@ -828,11 +828,21 @@ def filter_row_groups(pf, filters, as_idx: bool = False):
     Filtered list of row groups (or row group indexes)
     """
     if isinstance(filters[0][0], str):
-        # If 3rd level is already a column name, then transform
+        # If 2nd level is already a column name, then transform
         # `filters` into a list (OR condition) of list (AND condition)
         # of filters (tuple or list with 1st component being a column
         # name).
         filters = [filters]
+    # Retrieve all column names onto which are applied filters, and check they
+    # are existing columns of the dataset.
+    as_cols = pf.columns + list(pf.cats.keys())
+    known = [ands[0] in as_cols for ors in filters for ands in ors]
+    if not all(known):
+        falses = [i for i, x in enumerate(known) if not x]
+        cols_in_filter = [ands[0] for ors in filters for ands in ors]
+        wrong_cols = {cols_in_filter[i] for i in falses}
+        raise ValueError('No filter can be applied on unexisting column(s) \
+{!s}.'.format(wrong_cols))
     if as_idx:
         return [i for i, rg in enumerate(pf.row_groups) if any([
                    not(filter_out_stats(rg, and_filters, pf.schema)) and
