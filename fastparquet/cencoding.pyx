@@ -65,7 +65,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):
             right -= 8
         elif left - right < width:
             b = file_obj.read_byte()
-            data |= (<unsigned int>b & 0xff) << 8
+            data |= (<unsigned int>b & 0xff) << left
             left += 8
         else:
             ptr[0] = <int>(data >> right & mask)
