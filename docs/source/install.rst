@@ -10,12 +10,15 @@ Required:
 - numpy
 - pandas
 - pytest
+- cramjam
 
-Optional (compression algorithms; gzip is always available):
+`cramjam`_ provides compression codecs: gzip, snappy, lz4, brotli, zstd
 
-- python-snappy
+.. _cramjam: https://github.com/milesgranger/pyrus-cramjam
+
+Optional compression codec:
+
 - python-lzo
-- brotli
 
 Installation
 ------------

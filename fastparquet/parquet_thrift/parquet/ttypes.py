@@ -231,6 +231,7 @@ class CompressionCodec(object):
         4: "BROTLI",
         5: "LZ4",
         6: "ZSTD",
+        7: "LZ4_RAW",
     }
 
     _NAMES_TO_VALUES = {
@@ -241,6 +242,7 @@ class CompressionCodec(object):
         "BROTLI": 4,
         "LZ4": 5,
         "ZSTD": 6,
+        "LZ4_RAW": 7,
     }
 
 
