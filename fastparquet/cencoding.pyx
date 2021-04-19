@@ -205,3 +205,79 @@ cdef class NumpyIO(object):
         """ In write mode, the data we have gathered until now
         """
         return self.data[:self.loc]
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
+                      null, null_val, max_defi, prev_i):
+    """Dremel-assembly of arrays of values into lists
+
+    Parameters
+    ----------
+    assign: array dtype O
+        To insert lists into
+    defi: int array
+        Definition levels, max 3
+    rep: int array
+        Repetition levels, max 1
+    dic: array of labels or None
+        Applied if d is True
+    d: bool
+        Whether to dereference dict values
+    null: bool
+        Can an entry be None?
+    null_val: bool
+        can list elements be None
+    max_defi: int
+        value of definition level that corresponds to non-null
+    prev_i: int
+        1 + index where the last row in the previous page was inserted (0 if first page)
+    """
+    cdef int counter
+    ## TODO: good case for cython
+    if d:
+        # dereference dict values
+        val = dic[val]
+    i = prev_i
+    vali = 0
+    part = []
+    started = False
+    have_null = False
+    if defi is None:
+        defi = value_maker(max_defi)
+    for counter in range(defi.shape[0]):
+        de = defi[counter]
+        re = rep[counter]
+        if not re:
+            # new row - save what we have
+            if started:
+                assign[i] = None if have_null else part
+                part = []
+                i += 1
+            else:
+                # first time: no row to save yet, unless it's a row continued from previous page
+                if vali > 0:
+                    assign[i - 1].extend(part) # add the items to previous row
+                    part = []
+                    # don't increment i since we only filled i-1
+                started = True
+        if de == max_defi:
+            # append real value to current item
+            part.append(val[vali])
+            vali += 1
+        elif de > null:
+            # append null to current item
+            part.append(None)
+        # next object is None as opposed to an object
+        have_null = de == 0 and null
+    if started: # normal case - add the leftovers to the next row
+        assign[i] = None if have_null else part
+    else: # can only happen if the only elements in this page are the continuation of the last row from previous page
+        assign[i - 1].extend(part)
+    return i
+
+
+def value_maker(val):
+    while True:
+        yield val
