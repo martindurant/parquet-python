@@ -222,6 +222,7 @@ class CompressionCodec(object):
     BROTLI = 4
     LZ4 = 5
     ZSTD = 6
+    LZ4_RAW = 7
 
     _VALUES_TO_NAMES = {
         0: "UNCOMPRESSED",
