@@ -50,22 +50,21 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):
     Read values packed into width-bits each (which can be >8)
     """
     cdef unsigned int count, mask, data, offset
-    cdef unsigned char left = 8, right = 0, b = 0
+    cdef unsigned char left = 8, right = 0
     cdef int* ptr
 
     ptr = <int*>o.get_pointer()
     count = ((<int>header & 0xff) >> 1) * 8
     offset = count * 4
     mask = _mask_for_bits(width)
-    data = 0xff & <unsigned int>file_obj.read_byte()
+    data = 0xff & file_obj.read_byte()
     while count:
         if right > 8:
             data >>= 8
             left -= 8
             right -= 8
         elif left - right < width:
-            b = file_obj.read_byte()
-            data |= (<unsigned int>b & 0xff) << left
+            data |= (file_obj.read_byte() & 0xff) << left
             left += 8
         else:
             ptr[0] = <int>(data >> right & mask)
@@ -106,17 +105,12 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
     if length is False:
         length = read_length(io_obj)
     start = io_obj.tell()
-    print("START",start)
     while io_obj.tell() - start < length and o.tell() < o.nbytes:
         header = read_unsigned_var_int(io_obj)
-        print("header", bin(header))
         if header & 1 == 0:
-            print("rle")
             read_rle(io_obj, header, width, o)
         else:
-            print("bitpack")
             read_bitpacked(io_obj, header, width, o)
-        print(io_obj.tell(), o.tell())
 
 
 cpdef int read_length(NumpyIO file_obj):

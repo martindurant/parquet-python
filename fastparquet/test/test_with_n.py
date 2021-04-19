@@ -73,11 +73,13 @@ def test_hybrid_extra_bytes():
                 data2 = data + b'extra bytes'
             else:
                 continue
-            i = encoding.NumpyIO(np.frombuffer(memoryview(data2), dtype=np.uint8))
-            o = encoding.NumpyIO(results.view('uint8'))
+            i = encoding.NumpyIO(bytearray(data2))
+            o = encoding.NumpyIO(bytearray(results))
             encoding.read_rle_bit_packed_hybrid(i, width, length, o)
-            assert (res == o.so_far()[:len(res)]).all()
-            assert i.loc == len(data)
+            out = np.frombuffer(o.so_far(), dtype="int32")
+            cond = (res == out).all()
+            assert cond
+            assert i.tell() == len(data)
 
 
 def test_read_data():
