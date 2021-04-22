@@ -941,3 +941,11 @@ def test_object_encoding_int32(tempdir):
     pf = ParquetFile(fn)
     assert pf._schema[1].type == parquet_thrift.Type.INT32
     assert not pf.schema.is_required('a')
+
+
+def test_custom_metadata(tempdir):
+    df = pd.DataFrame({'a': [15]})
+    fn = os.path.join(tempdir, 'temp.parq')
+    write(fn, df, custom_metadata={"hello": "world"})
+    pf = ParquetFile(fn)
+    assert pf.key_value_metadata['hello'] == 'world'

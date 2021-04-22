@@ -813,7 +813,8 @@ def write(filename, data, row_group_offsets=50000000,
           compression=None, file_scheme='simple', open_with=default_open,
           mkdirs=default_mkdirs, has_nulls=True, write_index=None,
           partition_on=[], fixed_text=None, append=False,
-          object_encoding='infer', times='int64'):
+          object_encoding='infer', times='int64',
+          custom_metadata=None):
     """ Write Pandas DataFrame to filename as Parquet Format.
 
     Parameters
@@ -912,6 +913,8 @@ def write(filename, data, row_group_offsets=50000000,
         resolution; in "int96" mode, they are written as 12-byte blocks, with
         the first 8 bytes as ns within the day, the next 4 bytes the julian day.
         'int96' mode is included only for compatibility.
+    custom_metadata: dict
+        key-value metadata to write
 
     Examples
     --------
@@ -944,6 +947,13 @@ def write(filename, data, row_group_offsets=50000000,
                         fixed_text=fixed_text, object_encoding=object_encoding,
                         times=times, index_cols=index_cols,
                         partition_cols=partition_on)
+    if custom_metadata is not None:
+        fmd.key_value_metadata.extend(
+            [
+                parquet_thrift.KeyValue(key=key, value=value)
+                for key, value in custom_metadata.items()
+            ]
+        )
 
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
