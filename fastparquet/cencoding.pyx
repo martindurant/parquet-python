@@ -125,6 +125,40 @@ cpdef int read_length(NumpyIO file_obj):
     return out
 
 
+cdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
+    while x > 127:
+        o.write_byte((x & 0x7F) | 0x80)
+        x >>= 7
+    o.write_byte(x)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def encode_bitpacked(int[:] values, int width, NumpyIO o):  # pragma: no cover
+    """
+    Write values packed into width-bits each (which can be >8)
+
+    values is a NumbaIO array (int32)
+    o is a NumbaIO output array (uint8), size=(len(values)*width)/8, rounded up.
+    """
+
+    cdef int bit_packed_count = (values.shape[0] + 7) // 8
+    encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
+    cdef char right_byte_mask = 0b11111111
+    cdef int bit=0, bits=0, v, counter
+    for counter in range(values.shape[0]):
+        v = values[counter]
+        bits |= v << bit
+        bit += width
+        while bit >= 8:
+            o.write_byte(bits & right_byte_mask)
+            bit -= 8
+            bits >>= 8
+    if bit:
+        o.write_byte(bits)
+
+
+
 cdef class NumpyIO(object):
     """
     Read or write from a numpy arra like a file object
@@ -245,10 +279,8 @@ def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
     part = []
     started = False
     have_null = False
-    if defi is None:
-        defi = value_maker(max_defi)
-    for counter in range(defi.shape[0]):
-        de = defi[counter]
+    for counter in range(rep.shape[0]):
+        de = defi[counter] if defi is not None else max_defi
         re = rep[counter]
         if not re:
             # new row - save what we have
@@ -277,11 +309,6 @@ def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
     else: # can only happen if the only elements in this page are the continuation of the last row from previous page
         assign[i - 1].extend(part)
     return i
-
-
-def value_maker(val):
-    while True:
-        yield val
 
 
 cdef int zigzag_int(unsigned long n):
@@ -326,13 +353,13 @@ cdef list read_list(NumpyIO data):
     cdef char byte, typ
     cdef int size, bsize, _
     byte = data.read_byte()
-    if byte > 239:
+    if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)
     else:
         size = ((byte & 0xf0) >> 4)
     out = []
-    typ = byte & 0x0f
-    if typ ==5:
+    typ = byte & 0x0f # 0b00001111
+    if typ == 5:
         for _ in range(size):
             out.append(zigzag_int(read_unsigned_var_int(data)))
     elif typ == 8:
