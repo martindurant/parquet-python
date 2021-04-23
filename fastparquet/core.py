@@ -40,7 +40,7 @@ def read_data(fobj, coding, count, bit_width):
     Reads with RLE/bitpacked hybrid, where length is given by first byte.
     """
     out = np.empty(count, dtype=np.int32)
-    o = encoding.NumpyIO(bytearray(out))
+    o = encoding.NumpyIO(out.view('uint8'))
     if coding == parquet_thrift.Encoding.RLE:
         while o.tell() < count * 4:
             encoding.read_rle_bit_packed_hybrid(fobj, bit_width, 0, o)
