@@ -66,8 +66,9 @@ pdoptional_to_numpy_typemap = {
     pd.UInt16Dtype(): np.uint16,
     pd.UInt32Dtype(): np.uint32,
     pd.UInt64Dtype(): np.uint64,
-    pd.BooleanDtype(): np.bool_
+    pd.BooleanDtype(): bool
 }
+
 
 def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     """ Get appropriate typecodes for column dtype
