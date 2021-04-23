@@ -6,6 +6,7 @@
 import cython
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
+from cpython cimport PyBytes_FromStringAndSize
 
 
 cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
@@ -281,3 +282,66 @@ def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
 def value_maker(val):
     while True:
         yield val
+
+
+cdef int zigzag_int(unsigned long n):
+    return (n >> 1) ^ -(n & 1)
+
+
+cdef long zigzag_long(unsigned long n):
+    return (n >> 1) ^ -(n & 1)
+
+
+cpdef dict read_thrift(NumpyIO data):
+    cdef char byte, id = 0, bit
+    cdef int size
+    out = {}
+    while True:
+        byte = data.read_byte()
+        if byte == 0:
+            break
+        id += (byte & 0b11110000) >> 4
+        bit = byte & 0b00001111
+        if bit == 1:
+            out[id] = True
+        elif bit == 2:
+            out[id] == False
+        elif bit == 5 or bit == 6:
+            out[id] = zigzag_long(read_unsigned_var_int(data))
+        elif bit == 7:
+            out[id] = <double>data.get_pointer()[0]
+            data.seek(4, 1)
+        elif bit == 8:
+            size = read_unsigned_var_int(data)
+            out[id] = PyBytes_FromStringAndSize(data.get_pointer(), size)
+            data.seek(size, 1)
+        elif bit == 9:
+            out[id] = read_list(data)
+        elif bit == 12:
+            out[id] = read_thrift(data)
+    return out
+
+
+cdef list read_list(NumpyIO data):
+    cdef char byte, typ
+    cdef int size, bsize, _
+    byte = data.read_byte()
+    if byte > 239:
+        size = read_unsigned_var_int(data)
+    else:
+        size = ((byte & 0xf0) >> 4)
+    out = []
+    typ = byte & 0x0f
+    if typ ==5:
+        for _ in range(size):
+            out.append(zigzag_int(read_unsigned_var_int(data)))
+    elif typ == 8:
+        for _ in range(size):
+            bsize = read_unsigned_var_int(data)
+            out.append(PyBytes_FromStringAndSize(data.get_pointer(), size))
+            data.seek(bsize, 1)
+    else:
+        for _ in range(size):
+            out.append(read_thrift(data))
+
+    return out
