@@ -92,17 +92,10 @@ def thrift_print(structure, offset=0):
     return s
 
 
-def bind_method(cls, name, func):
-    if sys.version_info.major == 2:
-        setattr(cls, name, types.MethodType(func, None, cls))
-    else:
-        setattr(cls, name, func)
-
-
 for clsname in dir(parquet_thrift):
     if clsname[0].isupper():
         cls = getattr(parquet_thrift, clsname)
-        bind_method(cls, '__repr__', thrift_print)
+        cls.__repr__ = thrift_print
 
 
 def getstate_method(ob):
@@ -128,6 +121,6 @@ def setstate_method(self, state):
 for cls in [parquet_thrift.FileMetaData,
             parquet_thrift.RowGroup,
             parquet_thrift.ColumnChunk]:
-    bind_method(cls, '__getstate__', getstate_method)
-    bind_method(cls, '__setstate__', setstate_method)
-    bind_method(cls, '__copy__', copy_method)
+    cls.__getstate__ = getstate_method
+    cls.__setstate__ = setstate_method
+    cls.__copy__ = copy_method
