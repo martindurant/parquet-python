@@ -78,6 +78,8 @@ class ParquetFile(object):
     statistics: dict
         Max/min/count of each column chunk
     """
+    _pdm = None
+
     def __init__(self, fn, verify=False, open_with=default_open,
                  root=False, sep=None):
         if isinstance(fn, (tuple, list)):
@@ -459,16 +461,20 @@ class ParquetFile(object):
 
     @property
     def has_pandas_metadata(self):
+        if self._pdm:
+            return True
         if self.fmd.key_value_metadata is None:
             return False
         return bool(self.key_value_metadata.get('pandas', False))
 
     @property
     def pandas_metadata(self):
-        if self.has_pandas_metadata:
-            return json.loads(self.key_value_metadata['pandas'])
-        else:
-            return {}
+        if self._pdm is None:
+            if self.has_pandas_metadata:
+                self._pdm = json.loads(self.key_value_metadata['pandas'])
+            else:
+                self._pdm = {}
+        return self._pdm
 
     @property
     def categories(self):
@@ -504,14 +510,11 @@ class ParquetFile(object):
                 # uint/int/bool columns that may have nulls become float columns
                 num_nulls = 0
                 for rg in self.row_groups:
-                    chunk = rg.columns[i]
-                    if chunk.meta_data.statistics is None:
+                    st = rg.columns[i].meta_data.statistics
+                    if st is None:
                         num_nulls = True
                         break
-                    if chunk.meta_data.statistics.null_count is None:
-                        num_nulls = True
-                        break
-                    if chunk.meta_data.statistics.null_count:
+                    if st.null_count is not 0:
                         num_nulls = True
                         break
                 if num_nulls:
