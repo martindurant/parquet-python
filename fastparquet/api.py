@@ -593,16 +593,16 @@ def paths_to_cats(paths, partition_meta=None):
 
     if all(p in [None, ""] for p in paths):
         return "simple", {}
-    parts = [path.split("/")[:-1] for path in paths]
-    lparts = [len(part)for part in parts]
-    if max(lparts) < 1:
+    paths = set(path.rsplit("/", 1)[0] if "/" in path else "" for path in paths if "/")
+    parts = [path.split("/") for path in paths if path]
+    lparts = [len(part) for part in parts]
+    if not lparts or max(lparts) < 1:
         return "flat", {}
     if len(set(lparts)) > 1:
         return "other", {}
 
     partition_meta = partition_meta or {}
     cats = OrderedDict()
-    paths = set(path.rsplit("/", 1)[0] for path in paths)
     s = ex_from_sep('/')
     string_types = set()
     meta = {"pandas_type": "string", "numpy_type": "object"}
