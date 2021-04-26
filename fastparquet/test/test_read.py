@@ -8,6 +8,7 @@ import pytest
 
 import fastparquet
 from fastparquet import writer, core
+from fastparquet.cencoding import NumpyIO
 
 from fastparquet.test.util import TEST_DATA, s3, tempdir
 
@@ -264,13 +265,12 @@ def test_index(tempdir):
 
 
 def test_skip_length():
-    class MockIO:
-        loc = 0
+    data = NumpyIO(bytearray(2**21))
     for num in [1, 63, 64, 64*127, 64*128, 63*128**2, 64*128**2]:
         block, _ = writer.make_definitions(np.zeros(num), True)
-        MockIO.loc = 0
-        core.skip_definition_bytes(MockIO, num)
-        assert len(block) == MockIO.loc
+        data.seek(0, 0)
+        core.skip_definition_bytes(data, num)
+        assert len(block) == data.tell()
 
 
 def test_timestamp96():

@@ -245,7 +245,7 @@ cdef class NumpyIO(object):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
-                      null, null_val, max_defi, prev_i):
+                      char null, null_val, int max_defi, int prev_i):
     """Dremel-assembly of arrays of values into lists
 
     Parameters
@@ -269,16 +269,14 @@ def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
     prev_i: int
         1 + index where the last row in the previous page was inserted (0 if first page)
     """
-    cdef int counter
-    ## TODO: good case for cython
+    cdef int counter, i, re, de
+    cdef int vali = 0
+    cdef char started = False, have_null = False
     if d:
         # dereference dict values
         val = dic[val]
     i = prev_i
-    vali = 0
     part = []
-    started = False
-    have_null = False
     for counter in range(rep.shape[0]):
         de = defi[counter] if defi is not None else max_defi
         re = rep[counter]

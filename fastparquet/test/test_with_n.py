@@ -86,9 +86,9 @@ def test_read_data():
     with open(os.path.join(TEST_DATA, 'read_data')) as f:
         for i, l in enumerate(f):
             (data, fo_encoding, value_count, bit_width, res) = eval(l)
-            i = encoding.NumpyIO(np.frombuffer(memoryview(data), dtype=np.uint8))
+            i = encoding.NumpyIO(bytearray(data))
             out = core.read_data(i, fo_encoding, value_count,
-                                   bit_width)
+                                 bit_width)
             for o, r in zip(out, res):
                 # result from old version is sometimes 1 value too long
                 assert o == r
