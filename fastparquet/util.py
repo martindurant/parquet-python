@@ -7,7 +7,7 @@ import re
 import numbers
 from collections import defaultdict
 from distutils.version import LooseVersion
-import itertools
+from functools import lru_cache
 import pandas
 
 from pandas.api.types import is_categorical_dtype
@@ -58,6 +58,11 @@ def val_to_num(x, meta=None):
     """Parse a string as a number, date or timedelta if possible"""
     if meta:
         return val_from_meta(x, meta)
+    return _val_to_num(x)
+
+
+@lru_cache(1000)
+def _val_to_num(x):
     if isinstance(x, numbers.Real):
         return x
     if x in ['now', 'NOW', 'TODAY', '']:
@@ -86,6 +91,7 @@ def val_to_num(x, meta=None):
         return pd.Timedelta(x)
     except:
         return x
+
 
 def ensure_bytes(s):
     return s.encode('utf-8') if isinstance(s, str) else s

@@ -78,6 +78,8 @@ class ParquetFile(object):
     statistics: dict
         Max/min/count of each column chunk
     """
+    _pdm = None
+
     def __init__(self, fn, verify=False, open_with=default_open,
                  root=False, sep=None):
         if isinstance(fn, (tuple, list)):
@@ -149,10 +151,6 @@ class ParquetFile(object):
         self.created_by = fmd.created_by
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python" if self.created_by is not None else False
-        files = [rg.columns[0].file_path
-                 for rg in self.row_groups
-                 if rg.columns]
-        self.file_scheme = get_file_scheme(files)
         self._read_partitions()
         self._dtypes()
 
@@ -179,12 +177,12 @@ class ParquetFile(object):
         return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
 
     def _read_partitions(self):
-        paths = (
-            col.file_path or "" 
+        paths = [
+            rg.columns[0].file_path or ""
             for rg in self.row_groups
-            for col in rg.columns
-        )
-        self.cats = paths_to_cats(paths, self.file_scheme, self.partition_meta)
+            if rg.columns
+        ]
+        self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
@@ -459,16 +457,20 @@ class ParquetFile(object):
 
     @property
     def has_pandas_metadata(self):
+        if self._pdm:
+            return True
         if self.fmd.key_value_metadata is None:
             return False
         return bool(self.key_value_metadata.get('pandas', False))
 
     @property
     def pandas_metadata(self):
-        if self.has_pandas_metadata:
-            return json.loads(self.key_value_metadata['pandas'])
-        else:
-            return {}
+        if self._pdm is None:
+            if self.has_pandas_metadata:
+                self._pdm = json.loads(self.key_value_metadata['pandas'])
+            else:
+                self._pdm = {}
+        return self._pdm
 
     @property
     def categories(self):
@@ -504,14 +506,11 @@ class ParquetFile(object):
                 # uint/int/bool columns that may have nulls become float columns
                 num_nulls = 0
                 for rg in self.row_groups:
-                    chunk = rg.columns[i]
-                    if chunk.meta_data.statistics is None:
+                    st = rg.columns[i].meta_data.statistics
+                    if st is None:
                         num_nulls = True
                         break
-                    if chunk.meta_data.statistics.null_count is None:
-                        num_nulls = True
-                        break
-                    if chunk.meta_data.statistics.null_count:
+                    if st.null_count is not 0:
                         num_nulls = True
                         break
                 if num_nulls:
@@ -575,7 +574,7 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     return df, views
 
 
-def paths_to_cats(paths, file_scheme, partition_meta=None):
+def paths_to_cats(paths, partition_meta=None):
     """
     Extract categorical fields and labels from hive- or drill-style paths.
 
@@ -589,23 +588,37 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
     -------
     cats (OrderedDict[str, List[Any]]): a dict of field names and their values
     """
-    partition_meta = partition_meta or {}
-    if file_scheme in ['simple', 'flat', 'other']:
-        cats = {}
-        return cats
+    if len(paths) == 0:
+        return "empty", {}
 
+    if all(p in [None, ""] for p in paths):
+        return "simple", {}
+    paths = set(path.rsplit("/", 1)[0] if "/" in path else "" for path in paths if "/")
+    parts = [path.split("/") for path in paths if path]
+    lparts = [len(part) for part in parts]
+    if not lparts or max(lparts) < 1:
+        return "flat", {}
+    if len(set(lparts)) > 1:
+        return "other", {}
+
+    partition_meta = partition_meta or {}
     cats = OrderedDict()
-    paths = set(path.rsplit("/", 1)[0] for path in paths)
     s = ex_from_sep('/')
     string_types = set()
     meta = {"pandas_type": "string", "numpy_type": "object"}
     seen = set()
-    if file_scheme == 'hive':
-        for key, val in (
-            (k, v)
-            for path in paths
-            for k, v in s.findall(path)
-        ):
+    file_scheme = "hive"
+    for path, path_parts in zip(paths, parts):
+
+        if file_scheme == "hive":
+            hivehits = s.findall(path)
+            if hivehits and len(hivehits) != len(path_parts):
+                raise ValueError("Mixed paths")
+        if file_scheme == "drill" or not hivehits:
+            file_scheme = "drill"
+            hivehits = [(f"dir{i}", v) for i, v in enumerate(path_parts)]
+        for key, val in hivehits:
+
             if (key, val) in seen:
                 continue
             seen.add((key, val))
@@ -613,20 +626,9 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
             if isinstance(tp, str):
                 string_types.add(key)
             cats.setdefault(key, set()).add(tp)
-    else:
-        for i, val in (
-            (i, val)
-            for path in paths
-            for i, val in enumerate(path.split('/'))
-        ):
-            if (i, val) in seen:
-                continue
-            seen.add((i, val))
-            key = 'dir%i' % i
-            cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
 
     cats = OrderedDict([(key, list(v)) for key, v in cats.items()])
-    return cats
+    return file_scheme, cats
 
 
 def filter_out_stats(rg, filters, schema):
@@ -828,11 +830,21 @@ def filter_row_groups(pf, filters, as_idx: bool = False):
     Filtered list of row groups (or row group indexes)
     """
     if isinstance(filters[0][0], str):
-        # If 3rd level is already a column name, then transform
+        # If 2nd level is already a column name, then transform
         # `filters` into a list (OR condition) of list (AND condition)
         # of filters (tuple or list with 1st component being a column
         # name).
         filters = [filters]
+    # Retrieve all column names onto which are applied filters, and check they
+    # are existing columns of the dataset.
+    as_cols = pf.columns + list(pf.cats.keys())
+    known = [ands[0] in as_cols for ors in filters for ands in ors]
+    if not all(known):
+        falses = [i for i, x in enumerate(known) if not x]
+        cols_in_filter = [ands[0] for ors in filters for ands in ors]
+        wrong_cols = {cols_in_filter[i] for i in falses}
+        raise ValueError('No filter can be applied on unexisting column(s) \
+{!s}.'.format(wrong_cols))
     if as_idx:
         return [i for i, rg in enumerate(pf.row_groups) if any([
                    not(filter_out_stats(rg, and_filters, pf.schema)) and

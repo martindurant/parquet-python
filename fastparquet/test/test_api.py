@@ -494,6 +494,16 @@ def test_in_filter_rowgroups(tempdir):
     assert row_groups[1].x.tolist() == [8, 9]
 
 
+def test_unexisting_filter_cols(tempdir):
+    fn = os.path.join(tempdir, 'test.parq') 
+    df = pd.DataFrame({'a': range(5), 'b': [1, 1, 2, 2, 2]})
+    write(fn, df, file_scheme='hive', partition_on='b')
+    pf = ParquetFile(fn)
+    with pytest.raises(ValueError, match="{'c'}.$"):
+        rec_df = ParquetFile(fn).to_pandas(filters=[(('a', '>=', 0),
+                                                     ('c', '==', 0),)])
+    
+
 def test_index_not_in_columns(tempdir):
     df = pd.DataFrame({'a': ['x', 'y', 'z'], 'b': [4, 5, 6]}).set_index('a')
     write(tempdir, df, file_scheme='hive')
@@ -525,6 +535,7 @@ def test_no_index_name(tempdir):
     out = pf.to_pandas()
     assert out.index.name is None
     assert out.index.tolist() == [0, 1, 2]
+
 
 def test_input_column_list_not_mutated(tempdir):
     df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
@@ -818,6 +829,7 @@ def test_path_containing_metadata_df():
     assert list(p.columns) == ['a', 'b', 'c', '__index_level_0__']
     assert len(df) == 0
 
+
 def test_empty_df():
     p = ParquetFile(os.path.join(TEST_DATA, "empty.parquet"))
     df = p.to_pandas()
@@ -923,3 +935,11 @@ def test_pandas_metadata_inference():
     assert df.index.tolist() == [0, 1]
     assert df.index.name is None
 
+
+def test_write_index_false(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    df = pd.DataFrame(0, columns=['a'], index=range(1,3))
+    write(fn, df, write_index=False)
+    rec_df = ParquetFile(fn).to_pandas()
+    assert rec_df.index[0] == 0
+    

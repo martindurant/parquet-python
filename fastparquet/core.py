@@ -115,7 +115,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
 
         width = helper.schema_element(metadata.path_in_schema).type_length
-        values = read_plain(bytearray(raw_bytes)[io_obj.tell():],
+        values = encoding.read_plain(bytearray(raw_bytes)[io_obj.loc:],
                                      metadata.type,
                                      int(daph.num_values - num_nulls),
                                      width=width,
