@@ -26,16 +26,11 @@ def gzip_decompress(data, uncompressed_size):
 compressions['GZIP'] = gzip_compress_v3
 decompressions['GZIP'] = gzip_decompress
 
-<<<<<<< HEAD
-def snappy_decompress(data, uncompressed_size):
-    return cramjam.snappy.decompress_raw(data)
-=======
 
 def snappy_decompress(data, uncompressed_size):
     return cramjam.snappy.decompress_raw(data)
 
 
->>>>>>> main
 compressions['SNAPPY'] = cramjam.snappy.compress_raw
 decompressions['SNAPPY'] = snappy_decompress
 try:
