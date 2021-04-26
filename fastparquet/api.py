@@ -151,10 +151,6 @@ class ParquetFile(object):
         self.created_by = fmd.created_by
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python" if self.created_by is not None else False
-        files = [rg.columns[0].file_path
-                 for rg in self.row_groups
-                 if rg.columns]
-        self.file_scheme = get_file_scheme(files)
         self._read_partitions()
         self._dtypes()
 
@@ -181,12 +177,12 @@ class ParquetFile(object):
         return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
 
     def _read_partitions(self):
-        paths = (
-            col.file_path or "" 
+        paths = [
+            rg.columns[0].file_path or ""
             for rg in self.row_groups
-            for col in rg.columns
-        )
-        self.cats = paths_to_cats(paths, self.file_scheme, self.partition_meta)
+            if rg.columns
+        ]
+        self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
@@ -578,7 +574,7 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     return df, views
 
 
-def paths_to_cats(paths, file_scheme, partition_meta=None):
+def paths_to_cats(paths, partition_meta=None):
     """
     Extract categorical fields and labels from hive- or drill-style paths.
 
@@ -592,23 +588,37 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
     -------
     cats (OrderedDict[str, List[Any]]): a dict of field names and their values
     """
-    partition_meta = partition_meta or {}
-    if file_scheme in ['simple', 'flat', 'other']:
-        cats = {}
-        return cats
+    if len(paths) == 0:
+        return "empty", {}
 
+    if all(p in [None, ""] for p in paths):
+        return "simple", {}
+    parts = [path.split("/")[:-1] for path in paths]
+    lparts = [len(part)for part in parts]
+    if max(lparts) < 1:
+        return "flat", {}
+    if len(set(lparts)) > 1:
+        return "other", {}
+
+    partition_meta = partition_meta or {}
     cats = OrderedDict()
     paths = set(path.rsplit("/", 1)[0] for path in paths)
     s = ex_from_sep('/')
     string_types = set()
     meta = {"pandas_type": "string", "numpy_type": "object"}
     seen = set()
-    if file_scheme == 'hive':
-        for key, val in (
-            (k, v)
-            for path in paths
-            for k, v in s.findall(path)
-        ):
+    file_scheme = "hive"
+    for path, path_parts in zip(paths, parts):
+
+        if file_scheme == "hive":
+            hivehits = s.findall(path)
+            if hivehits and len(hivehits) != len(path_parts):
+                raise ValueError("Mixed paths")
+        if file_scheme == "drill" or not hivehits:
+            file_scheme = "drill"
+            hivehits = [(f"dir{i}", v) for i, v in enumerate(path_parts)]
+        for key, val in hivehits:
+
             if (key, val) in seen:
                 continue
             seen.add((key, val))
@@ -616,20 +626,9 @@ def paths_to_cats(paths, file_scheme, partition_meta=None):
             if isinstance(tp, str):
                 string_types.add(key)
             cats.setdefault(key, set()).add(tp)
-    else:
-        for i, val in (
-            (i, val)
-            for path in paths
-            for i, val in enumerate(path.split('/'))
-        ):
-            if (i, val) in seen:
-                continue
-            seen.add((i, val))
-            key = 'dir%i' % i
-            cats.setdefault(key, set()).add(val_to_num(val, partition_meta.get(key)))
 
     cats = OrderedDict([(key, list(v)) for key, v in cats.items()])
-    return cats
+    return file_scheme, cats
 
 
 def filter_out_stats(rg, filters, schema):
