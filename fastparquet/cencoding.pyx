@@ -1,7 +1,13 @@
+# https://cython.readthedocs.io/en/latest/src/userguide/
+#   source_files_and_compilation.html#compiler-directives
 # cython: profile=False
 # cython: linetrace=False
 # cython: binding=False
 # cython: language_level=3
+# cython: initializedcheck=False
+# cython: overflowcheck=False
+# cython: cdivision=True
+# cython: always_allow_keywords=False
 
 import cython
 cdef extern from "string.h":
@@ -15,19 +21,21 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
     The count is determined from the header and the width is used to grab the
     value that's repeated. Yields the value repeated count times.
     """
-    cdef int count, width, extra, i
+    cdef int count, width, extra, i, thedata
     cdef char *inptr, *outptr
     count = header >> 1
     width = (bit_width + 7) // 8
     extra = 4 - width
     inptr = file_obj.get_pointer()
+    outptr = <char*> &thedata
+    memcpy(outptr, inptr, width)
+    for i in range(width, 4):
+        outptr[i] = 0
+    inptr = outptr
     outptr = o.get_pointer()
     for _ in range(count):
-        memcpy(outptr, inptr, width)
-        outptr += width
-        for _ in range(extra):
-            outptr[0] = 0
-            outptr += 1
+        memcpy(outptr, inptr, 4)
+        outptr += 4
     file_obj.seek(width, 1)
     o.seek(count * 4, 1)
 
