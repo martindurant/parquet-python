@@ -601,21 +601,26 @@ def paths_to_cats(paths, partition_meta=None):
     if len(set(lparts)) > 1:
         return "other", {}
 
+    try:
+        return "hive", _path_to_cats(paths, parts, partition_meta=partition_meta)
+    except ValueError:
+        return "drill", _path_to_cats(paths, parts, "drill", partition_meta=partition_meta)
+
+
+def _path_to_cats(paths, parts, file_scheme="hive", partition_meta=None):
     partition_meta = partition_meta or {}
     cats = OrderedDict()
     s = ex_from_sep('/')
     string_types = set()
     meta = {"pandas_type": "string", "numpy_type": "object"}
     seen = set()
-    file_scheme = "hive"
     for path, path_parts in zip(paths, parts):
 
         if file_scheme == "hive":
             hivehits = s.findall(path)
-            if hivehits and len(hivehits) != len(path_parts):
-                raise ValueError("Mixed paths")
-        if file_scheme == "drill" or not hivehits:
-            file_scheme = "drill"
+            if not hivehits:
+                raise ValueError("Not a hive scheme")
+        if file_scheme == "drill":
             hivehits = [(f"dir{i}", v) for i, v in enumerate(path_parts)]
         for key, val in hivehits:
 
@@ -627,8 +632,8 @@ def paths_to_cats(paths, partition_meta=None):
                 string_types.add(key)
             cats.setdefault(key, set()).add(tp)
 
-    cats = OrderedDict([(key, list(v)) for key, v in cats.items()])
-    return file_scheme, cats
+    return OrderedDict([(key, list(v)) for key, v in cats.items()])
+
 
 
 def filter_out_stats(rg, filters, schema):
