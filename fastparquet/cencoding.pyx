@@ -21,19 +21,19 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
     The count is determined from the header and the width is used to grab the
     value that's repeated. Yields the value repeated count times.
     """
-    cdef int count, width, extra, i, thedata
+    cdef int count, width, extra, i
     cdef char *inptr, *outptr
     count = header >> 1
     width = (bit_width + 7) // 8
     extra = 4 - width
     inptr = file_obj.get_pointer()
-    outptr = <char*> &thedata
+    outptr = o.get_pointer()
     memcpy(outptr, inptr, width)
     for i in range(width, 4):
         outptr[i] = 0
     inptr = outptr
     outptr = o.get_pointer()
-    for _ in range(count):
+    for _ in range(1, count):
         memcpy(outptr, inptr, 4)
         outptr += 4
     file_obj.seek(width, 1)
@@ -174,7 +174,7 @@ cdef class NumpyIO(object):
     This class is numba-jit-able (for specific dtypes)
     """
     cdef char[:] data
-    cdef unsigned int loc, nbytes, itemsize
+    cdef unsigned int loc, nbytes
     cdef char* ptr
 
     def __init__(self, char[:] data):
@@ -182,7 +182,6 @@ cdef class NumpyIO(object):
         self.loc = 0
         self.ptr = &data[0]
         self.nbytes = self.data.nbytes
-        self.itemsize = self.data.itemsize
 
     cdef char* get_pointer(self):
         return self.ptr + self.loc
@@ -192,15 +191,11 @@ cdef class NumpyIO(object):
         return self.nbytes
 
     @cython.wraparound(False)
-    @cython.boundscheck(False)
     cpdef char[:] read(self, int x):
-        if self.loc + x > self.nbytes:
-            x = self.nbytes - self.loc
-        if x > 0:
-            self.loc += x
-        else:
-            x = self.nbytes - self.loc
-        return self.data[self.loc - x:self.loc]
+        cdef char[:] out
+        out = self.data[self.loc:self.loc + x]
+        self.seek(x, 1)
+        return out
 
     cpdef char read_byte(self):
         cdef char out
@@ -211,10 +206,11 @@ cdef class NumpyIO(object):
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cdef void write(self, char[:] d):
-        cdef int l
-        l = len(d)
+        cdef int l, i
+        l = d.shape[0]
         self.loc += l
-        self.ptr[self.loc-l:self.loc] = d
+        for i in range(d.shape[0]):
+            self.write_byte(d[i])
 
     cdef void write_byte(self, char b):
         if self.loc >= self.nbytes:
@@ -223,11 +219,10 @@ cdef class NumpyIO(object):
         self.ptr[self.loc] = b
         self.loc += 1
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
     cdef void write_many(self, char b, int count):
-        self.data[self.loc:self.loc+count] = b
-        self.loc += count
+        cdef int i
+        for i in range(count):
+            self.write_byte(b)
 
     cpdef int tell(self):
         return self.loc
@@ -243,7 +238,6 @@ cdef class NumpyIO(object):
             self.loc = self.nbytes
 
     @cython.wraparound(False)
-    @cython.boundscheck(False)
     cpdef char[:] so_far(self):
         """ In write mode, the data we have gathered until now
         """
@@ -357,7 +351,8 @@ cpdef dict read_thrift(NumpyIO data):
 
 cdef list read_list(NumpyIO data):
     cdef char byte, typ
-    cdef int size, bsize, _
+    cdef int size, bsize
+    cdef long _
     byte = data.read_byte()
     if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)

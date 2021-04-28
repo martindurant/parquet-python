@@ -12,3 +12,7 @@ fastparquet.egg-info
 .idea
 .cached
 /.cache
+*.c
+*.html
+.DS_Store
+__pycache__/

@@ -177,11 +177,7 @@ class ParquetFile(object):
         return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
 
     def _read_partitions(self):
-        paths = [
-            rg.columns[0].file_path or ""
-            for rg in self.row_groups
-            if rg.columns
-        ]
+        paths = [rg.columns[0].file_path or "" for rg in self.row_groups if rg.columns]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def row_group_filename(self, rg):
@@ -607,7 +603,7 @@ def paths_to_cats(paths, partition_meta=None):
     string_types = set()
     meta = {"pandas_type": "string", "numpy_type": "object"}
     seen = set()
-    file_scheme = "hive"
+    file_scheme = "hive" if all("=" in path for path in paths) else "drill"
     for path, path_parts in zip(paths, parts):
 
         if file_scheme == "hive":
