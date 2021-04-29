@@ -22,6 +22,7 @@ from .util import (default_open, default_mkdirs,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata, path_string)
 from .speedups import array_encode_utf8, pack_byte_array
+from .cencoding import encode_rle_bp as _encode_rle_bp
 from decimal import Decimal
 
 MARKER = b'PAR1'
@@ -412,7 +413,7 @@ def encode_rle(data, se, fixed_text=None):
             width += 1
         l = (len(data) * width + 7) // 8 + 10
         o = encoding.Numpy8(np.empty(l, dtype='uint8'))
-        encode_rle_bp(data, width, o)
+        _encode_rle_bp(data, width, o)
         return o.so_far().tobytes()
 
 
@@ -926,7 +927,7 @@ def write(filename, data, row_group_offsets=50000000,
     if isinstance(row_group_offsets, int):
         if not row_group_offsets:
             row_group_offsets = [0]
-        else: 
+        else:
             l = len(data)
             nparts = max((l - 1) // row_group_offsets + 1, 1)
             chunksize = max(min((l - 1) // nparts + 1, l), 1)
@@ -981,7 +982,7 @@ def write(filename, data, row_group_offsets=50000000,
 part files. This situation is not allowed with use of `append='overwrite'`.")
                 i_offset = 0
             else:
-                i_offset = find_max_part(fmd.row_groups)                
+                i_offset = find_max_part(fmd.row_groups)
         else:
             i_offset = 0
 
@@ -1004,7 +1005,7 @@ part files. This situation is not allowed with use of `append='overwrite'`.")
                     # Get 'new' combinations of values from columns listed in
                     # 'partition_on',along with corresponding row groups.
                     new_rgps = {'_'.join(rg.columns[0].file_path.split('/')[:-1]): rg \
-                              for rg in rgs}                    
+                              for rg in rgs}
                     for part_val in new_rgps:
                         if part_val in exist_rgps:
                             # Replace existing row group metadata with new ones.
@@ -1019,7 +1020,7 @@ part files. This situation is not allowed with use of `append='overwrite'`.")
                             # Keep 'exist_rgps' list representative for next 'replace'
                             # or 'insert' cases.
                             exist_rgps.insert(row_group_index, part_val)
-                    
+
             else:
                 partname = join_path(filename, part)
                 with open_with(partname, 'wb') as f2:
