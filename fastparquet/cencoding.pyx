@@ -361,25 +361,17 @@ cdef list read_list(NumpyIO data):
     return out
 
 
-cdef void write_length(int l, NumpyIO o):
-    cdef int rbm, i
-    right_byte_mask = 0b11111111
-    for i in range(4):
-        o.write_byte(l & rbm)
-        l >>= 8
-
-
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef void encode_rle_bp(int[:] data, int width, NumpyIO o, int withlength):
+cpdef void encode_rle_bp(int[:] data, int width, NumpyIO o, int withlength = 0):
     cdef unsigned int start, end
     if withlength:
-        start = o.loc
-        o.loc = o.loc + 4
+        start = o.tell()
+        o.seek(4, 1)
     if True:
         encode_bitpacked(data, width, o)
     if withlength:
-        end = o.loc
-        o.loc = start
-        write_length(end - start, o)
-        o.loc = end
+        end = o.tell()
+        o.seek(start)
+        o.write_int(end - start)
+        o.seek(end)
