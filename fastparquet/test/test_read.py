@@ -48,6 +48,7 @@ def test_read_footer():
     assert {s.name for s in p._schema} == snames
     assert set(p.columns) == snames - {"schema"}
 
+
 files = [os.path.join(TEST_DATA, p) for p in
          ["gzip-nation.impala.parquet", "nation.dict.parquet",
           "nation.impala.parquet", "nation.plain.parquet",
@@ -330,6 +331,7 @@ def test_multi_index_category(tempdir):
     assert dg.index.levels[1].name == 'b'
     assert dg.equals(df)
 
+
 def test_no_columns(tempdir):
     # https://github.com/dask/fastparquet/issues/361
     # Create a non-empty DataFrame, then select no columns. That way we get
@@ -344,6 +346,7 @@ def test_no_columns(tempdir):
     expected = pd.DataFrame({"A": [1, 2]})[[]]
     assert len(result) == 2
     pd.testing.assert_frame_equal(result, expected)
+
 
 def test_map_multipage(tempdir):
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "map-test.snappy.parquet"))
@@ -361,6 +364,7 @@ def test_map_multipage(tempdir):
     assert sorted(df["topics"].iloc[0].keys()) == sorted(first_row_keys)
     assert sorted(df["topics"].iloc[-1].keys()) == sorted(last_row_keys)
     assert df.isnull().sum().sum() == 0 # ensure every row got converted
+
 
 def test_map_last_row_split(tempdir):
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "test-map-last-row-split.parquet"))

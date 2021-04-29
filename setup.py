@@ -67,6 +67,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     packages=['fastparquet'],
@@ -76,24 +77,13 @@ setup(
         'pytest-runner',
     ] + [p for p in install_requires if p.startswith('numpy')],
     extras_require={
-        'brotli': ['brotli'],
-        'lz4': ['lz4 >= 0.19.1'],
         'lzo': ['python-lzo'],
-        'snappy': ['python-snappy'],
-        'zstandard': ['zstandard'],
-        'zstd': ['zstd'],
     },
     tests_require=[
         'pytest',
-        'python-snappy',
-        'lz4 >= 0.19.1',
-        'zstandard',
-        'zstd',
     ],
     long_description=(open('README.rst').read() if os.path.exists('README.rst')
                       else ''),
-    package_data={'fastparquet': ['*.thrift']},
-    include_package_data=True,
     exclude_package_data={'fastparquet': ['test/*']},
     python_requires=">=3.6,",
     **extra

@@ -21,23 +21,14 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
     The count is determined from the header and the width is used to grab the
     value that's repeated. Yields the value repeated count times.
     """
-    cdef int count, width, extra, i
-    cdef char *inptr, *outptr
+    cdef int count, width, i, data = 0
     count = header >> 1
     width = (bit_width + 7) // 8
-    extra = 4 - width
-    inptr = file_obj.get_pointer()
-    outptr = o.get_pointer()
-    memcpy(outptr, inptr, width)
-    for i in range(width, 4):
-        outptr[i] = 0
-    inptr = outptr
-    outptr = o.get_pointer()
-    for _ in range(1, count):
-        memcpy(outptr, inptr, 4)
-        outptr += 4
-    file_obj.seek(width, 1)
-    o.seek(count * 4, 1)
+    for i in range(width):
+        data <<= 8
+        data |= (<int>file_obj.read_byte()) & 0xff
+    for i in range(count):
+        o.write_int(data)
 
 
 cpdef int width_from_max_int(long value):
@@ -54,19 +45,17 @@ cdef int _mask_for_bits(int i):
     return (1 << i) - 1
 
 
-cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):
+cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o):
     """
     Read values packed into width-bits each (which can be >8)
     """
-    cdef unsigned int count, mask, data, offset
+    cdef unsigned int count, mask, data
     cdef unsigned char left = 8, right = 0
-    cdef int* ptr
+    # TODO: special case for width=4, 8
 
-    ptr = <int*>o.get_pointer()
-    count = ((<int>header & 0xff) >> 1) * 8
-    offset = count * 4
+    count = ((header & 0xff) >> 1) * 8
     mask = _mask_for_bits(width)
-    data = 0xff & file_obj.read_byte()
+    data = 0xff & <int>file_obj.read_byte()
     while count:
         if right > 8:
             data >>= 8
@@ -76,22 +65,21 @@ cpdef void read_bitpacked(NumpyIO file_obj, char header, int width, NumpyIO o):
             data |= (file_obj.read_byte() & 0xff) << left
             left += 8
         else:
-            ptr[0] = <int>(data >> right & mask)
-            ptr += 1
+            o.write_int(<int>(data >> right & mask))
             count -= 1
             right += width
-    o.seek(offset, 1)  # sets .loc
 
 
 cpdef unsigned long read_unsigned_var_int(NumpyIO file_obj):
     """Read a value using the unsigned, variable int encoding.
     file-obj is a NumpyIO of bytes; avoids struct to allow numba-jit
     """
-    cdef int result = 0, shift = 0
+    cdef unsigned long result = 0
+    cdef int shift = 0
     cdef char byte
     while True:
         byte = file_obj.read_byte()
-        result |= (<int>(byte & 0x7F) << shift)
+        result |= (<long>(byte & 0x7F) << shift)
         if (byte & 0x80) == 0:
             break
         shift += 7
@@ -106,31 +94,19 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
 
     file-obj is a NumpyIO of bytes; o if an output NumpyIO of int32
 
-    The caller can tell the number of elements in the output by lookint
+    The caller can tell the number of elements in the output by looking
     at .tell().
     """
-    cdef int start
-    cdef unsigned long header
+    cdef int start, header
     if length is False:
-        length = read_length(io_obj)
+        length = io_obj.read_int()
     start = io_obj.tell()
     while io_obj.tell() - start < length and o.tell() < o.nbytes:
-        header = read_unsigned_var_int(io_obj)
+        header = <int>read_unsigned_var_int(io_obj)
         if header & 1 == 0:
             read_rle(io_obj, header, width, o)
         else:
             read_bitpacked(io_obj, header, width, o)
-
-
-cpdef int read_length(NumpyIO file_obj):
-    """ Numpy trick to get a 32-bit length from four bytes
-
-    Equivalent to struct.unpack('<i'), but suitable for numba-jit
-    """
-    cdef int out
-    out = (<int*> file_obj.ptr)[0]
-    file_obj.seek(4, 1)
-    return out
 
 
 cdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
@@ -169,9 +145,9 @@ def encode_bitpacked(int[:] values, int width, NumpyIO o):  # pragma: no cover
 
 cdef class NumpyIO(object):
     """
-    Read or write from a numpy arra like a file object
+    Read or write from a numpy array like a file object
 
-    This class is numba-jit-able (for specific dtypes)
+    The main purpose is to keep track of the current location in the memory
     """
     cdef char[:] data
     cdef unsigned int loc, nbytes
@@ -181,7 +157,7 @@ cdef class NumpyIO(object):
         self.data = data
         self.loc = 0
         self.ptr = &data[0]
-        self.nbytes = self.data.nbytes
+        self.nbytes = data.shape[0]
 
     cdef char* get_pointer(self):
         return self.ptr + self.loc
@@ -194,7 +170,7 @@ cdef class NumpyIO(object):
     cpdef char[:] read(self, int x):
         cdef char[:] out
         out = self.data[self.loc:self.loc + x]
-        self.seek(x, 1)
+        self.loc += x
         return out
 
     cpdef char read_byte(self):
@@ -203,12 +179,17 @@ cdef class NumpyIO(object):
         self.loc += 1
         return out
 
+    cpdef int read_int(self):
+        cdef int i
+        if self.nbytes - self.loc < 4:
+            return 0
+        i = (<int*> self.get_pointer())[0]
+        self.loc += 4
+        return i
+
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cdef void write(self, char[:] d):
-        cdef int l, i
-        l = d.shape[0]
-        self.loc += l
         for i in range(d.shape[0]):
             self.write_byte(d[i])
 
@@ -219,6 +200,12 @@ cdef class NumpyIO(object):
         self.ptr[self.loc] = b
         self.loc += 1
 
+    cpdef void write_int(self, int i):
+        if self.nbytes - self.loc < 4:
+            return
+        (<int*> self.get_pointer())[0] = i
+        self.loc += 4
+
     cdef void write_many(self, char b, int count):
         cdef int i
         for i in range(count):
@@ -227,7 +214,7 @@ cdef class NumpyIO(object):
     cpdef int tell(self):
         return self.loc
 
-    cpdef void seek(self, int loc, int whence):
+    cpdef void seek(self, int loc, int whence=0):
         if whence == 0:
             self.loc = loc
         elif whence == 1:
@@ -332,7 +319,7 @@ cpdef dict read_thrift(NumpyIO data):
         if bit == 1:
             out[id] = True
         elif bit == 2:
-            out[id] == False
+            out[id] = False
         elif bit == 5 or bit == 6:
             out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 7:
@@ -351,8 +338,7 @@ cpdef dict read_thrift(NumpyIO data):
 
 cdef list read_list(NumpyIO data):
     cdef char byte, typ
-    cdef int size, bsize
-    cdef long _
+    cdef int size, bsize, _
     byte = data.read_byte()
     if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)

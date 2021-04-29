@@ -32,7 +32,14 @@ def snappy_decompress(data, uncompressed_size):
 
 
 compressions['SNAPPY'] = cramjam.snappy.compress_raw
-decompressions['SNAPPY'] = snappy_decompress
+
+def sd(data, size):
+    import numpy as np
+    out = np.empty(size, dtype="uint8")
+    cramjam.snappy.decompress_raw_into(data, out)
+    return out
+
+decompressions['SNAPPY'] = sd
 try:
     import lzo
     def lzo_decompress(data, uncompressed_size):
