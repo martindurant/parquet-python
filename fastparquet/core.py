@@ -26,6 +26,11 @@ def _read_page(file_obj, page_header, column_metadata):
         page_header.uncompressed_page_size,
         column_metadata.codec,
     )
+
+    assert len(raw_bytes) == page_header.uncompressed_page_size, \
+        "found {0} raw bytes (expected {1})".format(
+            len(raw_bytes),
+            page_header.uncompressed_page_size)
     return raw_bytes
 
 
@@ -94,7 +99,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     """
     daph = header.data_page_header
     raw_bytes = _read_page(f, header, metadata)
-    ba = bytearray(raw_bytes)  # must not get collected while used by io_obj
+    ba = bytearray(raw_bytes)
     io_obj = encoding.NumpyIO(ba)
 
     repetition_levels = read_rep(io_obj, daph, helper, metadata)
@@ -109,6 +114,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     nval = daph.num_values - num_nulls
     se = helper.schema_element(metadata.path_in_schema)
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
+
         width = helper.schema_element(metadata.path_in_schema).type_length
         values = read_plain(bytearray(raw_bytes)[io_obj.tell():],
                                      metadata.type,
@@ -122,13 +128,17 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
             bit_width = se.type_length
         else:
             bit_width = io_obj.read_byte()
-        if bit_width:
+        if bit_width in [8, 16, 32] and selfmade:
+            num = (encoding.read_unsigned_var_int(io_obj) >> 1) * 8
+            values = np.frombuffer(io_obj.read(num * bit_width // 8),
+                                   dtype='int%i' % bit_width)
+        elif bit_width:
             values = np.empty(daph.num_values-num_nulls+7, dtype=np.int32)
             o = encoding.NumpyIO(values.view('uint8'))
             # length is simply "all data left in this page"
             encoding.read_rle_bit_packed_hybrid(
                         io_obj, bit_width, io_obj.len-io_obj.tell(), o=o)
-            values = values[:nval]
+            values = values.data[:nval]
         else:
             values = np.zeros(nval, dtype=np.int8)
     else:
