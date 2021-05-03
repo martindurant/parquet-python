@@ -18,6 +18,7 @@ def unpack_boolean(data, out):
 
 
 def read_plain_boolean(raw_bytes, count):
+    # scrap this in favour of np.unpackbits, which is actually faster
     """Read `count` booleans using the plain encoding."""
     data = np.frombuffer(raw_bytes, dtype='uint8')
     padded = len(raw_bytes) * 8

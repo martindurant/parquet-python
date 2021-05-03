@@ -197,6 +197,8 @@ def convert(data, se):
         if type in revmap:
             out = data.values.astype(revmap[type], copy=False)
         elif type == parquet_thrift.Type.BOOLEAN:
+            # TODO: with our own bitpack writer, no need to copy for
+            #  the padding
             padded = np.lib.pad(data.values, (0, 8 - (len(data) % 8)),
                                 'constant', constant_values=(0, 0))
             out = np.packbits(padded.reshape(-1, 8)[:, ::-1].ravel())
@@ -205,9 +207,11 @@ def convert(data, se):
     elif "S" in str(dtype)[:2] or "U" in str(dtype)[:2]:
         out = data.values
     elif dtype == "O":
+        # TODO: nullable types
         try:
             if converted_type == parquet_thrift.ConvertedType.UTF8:
                 # getattr for new pandas StringArray
+                # TODO: to bytes in one step
                 out = array_encode_utf8(data)
             elif converted_type == parquet_thrift.ConvertedType.DECIMAL:
                 out = data.values.astype(np.float64, copy=False)
@@ -215,12 +219,15 @@ def convert(data, se):
                 if type in revmap:
                     out = data.values.astype(revmap[type], copy=False)
                 elif type == parquet_thrift.Type.BOOLEAN:
+                    # TODO: with our own bitpack writer, no need to copy for
+                    #  the padding
                     padded = np.lib.pad(data.values, (0, 8 - (len(data) % 8)),
                                         'constant', constant_values=(0, 0))
                     out = np.packbits(padded.reshape(-1, 8)[:, ::-1].ravel())
                 else:
                     out = data.values
             elif converted_type == parquet_thrift.ConvertedType.JSON:
+                # TODO: avoid list, use better JSON
                 out = np.array([json.dumps(x).encode('utf8') for x in data],
                                dtype="O")
             elif converted_type == parquet_thrift.ConvertedType.BSON:
@@ -236,6 +243,7 @@ def convert(data, se):
     elif str(dtype) == "string":
         try:
             if converted_type == parquet_thrift.ConvertedType.UTF8:
+                # TODO: into bytes in one step
                 out = array_encode_utf8(data)
             elif converted_type is None:
                 out = data.values
@@ -249,15 +257,17 @@ def convert(data, se):
                              '%s' % (data.name, ct, e))
 
     elif converted_type == parquet_thrift.ConvertedType.TIMESTAMP_MICROS:
+        # TODO: shift inplace
         out = np.empty(len(data), 'int64')
         time_shift(data.values.view('int64'), out)
     elif converted_type == parquet_thrift.ConvertedType.TIME_MICROS:
+        # TODO: shift inplace
         out = np.empty(len(data), 'int64')
         time_shift(data.values.view('int64'), out)
     elif type == parquet_thrift.Type.INT96 and dtype.kind == 'M':
         ns_per_day = (24 * 3600 * 1000000000)
         day = data.values.view('int64') // ns_per_day + 2440588
-        ns = (data.values.view('int64') % ns_per_day)# - ns_per_day // 2
+        ns = (data.values.view('int64') % ns_per_day)  # - ns_per_day // 2
         out = np.empty(len(data), dtype=[('ns', 'i8'), ('day', 'i4')])
         out['ns'] = ns
         out['day'] = day
@@ -403,8 +413,11 @@ def encode_rle(data, se, fixed_text=None):
         o = encoding.Numpy8(np.empty(10, dtype=np.uint8))
         bit_packed_count = (len(data) + 7) // 8
         encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
+        # TODO: `tobytes` makes copy, and adding bytes also makes copy
         return o.so_far().tobytes() + data.values.tostring()
     else:
+        # TODO: probably width is always 1
+        #  if not, consider rounding width up to nearest power of 2
         m = data.max()
         width = 0
         while m:
@@ -413,18 +426,21 @@ def encode_rle(data, se, fixed_text=None):
         l = (len(data) * width + 7) // 8 + 10
         o = encoding.Numpy8(np.empty(l, dtype='uint8'))
         encode_rle_bp(data, width, o)
+        # TODO: `tobytes` makes copy
         return o.so_far().tobytes()
 
 
 def encode_dict(data, se):
-    """ The data part of dictionary encoding is always int8, with RLE/bitpack
+    """ The data part of dictionary encoding is always int8/16, with RLE/bitpack
     """
     width = data.values.dtype.itemsize * 8
     o = encoding.Numpy8(np.empty(10, dtype=np.uint8))
     o.write_byte(width)
     bit_packed_count = (len(data) + 7) // 8
     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
+    # TODO: `tobytes` makes copy, and adding bytes also makes copy
     return o.so_far().tobytes() + data.values.tobytes()
+
 
 encode = {
     'PLAIN': encode_plain,
@@ -526,6 +542,7 @@ def write_column(f, data, selement, compression=None):
                 num_values=len(data.cat.categories),
                 encoding=parquet_thrift.Encoding.PLAIN)
         bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
+        # TODO: copy on bytes addition
         bdata += 8 * b'\x00'
         l0 = len(bdata)
         if compression:
@@ -563,8 +580,11 @@ def write_column(f, data, selement, compression=None):
         # disallow bitpacking for compatability
         data = data.astype('int32')
 
+    # TODO: here we make a copy of encoded data even if deps
+    #  and reps are empty
     bdata = definition_data + repetition_data + encode[encoding](
             data, selement)
+    # here we make another copy
     bdata += 8 * b'\x00'
     try:
         if encoding != 'PLAIN_DICTIONARY' and num_nulls == 0:

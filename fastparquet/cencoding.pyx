@@ -5,7 +5,10 @@
 # cython: binding=False
 # cython: language_level=3
 # cython: initializedcheck=False
+# cython: boundscheck=False
+# cython: wraparound=False
 # cython: overflowcheck=False
+# cython: initializedcheck=False
 # cython: cdivision=True
 # cython: always_allow_keywords=False
 
@@ -43,6 +46,80 @@ cpdef int width_from_max_int(long value):
 cdef int _mask_for_bits(int i):
     """Generate a mask to grab `i` bits from an int value."""
     return (1 << i) - 1
+
+
+cpdef void read_bitpacked8(NumpyIO file_obj, int count, NumpyIO o):
+    # return out[:] = np.frombuffer(file_obj.read(count), count, dtype=np.uint8)
+    cdef int i
+    cdef char* outptr
+    cdef char* inptr
+    inptr = file_obj.get_pointer()
+    outptr = o.get_pointer()
+    for i in range(count):
+        outptr[0] = inptr[0]
+        outptr += 1
+        inptr += 1
+    file_obj.loc += count
+    o.loc += count
+
+
+cpdef void read_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
+    # implementation of np.unpackbits with output array. Output is int8 array
+    cdef char * inptr
+    cdef char * outptr
+    cdef unsigned char data
+    cdef int counter = count, i
+    outptr = o.get_pointer()
+    inptr = file_obj.get_pointer()
+    for counter in range(count // 8):
+        # whole bytes
+        data = inptr[0]
+        inptr += 1
+        for i in range(8):
+            outptr[0] = data & 0x80 > 0
+            data <<= 1
+            outptr += 1
+    if count % 8:
+        # remaining values in the last byte
+        data = <int>inptr[0]
+        inptr += 1
+        for i in range(count % 8):
+            outptr[0] = data & 0x80 > 0
+            data <<= 1
+            outptr += 1
+    file_obj.loc += (count + 7) // 8
+    o.loc += count
+
+
+cpdef void write_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
+    # implementation of np.packbits with output array. Input is int8 array
+    cdef char * inptr
+    cdef char * outptr
+    cdef char data = 0
+    cdef int counter, i
+    cdef long indata
+    outptr = o.get_pointer()
+    inptr = file_obj.get_pointer()
+    for counter in range(count // 8):
+        # fetch a long in one op, instead of byte by byte
+        indata = (<long*>inptr)[0]
+        inptr += 8
+        for i in range(8):
+            data = data << 1 | (indata & 1)
+            indata >>= 8
+        outptr[0] = data
+        outptr += 1
+    if count % 8:
+        # leftover partial byte
+        data = 0
+        for i in range(count % 8):
+            data = data << 1 | (inptr[0] != 0)
+            inptr += 1
+        outptr[0] = data
+        outptr += 1
+    file_obj.loc += count * 4
+    o.loc += (count + 7) // 8
+
 
 
 cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o):
@@ -142,7 +219,7 @@ def encode_bitpacked(int[:] values, int width, NumpyIO o):  # pragma: no cover
         o.write_byte(bits)
 
 
-
+@cython.freelist(100)
 cdef class NumpyIO(object):
     """
     Read or write from a numpy array like a file object
@@ -153,7 +230,7 @@ cdef class NumpyIO(object):
     cdef unsigned int loc, nbytes
     cdef char* ptr
 
-    def __init__(self, char[:] data):
+    def __cinit__(self, char[:] data):
         self.data = data
         self.loc = 0
         self.ptr = &data[0]
@@ -166,7 +243,6 @@ cdef class NumpyIO(object):
     def len(self):
         return self.nbytes
 
-    @cython.wraparound(False)
     cpdef char[:] read(self, int x):
         cdef char[:] out
         out = self.data[self.loc:self.loc + x]
@@ -187,11 +263,9 @@ cdef class NumpyIO(object):
         self.loc += 4
         return i
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
-    cdef void write(self, char[:] d):
-        for i in range(d.shape[0]):
-            self.write_byte(d[i])
+    cpdef void write(self, char[:] d):
+        self.data[self.loc: self.loc + d.shape[0]] = d
+        self.loc += d.shape[0]
 
     cdef void write_byte(self, char b):
         if self.loc >= self.nbytes:

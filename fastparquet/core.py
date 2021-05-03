@@ -161,6 +161,7 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, 
     """
     raw_bytes = _read_page(file_obj, page_header, column_metadata)
     if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
+        # TODO: copies raw_bytes and also copies array (use copy=False)
         values = np.array(unpack_byte_array(bytearray(raw_bytes),
                           page_header.dictionary_page_header.num_values, utf=utf), dtype='object')
     else:
@@ -234,6 +235,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
     row_idx = 0
     while True:
         if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+            # TODO: np.array copies by default
             dic2 = np.array(read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0))
             dic2 = convert(dic2, se)
             if use_cat and (dic2 != dic).any():
@@ -268,6 +270,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
             row_idx = 1 + _assemble_objects(assign, defi, rep, val, dic, d,
                                              null, null_val, max_defi, row_idx)
         elif defi is not None:
+            # TODO: if output is NULLABLE (e.g., IntegerArray) can use
+            #  fastpath here, but need nulls array
             part = assign[num:num+len(defi)]
             part[defi != max_defi] = my_nan
             if d and not use_cat:
@@ -277,6 +281,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             else:
                 part[defi == max_defi] = val
         else:
+            # TODO: can use, fastpath here, may need nulls array if NULLABLE
             piece = assign[num:num+len(val)]
             if use_cat and not d:
                 # only possible for multi-index
@@ -336,6 +341,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
                  catdef=out.get(name+'-catdef', None))
 
         if _is_map_like(schema_helper, column):
+            # TODO: could be done in fast loop in _assemble_objects?
             if name not in maps:
                 maps[name] = out[name].copy()
             else:

@@ -94,7 +94,9 @@ def convert(data, se, timestamp96=True):
     if ctype == parquet_thrift.ConvertedType.UTF8:
         if data.dtype != "O":
             # stats pairs
+            # TODO: generator would do instead of list
             return np.array([o.decode() for o in data])
+        # TODO why call array again here?
         return np.array(data)  # was already converted in speedups
     if ctype == parquet_thrift.ConvertedType.DECIMAL:
         scale_factor = 10**-se.scale
@@ -103,6 +105,7 @@ def convert(data, se, timestamp96=True):
         else:  # byte-string
             # NB: general but slow method
             # could optimize when data.dtype.itemsize <= 8
+            # TODO: easy cythonize (but rare)
             return np.array([
                 int.from_bytes(
                     data.data[i:i + 1], byteorder='big', signed=True
@@ -110,11 +113,13 @@ def convert(data, se, timestamp96=True):
                 for i in range(len(data))
             ])
     elif ctype == parquet_thrift.ConvertedType.DATE:
+        # TODO: multiply inplace
         return (data * DAYS_TO_MILLIS).view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
         out = np.empty(len(data), dtype='int64')
         if sys.platform == 'win32':
             data = data.astype('int64')
+        # TODO: here and following blocks: multiply inplace
         time_shift(data, out, 1000000)
         return out.view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MILLIS:
@@ -130,6 +135,8 @@ def convert(data, se, timestamp96=True):
         time_shift(data, out)
         return out.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.UINT_8:
+        # TODO: return strided views?
+        #  data.view('uint8')[::data.itemsize].view(out_dtype)
         return data.astype(np.uint8)
     elif ctype == parquet_thrift.ConvertedType.UINT_16:
         return data.astype(np.uint16)
@@ -150,6 +157,8 @@ def convert(data, se, timestamp96=True):
             out = np.empty(len(data), dtype="O")
         else:
             out = data
+        # TODO: unnecessary list - loop would save memory, and can cythonise
+        #  and could use better JSON codec (ujson, rapidjson, orjson)
         out[:] = [json.loads(d.decode('utf8')) for d in data]
         return out
     elif ctype == parquet_thrift.ConvertedType.BSON:
@@ -157,6 +166,8 @@ def convert(data, se, timestamp96=True):
             out = np.empty(len(data), dtype="O")
         else:
             out = data
+        # TODO: unnecessary list - loop would save memory, and can cythonise
+        #  and could use better BSON lib (bson-numpy, python-bsonjs)?
         out[:] = [unbson(d) for d in data]
         return out
     elif ctype == parquet_thrift.ConvertedType.INTERVAL:
