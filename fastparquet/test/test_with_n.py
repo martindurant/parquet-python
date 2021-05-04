@@ -53,7 +53,6 @@ def test_hybrid():
             if counter > count // 20:
                 break
             (data, width, length, res) = eval(l)
-            print("TEST", counter, width, length)
             i = encoding.NumpyIO(bytearray(data))
             o = encoding.NumpyIO(results.view('uint8'))
             encoding.read_rle_bit_packed_hybrid(i, width, length or 0, o)

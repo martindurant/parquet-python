@@ -208,6 +208,7 @@ def test_nulls_roundtrip(tempdir):
         assert (df[col] == data[col])[~data[col].isnull()].all()
         assert (data[col].isnull() == df[col].isnull()).all()
 
+
 def test_decimal_roundtrip(tempdir):
     import decimal
     def decimal_convert(x):

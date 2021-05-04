@@ -150,7 +150,7 @@ def test_tz_nonstring(tmpdir):
     # https://github.com/dask/fastparquet/issues/578
     import uuid
 
-    event={}
+    event = {}
     event_id = str(uuid.uuid4())
     event['id'] = [event_id]
     event['site_name'] = ['TestString']
@@ -160,7 +160,6 @@ def test_tz_nonstring(tmpdir):
     event_df = pd.DataFrame(event)
     event_df['start_time'] = pd.to_datetime(event_df['start_time'])
     event_df['end_time'] = pd.to_datetime(event_df['end_time'])
-    event_df.info()
     fn = '{}/{}.parquet'.format(tmpdir, event_id)
     event_df.to_parquet(fn, compression='uncompressed', engine='fastparquet')
 
