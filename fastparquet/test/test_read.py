@@ -59,7 +59,6 @@ expected = pd.read_csv(csvfile, delimiter="|", index_col=0, names=cols)
 
 
 def test_read_s3(s3):
-    s3fs = pytest.importorskip('s3fs')
     myopen = s3.open
     pf = fastparquet.ParquetFile(TEST_DATA+'/split/_metadata', open_with=myopen)
     df = pf.to_pandas()

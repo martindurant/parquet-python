@@ -12,16 +12,18 @@ import pytest
 
 from fastparquet.util import default_mkdirs
 from fastparquet.test.util import s3, tempdir, sql, TEST_DATA
+from fastparquet import cencoding
 
 
 def test_uvarint():
     values = np.random.randint(0, 15000, size=100)
-    o = encoding.Numpy8(np.zeros(30, dtype=np.uint8))
+    buf = np.zeros(30, dtype=np.uint8)
+    o = cencoding.NumpyIO(buf)
     for v in values:
-        o.loc = 0
-        writer.encode_unsigned_varint(v, o)
-        o.loc = 0
-        out = encoding.read_unsigned_var_int(o)
+        o.seek(0)
+        cencoding.encode_unsigned_varint(v, o)
+        o.seek(0)
+        out = cencoding.read_unsigned_var_int(o)
         assert v == out
 
 
@@ -29,26 +31,29 @@ def test_bitpack():
     for _ in range(10):
         values = np.random.randint(0, 15000, size=np.random.randint(10, 100),
                                    dtype=np.int32)
-        width = encoding.width_from_max_int(values.max())
-        o = encoding.Numpy8(np.zeros(900, dtype=np.uint8))
-        writer.encode_bitpacked(values, width, o)
-        o.loc = 0
-        head = encoding.read_unsigned_var_int(o)
-        out = encoding.Numpy32(np.zeros(300, dtype=np.int32))
-        encoding.read_bitpacked(o, head, width, out)
-        assert (values == out.so_far()[:len(values)]).all()
-        assert out.so_far()[len(values):].sum() == 0  # zero padding
-        assert out.loc - len(values) < 8
+        width = cencoding.width_from_max_int(values.max())
+        buf = np.zeros(900, dtype=np.uint8)
+        o = cencoding.NumpyIO(buf)
+        cencoding.encode_bitpacked(values, width, o)
+        o.seek(0)
+        head = cencoding.read_unsigned_var_int(o)
+        buf2 = np.zeros(300, dtype=np.int32)
+        out = cencoding.NumpyIO(buf2.view("uint8"))
+        cencoding.read_bitpacked(o, head, width, out)
+        assert (values == buf2[:len(values)]).all()
+        assert buf2[len(values):].sum() == 0  # zero padding
+        assert out.tell() // 8 - len(values) < 8
 
 
 def test_length():
     lengths = np.random.randint(0, 15000, size=100)
-    o = encoding.Numpy8(np.zeros(900, dtype=np.uint8))
+    buf = np.zeros(900, dtype=np.uint8)
+    o = cencoding.NumpyIO(buf)
     for l in lengths:
-        o.loc = 0
-        writer.write_length(l, o)
-        o.loc = 0
-        out = encoding.read_length(o)
+        o.seek(0)
+        o.write_int(l)
+        o.seek(0)
+        out = buf.view('int32')[0]
         assert l == out
 
 
@@ -56,17 +61,19 @@ def test_rle_bp():
     for _ in range(10):
         values = np.random.randint(0, 15000, size=np.random.randint(10, 100),
                                    dtype=np.int32)
-        out = encoding.Numpy32(np.empty(len(values) + 5, dtype=np.int32))
-        o = encoding.Numpy8(np.zeros(900, dtype=np.uint8))
-        width = encoding.width_from_max_int(values.max())
+        buf = np.empty(len(values) + 5, dtype=np.int32)
+        out = cencoding.NumpyIO(buf.view('uint8'))
+        buf2 = np.zeros(900, dtype=np.uint8)
+        o = cencoding.NumpyIO(buf2)
+        width = cencoding.width_from_max_int(values.max())
 
         # without length
-        writer.encode_rle_bp(values, width, o)
-        l = o.loc
-        o.loc = 0
+        cencoding.encode_rle_bp(values, width, o)
+        l = o.tell()
+        o.seek(0)
 
-        encoding.read_rle_bit_packed_hybrid(o, width, length=l, o=out)
-        assert (out.so_far()[:len(values)] == values).all()
+        cencoding.read_rle_bit_packed_hybrid(o, width, length=l, o=out)
+        assert (buf[:len(values)] == values).all()
 
 
 def test_roundtrip_s3(s3):
@@ -223,34 +230,33 @@ def test_decimal_roundtrip(tempdir):
 def test_make_definitions_with_nulls():
     for _ in range(10):
         out = np.empty(1000, dtype=np.int32)
-        o = encoding.Numpy32(out)
+        o = cencoding.NumpyIO(out.view("uint8"))
         data = pd.Series(np.random.choice([True, None],
                                           size=np.random.randint(1, 1000)))
-        out, d2 = writer.make_definitions(data, False)
-        i = encoding.Numpy8(np.frombuffer(out, dtype=np.uint8))
-        encoding.read_rle_bit_packed_hybrid(i, 1, length=None, o=o)
-        out = o.so_far()[:len(data)]
-        assert (out == ~data.isnull()).sum()
+        defs, d2 = writer.make_definitions(data, False)
+        buf = np.frombuffer(bytearray(defs), dtype=np.uint8)
+        i = cencoding.NumpyIO(buf)
+        cencoding.read_rle_bit_packed_hybrid(i, 1, length=0, o=o)
+        assert (out[:len(data)] == ~data.isnull()).sum()
 
 
 def test_make_definitions_without_nulls():
     for _ in range(100):
         out = np.empty(10000, dtype=np.int32)
-        o = encoding.Numpy32(out)
+        o = cencoding.NumpyIO(out.view("uint8"))
         data = pd.Series([True] * np.random.randint(1, 10000))
-        out, d2 = writer.make_definitions(data, True)
+        defs, d2 = writer.make_definitions(data, True)
 
         l = len(data) << 1
         p = 1
         while l > 127:
             l >>= 7
             p += 1
-        assert len(out) == 4 + p + 1  # "length", num_count, value
+        assert len(defs) == 4 + p + 1  # "length", num_count, value
 
-        i = encoding.Numpy8(np.frombuffer(out, dtype=np.uint8))
-        encoding.read_rle_bit_packed_hybrid(i, 1, length=None, o=o)
-        out = o.so_far()
-        assert (out == ~data.isnull()).sum()
+        i = cencoding.NumpyIO(np.frombuffer(bytearray(defs), dtype=np.uint8))
+        cencoding.read_rle_bit_packed_hybrid(i, 1, length=0, o=o)
+        assert (out[:o.tell() // 4] == ~data.isnull()).sum()
 
     # class mock:
     #     def is_required(self, *args):

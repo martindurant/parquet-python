@@ -7,7 +7,7 @@ except ImportError:
     from thrift.protocol.TCompactProtocol import TCompactProtocol
 
 from . import encoding
-from . encoding import read_plain, _assemble_objects
+from . encoding import read_plain
 import fastparquet.cencoding as encoding
 from .compression import decompress_data
 from .converted_types import convert, typemap
@@ -99,6 +99,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     """
     daph = header.data_page_header
     raw_bytes = _read_page(f, header, metadata)
+    # TODO: copy with bytearray
     ba = bytearray(raw_bytes)
     io_obj = encoding.NumpyIO(ba)
 
@@ -116,6 +117,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
 
         width = helper.schema_element(metadata.path_in_schema).type_length
+        # TODO: copy with bytearray
         values = read_plain(bytearray(raw_bytes)[io_obj.tell():],
                                      metadata.type,
                                      int(daph.num_values - num_nulls),
@@ -267,8 +269,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
             null = not schema_helper.is_required(cmd.path_in_schema[0])
             null_val = (se.repetition_type !=
                         parquet_thrift.FieldRepetitionType.REQUIRED)
-            row_idx = 1 + _assemble_objects(assign, defi, rep, val, dic, d,
-                                             null, null_val, max_defi, row_idx)
+            row_idx = 1 + encoding._assemble_objects(assign, defi, rep, val, dic, d,
+                                                     null, null_val, max_defi, row_idx)
         elif defi is not None:
             # TODO: if output is NULLABLE (e.g., IntegerArray) can use
             #  fastpath here, but need nulls array

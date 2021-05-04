@@ -24,14 +24,20 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
     The count is determined from the header and the width is used to grab the
     value that's repeated. Yields the value repeated count times.
     """
-    cdef int count, width, i, data = 0
+    cdef:
+        int count, width, i, data = 0
+        char * inptr = file_obj.get_pointer()
+        char * outptr = o.get_pointer()
     count = header >> 1
     width = (bit_width + 7) // 8
     for i in range(width):
-        data <<= 8
-        data |= (<int>file_obj.read_byte()) & 0xff
+        data |= (inptr[0] & 0xff) << (i * 8)
+        inptr += 1
     for i in range(count):
-        o.write_int(data)
+        (<int*>outptr)[0] = data
+        outptr += 4
+    o.loc += outptr - o.get_pointer()
+    file_obj.loc += inptr - file_obj.get_pointer()
 
 
 cpdef int width_from_max_int(long value):
@@ -46,21 +52,6 @@ cpdef int width_from_max_int(long value):
 cdef int _mask_for_bits(int i):
     """Generate a mask to grab `i` bits from an int value."""
     return (1 << i) - 1
-
-
-cpdef void read_bitpacked8(NumpyIO file_obj, int count, NumpyIO o):
-    # return out[:] = np.frombuffer(file_obj.read(count), count, dtype=np.uint8)
-    cdef int i
-    cdef char* outptr
-    cdef char* inptr
-    inptr = file_obj.get_pointer()
-    outptr = o.get_pointer()
-    for i in range(count):
-        outptr[0] = inptr[0]
-        outptr += 1
-        inptr += 1
-    file_obj.loc += count
-    o.loc += count
 
 
 cpdef void read_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
@@ -126,25 +117,33 @@ cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o):
     """
     Read values packed into width-bits each (which can be >8)
     """
-    cdef unsigned int count, mask, data
-    cdef unsigned char left = 8, right = 0
-    # TODO: special case for width=4, 8
+    cdef:
+        unsigned int count, mask, data
+        unsigned char left = 8, right = 0
+        char * inptr = file_obj.get_pointer()
+        char * outptr = o.get_pointer()
 
     count = ((header & 0xff) >> 1) * 8
+    # TODO: special case for width=1, 2, 4, 8
     mask = _mask_for_bits(width)
-    data = 0xff & <int>file_obj.read_byte()
+    data = 0xff & <int>inptr[0]
+    inptr += 1
     while count:
         if right > 8:
             data >>= 8
             left -= 8
             right -= 8
         elif left - right < width:
-            data |= (file_obj.read_byte() & 0xff) << left
+            data |= (inptr[0] & 0xff) << left
+            inptr += 1
             left += 8
         else:
-            o.write_int(<int>(data >> right & mask))
+            (<int*>outptr)[0] = <int>(data >> right & mask)
+            outptr += 4
             count -= 1
             right += width
+    o.loc = o.loc + outptr - o.get_pointer()
+    file_obj.loc = file_obj.loc + inptr - file_obj.get_pointer()
 
 
 cpdef unsigned long read_unsigned_var_int(NumpyIO file_obj):
@@ -154,12 +153,16 @@ cpdef unsigned long read_unsigned_var_int(NumpyIO file_obj):
     cdef unsigned long result = 0
     cdef int shift = 0
     cdef char byte
+    cdef char * inptr = file_obj.get_pointer()
+
     while True:
-        byte = file_obj.read_byte()
+        byte = inptr[0]
+        inptr += 1
         result |= (<long>(byte & 0x7F) << shift)
         if (byte & 0x80) == 0:
             break
         shift += 7
+    file_obj.loc += inptr - file_obj.get_pointer()
     return result
 
 
@@ -177,46 +180,59 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
     cdef int start, header
     if length is False:
         length = io_obj.read_int()
-    start = io_obj.tell()
-    while io_obj.tell() - start < length and o.tell() < o.nbytes:
+    start = io_obj.loc
+    while io_obj.loc - start < length and o.loc < o.nbytes:
         header = <int>read_unsigned_var_int(io_obj)
         if header & 1 == 0:
             read_rle(io_obj, header, width, o)
         else:
             read_bitpacked(io_obj, header, width, o)
+        io_obj.check()
+        o.check()
 
 
-cdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
+cpdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
+    cdef char * outptr = o.get_pointer()
     while x > 127:
-        o.write_byte((x & 0x7F) | 0x80)
+        outptr[0] = (x & 0x7F) | 0x80
+        outptr += 1
         x >>= 7
-    o.write_byte(x)
+    outptr[0] = x
+    outptr += 1
+    o.loc += outptr - o.get_pointer()
 
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
-def encode_bitpacked(int[:] values, int width, NumpyIO o):  # pragma: no cover
+cpdef encode_bitpacked(int[:] values, int width, NumpyIO o):
     """
     Write values packed into width-bits each (which can be >8)
-
-    values is a NumbaIO array (int32)
-    o is a NumbaIO output array (uint8), size=(len(values)*width)/8, rounded up.
     """
 
     cdef int bit_packed_count = (values.shape[0] + 7) // 8
     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
-    cdef char right_byte_mask = 0b11111111
     cdef int bit=0, bits=0, v, counter
     for counter in range(values.shape[0]):
         v = values[counter]
         bits |= v << bit
         bit += width
         while bit >= 8:
-            o.write_byte(bits & right_byte_mask)
+            o.write_byte(bits & 0xff)
             bit -= 8
             bits >>= 8
     if bit:
         o.write_byte(bits)
+
+
+cpdef void encode_rle_bp(int[:] data, int width, NumpyIO o, int withlength = 0):
+    cdef unsigned int start, end
+    if withlength:
+        start = o.tell()
+        o.seek(4, 1)
+    encode_bitpacked(data, width, o)
+    if withlength:
+        end = o.tell()
+        o.seek(start)
+        o.write_int(end - start - 4)
+        o.seek(end)
 
 
 @cython.freelist(100)
@@ -267,7 +283,7 @@ cdef class NumpyIO(object):
         self.data[self.loc: self.loc + d.shape[0]] = d
         self.loc += d.shape[0]
 
-    cdef void write_byte(self, char b):
+    cpdef void write_byte(self, char b):
         if self.loc >= self.nbytes:
             # ignore attempt to write past end of buffer
             return
@@ -304,9 +320,10 @@ cdef class NumpyIO(object):
         """
         return self.data[:self.loc]
 
+    cdef check(self):
+        assert self.loc <= self.nbytes
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
+
 def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
                       char null, null_val, int max_defi, int prev_i):
     """Dremel-assembly of arrays of values into lists
@@ -433,19 +450,3 @@ cdef list read_list(NumpyIO data):
             out.append(read_thrift(data))
 
     return out
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-cpdef void encode_rle_bp(int[:] data, int width, NumpyIO o, int withlength = 0):
-    cdef unsigned int start, end
-    if withlength:
-        start = o.tell()
-        o.seek(4, 1)
-    if True:
-        encode_bitpacked(data, width, o)
-    if withlength:
-        end = o.tell()
-        o.seek(start)
-        o.write_int(end - start)
-        o.seek(end)

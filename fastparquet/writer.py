@@ -5,7 +5,6 @@ import struct
 import warnings
 from bisect import bisect
 
-import numba
 import numpy as np
 import pandas as pd
 from pandas.core.arrays.masked import BaseMaskedDtype
@@ -22,7 +21,8 @@ from .util import (default_open, default_mkdirs,
                    check_column_names, metadata_from_many, created_by,
                    get_column_metadata, path_string)
 from .speedups import array_encode_utf8, pack_byte_array
-from .cencoding import encode_rle_bp as _encode_rle_bp
+from . import cencoding
+from .cencoding import NumpyIO
 from decimal import Decimal
 
 MARKER = b'PAR1'
@@ -300,13 +300,12 @@ def infer_object_encoding(data):
         raise ValueError("Can't infer object conversion type: %s" % head)
 
 
-@numba.njit(nogil=True)
-def time_shift(indata, outdata, factor=1000):  # pragma: no cover
-    for i in range(len(indata)):
-        if indata[i] == nat:
-            outdata[i] = nat
-        else:
-            outdata[i] = indata[i] // factor
+def time_shift(indata, outdata, factor=1000):
+    outdata.view("int64")[:] = np.where(
+        indata.view('int64') == nat,
+        nat,
+        indata.view('int64') // factor
+    )
 
 
 def encode_plain(data, se):
@@ -318,102 +317,14 @@ def encode_plain(data, se):
         return out.tobytes()
 
 
-@numba.njit(nogil=True)
-def encode_unsigned_varint(x, o):  # pragma: no cover
-    while x > 127:
-        o.write_byte((x & 0x7F) | 0x80)
-        x >>= 7
-    o.write_byte(x)
-
-
-@numba.jit(nogil=True)
-def zigzag(n):  # pragma: no cover
-    " 32-bit only "
-    return (n << 1) ^ (n >> 31)
-
-
-@numba.njit(nogil=True)
-def encode_bitpacked_inv(values, width, o):  # pragma: no cover
-    bit = 16 - width
-    right_byte_mask = 0b11111111
-    left_byte_mask = right_byte_mask << 8
-    bits = 0
-    for v in values:
-        bits |= v << bit
-        while bit <= 8:
-            o.write_byte((bits & left_byte_mask) >> 8)
-            bit += 8
-            bits = (bits & right_byte_mask) << 8
-        bit -= width
-    if bit:
-        o.write_byte((bits & left_byte_mask) >> 8)
-
-
-@numba.njit(nogil=True)
-def encode_bitpacked(values, width, o):  # pragma: no cover
-    """
-    Write values packed into width-bits each (which can be >8)
-
-    values is a NumbaIO array (int32)
-    o is a NumbaIO output array (uint8), size=(len(values)*width)/8, rounded up.
-    """
-    bit_packed_count = (len(values) + 7) // 8
-    encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
-
-    bit = 0
-    right_byte_mask = 0b11111111
-    bits = 0
-    for v in values:
-        bits |= v << bit
-        bit += width
-        while bit >= 8:
-            o.write_byte(bits & right_byte_mask)
-            bit -= 8
-            bits >>= 8
-    if bit:
-        o.write_byte(bits)
-
-
-def write_length(l, o):
-    """ Put a 32-bit length into four bytes in o
-
-    Equivalent to struct.pack('<i', l), but suitable for numba-jit
-    """
-    right_byte_mask = 0b11111111
-    for _ in range(4):
-        o.write_byte(l & right_byte_mask)
-        l >>= 8
-
-
-def encode_rle_bp(data, width, o, withlength=False):
-    """Write data into o using RLE/bitpacked hybrid
-
-    data : values to encode (int32)
-    width : bits-per-value, set by max(data)
-    o : output encoding.Numpy8
-    withlength : bool
-        If definitions/repetitions, length of data must be pre-written
-    """
-    if withlength:
-        start = o.loc
-        o.loc = o.loc + 4
-    if True:
-        # I don't know how one would choose between RLE and bitpack
-        encode_bitpacked(data, width, o)
-    if withlength:
-        end = o.loc
-        o.loc = start
-        write_length(end - start, o)
-        o.loc = end
-
-
 def encode_rle(data, se, fixed_text=None):
     if data.dtype.kind not in ['i', 'u']:
         raise ValueError('RLE/bitpack encoding only works for integers')
     if se.type_length in [8, 16]:
-        o = encoding.Numpy8(np.empty(10, dtype=np.uint8))
+        buf = np.empty(10, dtype=np.uint8)
+        o = NumpyIO(buf)
         bit_packed_count = (len(data) + 7) // 8
-        encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
+        cencoding.encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
         # TODO: `tobytes` makes copy, and adding bytes also makes copy
         return o.so_far().tobytes() + data.values.tostring()
     else:
@@ -425,8 +336,9 @@ def encode_rle(data, se, fixed_text=None):
             m >>= 1
             width += 1
         l = (len(data) * width + 7) // 8 + 10
-        o = encoding.Numpy8(np.empty(l, dtype='uint8'))
-        _encode_rle_bp(data, width, o)
+        buf = np.empty(l, dtype='uint8')
+        o = NumpyIO(buf)
+        cencoding.encode_rle_bp(data, width, o)
         # TODO: `tobytes` makes copy
         return o.so_far().tobytes()
 
@@ -435,12 +347,13 @@ def encode_dict(data, se):
     """ The data part of dictionary encoding is always int8/16, with RLE/bitpack
     """
     width = data.values.dtype.itemsize * 8
-    o = encoding.Numpy8(np.empty(10, dtype=np.uint8))
+    buf = np.empty(10, dtype=np.uint8)
+    o = NumpyIO(buf)
     o.write_byte(width)
     bit_packed_count = (len(data) + 7) // 8
-    encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
-    # TODO: `tobytes` makes copy, and adding bytes also makes copy
-    return o.so_far().tobytes() + data.values.tobytes()
+    cencoding.encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
+    # TODO: `bytes`, `tobytes` makes copy, and adding bytes also makes copy
+    return bytes(o.so_far()) + data.values.tobytes()
 
 
 encode = {
@@ -455,23 +368,26 @@ def make_definitions(data, no_nulls):
     """For data that can contain NULLs, produce definition levels binary
     data: either bitpacked bools, or (if number of nulls == 0), single RLE
     block."""
-    temp = encoding.Numpy8(np.empty(10, dtype=np.uint8))
+    buf = np.empty(10, dtype=np.uint8)
+    temp = NumpyIO(buf)
 
     if no_nulls:
         # no nulls at all
         l = len(data)
-        encode_unsigned_varint(l << 1, temp)
+        cencoding.encode_unsigned_varint(l << 1, temp)
         temp.write_byte(1)
-        block = struct.pack('<i', temp.loc) + temp.so_far().tobytes()
+        # TODO: adding bytes causes copy
+        block = struct.pack('<i', temp.tell()) + temp.so_far()
         out = data
     else:
         se = parquet_thrift.SchemaElement(type=parquet_thrift.Type.BOOLEAN)
         out = encode_plain(data.notnull(), se)
 
-        encode_unsigned_varint(len(out) << 1 | 1, temp)
-        head = temp.so_far().tobytes()
+        cencoding.encode_unsigned_varint(len(out) << 1 | 1, temp)
+        head = temp.so_far()
 
-        block = struct.pack('<i', len(head + out)) + head + out
+        # TODO: adding bytes causes copy
+        block = struct.pack('<i', len(head) + len(out)) + head + out
         out = data.dropna()  # better, data[data.notnull()], from above ?
     return block, out
 

@@ -5,7 +5,6 @@ import subprocess
 import sys
 from distutils.version import LooseVersion
 
-import numba
 import numpy as np
 import pandas as pd
 try:
@@ -23,7 +22,6 @@ TEST_DATA = "test-data"
 
 
 @pytest.mark.xfail(reason="new numpy")
-@pytest.mark.skipif(numba.__version__ <= LooseVersion("0.39.0"), reason="Warning from numba.")
 def test_import_without_warning():
     # in a subprocess to avoid import chacing issues.
     subprocess.check_call([sys.executable, "-Werror", "-c", "import fastparquet"])

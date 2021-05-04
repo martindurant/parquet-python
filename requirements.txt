@@ -1,5 +1,4 @@
 pandas>=1.1.0
-numba>=0.49
 numpy>=1.11
 thrift>=0.11.0
 cramjam>=2.3.0

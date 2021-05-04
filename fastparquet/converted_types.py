@@ -8,9 +8,7 @@ but they're not necessarily the most performant.
 
 import json
 import logging
-import numba
 import numpy as np
-import binascii
 
 import sys
 
@@ -180,10 +178,11 @@ def convert(data, se, timestamp96=True):
     return data
 
 
-@numba.njit(nogil=True)
-def time_shift(indata, outdata, factor=1000):  # pragma: no cover
-    for i in range(len(indata)):
-        if indata[i] == nat:
-            outdata[i] = nat
-        else:
-            outdata[i] = indata[i] * factor
+def time_shift(indata, outdata, factor=1000):
+    # TODO: cython this to avoid temporary array in where
+    indata = indata.astype("int64", copy=False)
+    outdata.view("int64")[:] = np.where(
+        indata.view('int64') == nat,
+        nat,
+        indata.view('int64') * factor
+    )
