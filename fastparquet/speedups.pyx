@@ -31,9 +31,9 @@ def array_encode_utf8(inp):
         np.ndarray[object, ndim=1] arr
         np.ndarray[object] result
 
-    arr = np.array(inp)
+    arr = np.array(inp, copy=False)
 
-    n = len(arr)
+    n = arr.shape[0]
     # TODO: why not inplace?
     result = np.empty(n, dtype=object)
     for i in range(n):

@@ -876,7 +876,6 @@ def filter_out_cats(rg, filters, partition_meta={}):
     -------
     True or False
     """
-    # TODO: fix for Drill
     if len(filters) == 0 or rg.columns[0].file_path is None:
         return False
     s = ex_from_sep('/')

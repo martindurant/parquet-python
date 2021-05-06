@@ -16,9 +16,10 @@ import cython
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
 from cpython cimport PyBytes_FromStringAndSize
+from libc.stdint cimport uint8_t
 
 
-cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
+cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o, int itemsize=4):
     """Read a run-length encoded run from the given fo with the given header and bit_width.
 
     The count is determined from the header and the width is used to grab the
@@ -33,12 +34,17 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o):
     for i in range(width):
         data |= (inptr[0] & 0xff) << (i * 8)
         inptr += 1
-    vals_left = (o.nbytes - o.loc) // 4
+    vals_left = (o.nbytes - o.loc) // itemsize
     if count > vals_left:
         count = vals_left
-    for i in range(count):
-        (<int*>outptr)[0] = data
-        outptr += 4
+    if itemsize == 4:
+        for i in range(count):
+            (<int*>outptr)[0] = data
+            outptr += 4
+    else:
+        for i in range(count):
+            outptr[0] = data & 0xff
+            outptr += 1
     o.loc += outptr - o.get_pointer()
     file_obj.loc += inptr - file_obj.get_pointer()
 
@@ -59,30 +65,33 @@ cdef int _mask_for_bits(int i):
 
 cpdef void read_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
     # implementation of np.unpackbits with output array. Output is int8 array
-    cdef char * inptr
-    cdef char * outptr
-    cdef unsigned char data
-    cdef int counter = count, i
-    outptr = o.get_pointer()
-    inptr = file_obj.get_pointer()
+    cdef:
+        char * inptr = file_obj.get_pointer()
+        char * outptr = o.get_pointer()
+        char * endptr
+        unsigned char data
+        int counter = count, i
+    endptr = (o.nbytes - o.loc) + outptr - 1
     for counter in range(count // 8):
         # whole bytes
         data = inptr[0]
         inptr += 1
         for i in range(8):
-            outptr[0] = data & 0x80 > 0
-            data <<= 1
-            outptr += 1
+            if outptr <= endptr:
+                outptr[0] = data & 1
+                outptr += 1
+            data >>= 1
     if count % 8:
         # remaining values in the last byte
         data = <int>inptr[0]
         inptr += 1
         for i in range(count % 8):
-            outptr[0] = data & 0x80 > 0
-            data <<= 1
-            outptr += 1
-    file_obj.loc += (count + 7) // 8
-    o.loc += count
+            if outptr <= endptr:
+                outptr[0] = data & 1
+                outptr += 1
+            data >>= 1
+    file_obj.loc += inptr - file_obj.get_pointer()
+    o.loc += outptr - o.get_pointer()
 
 
 cpdef void write_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
@@ -115,7 +124,7 @@ cpdef void write_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
     o.loc += (count + 7) // 8
 
 
-cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o):
+cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o, int itemsize=4):
     """
     Read values packed into width-bits each (which can be >8)
     """
@@ -128,7 +137,11 @@ cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o):
 
     count = ((header & 0xff) >> 1) * 8
     # TODO: special case for width=1, 2, 4, 8
-    endptr = (o.nbytes - o.loc) + outptr - 4
+    print(width)
+    if width == 1 and itemsize == 1:
+        read_bitpacked1(file_obj, count, o)
+        return
+    endptr = (o.nbytes - o.loc) + outptr - itemsize
     mask = _mask_for_bits(width)
     data = 0xff & <int>inptr[0]
     inptr += 1
@@ -143,8 +156,12 @@ cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o):
             left += 8
         else:
             if outptr <= endptr:
-                (<int*>outptr)[0] = <int>(data >> right & mask)
-                outptr += 4
+                if itemsize == 4:
+                    (<int*>outptr)[0] = <int>(data >> right & mask)
+                    outptr += 4
+                else:
+                    outptr[0] = data >> right & mask
+                    outptr += 1
             count -= 1
             right += width
     o.loc = o.loc + outptr - o.get_pointer()
@@ -171,13 +188,14 @@ cpdef unsigned long read_unsigned_var_int(NumpyIO file_obj):
     return result
 
 
-cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, NumpyIO o):
+cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, NumpyIO o,
+                                      int itemsize=4):
     """Read values from `io_obj` using the rel/bit-packed hybrid encoding.
 
     If length is not specified, then a 32-bit int is read first to grab the
     length of the encoded data.
 
-    file-obj is a NumpyIO of bytes; o if an output NumpyIO of int32
+    file-obj is a NumpyIO of bytes; o if an output NumpyIO of int32 or int8/bool
 
     The caller can tell the number of elements in the output by looking
     at .tell().
@@ -189,9 +207,9 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
     while io_obj.loc - start < length and o.loc < o.nbytes:
         header = <int>read_unsigned_var_int(io_obj)
         if header & 1 == 0:
-            read_rle(io_obj, header, width, o)
+            read_rle(io_obj, header, width, o, itemsize)
         else:
-            read_bitpacked(io_obj, header, width, o)
+            read_bitpacked(io_obj, header, width, o, itemsize)
 
 
 cpdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
@@ -245,14 +263,15 @@ cdef class NumpyIO(object):
 
     The main purpose is to keep track of the current location in the memory
     """
-    cdef char[:] data
+    cdef const uint8_t[:] data
     cdef unsigned int loc, nbytes
     cdef char* ptr
+    cdef char writable
 
-    def __cinit__(self, char[:] data):
+    def __cinit__(self, const uint8_t[::1] data):
         self.data = data
         self.loc = 0
-        self.ptr = &data[0]
+        self.ptr = <char*>&data[0]
         self.nbytes = data.shape[0]
 
     cdef char* get_pointer(self):
@@ -262,8 +281,10 @@ cdef class NumpyIO(object):
     def len(self):
         return self.nbytes
 
-    cpdef char[:] read(self, int x):
-        cdef char[:] out
+    cpdef const uint8_t[:] read(self, int x=-1):
+        cdef const uint8_t[:] out
+        if x < 1:
+            x = self.nbytes - self.loc
         out = self.data[self.loc:self.loc + x]
         self.loc += x
         return out
@@ -282,8 +303,8 @@ cdef class NumpyIO(object):
         self.loc += 4
         return i
 
-    cpdef void write(self, char[:] d):
-        self.data[self.loc: self.loc + d.shape[0]] = d
+    cpdef void write(self, const char[::1] d):
+        memcpy(<void*>self.ptr[self.loc], <void*>&d[0], d.shape[0])
         self.loc += d.shape[0]
 
     cpdef void write_byte(self, char b):
@@ -318,13 +339,14 @@ cdef class NumpyIO(object):
             self.loc = self.nbytes
 
     @cython.wraparound(False)
-    cpdef char[:] so_far(self):
+    cpdef const uint8_t[:] so_far(self):
         """ In write mode, the data we have gathered until now
         """
         return self.data[:self.loc]
 
 
-def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
+def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] rep,
+                      val, dic, d,
                       char null, null_val, int max_defi, int prev_i):
     """Dremel-assembly of arrays of values into lists
 
@@ -387,6 +409,20 @@ def _assemble_objects(object[:] assign, int[:] defi, int[:] rep, val, dic, d,
     else: # can only happen if the only elements in this page are the continuation of the last row from previous page
         assign[i - 1].extend(part)
     return i
+
+
+cdef long nat = -9223372036854775808
+
+
+cpdef void time_shift(const long[::1] data, int factor=1000):
+    cdef int i
+    cdef long * ptr
+    cdef long value
+    ptr = <long*>&data[0]
+    for i in range(data.shape[0]):
+        if ptr[0] != nat:
+            ptr[0] *= factor
+        ptr += 1
 
 
 cdef int zigzag_int(unsigned long n):

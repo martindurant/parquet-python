@@ -39,11 +39,11 @@ def read_data(fobj, coding, count, bit_width):
 
     Reads with RLE/bitpacked hybrid, where length is given by first byte.
     """
-    out = np.empty(count, dtype=np.int32)
-    o = encoding.NumpyIO(out.view('uint8'))
+    out = np.empty(count, dtype=np.uint8)
+    o = encoding.NumpyIO(out)
     if coding == parquet_thrift.Encoding.RLE:
-        while o.tell() < count * 4:
-            encoding.read_rle_bit_packed_hybrid(fobj, bit_width, 0, o)
+        while o.tell() < count:
+            encoding.read_rle_bit_packed_hybrid(fobj, bit_width, 0, o, itemsize=1)
     else:
         raise NotImplementedError('Encoding %s' % coding)
     return out
@@ -99,9 +99,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     """
     daph = header.data_page_header
     raw_bytes = _read_page(f, header, metadata)
-    # TODO: copy with bytearray
-    ba = bytearray(raw_bytes)
-    io_obj = encoding.NumpyIO(ba)
+    io_obj = encoding.NumpyIO(raw_bytes)
 
     repetition_levels = read_rep(io_obj, daph, helper, metadata)
 
@@ -117,12 +115,11 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
 
         width = helper.schema_element(metadata.path_in_schema).type_length
-        # TODO: copy with bytearray
-        values = read_plain(bytearray(raw_bytes)[io_obj.tell():],
-                                     metadata.type,
-                                     int(daph.num_values - num_nulls),
-                                     width=width,
-                                     utf=se.converted_type == 0)
+        values = read_plain(io_obj.read(),
+                            metadata.type,
+                            int(daph.num_values - num_nulls),
+                            width=width,
+                            utf=se.converted_type == 0)
     elif daph.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
                            parquet_thrift.Encoding.RLE]:
         # bit_width is stored as single byte.
@@ -135,11 +132,16 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
             values = np.frombuffer(io_obj.read(num * bit_width // 8),
                                    dtype='int%i' % bit_width)
         elif bit_width:
-            values = np.empty(daph.num_values-num_nulls+7, dtype=np.int32)
-            o = encoding.NumpyIO(values.view('uint8'))
-            # length is simply "all data left in this page"
-            encoding.read_rle_bit_packed_hybrid(
-                        io_obj, bit_width, io_obj.len-io_obj.tell(), o=o)
+            if bit_width > 8:
+                values = np.empty(daph.num_values-num_nulls+7, dtype=np.int32)
+                o = encoding.NumpyIO(values.view('uint8'))
+                encoding.read_rle_bit_packed_hybrid(
+                            io_obj, bit_width, io_obj.len-io_obj.tell(), o=o, itemsize=4)
+            else:
+                values = np.empty(daph.num_values-num_nulls+7, dtype=np.uint8)
+                o = encoding.NumpyIO(values)
+                encoding.read_rle_bit_packed_hybrid(
+                    io_obj, bit_width, io_obj.len-io_obj.tell(), o=o, itemsize=1)
             values = values.data[:nval]
         else:
             values = np.zeros(nval, dtype=np.int8)
@@ -164,7 +166,7 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, 
     raw_bytes = _read_page(file_obj, page_header, column_metadata)
     if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
         # TODO: copies raw_bytes and also copies array (use copy=False)
-        values = np.array(unpack_byte_array(bytearray(raw_bytes),
+        values = np.array(unpack_byte_array(raw_bytes,
                           page_header.dictionary_page_header.num_values, utf=utf), dtype='object')
     else:
         width = schema_helper.schema_element(

@@ -1,14 +1,14 @@
 """encoding.py - methods for reading parquet encoded data blocks."""
-import array
-
 import numpy as np
+from .cencoding import read_bitpacked1, NumpyIO
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
 
 
 def read_plain_boolean(raw_bytes, count):
     data = np.frombuffer(raw_bytes, dtype='uint8')
-    out = np.unpackbits(data).astype(bool, copy=False).reshape(-1, 8)[:, ::-1].reshape(-1)
+    out = np.empty(count, dtype=bool)
+    read_bitpacked1(NumpyIO(data), count, NumpyIO(out.view('uint8')))
     return out[:count]
 
 

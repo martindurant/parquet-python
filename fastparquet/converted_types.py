@@ -13,6 +13,7 @@ import numpy as np
 import sys
 
 from .thrift_structures import parquet_thrift
+from .cencoding import time_shift
 
 logger = logging.getLogger('parquet')  # pylint: disable=invalid-name
 
@@ -91,11 +92,11 @@ def convert(data, se, timestamp96=True):
         return data
     if ctype == parquet_thrift.ConvertedType.UTF8:
         if data.dtype != "O":
-            # stats pairs
-            # TODO: generator would do instead of list
-            return np.array([o.decode() for o in data])
-        # TODO why call array again here?
-        return np.array(data)  # was already converted in speedups
+            # fixed string
+            import pandas as pd
+            return pd.core.strings.str_decode(data, "utf8")
+        # already converted in speedups.unpack_byte_array
+        return data
     if ctype == parquet_thrift.ConvertedType.DECIMAL:
         scale_factor = 10**-se.scale
         if data.dtype.kind in ['i', 'f']:
@@ -111,26 +112,24 @@ def convert(data, se, timestamp96=True):
                 for i in range(len(data))
             ])
     elif ctype == parquet_thrift.ConvertedType.DATE:
-        # TODO: multiply inplace
-        return (data * DAYS_TO_MILLIS).view('datetime64[ns]')
+        data *= DAYS_TO_MILLIS
+        return data.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
-        out = np.empty(len(data), dtype='int64')
-        if sys.platform == 'win32':
-            data = data.astype('int64')
+        out = data.astype('int64', copy=False)
         # TODO: here and following blocks: multiply inplace
-        time_shift(data, out, 1000000)
+        time_shift(out.view("int64"), 1000000)
         return out.view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MILLIS:
-        out = np.empty_like(data)
-        time_shift(data, out, 1000000)
+        out = data
+        time_shift(data.view("int64"), 1000000)
         return out.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MICROS:
-        out = np.empty_like(data)
-        time_shift(data, out)
+        out = data
+        time_shift(data.view("int64"))
         return out.view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MICROS:
-        out = np.empty_like(data)
-        time_shift(data, out)
+        out = data
+        time_shift(data.view("int64"))
         return out.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.UINT_8:
         # TODO: return strided views?
@@ -176,13 +175,3 @@ def convert(data, se, timestamp96=True):
         logger.info("Converted type '%s'' not handled",
                     parquet_thrift.ConvertedType._VALUES_TO_NAMES[ctype])  # pylint:disable=protected-access
     return data
-
-
-def time_shift(indata, outdata, factor=1000):
-    # TODO: cython this to avoid temporary array in where
-    indata = indata.astype("int64", copy=False)
-    outdata.view("int64")[:] = np.where(
-        indata.view('int64') == nat,
-        nat,
-        indata.view('int64') * factor
-    )

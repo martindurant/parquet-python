@@ -235,7 +235,7 @@ def test_make_definitions_with_nulls():
         data = pd.Series(np.random.choice([True, None],
                                           size=np.random.randint(1, 1000)))
         defs, d2 = writer.make_definitions(data, False)
-        buf = np.frombuffer(bytearray(defs), dtype=np.uint8)
+        buf = np.frombuffer(defs, dtype=np.uint8)
         i = cencoding.NumpyIO(buf)
         cencoding.read_rle_bit_packed_hybrid(i, 1, length=0, o=o)
         assert (out[:len(data)] == ~data.isnull()).sum()
@@ -255,7 +255,7 @@ def test_make_definitions_without_nulls():
             p += 1
         assert len(defs) == 4 + p + 1  # "length", num_count, value
 
-        i = cencoding.NumpyIO(np.frombuffer(bytearray(defs), dtype=np.uint8))
+        i = cencoding.NumpyIO(np.frombuffer(defs, dtype=np.uint8))
         cencoding.read_rle_bit_packed_hybrid(i, 1, length=0, o=o)
         assert (out[:o.tell() // 4] == ~data.isnull()).sum()
 

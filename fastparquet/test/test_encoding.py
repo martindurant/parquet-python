@@ -61,7 +61,7 @@ def test_boolean():
 
 def testFourByteValue():
     """Test reading a run with a single four-byte value."""
-    buf = np.frombuffer(bytearray(struct.pack(b"<i", 1 << 30)), np.uint8)
+    buf = np.frombuffer(struct.pack(b"<i", 1 << 30), np.uint8)
     fo = cencoding.NumpyIO(buf)
     out = np.zeros(10, np.uint32)
     o = cencoding.NumpyIO(out.view("uint8"))
@@ -72,7 +72,7 @@ def testFourByteValue():
 
 def testSingleByte():
     """Test reading a single byte value."""
-    buf = np.frombuffer(bytearray(struct.pack(b"<i", 0x7F)), np.uint8)
+    buf = np.frombuffer(struct.pack(b"<i", 0x7F), np.uint8)
     fo = cencoding.NumpyIO(buf)
     out = cencoding.read_unsigned_var_int(fo)
     assert 0x7F == out
@@ -81,7 +81,7 @@ def testSingleByte():
 
 def testFourByte():
     """Test reading a four byte value."""
-    buf = np.frombuffer(bytearray(struct.pack(b"<BBBB", 0xFF, 0xFF, 0xFF, 0x7F)), np.uint8)
+    buf = np.frombuffer(struct.pack(b"<BBBB", 0xFF, 0xFF, 0xFF, 0x7F), np.uint8)
     fo = cencoding.NumpyIO(buf)
     out = cencoding.read_unsigned_var_int(fo)
     assert 0x0FFFFFFF == out
@@ -91,7 +91,7 @@ def testFourByte():
 def testFromExample():
     """Test a simple example."""
     raw_data_in = [0b10001000, 0b11000110, 0b11111010]
-    encoded_bitstring = bytearray(b'\x88\xc6\xfa')
+    encoded_bitstring = b'\x88\xc6\xfa'
     buf = np.frombuffer(encoded_bitstring, np.uint8)
     fo = cencoding.NumpyIO(buf)
     count = 8
