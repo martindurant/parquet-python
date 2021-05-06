@@ -389,6 +389,7 @@ def json_decoder():
             try:
                 package = importlib.import_module(lib)
                 _json_decoder[0] = package.loads
+                break
             except (ImportError, AttributeError):
                 pass
     return _json_decoder[0]

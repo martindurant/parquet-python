@@ -72,8 +72,14 @@ class SchemaHelper(object):
         self.schema_elements_by_name = dict(
             [(se.name, se) for se in schema_elements])
         schema_tree(schema_elements)
-        self.text = schema_to_text(self.schema_elements[0])
+        self._text = None
         flatten(self.root, self.root)
+
+    @property
+    def text(self):
+        if self._text is None:
+            self._text = schema_to_text(self.schema_elements[0])
+        return self._text
 
     def __eq__(self, other):
         return self.schema_elements == other.schema_elements
