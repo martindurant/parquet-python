@@ -70,28 +70,27 @@ cpdef void read_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
         char * outptr = o.get_pointer()
         char * endptr
         unsigned char data
-        int counter = count, i
-    endptr = (o.nbytes - o.loc) + outptr - 1
+        int counter, i, startcount=count
+    if count > o.nbytes - o.loc:
+        count = o.nbytes - o.loc
     for counter in range(count // 8):
         # whole bytes
         data = inptr[0]
         inptr += 1
         for i in range(8):
-            if outptr <= endptr:
-                outptr[0] = data & 1
-                outptr += 1
+            outptr[0] = data & 1
+            outptr += 1
             data >>= 1
     if count % 8:
         # remaining values in the last byte
         data = <int>inptr[0]
         inptr += 1
         for i in range(count % 8):
-            if outptr <= endptr:
-                outptr[0] = data & 1
-                outptr += 1
+            outptr[0] = data & 1
+            outptr += 1
             data >>= 1
-    file_obj.loc += inptr - file_obj.get_pointer()
-    o.loc += outptr - o.get_pointer()
+    file_obj.loc += (startcount + 7) // 8
+    o.loc += count
 
 
 cpdef void write_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
