@@ -377,3 +377,18 @@ def join_path(*path):
     else:
         joined = abs_prefix + ('/'.join(simpler))
     return joined
+
+
+_json_decoder = [None]
+
+
+def json_decoder():
+    import importlib
+    if _json_decoder[0] is None:
+        for lib in ['orjson', 'ujson', 'rapidjson', 'json']:
+            try:
+                package = importlib.import_module(lib)
+                _json_decoder[0] = package.loads
+            except (ImportError, AttributeError):
+                pass
+    return _json_decoder[0]

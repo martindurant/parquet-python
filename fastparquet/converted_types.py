@@ -10,10 +10,9 @@ import json
 import logging
 import numpy as np
 
-import sys
-
 from .thrift_structures import parquet_thrift
 from .cencoding import time_shift
+from .util import json_decoder
 
 logger = logging.getLogger('parquet')  # pylint: disable=invalid-name
 
@@ -154,8 +153,8 @@ def convert(data, se, timestamp96=True):
         else:
             out = data
         # TODO: unnecessary list - loop would save memory, and can cythonise
-        #  and could use better JSON codec (ujson, rapidjson, orjson)
-        out[:] = [json.loads(d.decode('utf8')) for d in data]
+        decoder = json_decoder()
+        out[:] = [decoder(d) for d in data]
         return out
     elif ctype == parquet_thrift.ConvertedType.BSON:
         if isinstance(data, list) or data.dtype != "O":

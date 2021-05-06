@@ -1,7 +1,6 @@
 """parquet - read parquet files."""
 from collections import OrderedDict
 import io
-import json
 import re
 import struct
 
@@ -13,7 +12,7 @@ from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
 from .util import (default_open, ParquetException, val_to_num,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, get_file_scheme, groupby_types)
+                   ex_from_sep, json_decoder)
 
 
 class ParquetFile(object):
@@ -463,7 +462,7 @@ class ParquetFile(object):
     def pandas_metadata(self):
         if self._pdm is None:
             if self.has_pandas_metadata:
-                self._pdm = json.loads(self.key_value_metadata['pandas'])
+                self._pdm = json_decoder()(self.key_value_metadata['pandas'])
             else:
                 self._pdm = {}
         return self._pdm
@@ -478,7 +477,7 @@ class ParquetFile(object):
         # old track
         vals = self.key_value_metadata.get("fastparquet.cats", None)
         if vals:
-            return json.loads(vals)
+            return json_decoder()(vals)
         else:
             return {}
 

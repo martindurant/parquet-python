@@ -40,6 +40,9 @@ def time_column():
                 write(fn, df, has_nulls=False)#, compression="SNAPPY")
 
             pf = ParquetFile(fn)
+            with measure("file open", result):
+                ParquetFile(fn)
+
             pf.to_pandas()  # warm-up
 
             with measure('%s: read, no nulls' % d.dtypes[col], result):
