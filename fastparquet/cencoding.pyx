@@ -137,7 +137,6 @@ cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o, in
 
     count = ((header & 0xff) >> 1) * 8
     # TODO: special case for width=1, 2, 4, 8
-    print(width)
     if width == 1 and itemsize == 1:
         read_bitpacked1(file_obj, count, o)
         return
