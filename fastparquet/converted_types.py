@@ -94,7 +94,7 @@ def convert(data, se, timestamp96=True):
         if data.dtype != "O":
             # fixed string
             import pandas as pd
-            return pd.core.strings.str_decode(data, "utf8")
+            return pd.Series(data).str.decode("utf8").values
         # already converted in speedups.unpack_byte_array
         return data
     if ctype == parquet_thrift.ConvertedType.DECIMAL:
@@ -116,7 +116,6 @@ def convert(data, se, timestamp96=True):
         return data.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
         out = data.astype('int64', copy=False)
-        # TODO: here and following blocks: multiply inplace
         time_shift(out.view("int64"), 1000000)
         return out.view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MILLIS:
