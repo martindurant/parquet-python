@@ -240,8 +240,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
     row_idx = 0
     while True:
         if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-            # TODO: np.array copies by default
-            dic2 = np.array(read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0))
+            dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
             dic2 = convert(dic2, se)
             if use_cat and (dic2 != dic).any():
                 raise RuntimeError("Attempt to read as categorical a column"
