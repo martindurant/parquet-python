@@ -429,7 +429,7 @@ def encode_dict(data, se):
 encode = {
     'PLAIN': encode_plain,
     'RLE': encode_rle,
-    'PLAIN_DICTIONARY': encode_dict,
+    'RLE_DICTIONARY': encode_dict,
     # 'DELTA_BINARY_PACKED': encode_delta
 }
 
@@ -557,7 +557,7 @@ def write_column(f, data, selement, compression=None):
         ncats = len(data.cat.categories)
         data = data.cat.codes
         cats = True
-        encoding = "PLAIN_DICTIONARY"
+        encoding = "RLE_DICTIONARY"
     elif str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
         # encoding = "RLE"
         # disallow bitpacking for compatability
@@ -567,7 +567,7 @@ def write_column(f, data, selement, compression=None):
             data, selement)
     bdata += 8 * b'\x00'
     try:
-        if encoding != 'PLAIN_DICTIONARY' and num_nulls == 0:
+        if encoding != 'RLE_DICTIONARY' and num_nulls == 0:
             max, min = data.values.max(), data.values.min()
             if selement.type == parquet_thrift.Type.BYTE_ARRAY:
                 if selement.converted_type is not None:

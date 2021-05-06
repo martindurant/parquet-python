@@ -260,7 +260,7 @@ def test_index(tempdir):
         fastparquet.write(tempdir, d2, file_scheme='hive', write_index=True)
         pf = fastparquet.ParquetFile(tempdir)
         out = pf.to_pandas(index=column, categories=['b'])
-        pd.util.testing.assert_frame_equal(out, d2, check_categorical=False)
+        pd.testing.assert_frame_equal(out, d2, check_categorical=False)
 
 
 def test_skip_length():
@@ -283,6 +283,13 @@ def test_timestamp96():
              "2016-08-07 23:08:06", "2016-08-08 23:08:07",
              "2016-08-09 23:08:08", "2016-08-10 23:08:09"])
     assert (out['date_added'] == expected).all()
+
+
+def test_rle_dict():
+    # standard dataset with RLE_DICT instead of PLAIN_DICT
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, 'repeated_no_annotation.parquet'))
+    out = pf.to_pandas()
+    assert out['id'].tolist() == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 
 def test_bad_catsize(tempdir):

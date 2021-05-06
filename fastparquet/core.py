@@ -120,6 +120,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
                                      width=width,
                                      utf=se.converted_type == 0)
     elif daph.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
+                           parquet_thrift.Encoding.RLE_DICTIONARY,
                            parquet_thrift.Encoding.RLE]:
         # bit_width is stored as single byte.
         if daph.encoding == parquet_thrift.Encoding.RLE:
@@ -250,7 +251,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
             # this should never get called
             raise ValueError('Column contains repeated value, must use object '
                              'type, but has assumed type: %s' % assign.dtype)
-        d = ph.data_page_header.encoding == parquet_thrift.Encoding.PLAIN_DICTIONARY
+        d = ph.data_page_header.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
+                                             parquet_thrift.Encoding.RLE_DICTIONARY]
         if use_cat and not d:
             if not hasattr(catdef, '_set_categories'):
                 raise ValueError('Returning category type requires all chunks'

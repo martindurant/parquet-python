@@ -185,7 +185,7 @@ def test_datetime_roundtrip(tempdir, df, capsys):
 
     df2 = r.to_pandas()
 
-    pd.util.testing.assert_frame_equal(df, df2, check_categorical=False)
+    pd.testing.assert_frame_equal(df, df2, check_categorical=False)
 
 
 def test_nulls_roundtrip(tempdir):
@@ -437,7 +437,7 @@ def test_index(tempdir):
     assert meta['index_columns'] == ['z']
     out = pf.to_pandas()
     assert out.index.name == 'z'
-    pd.util.testing.assert_frame_equal(df, out)
+    pd.testing.assert_frame_equal(df, out)
     out = pf.to_pandas(index=False)
     assert out.index.name is None
     assert (out.index == range(3)).all()
@@ -752,7 +752,7 @@ def test_append_simple(tempdir):
 
     pf = ParquetFile(fn)
     expected = pd.concat([df, df], ignore_index=True)
-    pd.util.testing.assert_frame_equal(pf.to_pandas(), expected,
+    pd.testing.assert_frame_equal(pf.to_pandas(), expected,
                                        check_categorical=False)
 
 
@@ -768,7 +768,7 @@ def test_append_empty(tempdir, scheme):
     write(fn, df, append=True, write_index=False, file_scheme=scheme)
 
     pf = ParquetFile(fn)
-    pd.util.testing.assert_frame_equal(pf.to_pandas(), df,
+    pd.testing.assert_frame_equal(pf.to_pandas(), df,
                                        check_categorical=False)
 
 
@@ -889,7 +889,7 @@ def test_cats_in_part_files(tempdir):
         assert len(pf.row_groups) == 1
     out = pd.concat([ParquetFile(f).to_pandas() for f in files],
                     ignore_index=True)
-    pd.util.testing.assert_frame_equal(df, out)
+    pd.testing.assert_frame_equal(df, out)
 
 
 def test_cats_and_nulls(tempdir):

@@ -48,7 +48,7 @@ df = sql.createDataFrame(out, df_schema)
     expected = sql.read.parquet(fn).toPandas()
     pf = fastparquet.ParquetFile(fn)
     data = pf.to_pandas()
-    pd.util.testing.assert_frame_equal(data, expected)
+    pd.testing.assert_frame_equal(data, expected)
 
 
 def test_nested_list(sql):
@@ -113,11 +113,11 @@ def test_empty_row_groups(tempdir, sql):
     pf = fastparquet.ParquetFile(files)  # don't necessarily have metadata
     assert len(files) > 1  # more than one worker was writing
     d = pf.to_pandas(index=False)
-    pd.util.testing.assert_frame_equal(d, d0)
+    pd.testing.assert_frame_equal(d, d0)
 
     # destroy empty files
     [os.unlink(f) for (f, s) in zip(files, sizes) if s < msize]
 
     # loads anyway, since empty row-groups are not touched
     d = pf.to_pandas()
-    pd.util.testing.assert_frame_equal(d, d0)
+    pd.testing.assert_frame_equal(d, d0)

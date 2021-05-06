@@ -151,9 +151,9 @@ def test_iter(tempdir):
     pf = ParquetFile(fn)
     out = iter(pf.iter_row_groups(index='index'))
     d1 = next(out)
-    pd.util.testing.assert_frame_equal(d1, df[:2])
+    pd.testing.assert_frame_equal(d1, df[:2])
     d2 = next(out)
-    pd.util.testing.assert_frame_equal(d2, df[2:])
+    pd.testing.assert_frame_equal(d2, df[2:])
     with pytest.raises(StopIteration):
         next(out)
 
@@ -198,7 +198,7 @@ def test_open_standard(tempdir):
           open_with=open)
     pf = ParquetFile(fn, open_with=open)
     d2 = pf.to_pandas()
-    pd.util.testing.assert_frame_equal(d2, df)
+    pd.testing.assert_frame_equal(d2, df)
 
 
 def test_filelike(tempdir):
@@ -210,12 +210,12 @@ def test_filelike(tempdir):
     with open(fn, 'rb') as f:
         pf = ParquetFile(f, open_with=open)
         d2 = pf.to_pandas()
-        pd.util.testing.assert_frame_equal(d2, df)
+        pd.testing.assert_frame_equal(d2, df)
 
     b = io.BytesIO(open(fn, 'rb').read())
     pf = ParquetFile(b, open_with=open)
     d2 = pf.to_pandas()
-    pd.util.testing.assert_frame_equal(d2, df)
+    pd.testing.assert_frame_equal(d2, df)
 
 
 def test_cast_index(tempdir):
@@ -277,7 +277,7 @@ def test_read_multiple_no_metadata(tempdir):
     pf = ParquetFile(flist)
     assert len(pf.row_groups) == 2
     out = pf.to_pandas()
-    pd.util.testing.assert_frame_equal(out, df)
+    pd.testing.assert_frame_equal(out, df)
 
 
 def test_single_upper_directory(tempdir):
@@ -364,7 +364,7 @@ def test_filter_without_paths(tempdir):
 
     pf = ParquetFile(fn)
     out = pf.to_pandas(filters=[['x', '>', 3]])
-    pd.util.testing.assert_frame_equal(out, df)
+    pd.testing.assert_frame_equal(out, df)
     out = pf.to_pandas(filters=[['x', '>', 30]])
     assert len(out) == 0
 
@@ -664,7 +664,7 @@ def test_compression_zstandard(tempdir):
 
     df2 = p.to_pandas()
 
-    pd.util.testing.assert_frame_equal(df, df2)
+    pd.testing.assert_frame_equal(df, df2)
 
 
 def test_compression_zstd(tempdir):
@@ -704,7 +704,7 @@ def test_compression_zstd(tempdir):
 
     df2 = p.to_pandas()
 
-    pd.util.testing.assert_frame_equal(df, df2)
+    pd.testing.assert_frame_equal(df, df2)
 
 
 def test_compression_lz4(tempdir):
@@ -745,7 +745,7 @@ def test_compression_lz4(tempdir):
 
     df2 = p.to_pandas()
 
-    pd.util.testing.assert_frame_equal(df, df2)
+    pd.testing.assert_frame_equal(df, df2)
 
 def test_compression_snappy(tempdir):
     pytest.importorskip('snappy')
@@ -782,7 +782,7 @@ def test_compression_snappy(tempdir):
 
     df2 = p.to_pandas()
 
-    pd.util.testing.assert_frame_equal(df, df2)
+    pd.testing.assert_frame_equal(df, df2)
 
 
 def test_int96_stats(tempdir):
