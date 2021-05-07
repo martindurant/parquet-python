@@ -1,14 +1,16 @@
 name: PyPi wheels
 
-on: [push, pull_request]
+on: [push]
+
 
 jobs:
   build:
+    #if: startsWith(github.ref, 'refs/tags/0.')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-10.15, windows-2019]
+        os: [ubuntu-20.04, windows-2019]
         architecture: ['x64']
         linux_archs: ["auto s390x"]
         include:
@@ -24,12 +26,9 @@ jobs:
 
     name: Python ${{ matrix.os }}
     env:
-      # CIBW_BEFORE_ALL_LINUX: yum install -y snappy-devel
-      MACOSX_DEPLOYMENT_TARGET: "10.9"
       CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
       CIBW_BEFORE_ALL: "pip install numpy cython"
       CIBW_SKIP: ${{ matrix.skip }}
-      # CIBW_ENVIRONMENT_WINDOWS: ${{ matrix.environment_windows }}
       CIBW_ARCHS_LINUX: ${{ matrix.linux_archs }}
       CIBW_ARCHS_MACOS: x86_64 universal2
       CIBW_TEST_SKIP: "*"
