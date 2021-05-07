@@ -24,17 +24,15 @@ jobs:
 
     name: Python ${{ matrix.os }}
     env:
-      CIBW_TEST_REQUIRES: pytest
-      CIBW_TEST_COMMAND: "echo noop"
       # CIBW_BEFORE_ALL_LINUX: yum install -y snappy-devel
       MACOSX_DEPLOYMENT_TARGET: "10.9"
       CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
-      # CIBW_BEFORE_ALL: "bash {project}/build_snappy.sh"
+      CIBW_BEFORE_ALL: "pip install numpy cython"
       CIBW_SKIP: ${{ matrix.skip }}
       # CIBW_ENVIRONMENT_WINDOWS: ${{ matrix.environment_windows }}
       CIBW_ARCHS_LINUX: ${{ matrix.linux_archs }}
       CIBW_ARCHS_MACOS: x86_64 universal2
-      CIBW_TEST_SKIP: "*_arm64 *_universal2:arm64"
+      CIBW_TEST_SKIP: "*"
     steps:
       - uses: actions/checkout@v2
 
