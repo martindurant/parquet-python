@@ -510,7 +510,7 @@ class ParquetFile(object):
                     if st is None:
                         num_nulls = True
                         break
-                    if st.null_count is not 0:
+                    if st.null_count:
                         num_nulls = True
                         break
                 if num_nulls:
