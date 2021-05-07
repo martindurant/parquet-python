@@ -1,4 +1,4 @@
-name: PyPi wheel and sdist
+name: PyPi wheels
 
 on: [push, pull_request]
 
