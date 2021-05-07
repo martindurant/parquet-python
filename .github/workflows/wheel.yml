@@ -5,24 +5,22 @@ on: [push, pull_request]
 
 jobs:
   build:
-    #if: startsWith(github.ref, 'refs/tags/0.')
+    if: startsWith(github.ref, 'refs/tags/0.')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, windows-2019]
         architecture: ['x64']
-        linux_archs: ["auto s390x"]
+        linux_archs: ["auto"]
         include:
           - os: windows-2019
-            architecture: 'x86'
-            skip: "*2*win* *win_amd64"
-          - os: windows-2019
             architecture: 'x64'
-            skip: "*2*win* *win32"
+            skip: "*2*win* *win32 pp*"
           - os: ubuntu-20.04
             architecture: 'x64'
-            linux_archs: aarch64 ppc64le
+            linux_archs: aarch64
+            skip: "pp*"
 
     name: Python ${{ matrix.os }}
     env:
