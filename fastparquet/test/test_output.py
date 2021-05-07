@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import numpy as np
 import os
 import pandas as pd
@@ -168,7 +169,11 @@ def test_roundtrip_complex(tempdir, scheme,):
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
                   periods=10, freq='H', tz='Europe/Berlin')}),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
-                  periods=10, freq='H', tz='UTC')})
+                  periods=10, freq='H', tz='UTC')}),
+    pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
+                                     periods=10, freq='H', tz=datetime.timezone.min)}),
+    pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
+                                     periods=10, freq='H', tz=datetime.timezone.max)})
     ])
 def test_datetime_roundtrip(tempdir, df, capsys):
     fname = os.path.join(tempdir, 'test.parquet')

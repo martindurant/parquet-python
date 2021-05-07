@@ -522,14 +522,8 @@ class ParquetFile(object):
                         dtype[col] = np.dtype('f8')
             elif dt.kind == "M":
                 if tz is not None and tz.get(col, False):
-                    z = tz[col]
-                    if ":" in z:
-                        import pytz
-                        z = z[:3]
-                        z = z.replace("0", "") if z[1] == '0' else z
-                        z = pytz.timezone(f"Etc/GMT{z}")
-                    dtype[col] = pd.Series([], dtype='M8[ns]'
-                                           ).dt.tz_localize(z).dtype
+                    z = dataframe.tz_to_dt_tz(tz[col])
+                    dtype[col] = pd.Series([], dtype='M8[ns]').dt.tz_localize(z).dtype
             elif dt == 'S12':
                 dtype[col] = 'M8[ns]'
         for field in categories:

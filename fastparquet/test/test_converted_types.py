@@ -165,4 +165,4 @@ def test_tz_nonstring(tmpdir):
     event_df.to_parquet(fn, compression='uncompressed', engine='fastparquet')
 
     round = pd.read_parquet(fn, engine="fastparquet")
-    assert event_df.equals(round)
+    assert (event_df == round).all().all()

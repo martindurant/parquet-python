@@ -97,10 +97,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             d = np.empty(0, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 try:
-                    z = timezones[str(col)]
-                    if ":" in z:
-                        import pytz
-                        z = pytz.FixedOffset(int(z[:3]) * 60)
+                    z = tz_to_dt_tz(timezones[str(col)])
                     d = Series(d).dt.tz_localize(z)
                 except:
                     warnings.warn("Inferring time-zone from %s in column %s "
@@ -131,7 +128,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 # 1) create the DatetimeIndex in UTC as no datetime conversion is needed and
                 # it works with d uninitialised data (no NonExistentTimeError or AmbiguousTimeError)
                 # 2) convert to timezone (if UTC=noop, if None=remove tz, if other=change tz)
-                index = DatetimeIndex(d, tz="UTC").tz_convert(timezones[str(col)])
+                index = DatetimeIndex(d, tz="UTC").tz_convert(
+                    tz_to_dt_tz(timezones[str(col)]))
             else:
                 index = Index(d)
             views[col] = index.values
@@ -184,9 +182,11 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             values = np.zeros(shape=shape, dtype='M8[ns]')
             values = type(bvalues)(values, dtype=bvalues.dtype)
         else:
-            # Note: this will break on any ExtensionDtype other than
-            #  Categorical and DatetimeTZ
-            values = np.empty(shape=shape, dtype=bvalues.dtype)
+            if not isinstance(bvalues, np.ndarray):
+                # e.g. DatetimeLikeBlock backed by DatetimeArray/TimedeltaArray
+                values = type(bvalues)._from_sequence(values, copy=False)
+            else:
+                values = np.empty(shape=shape, dtype=bvalues.dtype)
 
         block.values = values
 
@@ -215,3 +215,14 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             for n in index_names
         ]
     return df, views
+
+
+def tz_to_dt_tz(z):
+    if ":" in z:
+        import datetime
+        hours, mins = z.split(":", 1)
+        sign = z.startswith("-")
+        z = int(hours) * 3600
+        z += (1, -1)[sign] * int(mins) * 60
+        z = datetime.timezone(datetime.timedelta(seconds=z))
+    return z
