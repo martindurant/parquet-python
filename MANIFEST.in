@@ -1,5 +1,6 @@
 recursive-include fastparquet *.py
-exclude fastparquet/*.c
+recursive-include fastparquet *.pyx
+#exclude fastparquet/*.c
 
 include setup.py
 include README.rst
