@@ -14,6 +14,7 @@ jobs:
         architecture: ['x64']
         linux_archs: ["auto"]
         include:
+          # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: windows-2019
             architecture: 'x64'
             skip: "*2*win* *win32 pp*"
