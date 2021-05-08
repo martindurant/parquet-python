@@ -72,15 +72,6 @@ to objects upon loading.
 Fixed-length byte arrays are not supported by Spark, so
 files written using this may not be portable.
 
-Short-type Integers
--------------------
-
-Types like 1-byte ints (signed or unsigned) are stored using bitpacking for
-optimized space and speed. Unfortunately, Spark is known not to be
-able to handle these types. If you want to generate files for reading by
-Spark, be sure to transform integer columns to a minimum of 4 bytes (numpy
-``int32`` or ``uint32``) before saving.
-
 Nulls
 -----
 
@@ -143,8 +134,8 @@ A couple of caveats should be noted:
   byte strings can be written as raw bytes type;
 - the time types have microsecond accuracy, whereas pandas time types normally
   are nanosecond accuracy;
-- all times are stored as UTC, and timezone information will
-  be lost;
+- all times are stored as UTC, but the timezone is stored in the metadata, so
+  will be recreated if loaded into pandas
 - complex numbers must have their real and imaginary parts stored as two
   separate float columns.
 

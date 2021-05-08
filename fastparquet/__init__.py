@@ -1,5 +1,5 @@
 """parquet - read parquet files."""
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 from .thrift_structures import parquet_thrift
 from .core import read_thrift

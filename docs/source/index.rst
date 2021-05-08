@@ -65,10 +65,6 @@ pure-Python Parquet quick-look utility which was the inspiration for fastparquet
 -  `parquet-cpp <https://github.com/apache/parquet-cpp/>`_ is a low-level C++
 implementation of the Parquet format which can be called from Python using
 Apache `Arrow <http://pyarrow.readthedocs.io/en/latest/>`_ bindings.
-Future collaboration with parquet-cpp is possible, in the medium term, and that
-perhaps their low-level
-routines will replace some functions in fastparquet or that high-level logic in
-fastparquet will be migrated to C++.
 
 - `PySpark <http://Spark.apache.org/docs/2.1.0/programming-guide.html>`_, a Python API to the Spark
 engine, interfaces Python commands with a Java/Scala execution core, and thereby

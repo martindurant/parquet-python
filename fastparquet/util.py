@@ -244,7 +244,9 @@ def get_column_metadata(column, name):
     elif hasattr(dtype, 'tz'):
         try:
             stz = str(dtype.tz)
-            if "pytz" not in stz:
+            if "UTC" in stz and ":" in stz:
+                extra_metadata = {'timezone': stz.strip("UTC")}
+            elif "pytz" not in stz:
                 pd.Series([pd.to_datetime('now')]).dt.tz_localize(stz)
                 extra_metadata = {'timezone': str(dtype.tz)}
             elif "Offset" in stz:
