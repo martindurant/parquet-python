@@ -178,8 +178,24 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, 
     return values
 
 
+def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
+                      dic, assign, num, use_cat):
+    """
+    :param infile: open file
+    :param schema_helper:
+    :param se: schema element
+    :param data_header2: page header struct
+    :param cmd: column metadata
+    :param dic: any dictionary labels encountered
+    :param assign: output array (all of it)
+    :param num: offset, rows so far
+    :param use_cat: output is categorical?
+    :return: None
+    """
+
+
 def read_col(column, schema_helper, infile, use_cat=False,
-             grab_dict=False, selfmade=False, assign=None, catdef=None):
+             selfmade=False, assign=None, catdef=None):
     """Using the given metadata, read one column in one row-group.
 
     Parameters
@@ -193,9 +209,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
     use_cat: bool (False)
         If this column is encoded throughout with dict encoding, give back
         a pandas categorical column; otherwise, decode to values
-    grab_dict: bool (False)
-        Short-cut mode to return the dictionary values only - skips the actual
-        data.
     """
     cmd = column.meta_data
     se = schema_helper.schema_element(cmd.path_in_schema)
@@ -203,30 +216,10 @@ def read_col(column, schema_helper, infile, use_cat=False,
                cmd.data_page_offset))
 
     infile.seek(off)
-    ph = read_thrift(infile, parquet_thrift.PageHeader)
-
-    dic = None
-    if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-        dic = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
-        ph = read_thrift(infile, parquet_thrift.PageHeader)
-        dic = convert(dic, se)
-    if grab_dict:
-        return dic
-    if use_cat and dic is not None:
-        # fastpath skips the check the number of categories hasn't changed.
-        # In this case, they may change, if the default RangeIndex was used.
-        catdef._set_categories(pd.Index(dic), fastpath=True)
-        if np.iinfo(assign.dtype).max < len(dic):
-            raise RuntimeError('Assigned array dtype (%s) cannot accommodate '
-                               'number of category labels (%i)' %
-                               (assign.dtype, len(dic)))
-
     rows = cmd.num_values
 
-    do_convert = True
     if use_cat:
         my_nan = -1
-        do_convert = False
     else:
         if assign.dtype.kind in ['f', 'i', 'u']:
             my_nan = np.nan
@@ -238,15 +231,30 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
     num = 0
     row_idx = 0
-    while True:
+    dic = None
+
+    while num < rows:
+
+        ph = read_thrift(infile, parquet_thrift.PageHeader)
         if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
             dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
             dic2 = convert(dic2, se)
-            if use_cat and (dic2 != dic).any():
+            if use_cat and dic is not None and (dic2 != dic).any():
                 raise RuntimeError("Attempt to read as categorical a column"
                                    "with multiple dictionary pages.")
             dic = dic2
-            ph = read_thrift(infile, parquet_thrift.PageHeader)
+            if use_cat and dic is not None:
+                # fastpath skips the check the number of categories hasn't changed.
+                # In this case, they may change, if the default RangeIndex was used.
+                catdef._set_categories(pd.Index(dic), fastpath=True)
+                if np.iinfo(assign.dtype).max < len(dic):
+                    raise RuntimeError('Assigned array dtype (%s) cannot accommodate '
+                                       'number of category labels (%i)' %
+                                       (assign.dtype, len(dic)))
+            continue
+        if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
+            read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
+                              dic, assign, num, use_cat)
             continue
         if (selfmade and hasattr(cmd, 'statistics') and
                 getattr(cmd.statistics, 'null_count', 1) == 0):
@@ -281,7 +289,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             part[defi != max_defi] = my_nan
             if d and not use_cat:
                 part[defi == max_defi] = dic[val]
-            elif do_convert:
+            elif not use_cat:
                 part[defi == max_defi] = convert(val, se)
             else:
                 part[defi == max_defi] = val
@@ -300,15 +308,12 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 piece[:] = i.codes
             elif d and not use_cat:
                 piece[:] = dic[val]
-            elif do_convert:
+            elif not use_cat:
                 piece[:] = convert(val, se)
             else:
                 piece[:] = val
 
         num += len(defi) if defi is not None else len(val)
-        if num >= rows:
-            break
-        ph = read_thrift(infile, parquet_thrift.PageHeader)
 
 
 def read_row_group_file(fn, rg, columns, categories, schema_helper, cats,

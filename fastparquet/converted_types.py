@@ -90,7 +90,7 @@ def convert(data, se, timestamp96=True):
     if ctype is None:
         return data
     if ctype == parquet_thrift.ConvertedType.UTF8:
-        if data.dtype != "O":
+        if data.dtype != "O" or (len(data) == 1 and not isinstance(data[0], str)):
             # fixed string
             import pandas as pd
             return pd.Series(data).str.decode("utf8").values
