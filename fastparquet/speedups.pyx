@@ -1,9 +1,17 @@
 """
 Native accelerators for Parquet encoding and decoding.
 """
-# cython: c_string_encoding=utf8
+# cython: profile=False
+# cython: linetrace=False
+# cython: binding=False
+# cython: language_level=3
+# cython: initializedcheck=False
 # cython: boundscheck=False
 # cython: wraparound=False
+# cython: overflowcheck=False
+# cython: initializedcheck=False
+# cython: cdivision=True
+# cython: always_allow_keywords=False
 
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)

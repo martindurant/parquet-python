@@ -40,7 +40,7 @@ else:
     modules = [
         Extension(mod, fix_exts(sources))
         for mod, sources in modules_to_build.items()]
-    extra = {'ext_modules': cythonize(modules, language_level=3, annotate=True)}
+    extra = {'ext_modules': cythonize(modules)}
 
 install_requires = open('requirements.txt').read().strip().split('\n')
 
