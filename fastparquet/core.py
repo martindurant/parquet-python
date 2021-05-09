@@ -9,7 +9,7 @@ except ImportError:
 from . import encoding
 from . encoding import read_plain
 import fastparquet.cencoding as encoding
-from .compression import decompress_data
+from .compression import decompress_data, rev_map, decom_into
 from .converted_types import convert, typemap, converts_inplace
 from .schema import _is_list_like, _is_map_like
 from .speedups import unpack_byte_array
@@ -34,12 +34,14 @@ def _read_page(file_obj, page_header, column_metadata):
     return raw_bytes
 
 
-def read_data(fobj, coding, count, bit_width):
+def read_data(fobj, coding, count, bit_width, out=None):
     """For definition and repetition levels
 
     Reads with RLE/bitpacked hybrid, where length is given by first byte.
+
+    out: potentially provide a len(count) uint8 array to reuse
     """
-    out = np.empty(count, dtype=np.uint8)
+    out = out or np.empty(count, dtype=np.uint8)
     o = encoding.NumpyIO(out)
     if coding == parquet_thrift.Encoding.RLE:
         while o.tell() < count:
@@ -60,9 +62,10 @@ def read_def(io_obj, daph, helper, metadata):
             metadata.path_in_schema)
         bit_width = encoding.width_from_max_int(max_definition_level)
         if bit_width:
+            # NB: num_values is index 1 for either type of page header
             definition_levels = read_data(
-                    io_obj, daph.definition_level_encoding,
-                    daph.num_values, bit_width)[:daph.num_values]
+                    io_obj, parquet_thrift.Encoding.RLE,
+                    daph.num_values, bit_width)
             num_nulls = daph.num_values - (definition_levels ==
                                            max_definition_level).sum()
         if num_nulls == 0:
@@ -82,11 +85,10 @@ def read_rep(io_obj, daph, helper, metadata):
             repetition_levels = None
         else:
             bit_width = encoding.width_from_max_int(max_repetition_level)
-            repetition_levels = read_data(io_obj, daph.repetition_level_encoding,
+            # NB: num_values is index 1 for either type of page header
+            repetition_levels = read_data(io_obj, parquet_thrift.Encoding.RLE,
                                           daph.num_values,
-                                          bit_width)[:daph.num_values]
-            # if repetition_levels.max() == 0:
-            #     repetition_levels = None
+                                          bit_width)
     return repetition_levels
 
 
@@ -201,9 +203,29 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     (8, TType.STRUCT, 'statistics', [Statistics, None], None, ),  # 8
 
     """
+    if data_header2.encoding not in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
+                                     parquet_thrift.Encoding.RLE_DICTIONARY,
+                                     parquet_thrift.Encoding.PLAIN]:
+        raise NotImplementedError
     max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
-    inpplace = converts_inplace(se)
+    # special case for UNCOMPRESSED
+    # flag to see if we can use decompress_into
+    into0 = ((use_cat or converts_inplace(se)) and data_header2.num_nulls == 0
+              and max_rep == 0)
+    into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
+            and into0)
+    # TODO: only easy path
+    assert max_def == max_rep == 0
+    # cases
+    # - can PLAIN decompress_into the output (may still convert)
+    # - can read_into output if not compressed and PLAIN
+    # - can LRE-read into output
+    if into and into0:
+        decomp = decom_into[rev_map[cmd.codec]]
+        infile.seek(data_header2.definition_levels_byte_length +
+                    data_header2.repetition_levels_byte_length, 1)
+        decomp()
 
 
 def read_col(column, schema_helper, infile, use_cat=False,

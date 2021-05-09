@@ -66,6 +66,12 @@ compressions['LZ4_RAW'] = lz4_compress
 decompressions['LZ4_RAW'] = cramjam.lz4.decompress_block
 compressions['ZSTD'] = cramjam.zstd.compress
 decompressions['ZSTD'] = cramjam.zstd.decompress
+decom_into = {
+    "GZIP": cramjam.gzip.decompress_into,
+    "SNAPPY": cramjam.snappy.decompress_into,
+    "ZSTD": cramjam.zstd.decompress_into,
+    "BROTLI": cramjam.brotli.decompress_into
+}
 
 compressions = {k.upper(): v for k, v in compressions.items()}
 decompressions = {k.upper(): v for k, v in decompressions.items()}

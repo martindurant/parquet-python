@@ -74,11 +74,12 @@ def typemap(se):
 
 
 def converts_inplace(se):
+    """when converting, reuses input array"""
     ctype = se.ctype
     if ctype is None:
         return True
-    if se.type == 6 and ctype == parquet_thrift.ConvertedType.UTF8:
-        return True
+    if se.type == parquet_thrift.Type.BYTE_ARRAY:
+        return ctype == parquet_thrift.ConvertedType.UTF8
     if ctype in [
         parquet_thrift.ConvertedType.DATE,
         parquet_thrift.ConvertedType.TIME_MILLIS,
@@ -87,6 +88,8 @@ def converts_inplace(se):
         parquet_thrift.ConvertedType.TIMESTAMP_MICROS
     ]:
         return True
+    if se.type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
+        return ctype != parquet_thrift.ConvertedType.UTF8
     return False
 
 

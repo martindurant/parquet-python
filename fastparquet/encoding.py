@@ -5,9 +5,9 @@ from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift
 
 
-def read_plain_boolean(raw_bytes, count):
+def read_plain_boolean(raw_bytes, count, out=None):
     data = np.frombuffer(raw_bytes, dtype='uint8')
-    out = np.empty(count, dtype=bool)
+    out = out or np.empty(count, dtype=bool)
     read_bitpacked1(NumpyIO(data), count, NumpyIO(out.view('uint8')))
     return out[:count]
 
