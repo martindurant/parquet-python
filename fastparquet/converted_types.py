@@ -73,6 +73,23 @@ def typemap(se):
     return np.dtype("O")
 
 
+def converts_inplace(se):
+    ctype = se.ctype
+    if ctype is None:
+        return True
+    if se.type == 6 and ctype == parquet_thrift.ConvertedType.UTF8:
+        return True
+    if ctype in [
+        parquet_thrift.ConvertedType.DATE,
+        parquet_thrift.ConvertedType.TIME_MILLIS,
+        parquet_thrift.ConvertedType.TIMESTAMP_MILLIS,
+        parquet_thrift.ConvertedType.TIME_MICROS,
+        parquet_thrift.ConvertedType.TIMESTAMP_MICROS
+    ]:
+        return True
+    return False
+
+
 def convert(data, se, timestamp96=True):
     """Convert known types from primitive to rich.
 

@@ -10,7 +10,7 @@ from . import encoding
 from . encoding import read_plain
 import fastparquet.cencoding as encoding
 from .compression import decompress_data
-from .converted_types import convert, typemap
+from .converted_types import convert, typemap, converts_inplace
 from .schema import _is_list_like, _is_map_like
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift, read_thrift
@@ -191,7 +191,19 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     :param num: offset, rows so far
     :param use_cat: output is categorical?
     :return: None
+    (1, TType.I32, 'num_values', None, None, ),  # 1
+    (2, TType.I32, 'num_nulls', None, None, ),  # 2
+    (3, TType.I32, 'num_rows', None, None, ),  # 3
+    (4, TType.I32, 'encoding', None, None, ),  # 4
+    (5, TType.I32, 'definition_levels_byte_length', None, None, ),  # 5
+    (6, TType.I32, 'repetition_levels_byte_length', None, None, ),  # 6
+    (7, TType.BOOL, 'is_compressed', None, True, ),  # 7
+    (8, TType.STRUCT, 'statistics', [Statistics, None], None, ),  # 8
+
     """
+    max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
+    max_def = schema_helper.max_definition_level(cmd.path_in_schema)
+    inpplace = converts_inplace(se)
 
 
 def read_col(column, schema_helper, infile, use_cat=False,
