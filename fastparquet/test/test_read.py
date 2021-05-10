@@ -262,6 +262,20 @@ def test_skip_length():
         assert len(block) == data.tell()
 
 
+def test_v2():
+    # from https://github.com/apache/parquet-testing/tree/master/data
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, 'datapage_v2.snappy.parquet'))
+    expected = pd.DataFrame(
+        {'a': {0: 'abc', 1: 'abc', 2: 'abc', 3: None, 4: 'abc'},
+         # 'b': {0: 1, 1: 2, 2: 3, 3: 4, 4: 5},
+         'c': {0: 2.0, 1: 3.0, 2: 4.0, 3: 5.0, 4: 2.0},
+         'd': {0: True, 1: True, 2: True, 3: False, 4: True},
+         'e': {0: [1, 2, 3], 1: None, 2: None, 3: [1, 2, 3], 4: [1, 2]}}
+    )
+    out = pf.to_pandas(columns=['a', 'c', 'd', 'e'])
+    assert out.equals(expected)
+
+
 def test_timestamp96():
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, 'mr_times.parq'))
     out = pf.to_pandas()
