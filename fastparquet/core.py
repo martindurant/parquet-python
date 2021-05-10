@@ -209,7 +209,9 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     if data_header2.encoding not in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
                                      parquet_thrift.Encoding.RLE_DICTIONARY,
                                      parquet_thrift.Encoding.RLE,
-                                     parquet_thrift.Encoding.PLAIN]:
+                                     parquet_thrift.Encoding.PLAIN,
+                                     parquet_thrift.Encoding.DELTA_BINARY_PACKED
+                                     ]:
         raise NotImplementedError
     size = ph.compressed_page_size
     max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
@@ -251,8 +253,9 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         infile.read_into(size, assign[num:num+n_values])
     elif data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN, but with nulls or not in-place conversion
+        codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         raw_bytes = decompress_data(infile.read(size),
-                                    ph.uncompressed_page_size)
+                                    ph.uncompressed_page_size, codec)
         values = read_plain(encoding.read_plain(raw_bytes),
                             cmd.type,
                             n_values,
@@ -319,6 +322,9 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         else:
             assign[num:num+data_header2.num_values] = dic[out]
     else:
+        codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
+        raw_bytes = decompress_data(infile.read(size),
+                                    ph.uncompressed_page_size, codec)
         raise NotImplementedError
     return data_header2.num_values
 
@@ -492,6 +498,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
                     value, key = out[name], maps[name]
                 out[name][:] = [dict(zip(k, v)) if k is not None else None
                                 for k, v in zip(key, value)]
+                del maps[name]
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,

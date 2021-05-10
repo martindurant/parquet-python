@@ -209,6 +209,38 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
         else:
             read_bitpacked(io_obj, header, width, o, itemsize)
 
+cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
+    """<block size in values> <number of miniblocks in a block> <total value count> <first value>"""
+    cdef:
+        int block_size = read_unsigned_var_int(file_obj)
+        int miniblock_per_block = read_unsigned_var_int(file_obj)
+        int count = read_unsigned_var_int(file_obj)
+        int value = zigzag_int(read_unsigned_var_int(file_obj))
+        int block, min_delta, i, j, values_per_miniblock, temp
+        const uint8_t[:] bitwidths
+        char bitwidth, header
+    values_per_miniblock = block_size // miniblock_per_block
+    while True:
+        min_delta = zigzag_int(read_unsigned_var_int(file_obj))
+        bitwidths = file_obj.read(miniblock_per_block)
+        for i in range(miniblock_per_block):
+            bitwidth = bitwidths[i]
+            if bitwidth:
+                header = ((block_size // miniblock_per_block) // 8) << 1
+                read_bitpacked(file_obj, header, bitwidth, o, itemsize=4)
+                for j in range(values_per_miniblock):
+                    temp = o.read_int()
+                    o.seek(-4, 1)
+                    o.write_int(value)
+                    value += min_delta + temp
+            else:
+                for j in range(values_per_miniblock):
+                    o.write_int(value)
+                    value += min_delta
+            count -= block_size // miniblock_per_block
+            if count < 0:
+                break
+
 
 cpdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
     cdef char * outptr = o.get_pointer()
