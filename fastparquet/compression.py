@@ -25,21 +25,9 @@ def gzip_decompress(data, uncompressed_size):
 
 compressions['GZIP'] = gzip_compress_v3
 decompressions['GZIP'] = gzip_decompress
-
-
-def snappy_decompress(data, uncompressed_size):
-    return cramjam.snappy.decompress_raw(data)
-
-
 compressions['SNAPPY'] = cramjam.snappy.compress_raw
+decompressions['SNAPPY'] = cramjam.snappy.decompress_raw
 
-def sd(data, size):
-    import numpy as np
-    out = np.empty(size, dtype="uint8")
-    cramjam.snappy.decompress_raw_into(data, out)
-    return out
-
-decompressions['SNAPPY'] = sd
 try:
     import lzo
     def lzo_decompress(data, uncompressed_size):
@@ -68,7 +56,7 @@ compressions['ZSTD'] = cramjam.zstd.compress
 decompressions['ZSTD'] = cramjam.zstd.decompress
 decom_into = {
     "GZIP": cramjam.gzip.decompress_into,
-    "SNAPPY": cramjam.snappy.decompress_into,
+    "SNAPPY": cramjam.snappy.decompress_raw_into,
     "ZSTD": cramjam.zstd.decompress_into,
     "BROTLI": cramjam.brotli.decompress_into
 }

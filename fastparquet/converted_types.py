@@ -75,7 +75,7 @@ def typemap(se):
 
 def converts_inplace(se):
     """when converting, reuses input array"""
-    ctype = se.ctype
+    ctype = se.converted_type
     if ctype is None:
         return True
     if se.type == parquet_thrift.Type.BYTE_ARRAY:
