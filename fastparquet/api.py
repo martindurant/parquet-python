@@ -44,7 +44,9 @@ class ParquetFile(object):
     root: str
         If passing a list of files, the top directory of the data-set may
         be ambiguous for partitioning where the upmost field has only one
-        value. Use this to specify the data'set root directory, if required.
+        value. Use this to specify the dataset root directory, if required.
+    fs: fsspec-compatible filesystem
+        You can use this instead of open_with (otherwise, it will be inferred)
 
     Attributes
     ----------
@@ -77,8 +79,6 @@ class ParquetFile(object):
         If this file was created by fastparquet
     statistics: dict
         Max/min/count of each column chunk
-    fs: fsspec-compatible filesystem
-        You can use this instead of open_with (otherwise, it will be inferred)
     """
     _pdm = None
 
