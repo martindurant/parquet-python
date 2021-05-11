@@ -125,7 +125,7 @@ def test_read_from_spark(tempdir, sql, int96, legacy, version):
     data.loc[100, 'f'] = np.nan
     fname = os.path.join(tempdir, 'test.parquet')
     df = sql.createDataFrame(data).repartition(1)
-    df.write.parquet(fname, compression=comp)
+    df.write.parquet(fname)
     files = [f for f in os.listdir(fname) if f.endswith("parquet")]
     fname = os.path.join(fname, files[0])
     ddf = fastparquet.ParquetFile(fname).to_pandas()
