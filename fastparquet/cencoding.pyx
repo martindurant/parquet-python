@@ -210,7 +210,6 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
             read_bitpacked(io_obj, header, width, o, itemsize)
 
 cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
-    """<block size in values> <number of miniblocks in a block> <total value count> <first value>"""
     cdef:
         int block_size = read_unsigned_var_int(file_obj)
         int miniblock_per_block = read_unsigned_var_int(file_obj)

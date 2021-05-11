@@ -321,6 +321,22 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             assign[num:num+data_header2.num_values][~nulls] = dic[out]
         else:
             assign[num:num+data_header2.num_values] = dic[out]
+    elif data_header2.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
+        codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
+        raw_bytes = decompress_data(infile.read(size),
+                                    ph.uncompressed_page_size, codec)
+        if converts_inplace(se):
+            encoding.delta_binary_unpack(
+                encoding.NumpyIO(raw_bytes),
+                encoding.NumpyIO(assign[num:num+data_header2.num_values].view('uint8'))
+            )
+            convert(assign[num:num+data_header2.num_values], se)
+        else:
+            out = np.empty(data_header2.num_values, dtype='int32')
+            encoding.delta_binary_unpack(
+                encoding.NumpyIO(raw_bytes), encoding.NumpyIO(out.view('uint8'))
+            )
+            assign[num:num+data_header2.num_values] = convert(out, se)
     else:
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         raw_bytes = decompress_data(infile.read(size),
