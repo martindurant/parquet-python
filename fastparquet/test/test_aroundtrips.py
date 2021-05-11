@@ -64,12 +64,15 @@ df = sql.read.json('temp.json')
     assert all([o == ['hi', 'world'] for o in out['nest.thing']])
 
 
-@pytest.mark.parametrize('scheme', ['simple', 'hive', 'drill'])
+comps = [None, 'UNCOMPRESSED', 'GZIP', 'SNAPPY']
+
+
+@pytest.mark.parametrize('scheme', ['simple', 'hive'])
 @pytest.mark.parametrize('row_groups', [[0], [0, 500]])
-@pytest.mark.parametrize('comp', [None] + list(compressions))
-def test_pyspark_roundtrip(tempdir, scheme, row_groups, comp, sql):
+@pytest.mark.parametrize('comp', comps)
+def test_writer_to_spark(tempdir, scheme, row_groups, comp, sql):
     if comp in ['BROTLI', 'ZSTD', 'LZO', "LZ4"]:
-        pytest.xfail("spark doesn't support compression")
+        pytest.skip("spark doesn't support compression")
     data = pd.DataFrame({'i32': np.random.randint(-2**17, 2**17, size=1001,
                                                   dtype=np.int32),
                          'i64': np.random.randint(-2**33, 2**33, size=1001,
@@ -99,6 +102,38 @@ def test_pyspark_roundtrip(tempdir, scheme, row_groups, comp, sql):
             ddf[col] + datetime.timedelta(hours=offset) == data[col]
         else:
             assert (ddf[col] == data[col])[~ddf[col].isnull()].all()
+
+
+@pytest.mark.parametrize('comp', comps)
+@pytest.mark.parametrize("int96", ["true", "false"])
+@pytest.mark.parametrize("legacy", ["true", "false"])
+@pytest.mark.parametrize("version", ["v2", "v1"])
+def test_read_from_spark(tempdir, sql, comp, int96, legacy, version):
+    sql.setConf("spark.sql.parquet.int96AsTimestamp", int96)
+    sql.setConf("spark.sql.parquet.writeLegacyFormat", legacy)
+    sql.setConf("spark.hadoop.parquet.writer.version", version)
+    sql.setConf('spark.hadoop.parquet.enable.summary-metadata', 'true')
+    data = pd.DataFrame({
+        'i32': np.random.randint(-2**17, 2**17, size=1001,
+                                 dtype=np.int32),
+        'i64': np.random.randint(-2**33, 2**33, size=1001,
+                                 dtype=np.int64),
+        'f': np.random.randn(1001),
+        'bhello': np.random.choice([b'hello', b'you',
+                                    b'people'], size=1001).astype("O"),
+        }
+    )
+
+    data['hello'] = data.bhello.str.decode('utf8')
+    data.loc[100, 'f'] = np.nan
+    fname = os.path.join(tempdir, 'test.parquet')
+    df = sql.createDataFrame(data).repartition(1)
+    df.write.parquet(fname, compression=comp)
+    files = [f for f in os.listdir(fname) if f.endswith("parquet")]
+    fname = os.path.join(fname, files[0])
+    ddf = fastparquet.ParquetFile(fname).to_pandas()
+    for col in data:
+        assert (ddf[col] == data[col])[~ddf[col].isnull()].all()
 
 
 def test_empty_row_groups(tempdir, sql):

@@ -63,7 +63,8 @@ def sql():
     pyspark = pytest.importorskip("pyspark")
     sc = pyspark.SparkContext.getOrCreate()
     sql = pyspark.SQLContext(sc)
-    return sql
+    yield sql
+    sc.stop()
 
 
 @pytest.fixture()
