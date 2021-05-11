@@ -64,15 +64,13 @@ df = sql.read.json('temp.json')
     assert all([o == ['hi', 'world'] for o in out['nest.thing']])
 
 
-comps = [None, 'UNCOMPRESSED', 'GZIP', 'SNAPPY']
+comps = ['UNCOMPRESSED', 'GZIP', 'SNAPPY']
 
 
 @pytest.mark.parametrize('scheme', ['simple', 'hive'])
 @pytest.mark.parametrize('row_groups', [[0], [0, 500]])
 @pytest.mark.parametrize('comp', comps)
 def test_writer_to_spark(tempdir, scheme, row_groups, comp, sql):
-    if comp in ['BROTLI', 'ZSTD', 'LZO', "LZ4"]:
-        pytest.skip("spark doesn't support compression")
     data = pd.DataFrame({'i32': np.random.randint(-2**17, 2**17, size=1001,
                                                   dtype=np.int32),
                          'i64': np.random.randint(-2**33, 2**33, size=1001,
@@ -104,11 +102,10 @@ def test_writer_to_spark(tempdir, scheme, row_groups, comp, sql):
             assert (ddf[col] == data[col])[~ddf[col].isnull()].all()
 
 
-@pytest.mark.parametrize('comp', comps)
 @pytest.mark.parametrize("int96", ["true", "false"])
 @pytest.mark.parametrize("legacy", ["true", "false"])
 @pytest.mark.parametrize("version", ["v2", "v1"])
-def test_read_from_spark(tempdir, sql, comp, int96, legacy, version):
+def test_read_from_spark(tempdir, sql, int96, legacy, version):
     sql.setConf("spark.sql.parquet.int96AsTimestamp", int96)
     sql.setConf("spark.sql.parquet.writeLegacyFormat", legacy)
     sql.setConf("spark.hadoop.parquet.writer.version", version)

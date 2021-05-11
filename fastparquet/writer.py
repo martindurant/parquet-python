@@ -250,7 +250,7 @@ def convert(data, se):
                 out = data.values
             if type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
                 out = out.astype('S%i' % se.type_length)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             ct = parquet_thrift.ConvertedType._VALUES_TO_NAMES[
                 converted_type] if converted_type is not None else None
             raise ValueError('Error converting column "%s" to bytes using '
@@ -317,32 +317,6 @@ def encode_plain(data, se):
         return out.tobytes()
 
 
-def encode_rle(data, se, fixed_text=None):
-    if data.dtype.kind not in ['i', 'u']:
-        raise ValueError('RLE/bitpack encoding only works for integers')
-    if se.type_length in [8, 16]:
-        buf = np.empty(10, dtype=np.uint8)
-        o = NumpyIO(buf)
-        bit_packed_count = (len(data) + 7) // 8
-        cencoding.encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
-        # TODO: `tobytes` makes copy, and adding bytes also makes copy
-        return o.so_far().tobytes() + data.values.tostring()
-    else:
-        # TODO: probably width is always 1
-        #  if not, consider rounding width up to nearest power of 2
-        m = data.max()
-        width = 0
-        while m:
-            m >>= 1
-            width += 1
-        l = (len(data) * width + 7) // 8 + 10
-        buf = np.empty(l, dtype='uint8')
-        o = NumpyIO(buf)
-        cencoding.encode_rle_bp(data, width, o)
-        # TODO: `tobytes` makes copy
-        return o.so_far().tobytes()
-
-
 def encode_dict(data, se):
     """ The data part of dictionary encoding is always int8/16, with RLE/bitpack
     """
@@ -358,9 +332,7 @@ def encode_dict(data, se):
 
 encode = {
     'PLAIN': encode_plain,
-    'RLE': encode_rle,
     'RLE_DICTIONARY': encode_dict,
-    # 'DELTA_BINARY_PACKED': encode_delta
 }
 
 
@@ -534,13 +506,7 @@ def write_column(f, data, selement, compression=None):
                                    uncompressed_page_size=l0,
                                    compressed_page_size=l1,
                                    data_page_header=dph, crc=None)
-    try:
-        write_thrift(f, ph)
-    except OverflowError as err:
-        raise IOError('Overflow error while writing page; try using a smaller '
-                      'value for `row_group_offsets`. Original message: ' +
-                      str(err))
-
+    write_thrift(f, ph)
     f.write(bdata)
 
     compressed_size = f.tell() - start

@@ -61,6 +61,21 @@ def test_logical_types(tempdir):
     assert isinstance(s['min']['D'][0], (np.datetime64, Timestamp))
 
 
+def test_text_schema(tempdir):
+    df = pd.util.testing.makeMixedDataFrame()
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df)
+    p = ParquetFile(fn)
+    t = p.schema.text
+    expected = ('- schema: \n'
+                '| - A: DOUBLE, OPTIONAL\n'
+                '| - B: DOUBLE, OPTIONAL\n'
+                '| - C: BYTE_ARRAY, UTF8, OPTIONAL\n'
+                '  - D: INT64, TIMESTAMP_MICROS, OPTIONAL')
+    assert t == expected
+    assert repr(p.schema) == "<Parquet Schema with 5 entries>"
+
+
 def test_empty_statistics(tempdir):
     p = ParquetFile(os.path.join(TEST_DATA, "nation.impala.parquet"))
 

@@ -20,7 +20,7 @@ try:
     from bson import BSON
     unbson = BSON.decode
     tobson = BSON.encode
-except ImportError:
+except ImportError:  # pragma: no cover
     try:
         import bson
         unbson = bson.loads
