@@ -283,20 +283,6 @@ def test_empty_row_group(tempdir):
     assert len(pf.row_groups) == 2
 
 
-@pytest.mark.skip()
-def test_write_delta(tempdir):
-    fname = os.path.join(tempdir, 'temp.parq')
-    data = pd.DataFrame({'i1': np.arange(10, dtype=np.int32) + 2,
-                         'i2': np.cumsum(np.random.randint(
-                                 0, 5, size=10)).astype(np.int32) + 2})
-    writer.write(fname, data, encoding="DELTA_BINARY_PACKED")
-
-    df = sql.read.parquet(fname)
-    ddf = df.toPandas()
-    for col in data:
-        assert (ddf[col] == data[col])[~ddf[col].isnull()].all()
-
-
 def test_int_rowgroups(tempdir):
     df = pd.DataFrame({'a': [1]*100})
     fname = os.path.join(tempdir, 'test.parq')

@@ -35,8 +35,7 @@ def path_string(o):
     return str(o)
 
 
-def default_open(f, mode='rb'):
-    return open(f, mode)
+default_open = open
 
 
 def val_from_meta(x, meta):

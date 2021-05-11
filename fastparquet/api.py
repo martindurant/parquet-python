@@ -107,7 +107,10 @@ class ParquetFile(object):
             elif fs is not None:
                 open_with = fs.open
             else:
-                fs = open_with.__self__
+                fs = getattr(open_with, "__self__", None)
+                if not isinstance(fs, fsspec.AbstractFileSystem):
+                    raise ValueError("Opening directories without a _metadata requires"
+                                     "a filesystem compatible with fsspec")
             if fs.isfile(fn):
                 self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:

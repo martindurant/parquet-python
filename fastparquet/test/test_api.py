@@ -182,6 +182,17 @@ def test_directory_local(tempdir):
     assert pf.to_pandas()['z'].tolist() == ['a', 'b', 'c', 'd'] * 2
 
 
+def test_directory_error(tempdir):
+    df = pd.DataFrame({'x': [1, 2, 3, 4],
+                       'y': [1.0, 2.0, 1.0, 2.0],
+                       'z': ['a', 'b', 'c', 'd']})
+    df.index.name = 'index'
+    write(os.path.join(tempdir, 'foo1.parquet'), df)
+    write(os.path.join(tempdir, 'foo2.parquet'), df)
+    with pytest.raises(ValueError, match="fsspec"):
+        ParquetFile(tempdir, open_with=lambda *args: open(*args))
+
+
 def test_directory_mem():
     import fsspec
     m = fsspec.filesystem("memory")
@@ -201,6 +212,7 @@ def test_directory_mem():
     pf = ParquetFile("/dir", fs=m)
     assert pf.info['rows'] == 8
     assert pf.to_pandas()['z'].tolist() == ['a', 'b', 'c', 'd'] * 2
+    m.store.clear()
 
 
 def test_directory_mem_nest():
