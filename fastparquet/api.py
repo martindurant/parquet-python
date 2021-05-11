@@ -115,7 +115,7 @@ class ParquetFile(object):
                 self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:
                     self._parse_header(f, verify)
-            elif fs.isdir(fn):
+            elif "*" in fn or fs.isdir(fn):
                 fn2 = join_path(fn, '_metadata')
                 if fs.exists(fn2):
                     self.fn = fn2
@@ -123,8 +123,11 @@ class ParquetFile(object):
                         self._parse_header(f, verify)
                     fn = fn2
                 else:
-                    allfiles = [f for f in fs.find(fn) if
-                                f.endswith(".parquet") or f.endswith(".parq")]
+                    if "*" in fn:
+                        allfiles = fs.glob(fn)
+                    else:
+                        allfiles = [f for f in fs.find(fn) if
+                                    f.endswith(".parquet") or f.endswith(".parq")]
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
                                                        open_with=open_with, root=root)
                     if basepath:

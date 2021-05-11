@@ -208,6 +208,11 @@ def test_directory_mem():
     assert pf.info['rows'] == 8
     assert pf.to_pandas()['z'].tolist() == ['a', 'b', 'c', 'd'] * 2
 
+    # inferred FS
+    pf = ParquetFile("/dir/*", open_with=m.open)
+    assert pf.info['rows'] == 8
+    assert pf.to_pandas()['z'].tolist() == ['a', 'b', 'c', 'd'] * 2
+
     # explicit FS
     pf = ParquetFile("/dir", fs=m)
     assert pf.info['rows'] == 8
