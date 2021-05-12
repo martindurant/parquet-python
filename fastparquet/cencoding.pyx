@@ -16,17 +16,17 @@ import cython
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
 from cpython cimport PyBytes_FromStringAndSize
-from libc.stdint cimport uint8_t, int32_t, uint64_t, int64_t
+from libc.stdint cimport uint8_t, uint32_t, int32_t, uint64_t, int64_t
 
 
-cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o, int itemsize=4):
+cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO o, int32_t itemsize=4):
     """Read a run-length encoded run from the given fo with the given header and bit_width.
 
     The count is determined from the header and the width is used to grab the
     value that's repeated. Yields the value repeated count times.
     """
     cdef:
-        int count, width, i, data = 0, vals_left
+        int32_t count, width, i, data = 0, vals_left
         char * inptr = file_obj.get_pointer()
         char * outptr = o.get_pointer()
     count = header >> 1
@@ -39,7 +39,7 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o, int 
         count = vals_left
     if itemsize == 4:
         for i in range(count):
-            (<int*>outptr)[0] = data
+            (<int32_t*>outptr)[0] = data
             outptr += 4
     else:
         for i in range(count):
@@ -49,28 +49,28 @@ cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o, int 
     file_obj.loc += inptr - file_obj.get_pointer()
 
 
-cpdef int width_from_max_int(long value):
+cpdef int32_t width_from_max_int(int64_t value):
     """Convert the value specified to a bit_width."""
-    cdef int i
+    cdef int32_t i
     for i in range(0, 64):
         if value == 0:
             return i
         value >>= 1
 
 
-cdef int _mask_for_bits(int i):
+cdef int32_t _mask_for_bits(int32_t i):
     """Generate a mask to grab `i` bits from an int value."""
     return (1 << i) - 1
 
 
-cpdef void read_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
+cpdef void read_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):
     # implementation of np.unpackbits with output array. Output is int8 array
     cdef:
         char * inptr = file_obj.get_pointer()
         char * outptr = o.get_pointer()
         char * endptr
         unsigned char data
-        int counter, i, startcount=count
+        int32_t counter, i, startcount=count
     if count > o.nbytes - o.loc:
         count = o.nbytes - o.loc
     for counter in range(count // 8):
@@ -83,7 +83,7 @@ cpdef void read_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
             data >>= 1
     if count % 8:
         # remaining values in the last byte
-        data = <int>inptr[0]
+        data = <int32_t>inptr[0]
         inptr += 1
         for i in range(count % 8):
             outptr[0] = data & 1
@@ -93,18 +93,18 @@ cpdef void read_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
     o.loc += count
 
 
-cpdef void write_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
+cpdef void write_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):
     # implementation of np.packbits with output array. Input is int8 array
     cdef char * inptr
     cdef char * outptr
     cdef char data = 0
-    cdef int counter, i
-    cdef long indata
+    cdef int32_t counter, i
+    cdef int64_t indata
     outptr = o.get_pointer()
     inptr = file_obj.get_pointer()
     for counter in range(count // 8):
         # fetch a long in one op, instead of byte by byte
-        indata = (<long*>inptr)[0]
+        indata = (<int64_t*>inptr)[0]
         inptr += 8
         for i in range(8):
             data = data << 1 | (indata & 1)
@@ -123,12 +123,12 @@ cpdef void write_bitpacked1(NumpyIO file_obj, int count, NumpyIO o):
     o.loc += (count + 7) // 8
 
 
-cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o, int itemsize=4):
+cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, NumpyIO o, int32_t itemsize=4):
     """
     Read values packed into width-bits each (which can be >8)
     """
     cdef:
-        unsigned int count, mask, data, vals_left
+        uint32_t count, mask, data, vals_left
         unsigned char left = 8, right = 0
         char * inptr = file_obj.get_pointer()
         char * outptr = o.get_pointer()
@@ -141,7 +141,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o, in
         return
     endptr = (o.nbytes - o.loc) + outptr - itemsize
     mask = _mask_for_bits(width)
-    data = 0xff & <int>inptr[0]
+    data = 0xff & <int32_t>inptr[0]
     inptr += 1
     while count:
         if right > 8:
@@ -155,7 +155,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o, in
         else:
             if outptr <= endptr:
                 if itemsize == 4:
-                    (<int*>outptr)[0] = <int>(data >> right & mask)
+                    (<int32_t*>outptr)[0] = <int32_t>(data >> right & mask)
                     outptr += 4
                 else:
                     outptr[0] = data >> right & mask
@@ -166,19 +166,19 @@ cpdef void read_bitpacked(NumpyIO file_obj, int header, int width, NumpyIO o, in
     file_obj.loc += inptr - file_obj.get_pointer()
 
 
-cpdef unsigned long read_unsigned_var_int(NumpyIO file_obj):
+cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):
     """Read a value using the unsigned, variable int encoding.
     file-obj is a NumpyIO of bytes; avoids struct to allow numba-jit
     """
-    cdef unsigned long result = 0
-    cdef int shift = 0
+    cdef uint64_t result = 0
+    cdef int32_t shift = 0
     cdef char byte
     cdef char * inptr = file_obj.get_pointer()
 
     while True:
         byte = inptr[0]
         inptr += 1
-        result |= (<long>(byte & 0x7F) << shift)
+        result |= (<int64_t>(byte & 0x7F) << shift)
         if (byte & 0x80) == 0:
             break
         shift += 7
@@ -186,8 +186,8 @@ cpdef unsigned long read_unsigned_var_int(NumpyIO file_obj):
     return result
 
 
-cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, NumpyIO o,
-                                      int itemsize=4):
+cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, int32_t length, NumpyIO o,
+                                      int32_t itemsize=4):
     """Read values from `io_obj` using the rel/bit-packed hybrid encoding.
 
     If length is not specified, then a 32-bit int is read first to grab the
@@ -198,12 +198,12 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
     The caller can tell the number of elements in the output by looking
     at .tell().
     """
-    cdef int start, header
+    cdef int32_t start, header
     if length is False:
         length = io_obj.read_int()
     start = io_obj.loc
     while io_obj.loc - start < length and o.loc < o.nbytes:
-        header = <int>read_unsigned_var_int(io_obj)
+        header = <int32_t>read_unsigned_var_int(io_obj)
         if header & 1 == 0:
             read_rle(io_obj, header, width, o, itemsize)
         else:
@@ -211,11 +211,11 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int width, int length, Num
 
 cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
     cdef:
-        int block_size = read_unsigned_var_int(file_obj)
-        int miniblock_per_block = read_unsigned_var_int(file_obj)
-        int count = read_unsigned_var_int(file_obj)
-        int value = zigzag_int(read_unsigned_var_int(file_obj))
-        int block, min_delta, i, j, values_per_miniblock, temp
+        uint64_t block_size = read_unsigned_var_int(file_obj)
+        uint64_t miniblock_per_block = read_unsigned_var_int(file_obj)
+        int64_t count = read_unsigned_var_int(file_obj)
+        int32_t value = zigzag_int(read_unsigned_var_int(file_obj))
+        int32_t block, min_delta, i, j, values_per_miniblock, temp
         const uint8_t[:] bitwidths
         char bitwidth, header
     values_per_miniblock = block_size // miniblock_per_block
@@ -236,12 +236,12 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
                 for j in range(values_per_miniblock):
                     o.write_int(value)
                     value += min_delta
-            count -= block_size // miniblock_per_block
-            if count < 0:
-                break
+            count -= values_per_miniblock
+            if count <= 0:
+                return
 
 
-cpdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
+cpdef void encode_unsigned_varint(int32_t x, NumpyIO o):  # pragma: no cover
     cdef char * outptr = o.get_pointer()
     while x > 127:
         outptr[0] = (x & 0x7F) | 0x80
@@ -252,14 +252,14 @@ cpdef void encode_unsigned_varint(int x, NumpyIO o):  # pragma: no cover
     o.loc += outptr - o.get_pointer()
 
 
-cpdef encode_bitpacked(int[:] values, int width, NumpyIO o):
+cpdef encode_bitpacked(int32_t[:] values, int32_t width, NumpyIO o):
     """
     Write values packed into width-bits each (which can be >8)
     """
 
-    cdef int bit_packed_count = (values.shape[0] + 7) // 8
+    cdef int32_t bit_packed_count = (values.shape[0] + 7) // 8
     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
-    cdef int bit=0, bits=0, v, counter
+    cdef int32_t bit=0, bits=0, v, counter
     for counter in range(values.shape[0]):
         v = values[counter]
         bits |= v << bit
@@ -272,8 +272,8 @@ cpdef encode_bitpacked(int[:] values, int width, NumpyIO o):
         o.write_byte(bits)
 
 
-cpdef void encode_rle_bp(int[:] data, int width, NumpyIO o, int withlength = 0):
-    cdef unsigned int start, end
+cpdef void encode_rle_bp(int32_t[:] data, int32_t width, NumpyIO o, int32_t withlength = 0):
+    cdef uint32_t start, end
     if withlength:
         start = o.tell()
         o.seek(4, 1)
@@ -293,7 +293,7 @@ cdef class NumpyIO(object):
     The main purpose is to keep track of the current location in the memory
     """
     cdef const uint8_t[:] data
-    cdef unsigned int loc, nbytes
+    cdef uint32_t loc, nbytes
     cdef char* ptr
     cdef char writable
 
@@ -310,7 +310,7 @@ cdef class NumpyIO(object):
     def len(self):
         return self.nbytes
 
-    cpdef const uint8_t[:] read(self, int x=-1):
+    cpdef const uint8_t[:] read(self, int32_t x=-1):
         cdef const uint8_t[:] out
         if x < 1:
             x = self.nbytes - self.loc
@@ -324,11 +324,11 @@ cdef class NumpyIO(object):
         self.loc += 1
         return out
 
-    cpdef int read_int(self):
-        cdef int i
+    cpdef int32_t read_int(self):
+        cdef int32_t i
         if self.nbytes - self.loc < 4:
             return 0
-        i = (<int*> self.get_pointer())[0]
+        i = (<int32_t*> self.get_pointer())[0]
         self.loc += 4
         return i
 
@@ -343,21 +343,21 @@ cdef class NumpyIO(object):
         self.ptr[self.loc] = b
         self.loc += 1
 
-    cpdef void write_int(self, int i):
+    cpdef void write_int(self, int32_t i):
         if self.nbytes - self.loc < 4:
             return
-        (<int*> self.get_pointer())[0] = i
+        (<int32_t*> self.get_pointer())[0] = i
         self.loc += 4
 
-    cdef void write_many(self, char b, int count):
-        cdef int i
+    cdef void write_many(self, char b, int32_t count):
+        cdef int32_t i
         for i in range(count):
             self.write_byte(b)
 
-    cpdef int tell(self):
+    cpdef int32_t tell(self):
         return self.loc
 
-    cpdef void seek(self, int loc, int whence=0):
+    cpdef void seek(self, int32_t loc, int32_t whence=0):
         if whence == 0:
             self.loc = loc
         elif whence == 1:
@@ -376,7 +376,7 @@ cdef class NumpyIO(object):
 
 def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] rep,
                       val, dic, d,
-                      char null, null_val, int max_defi, int prev_i):
+                      char null, null_val, int32_t max_defi, int32_t prev_i):
     """Dremel-assembly of arrays of values into lists
 
     Parameters
@@ -400,8 +400,8 @@ def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] 
     prev_i: int
         1 + index where the last row in the previous page was inserted (0 if first page)
     """
-    cdef int counter, i, re, de
-    cdef int vali = 0
+    cdef int32_t counter, i, re, de
+    cdef int32_t vali = 0
     cdef char started = False, have_null = False
     if d:
         # dereference dict values
@@ -440,31 +440,31 @@ def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] 
     return i
 
 
-cdef long nat = -9223372036854775808
+cdef int64_t nat = -9223372036854775808
 
 
-cpdef void time_shift(const long[::1] data, int factor=1000):
-    cdef int i
-    cdef long * ptr
-    cdef long value
-    ptr = <long*>&data[0]
+cpdef void time_shift(const int64_t[::1] data, int32_t factor=1000):
+    cdef int32_t i
+    cdef int64_t * ptr
+    cdef int64_t value
+    ptr = <int64_t*>&data[0]
     for i in range(data.shape[0]):
         if ptr[0] != nat:
             ptr[0] *= factor
         ptr += 1
 
 
-cdef int zigzag_int(unsigned long n):
+cdef int32_t zigzag_int(uint64_t n):
     return (n >> 1) ^ -(n & 1)
 
 
-cdef long zigzag_long(unsigned long n):
+cdef int64_t zigzag_long(uint64_t n):
     return (n >> 1) ^ -(n & 1)
 
 
 cpdef dict read_thrift(NumpyIO data):
     cdef char byte, id = 0, bit
-    cdef int size
+    cdef int32_t size
     out = {}
     while True:
         byte = data.read_byte()
@@ -494,7 +494,7 @@ cpdef dict read_thrift(NumpyIO data):
 
 cdef list read_list(NumpyIO data):
     cdef char byte, typ
-    cdef int size, bsize, _
+    cdef int32_t size, bsize, _
     byte = data.read_byte()
     if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)

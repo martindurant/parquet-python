@@ -7,7 +7,7 @@ on:
     branches: main
 
 jobs:
-  test:
+  linux:
     name: ${{ matrix.CONDA_ENV }}-pytest
     runs-on: ubuntu-latest
     strategy:
@@ -28,6 +28,65 @@ jobs:
           auto-activate-base: false
           activate-environment: test_env
           environment-file: ci/environment-${{ matrix.CONDA_ENV }}.yml
+
+      - name: pip-install
+        shell: bash -l {0}
+        run: |
+          pip install -e . --no-deps
+
+      - name: Run Tests
+        shell: bash -l {0}
+        run: |
+          pytest --verbose --cov=fastparquet
+  dask:
+    name: dask
+    runs-on: ubuntu-latest
+    steps:
+      - name: APT
+        run: sudo apt-get install liblzo2-dev
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          auto-activate-base: false
+          activate-environment: test_env
+          environment-file: ci/environment-py38.yml
+
+      - name: pip-install
+        shell: bash -l {0}
+        run: |
+          git clone https://github.com/dask/dask
+          pip install pyarrow
+          pip install dask/
+          pip install -e . --no-deps
+
+      - name: Run Tests
+        shell: bash -l {0}
+        run: |
+          pytest --verbose dask/dask/dataframe/io/tests/test_parquet.py
+
+  win:
+    name: win
+    runs-on: windows-2019
+
+    steps:
+      - name: APT
+        run: sudo apt-get install liblzo2-dev
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          auto-activate-base: false
+          activate-environment: test_env
+          environment-file: ci/environment-py38.yml
 
       - name: pip-install
         shell: bash -l {0}
