@@ -70,6 +70,7 @@ comps = ['UNCOMPRESSED', 'GZIP', 'SNAPPY']
 @pytest.mark.parametrize('scheme', ['simple', 'hive'])
 @pytest.mark.parametrize('row_groups', [[0], [0, 500]])
 @pytest.mark.parametrize('comp', comps)
+@pytest.mark.skipif(os.name == 'nt', reason="don't spark on windows")
 def test_writer_to_spark(tempdir, scheme, row_groups, comp, sql):
     data = pd.DataFrame({'i32': np.random.randint(-2**17, 2**17, size=1001,
                                                   dtype=np.int32),
@@ -105,6 +106,7 @@ def test_writer_to_spark(tempdir, scheme, row_groups, comp, sql):
 @pytest.mark.parametrize("int96", ["true", "false"])
 @pytest.mark.parametrize("legacy", ["true", "false"])
 @pytest.mark.parametrize("version", ["v2", "v1"])
+@pytest.mark.skipif(os.name == 'nt', reason="don't spark on windows")
 def test_read_from_spark(tempdir, sql, int96, legacy, version):
     sql.setConf("spark.sql.parquet.int96AsTimestamp", int96)
     sql.setConf("spark.sql.parquet.writeLegacyFormat", legacy)
@@ -133,6 +135,7 @@ def test_read_from_spark(tempdir, sql, int96, legacy, version):
         assert (ddf[col] == data[col])[~ddf[col].isnull()].all()
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="don't spark on windows")
 def test_empty_row_groups(tempdir, sql):
     fn = os.path.join(tempdir, 'output.parquet')
     d0 = pd.DataFrame({'name': ['alice'], 'age': [20]})

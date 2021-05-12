@@ -58,7 +58,6 @@ def s3():
     proc.wait()
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="don't spark on windows")
 @pytest.fixture()
 def sql():
     pyspark = pytest.importorskip("pyspark")
