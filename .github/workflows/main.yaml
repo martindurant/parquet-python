@@ -74,9 +74,6 @@ jobs:
     runs-on: windows-2019
 
     steps:
-      - name: APT
-        run: sudo apt-get install liblzo2-dev
-
       - name: Checkout
         uses: actions/checkout@v2
 
