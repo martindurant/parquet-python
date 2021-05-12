@@ -448,9 +448,9 @@ class ParquetFile(object):
             return cats or {}
         if cats is None:
             return categ or {}
-        for c in cats.copy():
-            if c not in categ:
-                cats.remove(c)
+        if set(cats) - set(categ):
+            raise TypeError("Attempt to read as category a field that "
+                            "was not stored as such")
         return cats
 
     @property
