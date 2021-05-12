@@ -515,9 +515,23 @@ def write_column(f, data, selement, compression=None):
     offset = f.tell()
     s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls)
 
-    p = [parquet_thrift.PageEncodingStats(
-            page_type=parquet_thrift.PageType.DATA_PAGE,
-            encoding=parquet_thrift.Encoding.PLAIN, count=1)]
+    if cats:
+        p = [
+            parquet_thrift.PageEncodingStats(
+                page_type=parquet_thrift.PageType.DICTIONARY_PAGE,
+                encoding=parquet_thrift.Encoding.PLAIN, count=1),
+            parquet_thrift.PageEncodingStats(
+                page_type=parquet_thrift.PageType.DATA_PAGE,
+                encoding=parquet_thrift.Encoding.RLE_DICTIONARY, count=1),
+        ]
+        encodings = [parquet_thrift.Encoding.PLAIN,
+                     parquet_thrift.Encoding.RLE_DICTIONARY]
+
+    else:
+        p = [parquet_thrift.PageEncodingStats(
+             page_type=parquet_thrift.PageType.DATA_PAGE,
+             encoding=parquet_thrift.Encoding.PLAIN, count=1)]
+        encodings = [parquet_thrift.Encoding.PLAIN]
 
     if isinstance(compression, dict):
         algorithm = compression.get("type", None)
@@ -526,9 +540,7 @@ def write_column(f, data, selement, compression=None):
 
     cmd = parquet_thrift.ColumnMetaData(
             type=selement.type, path_in_schema=[name],
-            encodings=[parquet_thrift.Encoding.RLE,
-                       parquet_thrift.Encoding.BIT_PACKED,
-                       parquet_thrift.Encoding.PLAIN],
+            encodings=encodings,
             codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
                    if algorithm else 0),
             num_values=tot_rows,
@@ -539,9 +551,6 @@ def write_column(f, data, selement, compression=None):
             total_uncompressed_size=uncompressed_size,
             total_compressed_size=compressed_size)
     if cats:
-        p.append(parquet_thrift.PageEncodingStats(
-                page_type=parquet_thrift.PageType.DICTIONARY_PAGE,
-                encoding=parquet_thrift.Encoding.PLAIN, count=1))
         cmd.dictionary_page_offset = dict_start
         cmd.key_value_metadata.append(
             parquet_thrift.KeyValue(key='num_categories', value=str(ncats)))

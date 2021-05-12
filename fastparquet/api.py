@@ -83,6 +83,7 @@ class ParquetFile(object):
         You can use this instead of open_with (otherwise, it will be inferred)
     """
     _pdm = None
+    _categories = None
 
     def __init__(self, fn, verify=False, open_with=default_open,
                  root=False, sep=None, fs=None):
@@ -130,6 +131,8 @@ class ParquetFile(object):
                     else:
                         allfiles = [f for f in fs.find(fn) if
                                     f.endswith(".parquet") or f.endswith(".parq")]
+                    # TODO: we could fetch all of these at once, if we know roughly
+                    #  the footer size from just one.
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
                                                        open_with=open_with, root=root)
                     if basepath:
@@ -467,15 +470,44 @@ class ParquetFile(object):
 
     @property
     def categories(self):
+        if self._categories is not None:
+            return self._categories
         if self.has_pandas_metadata:
             metadata = self.pandas_metadata
-            cats = {m['name']: m['metadata']['num_categories'] for m in
-                    metadata['columns'] if m['pandas_type'] == 'categorical'}
+            cats = {}
+            for m in metadata['columns']:
+                if m['pandas_type'] != 'categorical':
+                    continue
+                out = False
+                if "fastparquet" in self.created_by:
+                    # if pandas was categorical, we will have used dict encoding
+                    cats[m['name']] = m['metadata']['num_categories']
+                    continue
+                for rg in self.row_groups:
+                    # but others (pyarrow) may have used dict for only some pages
+                    if out:
+                        break
+                    for col in rg.columns:
+                        if ".".join(col.meta_data.path_in_schema) != m['name']:
+                            out = True
+                            break
+                        if col.meta_data.encoding_stats:
+                            if any(s.encoding not in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
+                                                  parquet_thrift.Encoding.RLE_DICTIONARY]
+                                   for s in col.meta_data.encoding_stats
+                                   if s.page_type in [parquet_thrift.PageType.DATA_PAGE_V2,
+                                                      parquet_thrift.PageType.DATA_PAGE]):
+                                out = True
+                                break
+                if out is False:
+                    cats[m['name']] = m['metadata']['num_categories']
+            self._categories = cats
             return cats
         # old track
         vals = self.key_value_metadata.get("fastparquet.cats", None)
         if vals:
-            return json_decoder()(vals)
+            self._categories = json_decoder()(vals)
+            return self._categories
         else:
             return {}
 

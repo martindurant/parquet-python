@@ -16,7 +16,7 @@ import cython
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
 from cpython cimport PyBytes_FromStringAndSize
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, int32_t, uint64_t, int64_t
 
 
 cpdef void read_rle(NumpyIO file_obj, int header, int bit_width, NumpyIO o, int itemsize=4):
