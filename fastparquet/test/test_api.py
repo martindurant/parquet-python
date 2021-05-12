@@ -19,6 +19,7 @@ from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, f
 from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
+WIN = os.name == 'nt'
 
 
 @pytest.mark.xfail(reason="new numpy")
@@ -394,6 +395,7 @@ def test_floating_point_partition_name(tempdir):
     assert out[out.y1 == 'bb'].x.tolist() == [200.0]
 
 
+@pytest.mark.skipif(WIN, reason="path contains ':'")
 def test_datetime_partition_names(tempdir):
     dates = pd.to_datetime(['2015-05-09', '2018-10-15', '2020-10-17', '2015-05-09'])
     df = pd.DataFrame({

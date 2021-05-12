@@ -131,6 +131,8 @@ class ParquetFile(object):
                     else:
                         allfiles = [f for f in fs.find(fn) if
                                     f.endswith(".parquet") or f.endswith(".parq")]
+                    if not allfiles:
+                        raise ValueError("No files in dir")
                     # TODO: we could fetch all of these at once, if we know roughly
                     #  the footer size from just one.
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
@@ -446,9 +448,9 @@ class ParquetFile(object):
             return cats or {}
         if cats is None:
             return categ or {}
-        if any(c not in categ for c in cats):
-            raise TypeError('Attempt to load column as categorical that was'
-                            ' not categorical in the original pandas data')
+        for c in cats.copy():
+            if c not in categ:
+                cats.remove(c)
         return cats
 
     @property
@@ -489,8 +491,7 @@ class ParquetFile(object):
                         break
                     for col in rg.columns:
                         if ".".join(col.meta_data.path_in_schema) != m['name']:
-                            out = True
-                            break
+                            continue
                         if col.meta_data.encoding_stats:
                             if any(s.encoding not in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
                                                   parquet_thrift.Encoding.RLE_DICTIONARY]
