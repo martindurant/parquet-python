@@ -149,12 +149,12 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
                                    dtype='int%i' % bit_width)
         elif bit_width:
             if bit_width > 8:
-                values = np.empty(daph.num_values-num_nulls+7, dtype=np.int32)
+                values = np.empty(daph.num_values-num_nulls, dtype=np.int32)
                 o = encoding.NumpyIO(values.view('uint8'))
                 encoding.read_rle_bit_packed_hybrid(
                             io_obj, bit_width, io_obj.len-io_obj.tell(), o=o, itemsize=4)
             else:
-                values = np.empty(daph.num_values-num_nulls+7, dtype=np.uint8)
+                values = np.empty(daph.num_values-num_nulls, dtype=np.uint8)
                 o = encoding.NumpyIO(values)
                 encoding.read_rle_bit_packed_hybrid(
                     io_obj, bit_width, io_obj.len-io_obj.tell(), o=o, itemsize=1)
@@ -181,9 +181,8 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, 
     """
     raw_bytes = _read_page(file_obj, page_header, column_metadata)
     if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
-        # TODO: copies raw_bytes and also copies array (use copy=False)
-        values = np.array(unpack_byte_array(raw_bytes,
-                          page_header.dictionary_page_header.num_values, utf=utf), dtype='object')
+        values = unpack_byte_array(
+            raw_bytes, page_header.dictionary_page_header.num_values, utf=utf)
     else:
         width = schema_helper.schema_element(
             column_metadata.path_in_schema).type_length
@@ -268,7 +267,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         raw_bytes = decompress_data(infile.read(size),
                                     ph.uncompressed_page_size, codec)
-        values = read_plain(encoding.read_plain(raw_bytes),
+        values = read_plain(raw_bytes,
                             cmd.type,
                             n_values,
                             width=se.type_length,
