@@ -184,6 +184,10 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         else:
             if not isinstance(bvalues, np.ndarray):
                 # e.g. DatetimeLikeBlock backed by DatetimeArray/TimedeltaArray
+                if bvalues.dtype.kind == "m":
+                    values = np.zeros(shape=shape, dtype="m8[ns]")
+                elif bvalues.dtype.kind == "M":
+                    values = np.zeros(shape=shape, dtype="M8[ns]")
                 values = type(bvalues)._from_sequence(values, copy=False)
             else:
                 values = np.empty(shape=shape, dtype=bvalues.dtype)
