@@ -184,7 +184,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         else:
             if not isinstance(bvalues, np.ndarray):
                 # e.g. DatetimeLikeBlock backed by DatetimeArray/TimedeltaArray
-                values = type(bvalues)._from_sequence(values, copy=False)
+                values = type(bvalues)._from_sequence(bvalues, copy=False)
             else:
                 values = np.empty(shape=shape, dtype=bvalues.dtype)
 
