@@ -134,7 +134,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, Numpy
         char * outptr = o.get_pointer()
         char * endptr
 
-    count = ((header & 0xff) >> 1) * 8
+    count = (header >> 1) * 8
     # TODO: special case for width=1, 2, 4, 8
     if width == 1 and itemsize == 1:
         read_bitpacked1(file_obj, count, o)
@@ -186,7 +186,7 @@ cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):
     return result
 
 
-cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, int32_t length, NumpyIO o,
+cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t length, NumpyIO o,
                                       int32_t itemsize=4):
     """Read values from `io_obj` using the rel/bit-packed hybrid encoding.
 
@@ -200,7 +200,7 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, int32_t len
     """
     cdef int32_t start, header
     if length is False:
-        length = io_obj.read_int()
+        length = <uint32_t>io_obj.read_int()
     start = io_obj.loc
     while io_obj.loc - start < length and o.loc < o.nbytes:
         header = <int32_t>read_unsigned_var_int(io_obj)

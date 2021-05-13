@@ -460,3 +460,29 @@ def test_or_filtering(tempdir):
     or_df = pf.to_pandas(filters=or_filter).sort_values(cols)\
                                             .reset_index(drop=True)
     assert(or_df.equals(ref_df))
+
+
+def test_big_definitions(tempdir):
+    # https://github.com/dask/fastparquet/issues/604
+    values = [
+        "nan",
+        "Hello",
+        "How is this",
+        "Another String",
+        "These arent categories",
+        "Heres another",
+        "This is fine",
+    ]
+
+    p = [0.52, 0.28, 0.08, 0.05, 0.04, 0.028, 0.002]
+
+    test_df = pd.DataFrame({
+        'test': [np.nan if v=='nan' else v
+                 for v in np.random.choice(values, size=500_000, p=p)]
+    })
+
+    test_filename = 'test_issue_604.parquet'
+
+    test_df.to_parquet(test_filename, engine='fastparquet')
+    out = pd.read_parquet(test_filename, engine='fastparquet')
+    assert (out['test'].isna() == test_df['test'].isna()).all()
