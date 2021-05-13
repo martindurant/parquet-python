@@ -101,7 +101,7 @@ def unpack_byte_array(const unsigned char[::1] raw_bytes, Py_ssize_t n, const ch
         Py_ssize_t i = 0
         char* ptr = <char*>&raw_bytes[0]
         int itemlen
-        object[:] out = np.empty(n, dtype="object")
+        np.ndarray[object, ndim=1] out = np.empty(n, dtype="object")
 
     while i < n:
 

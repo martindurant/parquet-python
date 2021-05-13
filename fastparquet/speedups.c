@@ -1973,10 +1973,6 @@ static int __Pyx_ValidateAndInit_memviewslice(
 /* ObjectToMemviewSlice.proto */
 static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dc_unsigned_char__const__(PyObject *, int writable_flag);
 
-/* MemviewObjectToObject.proto */
-static PyObject *__pyx_memview_get_object(const char *itemp);
-static int __pyx_memview_set_object(const char *itemp, PyObject *obj);
-
 /* RealImag.proto */
 #if CYTHON_CCOMPLEX
   #ifdef __cplusplus
@@ -2099,9 +2095,6 @@ static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
 
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
-
-/* ObjectToMemviewSlice.proto */
-static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_object(PyObject *, int writable_flag);
 
 /* CheckBinaryVersion.proto */
 static int __Pyx_check_binary_version(void);
@@ -3296,7 +3289,9 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
   Py_ssize_t __pyx_v_i;
   char *__pyx_v_ptr;
   int __pyx_v_itemlen;
-  __Pyx_memviewslice __pyx_v_out = { 0, 0, { 0 }, { 0 }, { 0 } };
+  PyArrayObject *__pyx_v_out = 0;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_out;
+  __Pyx_Buffer __pyx_pybuffer_out;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   Py_ssize_t __pyx_t_1;
@@ -3305,13 +3300,17 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
   PyObject *__pyx_t_4 = NULL;
   PyObject *__pyx_t_5 = NULL;
   PyObject *__pyx_t_6 = NULL;
-  __Pyx_memviewslice __pyx_t_7 = { 0, 0, { 0 }, { 0 }, { 0 } };
+  PyArrayObject *__pyx_t_7 = NULL;
   int __pyx_t_8;
   PyObject **__pyx_t_9;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("unpack_byte_array", 0);
+  __pyx_pybuffer_out.pybuffer.buf = NULL;
+  __pyx_pybuffer_out.refcount = 0;
+  __pyx_pybuffernd_out.data = NULL;
+  __pyx_pybuffernd_out.rcbuffer = &__pyx_pybuffer_out;
 
   /* "fastparquet/speedups.pyx":101
  *     """
@@ -3327,7 +3326,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
  *         Py_ssize_t i = 0
  *         char* ptr = <char*>&raw_bytes[0]             # <<<<<<<<<<<<<<
  *         int itemlen
- *         object[:] out = np.empty(n, dtype="object")
+ *         np.ndarray[object, ndim=1] out = np.empty(n, dtype="object")
  */
   __pyx_t_1 = 0;
   __pyx_t_2 = -1;
@@ -3344,7 +3343,7 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
   /* "fastparquet/speedups.pyx":104
  *         char* ptr = <char*>&raw_bytes[0]
  *         int itemlen
- *         object[:] out = np.empty(n, dtype="object")             # <<<<<<<<<<<<<<
+ *         np.ndarray[object, ndim=1] out = np.empty(n, dtype="object")             # <<<<<<<<<<<<<<
  * 
  *     while i < n:
  */
@@ -3368,14 +3367,22 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_object(__pyx_t_6, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 104, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_v_out = __pyx_t_7;
-  __pyx_t_7.memview = NULL;
-  __pyx_t_7.data = NULL;
+  if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_7 = ((PyArrayObject *)__pyx_t_6);
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_out.rcbuffer->pybuffer, (PyObject*)__pyx_t_7, &__Pyx_TypeInfo_object, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_out = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_out.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 104, __pyx_L1_error)
+    } else {__pyx_pybuffernd_out.diminfo[0].strides = __pyx_pybuffernd_out.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_out.diminfo[0].shape = __pyx_pybuffernd_out.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_t_7 = 0;
+  __pyx_v_out = ((PyArrayObject *)__pyx_t_6);
+  __pyx_t_6 = 0;
 
   /* "fastparquet/speedups.pyx":106
- *         object[:] out = np.empty(n, dtype="object")
+ *         np.ndarray[object, ndim=1] out = np.empty(n, dtype="object")
  * 
  *     while i < n:             # <<<<<<<<<<<<<<
  * 
@@ -3425,14 +3432,14 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
       __pyx_t_1 = __pyx_v_i;
       __pyx_t_2 = -1;
       if (__pyx_t_1 < 0) {
-        __pyx_t_1 += __pyx_v_out.shape[0];
+        __pyx_t_1 += __pyx_pybuffernd_out.diminfo[0].shape;
         if (unlikely(__pyx_t_1 < 0)) __pyx_t_2 = 0;
-      } else if (unlikely(__pyx_t_1 >= __pyx_v_out.shape[0])) __pyx_t_2 = 0;
+      } else if (unlikely(__pyx_t_1 >= __pyx_pybuffernd_out.diminfo[0].shape)) __pyx_t_2 = 0;
       if (unlikely(__pyx_t_2 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_2);
         __PYX_ERR(0, 111, __pyx_L1_error)
       }
-      __pyx_t_9 = ((PyObject * *) ( /* dim=0 */ (__pyx_v_out.data + __pyx_t_1 * __pyx_v_out.strides[0]) ));
+      __pyx_t_9 = __Pyx_BufPtrStrided1d(PyObject **, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_out.diminfo[0].strides);
       __Pyx_GOTREF(*__pyx_t_9);
       __Pyx_INCREF(__pyx_t_6); __Pyx_DECREF(*__pyx_t_9);
       *__pyx_t_9 = __pyx_t_6;
@@ -3462,14 +3469,14 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
       __pyx_t_1 = __pyx_v_i;
       __pyx_t_2 = -1;
       if (__pyx_t_1 < 0) {
-        __pyx_t_1 += __pyx_v_out.shape[0];
+        __pyx_t_1 += __pyx_pybuffernd_out.diminfo[0].shape;
         if (unlikely(__pyx_t_1 < 0)) __pyx_t_2 = 0;
-      } else if (unlikely(__pyx_t_1 >= __pyx_v_out.shape[0])) __pyx_t_2 = 0;
+      } else if (unlikely(__pyx_t_1 >= __pyx_pybuffernd_out.diminfo[0].shape)) __pyx_t_2 = 0;
       if (unlikely(__pyx_t_2 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_2);
         __PYX_ERR(0, 113, __pyx_L1_error)
       }
-      __pyx_t_9 = ((PyObject * *) ( /* dim=0 */ (__pyx_v_out.data + __pyx_t_1 * __pyx_v_out.strides[0]) ));
+      __pyx_t_9 = __Pyx_BufPtrStrided1d(PyObject **, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_out.diminfo[0].strides);
       __Pyx_GOTREF(*__pyx_t_9);
       __Pyx_INCREF(__pyx_t_6); __Pyx_DECREF(*__pyx_t_9);
       *__pyx_t_9 = __pyx_t_6;
@@ -3503,10 +3510,8 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
  *     return out             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_6 = __pyx_memoryview_fromslice(__pyx_v_out, 1, (PyObject *(*)(char *)) __pyx_memview_get_object, (int (*)(char *, PyObject *)) __pyx_memview_set_object, 1);; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 117, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_r = __pyx_t_6;
-  __pyx_t_6 = 0;
+  __Pyx_INCREF(((PyObject *)__pyx_v_out));
+  __pyx_r = ((PyObject *)__pyx_v_out);
   goto __pyx_L0;
 
   /* "fastparquet/speedups.pyx":95
@@ -3523,11 +3528,19 @@ static PyObject *__pyx_pf_11fastparquet_8speedups_4unpack_byte_array(CYTHON_UNUS
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
   __Pyx_AddTraceback("fastparquet.speedups.unpack_byte_array", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
+  goto __pyx_L2;
   __pyx_L0:;
-  __PYX_XDEC_MEMVIEW(&__pyx_v_out, 1);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_out);
   __PYX_XDEC_MEMVIEW(&__pyx_v_raw_bytes, 1);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
@@ -23179,19 +23192,6 @@ __pyx_fail:
         return (target_type) value;\
     }
 
-/* MemviewObjectToObject */
-  static PyObject *__pyx_memview_get_object(const char *itemp) {
-    PyObject *result = *(PyObject **) itemp;
-    Py_INCREF(result);
-    return result;
-}
-static int __pyx_memview_set_object(const char *itemp, PyObject *obj) {
-    Py_INCREF(obj);
-    Py_DECREF(*(PyObject **) itemp);
-    *(PyObject **) itemp = obj;
-    return 1;
-}
-
 /* Declarations */
   #if CYTHON_CCOMPLEX
   #ifdef __cplusplus
@@ -24225,29 +24225,6 @@ raise_neg_overflow:
         return _PyLong_FromByteArray(bytes, sizeof(long),
                                      little, !is_unsigned);
     }
-}
-
-/* ObjectToMemviewSlice */
-  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_object(PyObject *obj, int writable_flag) {
-    __Pyx_memviewslice result = { 0, 0, { 0 }, { 0 }, { 0 } };
-    __Pyx_BufFmt_StackElem stack[1];
-    int axes_specs[] = { (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_STRIDED) };
-    int retcode;
-    if (obj == Py_None) {
-        result.memview = (struct __pyx_memoryview_obj *) Py_None;
-        return result;
-    }
-    retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
-                                                 PyBUF_RECORDS_RO | writable_flag, 1,
-                                                 &__Pyx_TypeInfo_object, stack,
-                                                 &result, obj);
-    if (unlikely(retcode == -1))
-        goto __pyx_fail;
-    return result;
-__pyx_fail:
-    result.memview = NULL;
-    result.data = NULL;
-    return result;
 }
 
 /* CheckBinaryVersion */

@@ -38,4 +38,4 @@ def read_plain(raw_bytes, type_, count, width=0, utf=False, stat=False):
                 return np.array([bytes(raw_bytes).decode()], dtype='O')
             else:
                 return np.array([bytes(raw_bytes)], dtype='O')
-        return np.array(unpack_byte_array(raw_bytes, count, utf=utf))
+        return unpack_byte_array(raw_bytes, count, utf=utf)

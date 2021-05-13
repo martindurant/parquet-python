@@ -451,7 +451,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
             # TODO: if output is NULLABLE (e.g., IntegerArray) can use
             #  fastpath here, but need nulls array
             part = assign[num:num+len(defi)]
-            part[defi != max_defi] = my_nan
+            if part.dtype.kind != "O":
+                part[defi != max_defi] = my_nan
             if d and not use_cat:
                 part[defi == max_defi] = dic[val]
             elif not use_cat:
