@@ -979,3 +979,50 @@ def test_write_index_false(tempdir):
     rec_df = ParquetFile(fn).to_pandas()
     assert rec_df.index[0] == 0
 
+
+def test_timestamp_filer(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    ts = [pd.Timestamp('2021/01/01 08:00:00'),
+          pd.Timestamp('2021/01/05 10:00:00')]
+    val = [10, 34]
+    df = pd.DataFrame({'val': val, 'ts': ts})
+    # two row-groups
+    write(fn, df, row_group_offsets=1, file_scheme='hive')
+
+    ts_filter = pd.Timestamp('2021/01/03 00:00:00')
+    pf = ParquetFile(fn)
+    filt = [[('ts', '<', ts_filter)], [('ts', '>=', ts_filter)]]
+    assert pf.to_pandas(filters=filt).val.tolist() == [10, 34]
+
+    filt = [[('ts', '>=', ts_filter)], [('ts', '<', ts_filter)]]
+    assert pf.to_pandas(filters=filt).val.tolist() == [10, 34]
+
+    ts_filter_down = pd.Timestamp('2021/01/03 00:00:00')
+    ts_filter_up = pd.Timestamp('2021/01/06 00:00:00')
+    filt = [('ts', '>=', ts_filter_down), ('ts', '<', ts_filter_up)]
+    assert pf.to_pandas(filters=filt).val.tolist() == [34]
+
+
+def test_select(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    val = [2, 10, 34, 76]
+    df = pd.DataFrame({'val': val})
+    write(fn, df, row_group_offsets=1)
+
+    pf = ParquetFile(fn)
+    assert len(pf[0].row_groups) == 1
+    assert pf[0].to_pandas().val.tolist() == [2]
+    assert pf[1].to_pandas().val.tolist() == [10]
+    assert pf[-1].to_pandas().val.tolist() == [76]
+    assert pf[:].to_pandas().val.tolist() == val
+    assert pf[::2].to_pandas().val.tolist() == val[::2]
+
+
+def test_head(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    val = [2, 10, 34, 76]
+    df = pd.DataFrame({'val': val})
+    write(fn, df)
+
+    pf = ParquetFile(fn)
+    assert pf.head(1).val.tolist() == [2]

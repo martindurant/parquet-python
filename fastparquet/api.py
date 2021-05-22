@@ -215,35 +215,29 @@ class ParquetFile(object):
         paths = [rg.columns[0].file_path or "" for rg in self.row_groups if rg.columns]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
-    def head(self, nrows, filters=None, columns=None):
+    def head(self, nrows, columns=None):
         """Get the first nrows of data
 
         This will load the whole of the first valid row-group for the
         given columns. If it has fewer rows than requested, we will not
         fetch more data.
 
-        filters and columns: as in to_pandas
-
         returns: dataframe
         """
         # TODO: implement with truncated assign and early exit
         #  from reading
-        return self[:1].to_pandas(
-            columns=columns, filters=filters, nrows=nrows)
+        return self[:1].to_pandas(columns=columns).head(nrows)
 
-    def _iloc_rg(self, start, stop=None, step=None):
+    def __getitem__(self, item):
+        """Select among the row-groups using integer/slicing"""
         import copy
-        if not isinstance(start, slice):
-            start = slice(start, stop, step)
-        new_rgs = self.row_groups[start]
+        new_rgs = self.row_groups[item]
+        if not isinstance(new_rgs, list):
+            new_rgs = [new_rgs]
         new_pf = copy.copy(self)
         new_pf.fmd.row_groups = new_rgs
         new_pf._set_attrs()
         return new_pf
-
-    def __getitem__(self, item):
-        """Select among the row-groups using integer/slicing"""
-        return self._iloc_rg(item)
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
@@ -686,7 +680,6 @@ def _path_to_cats(paths, parts, file_scheme="hive", partition_meta=None):
     return OrderedDict([(key, list(v)) for key, v in cats.items()])
 
 
-
 def filter_out_stats(rg, filters, schema):
     """
     According to the filters, should this row-group be excluded
@@ -720,12 +713,14 @@ def filter_out_stats(rg, filters, schema):
                 s = column.meta_data.statistics
                 if s.max is not None:
                     b = ensure_bytes(s.max)
-                    vmax = encoding.read_plain(b, column.meta_data.type, 1, stat=True)
+                    vmax = encoding.read_plain(
+                        b, column.meta_data.type, 1, stat=True).copy()
                     if se.converted_type is not None:
                         vmax = converted_types.convert(vmax, se)
                 if s.min is not None:
                     b = ensure_bytes(s.min)
-                    vmin = encoding.read_plain(b, column.meta_data.type, 1, stat=True)
+                    vmin = encoding.read_plain(
+                        b, column.meta_data.type, 1, stat=True).copy()
                     if se.converted_type is not None:
                         vmin = converted_types.convert(vmin, se)
                 if filter_val(op, val, vmin, vmax):
@@ -967,6 +962,7 @@ def filter_val(op, val, vmin=None, vmax=None):
     """
     vmin = _handle_np_array(vmin)
     vmax = _handle_np_array(vmax)
+    print(op, val, vmin, vmax)
     if op == 'in':
         return filter_in(val, vmin, vmax)
     if op == 'not in':
@@ -986,6 +982,7 @@ def filter_val(op, val, vmin=None, vmax=None):
         return True
 
     # keep this row_group
+    print(False)
     return False
 
 

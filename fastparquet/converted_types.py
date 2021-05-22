@@ -102,6 +102,7 @@ def convert(data, se, timestamp96=True):
     se: a schema element.
     timestamp96: convert int96 as if it were written by mr-parquet
     """
+    print("convert", data)
     ctype = se.converted_type
     if se.type == parquet_thrift.Type.INT96 and timestamp96:
         data2 = data.view([('ns', 'i8'), ('day', 'i4')])
