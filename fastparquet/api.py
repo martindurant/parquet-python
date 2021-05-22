@@ -691,7 +691,7 @@ def filter_out_stats(rg, filters, schema):
     rg: thrift RowGroup structure
     filters: list of 3-tuples
         Structure of each tuple: (column, op, value) where op is one of
-        ['==', '!=', '<', '<=', '>', '>=', 'in', 'not in'] and value is
+        ['==', , '=', '!=', '<', '<=', '>', '>=', 'in', 'not in'] and value is
         appropriate for the column in question
 
     Returns
@@ -711,18 +711,28 @@ def filter_out_stats(rg, filters, schema):
             se = schema.schema_element(name)
             if column.meta_data.statistics is not None:
                 s = column.meta_data.statistics
-                if s.max is not None:
-                    b = ensure_bytes(s.max)
-                    vmax = encoding.read_plain(
-                        b, column.meta_data.type, 1, stat=True).copy()
-                    if se.converted_type is not None:
-                        vmax = converted_types.convert(vmax, se)
-                if s.min is not None:
-                    b = ensure_bytes(s.min)
-                    vmin = encoding.read_plain(
-                        b, column.meta_data.type, 1, stat=True).copy()
-                    if se.converted_type is not None:
-                        vmin = converted_types.convert(vmin, se)
+                # we cache the converted valuesin the stats object
+                # TODO: keep this somewhere not in a thrift object?
+                max = s.max or s.max_value
+                if max is not None:
+                    if not hasattr(s, "converted_max"):
+                        b = ensure_bytes(max)
+                        vmax = encoding.read_plain(
+                            b, column.meta_data.type, 1, stat=True)
+                        if se.converted_type is not None:
+                            vmax = converted_types.convert(vmax, se)
+                        s.converted_max = vmax
+                    vmax = s.converted_max
+                min = s.min or s.min_value
+                if min is not None:
+                    if not hasattr(s, "converted_min"):
+                        b = ensure_bytes(min)
+                        vmin = encoding.read_plain(
+                            b, column.meta_data.type, 1, stat=True)
+                        if se.converted_type is not None:
+                            vmin = converted_types.convert(vmin, se)
+                        s.converted_min = vmin
+                    vmin = s.converted_min
                 if filter_val(op, val, vmin, vmax):
                     return True
     return False
@@ -967,12 +977,12 @@ def filter_val(op, val, vmin=None, vmax=None):
     if op == 'not in':
         return filter_not_in(val, vmin, vmax)
     if vmax is not None:
-        if op in ['==', '>='] and val > vmax:
+        if op in ['==', '>=', '='] and val > vmax:
             return True
         if op == '>' and val >= vmax:
             return True
     if vmin is not None:
-        if op in ['==', '<='] and val < vmin:
+        if op in ['==', '<=', '='] and val < vmin:
             return True
         if op == '<' and val <= vmin:
             return True

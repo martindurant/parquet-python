@@ -991,16 +991,17 @@ def test_timestamp_filer(tempdir):
 
     ts_filter = pd.Timestamp('2021/01/03 00:00:00')
     pf = ParquetFile(fn)
-    filt = [[('ts', '<', ts_filter)], [('ts', '>=', ts_filter)]]
-    assert pf.to_pandas(filters=filt).val.tolist() == [10, 34]
+    for _ in range(100):
+        filt = [[('ts', '<', ts_filter)], [('ts', '>=', ts_filter)]]
+        assert pf.to_pandas(filters=filt).val.tolist() == [10, 34]
 
-    filt = [[('ts', '>=', ts_filter)], [('ts', '<', ts_filter)]]
-    assert pf.to_pandas(filters=filt).val.tolist() == [10, 34]
+        filt = [[('ts', '>=', ts_filter)], [('ts', '<', ts_filter)]]
+        assert pf.to_pandas(filters=filt).val.tolist() == [10, 34]
 
-    ts_filter_down = pd.Timestamp('2021/01/03 00:00:00')
-    ts_filter_up = pd.Timestamp('2021/01/06 00:00:00')
-    filt = [('ts', '>=', ts_filter_down), ('ts', '<', ts_filter_up)]
-    assert pf.to_pandas(filters=filt).val.tolist() == [34]
+        ts_filter_down = pd.Timestamp('2021/01/03 00:00:00')
+        ts_filter_up = pd.Timestamp('2021/01/06 00:00:00')
+        filt = [('ts', '>=', ts_filter_down), ('ts', '<', ts_filter_up)]
+        assert pf.to_pandas(filters=filt).val.tolist() == [34]
 
 
 def test_select(tempdir):
