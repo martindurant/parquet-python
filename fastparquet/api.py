@@ -962,7 +962,6 @@ def filter_val(op, val, vmin=None, vmax=None):
     """
     vmin = _handle_np_array(vmin)
     vmax = _handle_np_array(vmax)
-    print(op, val, vmin, vmax)
     if op == 'in':
         return filter_in(val, vmin, vmax)
     if op == 'not in':
@@ -982,7 +981,6 @@ def filter_val(op, val, vmin=None, vmax=None):
         return True
 
     # keep this row_group
-    print(False)
     return False
 
 
