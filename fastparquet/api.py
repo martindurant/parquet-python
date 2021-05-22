@@ -691,7 +691,7 @@ def filter_out_stats(rg, filters, schema):
     rg: thrift RowGroup structure
     filters: list of 3-tuples
         Structure of each tuple: (column, op, value) where op is one of
-        ['==', , '=', '!=', '<', '<=', '>', '>=', 'in', 'not in'] and value is
+        ['==', '=', '!=', '<', '<=', '>', '>=', 'in', 'not in'] and value is
         appropriate for the column in question
 
     Returns
@@ -711,6 +711,9 @@ def filter_out_stats(rg, filters, schema):
             se = schema.schema_element(name)
             if column.meta_data.statistics is not None:
                 s = column.meta_data.statistics
+                if s.null_count == column.meta_data.num_values:
+                    # skip row groups with no valid values
+                    return True
                 # we cache the converted valuesin the stats object
                 # TODO: keep this somewhere not in a thrift object?
                 max = s.max or s.max_value
