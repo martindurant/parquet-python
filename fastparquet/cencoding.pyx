@@ -494,7 +494,7 @@ cpdef dict read_thrift(NumpyIO data):
 
 
 cdef list read_list(NumpyIO data):
-    cdef char byte, typ
+    cdef unsigned char byte, typ
     cdef int32_t size, bsize, _
     byte = data.read_byte()
     if byte >= 0xf0:  # 0b11110000
