@@ -23,6 +23,7 @@ from cpython.unicode cimport PyUnicode_DecodeUTF8
 
 import numpy as np
 cimport numpy as np
+import cython
 
 
 _obj_dtype = np.dtype('object')
@@ -88,6 +89,7 @@ def pack_byte_array(list items):
     return out
 
 
+@cython.boundscheck(False)
 def unpack_byte_array(const unsigned char[::1] raw_bytes, Py_ssize_t n, const char utf=False):
     """
     Unpack a variable length byte array column.
@@ -97,8 +99,9 @@ def unpack_byte_array(const unsigned char[::1] raw_bytes, Py_ssize_t n, const ch
         Py_ssize_t i = 0
         char* ptr = <char*>&raw_bytes[0]
         int itemlen, bytecount
-        np.ndarray[object, ndim=1] out = np.empty(n, dtype="object")
+        np.ndarray[object, ndim=1, mode="c"] out = np.empty(n, dtype="object")
 
+    assert out is not None
     bytecount = raw_bytes.shape[0]
     while i < n and bytecount > 0:
 
@@ -108,7 +111,6 @@ def unpack_byte_array(const unsigned char[::1] raw_bytes, Py_ssize_t n, const ch
             out[i] = PyUnicode_DecodeUTF8(ptr, itemlen, "ignore")
         else:
             out[i] = PyBytes_FromStringAndSize(ptr, itemlen)
-        print(out[i])
         ptr += itemlen
         bytecount -= 4 + itemlen
         i += 1

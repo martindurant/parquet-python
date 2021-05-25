@@ -136,6 +136,8 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
         pfs = file_list
         file_list = [pf.fn for pf in pfs]
     elif all(not isinstance(pf, api.ParquetFile) for pf in file_list):
+        # TODO: we don't need to make ParquetFiles here, just the FileMetaData
+        #  so can skip the cost of setting instance attributes
         pfs = [api.ParquetFile(fn, open_with=open_with) for fn in file_list]
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
