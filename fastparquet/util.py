@@ -1,4 +1,6 @@
 import copy
+import io
+import struct
 import numpy as np
 import os
 import os.path
@@ -110,7 +112,7 @@ def check_column_names(columns, *args):
 
 
 def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
-                       root=False):
+                       root=False, fs=None):
     """
     Given list of parquet files, make a FileMetaData that points to them
 
@@ -124,6 +126,8 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
     root: str
         Top of the dataset's directory tree, for cases where it can't be
         automatically inferred.
+    fs: fsspsec.AbstractFileSystem
+        Used in preference to open_with, if given
 
     Returns
     -------
@@ -132,45 +136,80 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
     """
     from fastparquet import api
 
+    legacy = True
     if all(isinstance(pf, api.ParquetFile) for pf in file_list):
         pfs = file_list
         file_list = [pf.fn for pf in pfs]
     elif all(not isinstance(pf, api.ParquetFile) for pf in file_list):
-        # TODO: we don't need to make ParquetFiles here, just the FileMetaData
-        #  so can skip the cost of setting instance attributes
-        pfs = [api.ParquetFile(fn, open_with=open_with) for fn in file_list]
+
+        if verify_schema or fs is None or len(file_list) < 3:
+            pfs = [api.ParquetFile(fn, open_with=open_with) for fn in file_list]
+        else:
+            # activate new code path here
+            f0 = file_list[0]
+            pf0 = api.ParquetFile(f0, open_with=open_with)
+            # permits concurrent fetch of footers; needs
+            pieces = fs.cat(file_list[1:], start=-int(1.4 * pf0._head_size))
+            legacy = False
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
     basepath, file_list = analyse_paths(file_list, root=root)
 
-    if verify_schema:
-        for pf in pfs[1:]:
-            if pf._schema != pfs[0]._schema:
-                raise ValueError('Incompatible schemas')
+    if legacy:
+        # legacy code path
+        if verify_schema:
+            for pf in pfs[1:]:
+                if pf._schema != pfs[0]._schema:
+                    raise ValueError('Incompatible schemas')
 
-    fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
-    fmd.row_groups = []
+        fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
+        fmd.row_groups = []
 
-    for pf, fn in zip(pfs, file_list):
-        if pf.file_scheme not in ['simple', 'empty']:
-            for rg in pf.row_groups:
-                rg = copy.copy(rg)
-                rg.columns = [copy.copy(c) for c in rg.columns]
-                for chunk in rg.columns:
-                    chunk.file_path = '/'.join([fn, chunk.file_path])
-                fmd.row_groups.append(rg)
+        for pf, fn in zip(pfs, file_list):
+            if pf.file_scheme not in ['simple', 'empty']:
+                for rg in pf.row_groups:
+                    rg = copy.copy(rg)
+                    rg.columns = [copy.copy(c) for c in rg.columns]
+                    for chunk in rg.columns:
+                        chunk.file_path = '/'.join([fn, chunk.file_path])
+                    fmd.row_groups.append(rg)
 
-        else:
-            for rg in pf.row_groups:
-                rg = copy.copy(rg)
-                rg.columns = [copy.copy(c) for c in rg.columns]
-                for chunk in rg.columns:
-                    chunk.file_path = fn
-                fmd.row_groups.append(rg)
+            else:
+                for rg in pf.row_groups:
+                    rg = copy.copy(rg)
+                    rg.columns = [copy.copy(c) for c in rg.columns]
+                    for chunk in rg.columns:
+                        chunk.file_path = fn
+                    fmd.row_groups.append(rg)
 
-    fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
-    return basepath, fmd
+        fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
+        return basepath, fmd
 
+    for rg in pf0.fmd.row_groups:
+        # chunks of first file, which would have file_path=None
+        for chunk in rg.columns:
+            chunk.file_path = f0[len(basepath):].lstrip("/")
+
+    for k, v in pieces.items():
+        rgs = _get_fmd(v).row_groups
+        for rg in rgs:
+            for chunk in rg.columns:
+                chunk.file_path = k[len(basepath):].lstrip("/")
+        pf0.fmd.row_groups.extend(rgs)
+    return basepath, pf0.fmd
+
+
+def _get_fmd(inbytes):
+    from .core import read_thrift
+    from .thrift_structures import parquet_thrift
+
+    f = io.BytesIO(inbytes)
+    f.seek(-8, 2)
+    head_size = struct.unpack('<i', f.read(4))[0]
+    f.seek(-(head_size + 8), 2)
+    data = f.read(head_size)
+    f = io.BytesIO(data)
+    return read_thrift(f, parquet_thrift.FileMetaData)
 
 # simple cache to avoid re compile every time
 seps = {}

@@ -133,10 +133,9 @@ class ParquetFile(object):
                                     f.endswith(".parquet") or f.endswith(".parq")]
                     if not allfiles:
                         raise ValueError("No files in dir")
-                    # TODO: we could fetch all of these at once, if we know roughly
-                    #  the footer size from just one.
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
-                                                       open_with=open_with, root=root)
+                                                       open_with=open_with, root=root,
+                                                       fs=fs)
                     if basepath:
                         self.fn = join_path(basepath, '_metadata')  # effective file
                     else:
@@ -162,6 +161,7 @@ class ParquetFile(object):
                 head_size = struct.unpack('<i', f.read(4))[0]
                 if verify:
                     assert f.read() == b'PAR1'
+                self._head_size = head_size
                 f.seek(-(head_size + 8), 2)
                 data = f.read(head_size)
             except (AssertionError, struct.error):
@@ -171,8 +171,7 @@ class ParquetFile(object):
         try:
             fmd = read_thrift(f, parquet_thrift.FileMetaData)
         except Exception:
-            raise ParquetException('Metadata parse failed: %s' %
-                                   self.fn)
+            raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
         self._set_attrs()
 
@@ -237,6 +236,8 @@ class ParquetFile(object):
         new_pf = copy.copy(self)
         new_pf.fmd.row_groups = new_rgs
         new_pf._set_attrs()
+        # would otherwise be "simple" when selecting one rg
+        new_pf.file_scheme = self.file_scheme
         return new_pf
 
     def row_group_filename(self, rg):

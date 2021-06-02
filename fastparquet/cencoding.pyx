@@ -15,7 +15,7 @@
 import cython
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
-from cpython cimport PyBytes_FromStringAndSize
+from cpython cimport PyBytes_FromStringAndSize, PyBytes_GET_SIZE
 from libc.stdint cimport uint8_t, uint32_t, int32_t, uint64_t, int64_t
 
 
@@ -242,14 +242,10 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
 
 
 cpdef void encode_unsigned_varint(int32_t x, NumpyIO o):  # pragma: no cover
-    cdef char * outptr = o.get_pointer()
     while x > 127:
-        outptr[0] = (x & 0x7F) | 0x80
-        outptr += 1
+        o.write_byte((x & 0x7F) | 0x80)
         x >>= 7
-    outptr[0] = x
-    outptr += 1
-    o.loc += outptr - o.get_pointer()
+    o.write_byte(x)
 
 
 cpdef encode_bitpacked(int32_t[:] values, int32_t width, NumpyIO o):
@@ -463,25 +459,25 @@ cdef int64_t zigzag_long(uint64_t n):
     return (n >> 1) ^ -(n & 1)
 
 
-cpdef dict read_thrift(NumpyIO data):
+cdef uint64_t long_zigzag(int64_t n):
+    return (n << 1) ^ (n >> 63)
+
+
+cpdef dict read_thrift(NumpyIO data, str name=None):
     cdef char byte, id = 0, bit
     cdef int32_t size
-    out = {}
+    cdef dict out = {}
     while True:
         byte = data.read_byte()
         if byte == 0:
             break
         id += (byte & 0b11110000) >> 4
         bit = byte & 0b00001111
-        if bit == 1:
-            out[id] = True
-        elif bit == 2:
-            out[id] = False
-        elif bit == 5 or bit == 6:
+        if bit == 5 or bit == 6:
             out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 7:
             out[id] = <double>data.get_pointer()[0]
-            data.seek(4, 1)
+            data.seek(8, 1)
         elif bit == 8:
             size = read_unsigned_var_int(data)
             out[id] = PyBytes_FromStringAndSize(data.get_pointer(), size)
@@ -490,7 +486,9 @@ cpdef dict read_thrift(NumpyIO data):
             out[id] = read_list(data)
         elif bit == 12:
             out[id] = read_thrift(data)
-    return out
+    if name is None:
+        return out
+    return ThriftObject(name, out)
 
 
 cdef list read_list(NumpyIO data):
@@ -505,14 +503,280 @@ cdef list read_list(NumpyIO data):
     typ = byte & 0x0f # 0b00001111
     if typ == 5:
         for _ in range(size):
-            out.append(zigzag_int(read_unsigned_var_int(data)))
+            out.append(zigzag_long(read_unsigned_var_int(data)))
     elif typ == 8:
         for _ in range(size):
             bsize = read_unsigned_var_int(data)
-            out.append(PyBytes_FromStringAndSize(data.get_pointer(), size))
+            out.append(PyBytes_FromStringAndSize(data.get_pointer(), bsize))
             data.seek(bsize, 1)
     else:
         for _ in range(size):
             out.append(read_thrift(data))
 
     return out
+
+
+cpdef void write_thrift(dict data, NumpyIO output):
+    cdef int i, l, prev = 0
+    cdef int delt = 0
+    cdef double d
+    cdef char * c
+    for i, val in data.items():
+        delt = i - prev
+        prev = i
+        if isinstance(val, int):
+            output.write_byte((delt << 4) | 6)
+            encode_unsigned_varint(long_zigzag(val), output)
+        elif isinstance(val, float):
+            output.write_byte((delt << 4) | 7)
+            d = val
+            (<double*>output.get_pointer())[0] = d
+            output.loc += 8
+        elif isinstance(val, bytes):
+            output.write_byte((delt << 4) | 8)
+            l = PyBytes_GET_SIZE(val)
+            encode_unsigned_varint(l, output)
+            c = val
+            memcpy(<void*>output.get_pointer(), <void*>c, l)
+            output.loc += l
+        elif isinstance(val, list):
+            output.write_byte((delt << 4) | 9)
+            write_list(val, output)
+        else:
+            output.write_byte((delt << 4) | 12)
+            write_thrift(val, output)
+    output.write_byte(0)
+
+
+cdef void write_list(list data, NumpyIO output):
+    cdef int l = len(data)
+    cdef int i
+    cdef dict d
+    cdef bytes b
+    cdef char * c
+    if l:
+        if isinstance(data[0], int):
+            if l > 14:
+                output.write_byte(5 | 0b11110000)
+                encode_unsigned_varint(l, output)
+            else:
+                output.write_byte(5 | (l << 4))
+            for i in data:
+                encode_unsigned_varint(long_zigzag(i), output)
+        elif isinstance(data[0], bytes):
+            if l > 14:
+                output.write_byte(8 | 0b11110000)
+                encode_unsigned_varint(l, output)
+            else:
+                output.write_byte(8 | (l << 4))
+            for b in data:
+                i = PyBytes_GET_SIZE(b)
+                encode_unsigned_varint(i, output)
+                c = b
+                memcpy(<void*>output.get_pointer(), <void*>c, i)
+                output.loc += i
+        else: # STRUCT
+            if l > 14:
+                output.write_byte(12 | 0b11110000)
+                encode_unsigned_varint(l, output)
+            else:
+                output.write_byte(12 | (l << 4))
+            for d in data:
+                write_thrift(d, output)
+    else:
+        # Not sure if zero-length list is allowed
+        output.write_byte(8 << 4)
+        encode_unsigned_varint(0, output)
+
+
+@cython.freelist(1000)
+@cython.final
+cdef class ThriftObject(dict):
+
+    cdef str name
+    cdef dict spec
+    cdef dict children
+    cdef dict attrs
+
+    def __init__(self, str name, dict indict):
+        super().__init__(indict)
+        if name is not None:
+            self.name = name
+            self.spec = specs[name]
+        self.children = children.get(name, {})
+        self.attrs = {}
+
+    def __getattr__(self, item):
+        cdef str ch
+        if item in self.spec:
+            out = self.get(self.spec[item], None)
+            ch = self.children.get(item)
+            if ch is not None and out is not None:
+                if isinstance(out, list):
+                    return [ThriftObject(ch, o) for o in out]
+                return ThriftObject(ch, out)
+            return out
+        else:
+            try:
+                return self.attrs[item]
+            except KeyError:
+                raise AttributeError
+
+    def __setattr__(self, item, value):
+        if item in self.spec:
+            self[self.spec[item]] = value
+        else:
+            self.attrs[item] = value
+
+    def __delattr__(self, item):
+        if item in self.spec:
+            del self[self.spec[item]]
+        else:
+            try:
+                del self.attrs[item]
+            except KeyError:
+                raise AttributeError
+
+    def __reduce__(self):
+        return ThriftObject, (self.name, dict(self))
+
+    cpdef _asdict(self):
+        cdef str k
+        cdef out = {}
+        for k in self.spec:
+            if k in self.children:
+                lower = getattr(self, k)
+                if lower is None:
+                    out[k] = None
+                elif isinstance(lower, list):
+                    out[k] = [l._asdict() for l in lower]
+                else:
+                    out[k] = lower._asdict()
+            else:
+                lower = getattr(self, k)
+                if isinstance(lower, bytes):
+                    lower = str(lower)
+                elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
+                    lower = [str(l) for l in lower]
+                out[k] = lower
+        return out
+
+    def __dir__(self):
+        return list(self.spec)
+
+    def __repr__(self):
+        alt = self._asdict()
+        try:
+            import yaml
+            return yaml.dump(alt)
+        except ImportError:
+            return str(alt)
+
+
+cdef dict specs = {'Statistics': {'max': 1,
+                                  'min': 2,
+                                  'null_count': 3,
+                                  'distinct_count': 4,
+                                  'max_value': 5,
+                                  'min_value': 6},
+                   'SchemaElement': {'type': 1,
+                                     'type_length': 2,
+                                     'repetition_type': 3,
+                                     'name': 4,
+                                     'num_children': 5,
+                                     'converted_type': 6,
+                                     'scale': 7,
+                                     'precision': 8,
+                                     'field_id': 9},
+                   'DataPageHeader': {'num_values': 1,
+                                      'encoding': 2,
+                                      'definition_level_encoding': 3,
+                                      'repetition_level_encoding': 4,
+                                      'statistics': 5},
+                   'IndexPageHeader': {},
+                   'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},
+                   'DataPageHeaderV2': {'num_values': 1,
+                                        'num_nulls': 2,
+                                        'num_rows': 3,
+                                        'encoding': 4,
+                                        'definition_levels_byte_length': 5,
+                                        'repetition_levels_byte_length': 6,
+                                        'is_compressed': 7,
+                                        'statistics': 8},
+                   'PageHeader': {'type': 1,
+                                  'uncompressed_page_size': 2,
+                                  'compressed_page_size': 3,
+                                  'crc': 4,
+                                  'data_page_header': 5,
+                                  'index_page_header': 6,
+                                  'dictionary_page_header': 7,
+                                  'data_page_header_v2': 8},
+                   'KeyValue': {'key': 1, 'value': 2},
+                   'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
+                   'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
+                   'ColumnMetaData': {'type': 1,
+                                      'encodings': 2,
+                                      'path_in_schema': 3,
+                                      'codec': 4,
+                                      'num_values': 5,
+                                      'total_uncompressed_size': 6,
+                                      'total_compressed_size': 7,
+                                      'key_value_metadata': 8,
+                                      'data_page_offset': 9,
+                                      'index_page_offset': 10,
+                                      'dictionary_page_offset': 11,
+                                      'statistics': 12,
+                                      'encoding_stats': 13},
+                   'ColumnChunk': {'file_path': 1, 'file_offset': 2, 'meta_data': 3},
+                   'RowGroup': {'columns': 1,
+                                'total_byte_size': 2,
+                                'num_rows': 3,
+                                'sorting_columns': 4},
+                   'TypeDefinedOrder': {},
+                   'ColumnOrder': {'TYPE_ORDER': 1},
+                   'FileMetaData': {'version': 1,
+                                    'schema': 2,
+                                    'num_rows': 3,
+                                    'row_groups': 4,
+                                    'key_value_metadata': 5,
+                                    'created_by': 6,
+                                    'column_orders': 7}
+                   }
+
+cdef dict children = {'DataPageHeader': {'statistics': 'Statistics'},
+                      'DataPageHeaderV2': {'statistics': 'Statistics'},
+                      'PageHeader': {'data_page_header': 'DataPageHeader',
+                                     'index_page_header': 'IndexPageHeader',
+                                     'dictionary_page_header': 'DictionaryPageHeader',
+                                     'data_page_header_v2': 'DataPageHeaderV2'},
+                      'ColumnMetaData': {'key_value_metadata': 'KeyValue',
+                                         'statistics': 'Statistics',
+                                         'encoding_stats': 'PageEncodingStats'},
+                      'ColumnChunk': {'meta_data': 'ColumnMetaData'},
+                      'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
+                      'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
+                      'FileMetaData': {'schema': 'SchemaElement',
+                                       'row_groups': 'RowGroup',
+                                       'key_value_metadata': 'KeyValue',
+                                       'column_orders': 'ColumnOrder'}}
+
+# specs = {}
+# for o in [o for o in fastparquet.parquet_thrift.__dict__.values() if isinstance(o, type)]:
+#     if hasattr(o, "thrift_spec"):
+#         specs[o.__name__] = {k[2]: k[0] for k in o.thrift_spec if k}
+#
+
+
+# children = {}
+# for o in [o for o in fastparquet.parquet_thrift.__dict__.values() if isinstance(o, type)]:
+#     if hasattr(o, "thrift_spec"):
+#         bit = {}
+#         for k in o.thrift_spec:
+#             if k and k[1] == fastparquet.parquet_thrift.TType.STRUCT and hasattr(k[3][0], "thrift_spec"):
+#                 bit[k[2]] =  k[3][0].__name__
+#             elif k and k[1] == fastparquet.parquet_thrift.TType.LIST and k[3][0] == \
+#                 fastparquet.parquet_thrift.TType.STRUCT:
+#                 bit[k[2]] =  k[3][1][0].__name__
+#         if bit:
+#             children[o.__name__] = bit
+#
