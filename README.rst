@@ -44,13 +44,19 @@ Required:
 
 .. _LLVM 4.0.x: https://github.com/llvm-mirror/llvm 
 
-Optional (compression algorithms; gzip is always available):
+Supported compression algorithms:
 
-- snappy (aka python-snappy)
-- lzo
-- brotli
-- lz4
-- zstandard
+- Available by default:
+
+  - gzip
+  - snappy
+  - brotli
+  - lz4
+  - zstandard
+
+- Optionally supported
+  
+  - `lzo <https://github.com/jd-boyd/python-lzo>`_
 
 
 Installation
