@@ -1,5 +1,6 @@
 
 import cramjam
+import numpy as np
 from .thrift_structures import parquet_thrift
 
 # TODO: use stream/direct-to-buffer conversions instead of memcopy
@@ -97,6 +98,13 @@ def decompress_data(data, uncompressed_size, algorithm='gzip'):
     if isinstance(algorithm, int):
         algorithm = rev_map[algorithm]
     if algorithm.upper() not in decompressions:
-        raise RuntimeError("Decompression '%s' not available.  Options: %s" %
-                (algorithm.upper(), sorted(decompressions)))
+        raise RuntimeError(
+            "Decompression '%s' not available.  Options: %s" %
+            (algorithm.upper(), sorted(decompressions))
+        )
+    if algorithm.upper() in decom_into:
+        # ensures writable buffer from cramjam
+        x = np.empty(uncompressed_size, dtype='uint8')
+        decom_into[algorithm.upper()](data, x)
+        return x
     return decompressions[algorithm.upper()](data, uncompressed_size)
