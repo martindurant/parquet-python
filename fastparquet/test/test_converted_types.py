@@ -32,7 +32,9 @@ def test_date():
         converted_type=pt.ConvertedType.DATE,
     )
     days = (datetime.date(2004, 11, 3) - datetime.date(1970, 1, 1)).days
-    assert (convert(pd.Series([days]), schema)[0] ==
+    data = pd.Series([days]).to_numpy()
+    data.flags.writeable = False
+    assert (convert(data, schema)[0] ==
             pd.to_datetime([datetime.date(2004, 11, 3)]))
 
 

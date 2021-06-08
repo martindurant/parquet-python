@@ -131,7 +131,7 @@ def convert(data, se, timestamp96=True):
                 for i in range(len(data))
             ])
     elif ctype == parquet_thrift.ConvertedType.DATE:
-        data *= DAYS_TO_MILLIS
+        data = data * DAYS_TO_MILLIS
         return data.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
         out = data.astype('int64', copy=False)
