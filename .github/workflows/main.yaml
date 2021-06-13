@@ -14,6 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         CONDA_ENV: [py37, py38, py39]
+        FASTPARQUET_DATAPAGE_V2: ["", "TRUE"]
     steps:
       - name: APT
         run: sudo apt-get install liblzo2-dev

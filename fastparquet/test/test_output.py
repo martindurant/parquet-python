@@ -100,7 +100,7 @@ def test_roundtrip_s3(s3):
 
 @pytest.mark.parametrize('scheme', ['simple', 'hive'])
 @pytest.mark.parametrize('row_groups', [[0], [0, 500]])
-@pytest.mark.parametrize('comp', [None, 'GZIP', 'SNAPPY'])
+@pytest.mark.parametrize('comp', ['SNAPPY', None, 'GZIP'])
 def test_roundtrip(tempdir, scheme, row_groups, comp):
     data = pd.DataFrame({'i32': np.arange(1000, dtype=np.int32),
                          'i64': np.arange(1000, dtype=np.int64),

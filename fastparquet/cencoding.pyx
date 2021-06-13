@@ -354,7 +354,7 @@ cdef class NumpyIO(object):
     cpdef int32_t tell(self):
         return self.loc
 
-    cpdef void seek(self, int32_t loc, int32_t whence=0):
+    cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):
         if whence == 0:
             self.loc = loc
         elif whence == 1:
@@ -363,6 +363,7 @@ cdef class NumpyIO(object):
             self.loc = self.nbytes + loc
         if self.loc > self.nbytes:
             self.loc = self.nbytes
+        return self.loc
 
     @cython.wraparound(False)
     cpdef const uint8_t[:] so_far(self):

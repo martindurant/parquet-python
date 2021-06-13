@@ -75,6 +75,8 @@ def typemap(se):
 
 def converts_inplace(se):
     """when converting, reuses input array"""
+    if se.type == parquet_thrift.Type.BOOLEAN:
+        return False  # always needs unpacking
     ctype = se.converted_type
     if ctype is None:
         return True

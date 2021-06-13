@@ -1,5 +1,6 @@
 from copy import copy
 import json
+import os
 import re
 import struct
 import warnings
@@ -364,7 +365,10 @@ def make_definitions(data, no_nulls):
     return block, out
 
 
-def write_column(f, data, selement, compression=None):
+DATAPAGE_VERSION = 2 if os.environ.get("FASTPARQUET_DATAPAGE_V2", False) else 1
+
+
+def write_column(f, data, selement, compression=None, datapage_version=None):
     """
     Write a single column of data to an open Parquet file
 
@@ -386,6 +390,7 @@ def write_column(f, data, selement, compression=None):
     chunk: ColumnChunk structure
 
     """
+    datapage_version = datapage_version or DATAPAGE_VERSION
     has_nulls = selement.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     tot_rows = len(data)
     encoding = "PLAIN"
@@ -469,51 +474,75 @@ def write_column(f, data, selement, compression=None):
         # disallow bitpacking for compatability
         data = data.astype('int32')
 
-    # TODO: here we make a copy of encoded data even if deps
-    #  and reps are empty
-    bdata = definition_data + repetition_data + encode[encoding](
-            data, selement)
-    # here we make another copy
-    bdata += 8 * b'\x00'
     try:
         if encoding != 'RLE_DICTIONARY' and num_nulls == 0:
             max, min = data.values.max(), data.values.min()
             if selement.type == parquet_thrift.Type.BYTE_ARRAY:
                 if selement.converted_type is not None:
-                    max = encode['PLAIN'](pd.Series([max]), selement)[4:]
-                    min = encode['PLAIN'](pd.Series([min]), selement)[4:]
+                    max = encode['PLAIN'](pd.Series([max], name=data.name), selement)[4:]
+                    min = encode['PLAIN'](pd.Series([min], name=data.name), selement)[4:]
             else:
-                max = encode['PLAIN'](pd.Series([max]), selement)
-                min = encode['PLAIN'](pd.Series([min]), selement)
+                max = encode['PLAIN'](pd.Series([max], name=data.name), selement)
+                min = encode['PLAIN'](pd.Series([min], name=data.name), selement)
     except TypeError:
         pass
+    s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls)
 
-    dph = parquet_thrift.DataPageHeader(
+    if datapage_version == 1:
+        bdata = b"".join([
+            repetition_data, definition_data, encode[encoding](data, selement), 8 * b'\x00'
+        ])
+        dph = parquet_thrift.DataPageHeader(
+                num_values=tot_rows,
+                encoding=getattr(parquet_thrift.Encoding, encoding),
+                definition_level_encoding=parquet_thrift.Encoding.RLE,
+                repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED)
+        l0 = len(bdata)
+
+        if compression:
+            bdata = compress_data(bdata, compression)
+            l1 = len(bdata)
+        else:
+            l1 = l0
+        diff += l0 - l1
+
+        ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE,
+                                       uncompressed_page_size=l0,
+                                       compressed_page_size=l1,
+                                       data_page_header=dph, crc=None)
+        write_thrift(f, ph)
+        f.write(bdata)
+    elif datapage_version == 2:
+        dph = parquet_thrift.DataPageHeaderV2(
             num_values=tot_rows,
+            num_nulls=num_nulls,
+            num_rows=tot_rows,
             encoding=getattr(parquet_thrift.Encoding, encoding),
-            definition_level_encoding=parquet_thrift.Encoding.RLE,
-            repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED)
-    l0 = len(bdata)
-
-    if compression:
-        bdata = compress_data(bdata, compression)
-        l1 = len(bdata)
-    else:
-        l1 = l0
-    diff += l0 - l1
-
-    ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE,
-                                   uncompressed_page_size=l0,
-                                   compressed_page_size=l1,
-                                   data_page_header=dph, crc=None)
-    write_thrift(f, ph)
-    f.write(bdata)
+            definition_levels_byte_length=len(definition_data),
+            repetition_levels_byte_length=0, # len(repetition_data),
+            is_compressed=compression is not None,
+            statistics=s
+        )
+        bdata = encode[encoding](data, selement)
+        lb = len(bdata)
+        if compression:
+            bdata = compress_data(bdata, compression)
+            diff = lb - len(bdata)
+        else:
+            diff = 0
+        ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE_V2,
+                                       uncompressed_page_size=lb,
+                                       compressed_page_size=len(bdata) + len(definition_data),
+                                       data_page_header_v2=dph, crc=None)
+        write_thrift(f, ph)
+        # f.write(repetition_data)  # no-op
+        f.write(definition_data)
+        f.write(bdata)
 
     compressed_size = f.tell() - start
     uncompressed_size = compressed_size + diff
 
     offset = f.tell()
-    s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls)
 
     if cats:
         p = [
