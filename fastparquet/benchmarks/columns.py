@@ -22,7 +22,7 @@ def measure(name, result):
 def time_column():
     with tmpdir() as tempdir:
         result = {}
-        fn = join_path(tempdir, 'temp.parq')
+        fn = join_path('temp.parq')
         n = 10000000
         r = np.random.randint(-1e10, 1e10, n, dtype='int64')
         d = pd.DataFrame({'w': pd.Categorical(np.random.choice(
@@ -43,7 +43,10 @@ def time_column():
             with measure("file open", result):
                 ParquetFile(fn)
 
-            pf.to_pandas()  # warm-up
+            if col == 'x':
+                assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
+            else:
+                assert pf.to_pandas().equals(df)  # warm-up
 
             with measure('%s: read, no nulls' % d.dtypes[col], result):
                 pf.to_pandas()
@@ -52,7 +55,10 @@ def time_column():
                 write(fn, df, has_nulls=True)#, compression="SNAPPY")
 
             pf = ParquetFile(fn)
-            pf.to_pandas()  # warm-up
+            if col == 'x':
+                assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
+            else:
+                assert pf.to_pandas().equals(df)  # warm-up
 
             with measure('%s: read, no nulls, has_null=True' % d.dtypes[col], result):
                 pf.to_pandas()
@@ -69,7 +75,10 @@ def time_column():
                 write(fn, df, has_nulls=True)#, compression="SNAPPY")
 
             pf = ParquetFile(fn)
-            pf.to_pandas()  # warm-up
+            if col == 'x':
+                assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
+            else:
+                assert pf.to_pandas().equals(df)  # warm-up
 
             with measure('%s: read, with null, has_null=True' % d.dtypes[col], result):
                 pf.to_pandas()
@@ -78,7 +87,10 @@ def time_column():
                 write(fn, df, has_nulls=False)#, compression="SNAPPY")
 
             pf = ParquetFile(fn)
-            pf.to_pandas()  # warm-up
+            if col == 'x':
+                assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
+            else:
+                assert pf.to_pandas().equals(df)  # warm-up
 
             with measure('%s: read, with null, has_null=False' % d.dtypes[col], result):
                 pf.to_pandas()

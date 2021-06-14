@@ -10,7 +10,7 @@ from . import encoding
 from . encoding import read_plain
 import fastparquet.cencoding as encoding
 from .compression import decompress_data, rev_map, decom_into
-from .converted_types import convert, typemap, converts_inplace
+from .converted_types import convert, simple, converts_inplace
 from .schema import _is_list_like, _is_map_like
 from .speedups import unpack_byte_array
 from .thrift_structures import parquet_thrift, read_thrift
@@ -250,8 +250,13 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         nulls = defi != max_def
     infile.seek(data)
 
-    into0 = ((use_cat or converts_inplace(se)) and data_header2.num_nulls == 0
+    # input and output element sizes match
+    see = se.type_length == assign.dtype.itemsize * 8 or simple.get(se.type).itemsize == assign.dtype.itemsize
+    # can read-into
+    into0 = ((use_cat or converts_inplace(se) and see)
+             and data_header2.num_nulls == 0
              and max_rep == 0 and assign.dtype.kind != "O")
+    # can decompress-into
     into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
             and into0)
 
@@ -261,7 +266,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         # PLAIN read directly into output (a copy for remote files)
         infile.readinto(assign[num:num+n_values].view('uint8'))
         convert(assign[num:num+n_values], se)
-    elif into and into0 and data_header2.encoding == parquet_thrift.Encoding.PLAIN:
+    elif into and data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN decompress directly into output
         decomp = decom_into[rev_map[cmd.codec]]
         decomp(infile.read(size), assign[num:num+data_header2.num_values].view('uint8'))

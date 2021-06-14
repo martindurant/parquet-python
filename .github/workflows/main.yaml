@@ -39,7 +39,7 @@ jobs:
         run: |
           pytest --verbose --cov=fastparquet
   v2:
-    name: ${{ matrix.CONDA_ENV }}-pytest
+    name: v2-py38
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -128,3 +128,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest --verbose --cov=fastparquet
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes

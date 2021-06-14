@@ -880,7 +880,13 @@ def write(filename, data, row_group_offsets=50000000,
     if (write_index or write_index is None
             and not isinstance(data.index, pd.RangeIndex)):
         cols = set(data)
-        data = data.reset_index()
+        if isinstance(data.index, pd.MultiIndex):
+
+            for name, cats, codes in zip(data.index.names, data.index.levels, data.index.codes):
+                data = data.assign(**{name: pd.Categorical.from_codes(codes, cats)})
+            data.reset_index(drop=True)
+        else:
+            data = data.reset_index()
         index_cols = [c for c in data if c not in cols]
     elif write_index is None and isinstance(data.index, pd.RangeIndex):
         # write_index=None, range to metadata
