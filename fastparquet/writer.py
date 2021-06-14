@@ -337,7 +337,7 @@ encode = {
 }
 
 
-def make_definitions(data, no_nulls):
+def make_definitions(data, no_nulls, datapage_version=1):
     """For data that can contain NULLs, produce definition levels binary
     data: either bitpacked bools, or (if number of nulls == 0), single RLE
     block."""
@@ -360,7 +360,12 @@ def make_definitions(data, no_nulls):
         head = temp.so_far()
 
         # TODO: adding bytes causes copy
-        block = struct.pack('<i', len(head) + len(out)) + head + out
+        if datapage_version == 1:
+            block = struct.pack('<i', len(head) + len(out)) + head + out
+        else:
+            # no need to write length, it's in the header
+            # head.write(out)?
+            block = bytes(head) + out
         out = data.dropna()  # better, data[data.notnull()], from above ?
     return block, out
 
@@ -400,7 +405,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             num_nulls = (data.cat.codes == -1).sum()
         else:
             num_nulls = len(data) - data.count()
-        definition_data, data = make_definitions(data, num_nulls == 0)
+        definition_data, data = make_definitions(data, num_nulls == 0, datapage_version=datapage_version)
         # make_definitions returns `data` with all nulls dropped
         # the null-stripped `data` can be converted from Optional Types to
         # their numpy counterparts

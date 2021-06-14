@@ -294,6 +294,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         raw_bytes = decompress_data(raw_bytes, ph.uncompressed_page_size, codec)
         pagefile = encoding.NumpyIO(raw_bytes)
         if data_header2.encoding != parquet_thrift.Encoding.RLE:
+            # TODO: check this bit; is the varint read only row byte-exact fastpath?
             bit_width = pagefile.read_byte()
             encoding.read_unsigned_var_int(pagefile)
         else:
