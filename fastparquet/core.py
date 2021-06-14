@@ -241,10 +241,11 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
     if max_def and data_header2.num_nulls:
         bit_width = encoding.width_from_max_int(max_def)
-        defi = read_data(
-            encoding.NumpyIO(infile.read(data_header2.definition_levels_byte_length)),
-            parquet_thrift.Encoding.RLE,
-            data_header2.num_values, bit_width)
+        # not the same as read_data(), because we know the length
+        io_obj = encoding.NumpyIO(infile.read(data_header2.definition_levels_byte_length))
+        defi = np.empty(data_header2.num_values, dtype="uint8")
+        encoding.read_rle_bit_packed_hybrid(io_obj, bit_width, data_header2.num_values,
+                                            encoding.NumpyIO(defi), itemsize=1)
         # TODO: for RLE read, could pass defi and max_def to unpacker, save on the copy
         nulls = defi != max_def
     infile.seek(data)
@@ -292,8 +293,12 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         infile.readinto(raw_bytes)
         raw_bytes = decompress_data(raw_bytes, ph.uncompressed_page_size, codec)
         pagefile = encoding.NumpyIO(raw_bytes)
-        bit_width = pagefile.read_byte()
-        encoding.read_unsigned_var_int(pagefile)
+        if data_header2.encoding != parquet_thrift.Encoding.RLE:
+            bit_width = pagefile.read_byte()
+            encoding.read_unsigned_var_int(pagefile)
+        else:
+            bit_width = 1
+            pagefile.seek(4, 1)
         if bit_width in [8, 16, 32] and selfmade:
             # special fastpath for cats
             outbytes = raw_bytes[pagefile.tell():]
@@ -508,15 +513,16 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
 def read_row_group_file(fn, rg, columns, categories, schema_helper, cats,
                         open=open, selfmade=False, index=None, assign=None,
-                        scheme='hive', partition_meta=None):
+                        scheme='hive', partition_meta=None, row_filter=False):
     with open(fn, mode='rb') as f:
         return read_row_group(f, rg, columns, categories, schema_helper, cats,
                               selfmade=selfmade, index=index, assign=assign,
-                              scheme=scheme, partition_meta=partition_meta)
+                              scheme=scheme, partition_meta=partition_meta,
+                              row_filter=row_filter)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
-                          selfmade=False, assign=None):
+                          selfmade=False, assign=None, row_filter=False):
     """
     Read a row group and return as a dict of arrays
 
@@ -556,7 +562,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
                    selfmade=False, index=None, assign=None,
-                   scheme='hive', partition_meta=None):
+                   scheme='hive', partition_meta=None, row_filter=False):
     """
     Access row-group in a file and read some columns into a data-frame.
     """
@@ -564,9 +570,12 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
     if assign is None:
         raise RuntimeError('Going with pre-allocation!')
     read_row_group_arrays(file, rg, columns, categories, schema_helper,
-                          cats, selfmade, assign=assign)
+                          cats, selfmade, assign=assign, row_filter=row_filter)
 
     for cat in cats:
+        if cat not in assign:
+            # do no need to have partition columns in output
+            continue
         if scheme == 'hive':
             s = ex_from_sep('/')
             partitions = s.findall(rg.columns[0].file_path)

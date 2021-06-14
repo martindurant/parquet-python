@@ -251,7 +251,7 @@ class ParquetFile(object):
             return self.fn
 
     def read_row_group_file(self, rg, columns, categories, index=None,
-                            assign=None, partition_meta=None):
+                            assign=None, partition_meta=None, row_filter=False):
         """ Open file for reading, and process it as a row-group """
         categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
@@ -261,14 +261,16 @@ class ParquetFile(object):
                     rg.num_rows, columns, categories, index)
             ret = True
         core.read_row_group_file(
-                fn, rg, columns, categories, self.schema, self.cats,
-                open=self.open, selfmade=self.selfmade, index=index,
-                assign=assign, scheme=self.file_scheme, partition_meta=partition_meta)
+            fn, rg, columns, categories, self.schema, self.cats,
+            open=self.open, selfmade=self.selfmade, index=index,
+            assign=assign, scheme=self.file_scheme, partition_meta=partition_meta,
+            row_filter=row_filter
+        )
         if ret:
             return df
 
     def read_row_group(self, rg, columns, categories, infile=None,
-                       index=None, assign=None):
+                       index=None, assign=None, row_filter=False):
         """
         Access row-group in a file and read some columns into a data-frame.
         """
@@ -281,72 +283,21 @@ class ParquetFile(object):
         core.read_row_group(
                 infile, rg, columns, categories, self.schema, self.cats,
                 self.selfmade, index=index, assign=assign,
-                scheme=self.file_scheme)
+                scheme=self.file_scheme, row_filter=row_filter)
         if ret:
             return df
 
-    def iter_row_groups(self, columns=None, categories=None, filters=[],
-                        index=None):
+    def iter_row_groups(self, **kwargs):
         """
-        Read data from parquet into a Pandas dataframe.
-
-        Parameters
-        ----------
-        columns: list of names or `None`
-            Column to load (see `ParquetFile.columns`). Any columns in the
-            data not in this list will be ignored. If `None`, read all columns.
-        categories: list, dict or `None`
-            If a column is encoded using dictionary encoding in every row-group
-            and its name is also in this list, it will generate a Pandas
-            Category-type column, potentially saving memory and time. If a
-            dict {col: int}, the value indicates the number of categories,
-            so that the optimal data-dtype can be allocated. If ``None``,
-            will automatically set *if* the data was written by fastparquet.
-        filters: list of list of tuples or list of tuples
-            To filter out (i.e., not read) some of the row-groups.
-            (This is not row-level filtering)
-            Filter syntax: [[(column, op, val), ...],...]
-            where op is [==, >, >=, <, <=, !=, in, not in]
-            The innermost tuples are transposed into a set of filters applied
-            through an `AND` operation.
-            The outer list combines these sets of filters through an `OR`
-            operation.
-            A single list of tuples can also be used, meaning that no `OR`
-            operation between set of filters is to be conducted.
-        index: string or list of strings or False or None
-            Column(s) to assign to the (multi-)index. If None, index is
-            inferred from the metadata (if this was originally pandas data); if
-            the metadata does not exist or index is False, index is simple
-            sequential integers.
-        assign: dict {cols: array}
-            Pre-allocated memory to write to. If None, will allocate memory
-            here.
+        Iterate a dataset by row-groups
 
         Returns
         -------
         Generator yielding one Pandas data-frame per row-group
         """
-        index = self._get_index(index)
-        columns = columns or self.columns
-        if index:
-            columns += [i for i in index if i not in columns]
-        check_column_names(self.columns, columns, categories)
-        rgs = filter_row_groups(self, filters) if filters else self.row_groups
-        if all(column.file_path is None for rg in rgs
-               for column in rg.columns):
-            with self.open(self.fn, 'rb') as f:
-                for rg in rgs:
-                    df, views = self.pre_allocate(rg.num_rows, columns,
-                                                  categories, index)
-                    self.read_row_group(rg, columns, categories, infile=f,
-                                        index=index, assign=views)
-                    yield df
-        else:
-            for rg in rgs:
-                df, views = self.pre_allocate(rg.num_rows, columns,
-                                              categories, index)
-                self.read_row_group_file(rg, columns, categories, index,
-                                         assign=views)
+        for i in range(len(self.row_groups)):
+            df = self[i].to_pandas(**kwargs)
+            if not df.empty:
                 yield df
 
     def _get_index(self, index=None):
@@ -358,7 +309,7 @@ class ParquetFile(object):
         return index
 
     def to_pandas(self, columns=None, categories=None, filters=[],
-                  index=None):
+                  index=None, row_filter=False):
         """
         Read data from parquet into a Pandas dataframe.
 
@@ -390,6 +341,9 @@ class ParquetFile(object):
             inferred from the metadata (if this was originally pandas data); if
             the metadata does not exist or index is False, index is simple
             sequential integers.
+        row_filter: bool
+            Whether filters are applied to whole row-groups (False, default)
+            or row-wise (True, experimental)
 
         Returns
         -------
@@ -401,7 +355,7 @@ class ParquetFile(object):
         if columns is not None:
             columns = columns[:]
         else:
-            columns = self.columns
+            columns = self.columns + list(self.cats)
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
@@ -414,7 +368,7 @@ class ParquetFile(object):
                                     else v[start:start + rg.num_rows])
                              for (name, v) in views.items()}
                     self.read_row_group(rg, columns, categories, infile=f,
-                                        index=index, assign=parts)
+                                        index=index, assign=parts, row_filter=row_filter)
                     start += rg.num_rows
         else:
             for rg in rgs:
@@ -422,7 +376,8 @@ class ParquetFile(object):
                                 else v[start:start + rg.num_rows])
                          for (name, v) in views.items()}
                 self.read_row_group_file(rg, columns, categories, index,
-                                         assign=parts, partition_meta=self.partition_meta)
+                                         assign=parts, partition_meta=self.partition_meta,
+                                         row_filter=row_filter)
                 start += rg.num_rows
         return df
 
