@@ -493,6 +493,20 @@ def test_in_filter(tempdir):
     assert set(out.symbols) == {'a', 'c'}
 
 
+def test_partition_columns(tempdir):
+    symbols = ['a', 'a', 'b', 'c', 'c', 'd']
+    values = [1, 2, 3, 4, 5, 6]
+    df = pd.DataFrame(data={'symbols': symbols, 'values': values})
+    write(tempdir, df, file_scheme='hive', partition_on=['symbols'])
+    pf = ParquetFile(tempdir)
+
+    # partition columns always come after actual columns
+    assert pf.to_pandas().columns.tolist() == ['values', 'symbols']
+    assert pf.to_pandas(columns=['symbols']).columns.tolist() == ['symbols']
+    assert pf.to_pandas(columns=['values']).columns.tolist() == ['values']
+    assert pf.to_pandas(columns=[]).columns.tolist() == []
+
+
 def test_in_filter_numbers(tempdir):
     symbols = ['a', 'a', 'b', 'c', 'c', 'd']
     values = [1, 2, 3, 4, 5, 6]

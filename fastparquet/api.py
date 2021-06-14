@@ -383,7 +383,8 @@ class ParquetFile(object):
 
     def pre_allocate(self, size, columns, categories, index):
         categories = self.check_categories(categories)
-        df, arrs = _pre_allocate(size, columns, categories, index, self.cats,
+        cats = {k: v for k, v in self.cats.items() if k in columns}
+        df, arrs = _pre_allocate(size, columns, categories, index, cats,
                                  self._dtypes(categories), self.tz)
         i_no_name = re.compile(r"__index_level_\d+__")
         if self.has_pandas_metadata:
