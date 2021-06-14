@@ -4,6 +4,7 @@ import struct
 import numpy as np
 import os
 import os.path
+import operator
 import pandas as pd
 import re
 import numbers
@@ -435,3 +436,14 @@ def json_decoder():
             except (ImportError, AttributeError):
                 pass
     return _json_decoder[0]
+
+
+ops = {
+    "==": operator.eq,
+    "=": operator.eq,
+    "!=": operator.ne,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "<": operator.lt,
+    "<=": operator.le
+}

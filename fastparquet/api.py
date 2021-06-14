@@ -11,7 +11,7 @@ from fastparquet.util import join_path
 from .core import read_thrift
 from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
-from .util import (default_open, ParquetException, val_to_num,
+from .util import (default_open, ParquetException, val_to_num, ops,
                    ensure_bytes, check_column_names, metadata_from_many,
                    ex_from_sep, json_decoder)
 
@@ -308,6 +308,44 @@ class ParquetFile(object):
             index = [index]
         return index
 
+    def _column_filter_for_row_group(self, rg, filters):
+        """generates bool index for rows of row-group"""
+        columns = sum([[f[0]] if isinstance(f[0], str) else [g[0] for g in f] for f in filters], [])
+        if self.file_scheme == 'simple':
+            with self.open(self.fn, 'rb') as f:
+                df = self.read_row_group(
+                    rg, columns, self.categories, index=False, infile=f, row_filter=True
+                )
+        else:
+            df = self.read_row_group_file(
+                rg, columns, self.categories, index=False,
+                partition_meta=self.partition_meta, row_filter=True
+            )
+        out = np.zeros(len(df), dtype=bool)
+        for or_part in filters:
+            if isinstance(or_part[0], str):
+                if op == 'in':
+                    out |= df[name].isin(val)
+                elif op == "not in":
+                    out |= ~df[name].isin(val)
+                elif op in ops:
+                    out |= ops[op](df[name], val)
+                elif op == "~":
+                    out |= ~df[name]
+            else:
+                and_part = np.ones(len(df), dtype=bool)
+                for name, op, val in or_part:
+                    if op == 'in':
+                        and_part &= df[name].isin(val)
+                    elif op == "not in":
+                        and_part &= ~df[name].isin(val)
+                    elif op in ops:
+                        and_part &= ops[op](df[name], val)
+                    elif op == "~":
+                        and_part &= ~df[name]
+                out |= and_part
+        return out
+
     def to_pandas(self, columns=None, categories=None, filters=[],
                   index=None, row_filter=False):
         """
@@ -326,10 +364,9 @@ class ParquetFile(object):
             so that the optimal data-dtype can be allocated. If ``None``,
             will automatically set *if* the data was written from pandas.
         filters: list of list of tuples or list of tuples
-            To filter out (i.e., not read) some of the row-groups.
-            (This is not row-level filtering)
+            To filter out data.
             Filter syntax: [[(column, op, val), ...],...]
-            where op is [==, >, >=, <, <=, !=, in, not in]
+            where op is [==, =, >, >=, <, <=, !=, in, not in]
             The innermost tuples are transposed into a set of filters applied
             through an `AND` operation.
             The outer list combines these sets of filters through an `OR`
@@ -343,7 +380,10 @@ class ParquetFile(object):
             sequential integers.
         row_filter: bool
             Whether filters are applied to whole row-groups (False, default)
-            or row-wise (True, experimental)
+            or row-wise (True, experimental). The latter requires two passes of
+            any row group that may contain valid rows, but can be much more
+            memory-efficient, especially if the filter columns are not required
+            in the output.
 
         Returns
         -------
@@ -359,6 +399,9 @@ class ParquetFile(object):
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
+        if filters and row_filter:
+            selected = [self._column_filter_for_row_group(rg) for rg in rgs]
+            size = sum(sel.notnull().sum() for sel in selected)
         df, views = self.pre_allocate(size, columns, categories, index)
         start = 0
         if self.file_scheme == 'simple':
@@ -412,10 +455,16 @@ class ParquetFile(object):
                 df.index.names = names
         return df, arrs
 
-    @property
-    def count(self):
-        """ Total number of rows """
-        return sum(rg.num_rows for rg in self.row_groups)
+    def count(self, filters=None, row_filter=False):
+        """ Total number of rows
+
+        filters and row_filters have the same meaning as in to_pandas. Unless both are given,
+        this method will not need to decode any data
+        """
+        rgs = filter_row_groups(self, filters)
+        if row_filter:
+            return sum(sum(self._column_filter_for_row_group(rg, filters)) for rg in rgs)
+        return sum(rg.num_rows for rg in rgs)
 
     @property
     def info(self):
@@ -850,12 +899,11 @@ def filter_row_groups(pf, filters, as_idx: bool = False):
     -------
     Filtered list of row groups (or row group indexes)
     """
-    if isinstance(filters[0][0], str):
-        # If 2nd level is already a column name, then transform
-        # `filters` into a list (OR condition) of list (AND condition)
-        # of filters (tuple or list with 1st component being a column
-        # name).
-        filters = [filters]
+    # If 2nd level is already a column name, then transform
+    # `filters` into a list (OR condition) of list (AND condition)
+    # of filters (tuple or list with 1st component being a column
+    # name).
+    filters = [[filt] if filt and isinstance(filt[0], str) else filt for filt in filters]
     # Retrieve all column names onto which are applied filters, and check they
     # are existing columns of the dataset.
     as_cols = pf.columns + list(pf.cats.keys())
@@ -896,7 +944,7 @@ def filter_out_cats(rg, filters, partition_meta={}):
     -------
     True or False
     """
-    if len(filters) == 0 or rg.columns[0].file_path is None:
+    if len(filters) == 0:
         return False
     s = ex_from_sep('/')
     partitions = s.findall(rg.columns[0].file_path)
