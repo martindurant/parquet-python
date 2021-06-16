@@ -322,13 +322,14 @@ class ParquetFile(object):
             index = [index]
         return index
 
-    @staticmethod
-    def _columns_from_filters(filters):
-        return list(
+    def _columns_from_filters(self, filters):
+        return [
+            c for c in
             set(sum([[f[0]]
                      if isinstance(f[0], str)
                      else [g[0] for g in f] for f in filters], []))
-        )
+            if c not in self.cats
+        ]
 
     def _column_filter_for_row_group(self, rg, filters):
         """generates bool index for rows of row-group"""
@@ -431,7 +432,8 @@ class ParquetFile(object):
         if filters and row_filter:
             # TODO: special case when filter columns are also in output
             cs = self._columns_from_filters(filters)
-            df = self.to_pandas(columns=cs, filters=filters, row_filter=False)
+            df = self.to_pandas(columns=cs, filters=filters, row_filter=False,
+                                index=False)
             sel = self._column_filter(df, filters=filters)
             size = sel.sum()
             selected = []
