@@ -118,7 +118,7 @@ def test_roundtrip(tempdir, scheme, row_groups, comp):
           compression=comp)
 
     r = ParquetFile(fname)
-    assert r.fmd.num_rows == r.count == 1000
+    assert r.fmd.num_rows == r.count() == 1000
 
     df = r.to_pandas()
 
@@ -323,7 +323,7 @@ def test_groups_roundtrip(tempdir, scheme):
                  file_scheme=scheme)
 
     r = ParquetFile(tempdir)
-    assert r.fmd.num_rows == r.count == sum(~df.a.isnull())
+    assert r.fmd.num_rows == r.count() == sum(~df.a.isnull())
     assert len(r.row_groups) == 8
     out = r.to_pandas()
 
@@ -357,7 +357,7 @@ def test_empty_groupby(tempdir):
     writer.write(tempdir, df, partition_on=['a', 'c'], file_scheme='hive',
                  row_group_offsets=[0, 500])
     r = ParquetFile(tempdir)
-    assert r.count == sum(~df.a.isnull())
+    assert r.count() == sum(~df.a.isnull())
     assert len(r.row_groups) == 6
     out = r.to_pandas()
 
@@ -761,7 +761,7 @@ def test_append_empty(tempdir, scheme):
                        'b': ['a', 'a', 'b', 'b']})
     write(fn, df.head(0), write_index=False, file_scheme=scheme)
     pf = ParquetFile(fn)
-    assert pf.count == 0
+    assert pf.count() == 0
     assert pf.file_scheme == 'empty'
     write(fn, df, append=True, write_index=False, file_scheme=scheme)
 
@@ -850,7 +850,7 @@ def test_empty_dataframe(tempdir):
     write(fn, df)
     pf = ParquetFile(fn)
     out = pf.to_pandas()
-    assert pf.count == 0
+    assert pf.count() == 0
     assert len(out) == 0
     assert (out.columns == df.columns).all()
     assert pf.statistics

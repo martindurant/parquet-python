@@ -218,10 +218,16 @@ def test_cat_filters():
     filters = [('catnum', 'not in', [1, 2, 3])]
     assert len(pf.to_pandas(filters=filters)) == 0
 
-    filters = [('cat', '==', 'freda'), ('catnum', '>=', 2.5)]
+    # AND
+    filters = [[('cat', '==', 'freda'), ('catnum', '>=', 2.5)]]
     assert len(pf.to_pandas(filters=filters)) == 333
 
-    filters = [('cat', '==', 'freda'), ('catnum', '!=', 2.5)]
+    # OR
+    filters = [('cat', '==', 'freda'), ('catnum', '>=', 2.5)]
+    assert len(pf.to_pandas(filters=filters)) == 1333
+
+    # AND
+    filters = [[('cat', '==', 'freda'), ('catnum', '!=', 2.5)]]
     assert len(pf.to_pandas(filters=filters)) == 1000
 
 
@@ -349,7 +355,7 @@ def test_no_columns(tempdir):
     # df = pd.DataFrame({"A": [1, 2]})[[]]
     # fastparquet.write("test-data/no_columns.parquet", df)
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "no_columns.parquet"))
-    assert pf.count == 2
+    assert pf.count() == 2
     assert pf.columns == []
     result = pf.to_pandas()
     expected = pd.DataFrame({"A": [1, 2]})[[]]
@@ -359,7 +365,7 @@ def test_no_columns(tempdir):
 
 def test_map_multipage(tempdir):
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "map-test.snappy.parquet"))
-    assert pf.count == 3551
+    assert pf.count() == 3551
     df = pf.to_pandas()
     first_row_keys = [u'FoxNews.com', u'News Network', u'mobile technology', u'broadcast', u'sustainability',
                       u'collective intelligence', u'radio', u'business law', u'LLC', u'telecommunications',
@@ -377,7 +383,7 @@ def test_map_multipage(tempdir):
 
 def test_map_last_row_split(tempdir):
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "test-map-last-row-split.parquet"))
-    assert pf.count == 2428
+    assert pf.count() == 2428
     df = pf.to_pandas()
     # file has 3 pages - rows at index 1210 and 2427 are split in-between neighboring pages
     first_split_row_keys = [u'White House', u'State Department', u'Tatverd\xe4chtige', u'financial economics',
@@ -447,7 +453,7 @@ def test_or_filtering(tempdir):
     up_filter = [('num', '>=', 1925)]
     down_filter = [('num', '<=', 18)]
     # Check disjointed groups.
-    empty_df = pf.to_pandas(filters = up_filter + down_filter)
+    empty_df = pf.to_pandas(filters=[up_filter + down_filter])
     assert empty_df.empty
     # Reading row groups separately for reference.
     up_df = pf.to_pandas(filters=up_filter)

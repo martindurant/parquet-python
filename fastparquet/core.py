@@ -393,7 +393,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
 
 
 def read_col(column, schema_helper, infile, use_cat=False,
-             selfmade=False, assign=None, catdef=None):
+             selfmade=False, assign=None, catdef=None,
+             row_filter=None):
     """Using the given metadata, read one column in one row-group.
 
     Parameters
@@ -407,6 +408,10 @@ def read_col(column, schema_helper, infile, use_cat=False,
     use_cat: bool (False)
         If this column is encoded throughout with dict encoding, give back
         a pandas categorical column; otherwise, decode to values
+    row_filter: bool array or None
+        if given, selects which of the values read are to be written
+        into the output. Effectively implies NULLs, even for a required
+        column.
     """
     cmd = column.meta_data
     se = schema_helper.schema_element(cmd.path_in_schema)
@@ -414,7 +419,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
                cmd.data_page_offset))
 
     infile.seek(off)
-    rows = cmd.num_values
+    rows = row_filter.sum() if isinstance(row_filter, np.ndarray) else cmd.num_values
 
     if use_cat:
         my_nan = -1
@@ -461,6 +466,10 @@ def read_col(column, schema_helper, infile, use_cat=False,
             skip_nulls = False
         defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
                                         skip_nulls, selfmade=selfmade)
+        if isinstance(row_filter, np.ndarray):
+            defi = defi[row_filter] if defi else defi
+            rep = rep[row_filter] if rep else rep
+            val = val[row_filter]
         if rep is not None and assign.dtype.kind != 'O':  # pragma: no cover
             # this should never get called
             raise ValueError('Column contains repeated value, must use object '
@@ -520,6 +529,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
 def read_row_group_file(fn, rg, columns, categories, schema_helper, cats,
                         open=open, selfmade=False, index=None, assign=None,
                         scheme='hive', partition_meta=None, row_filter=False):
+    # TODO: factor out this and the duplication in ParquetFile
     with open(fn, mode='rb') as f:
         return read_row_group(f, rg, columns, categories, schema_helper, cats,
                               selfmade=selfmade, index=index, assign=assign,
@@ -550,7 +560,8 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
 
         read_col(column, schema_helper, file, use_cat=name+'-catdef' in out,
                  selfmade=selfmade, assign=out[name],
-                 catdef=out.get(name+'-catdef', None))
+                 catdef=out.get(name+'-catdef', None),
+                 row_filter=row_filter)
 
         if _is_map_like(schema_helper, column):
             # TODO: could be done in fast loop in _assemble_objects?

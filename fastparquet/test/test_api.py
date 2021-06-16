@@ -262,7 +262,7 @@ def test_attributes(tempdir):
     pf = ParquetFile(fn)
     assert pf.columns == ['x', 'y', 'z']
     assert len(pf.row_groups) == 2
-    assert pf.count == 4
+    assert pf.count() == 4
     assert join_path(fn) == pf.info['name']
     assert join_path(fn) in str(pf)
     for col in df:
@@ -1015,7 +1015,8 @@ def test_timestamp_filer(tempdir):
 
     ts_filter_down = pd.Timestamp('2021/01/03 00:00:00')
     ts_filter_up = pd.Timestamp('2021/01/06 00:00:00')
-    filt = [('ts', '>=', ts_filter_down), ('ts', '<', ts_filter_up)]
+    # AND filter
+    filt = [[('ts', '>=', ts_filter_down), ('ts', '<', ts_filter_up)]]
     assert pf.to_pandas(filters=filt).val.tolist() == [34]
 
 
