@@ -526,17 +526,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
         num += len(defi) if defi is not None else len(val)
 
 
-def read_row_group_file(fn, rg, columns, categories, schema_helper, cats,
-                        open=open, selfmade=False, index=None, assign=None,
-                        scheme='hive', partition_meta=None, row_filter=False):
-    # TODO: factor out this and the duplication in ParquetFile
-    with open(fn, mode='rb') as f:
-        return read_row_group(f, rg, columns, categories, schema_helper, cats,
-                              selfmade=selfmade, index=index, assign=assign,
-                              scheme=scheme, partition_meta=partition_meta,
-                              row_filter=row_filter)
-
-
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
                           selfmade=False, assign=None, row_filter=False):
     """
