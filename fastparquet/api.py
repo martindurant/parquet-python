@@ -215,18 +215,21 @@ class ParquetFile(object):
         paths = [rg.columns[0].file_path or "" for rg in self.row_groups if rg.columns]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
-    def head(self, nrows, columns=None):
+    def head(self, nrows, **kwargs):
         """Get the first nrows of data
 
         This will load the whole of the first valid row-group for the
         given columns. If it has fewer rows than requested, we will not
         fetch more data.
 
+        kwargs can include things like columns, filters, etc., with
+        the same semantics as to_pandas()
+
         returns: dataframe
         """
         # TODO: implement with truncated assign and early exit
         #  from reading
-        return self[:1].to_pandas(columns=columns).head(nrows)
+        return self[:1].to_pandas(**kwargs).head(nrows)
 
     def __getitem__(self, item):
         """Select among the row-groups using integer/slicing"""

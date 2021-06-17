@@ -1020,7 +1020,7 @@ def test_timestamp_filer(tempdir):
     assert pf.to_pandas(filters=filt).val.tolist() == [34]
 
 
-def test_row_filter_count(tempdir):
+def test_row_filter(tempdir):
     fn = os.path.join(tempdir, 'test.parquet')
     df = pd.DataFrame({
         'a': ['o'] * 10 + ['i'] * 5,

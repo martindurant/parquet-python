@@ -232,6 +232,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
 
     max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
     if max_rep:
+        # TODO: probably not functional
         bit_width = encoding.width_from_max_int(max_rep)
         io_obj = encoding.NumpyIO(infile.read(data_header2.repetition_levels_byte_length))
         repi = np.empty(data_header2.num_values, dtype="uint8")
@@ -456,6 +457,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
                                        (assign.dtype, len(dic)))
             continue
         if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
+            if isinstance(row_filter, np.ndarray):
+                raise NotImplementedError
             num += read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
                                      dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade)
             continue
