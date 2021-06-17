@@ -1020,6 +1020,26 @@ def test_timestamp_filer(tempdir):
     assert pf.to_pandas(filters=filt).val.tolist() == [34]
 
 
+def test_row_filter_count(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    df = pd.DataFrame({
+        'a': ['o'] * 10 + ['i'] * 5,
+        'b': range(15)
+    })
+    write(fn, df, row_group_offsets=8)
+    pf = ParquetFile(fn)
+    assert pf.count(filters=[["a", "==", "o"]]) == 15
+    assert pf.count(filters=[["a", "==", "o"]], row_filter=True) == 10
+    assert pf.count(filters=[["a", "==", "i"]], row_filter=True) == 5
+    assert pf.count(filters=[["b", "in", [1, 3, 4]]]) == 8
+    assert pf.count(filters=[["b", "in", [1, 3, 4]]], row_filter=True) == 3
+    assert pf.to_pandas(filters=[["b", "in", [1, 3, 4]]], row_filter=True
+                        ).b.tolist() == [1, 3, 4]
+    assert pf.to_pandas(filters=[["a", "<", "o"]], row_filter=True).b.tolist() == [
+        10, 11, 12, 13, 14
+    ]
+
+
 def test_select(tempdir):
     fn = os.path.join(tempdir, 'test.parquet')
     val = [2, 10, 34, 76]

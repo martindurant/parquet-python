@@ -333,6 +333,7 @@ class ParquetFile(object):
         out = np.zeros(len(df), dtype=bool)
         for or_part in filters:
             if isinstance(or_part[0], str):
+                name, op, val = or_part
                 if name in self.cats:
                     continue
                 if op == 'in':
@@ -422,7 +423,6 @@ class ParquetFile(object):
             selected = []
             start = 0
             for rg in rgs[:]:
-                # TODO: omit rg with no valid rows? See comment block below
                 selected.append(sel[start:start+rg.num_rows])
                 start += rg.num_rows
         else:
