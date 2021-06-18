@@ -107,7 +107,7 @@ def test_writer_to_spark(tempdir, scheme, row_groups, comp, sql):
 
 @pytest.mark.parametrize("int96", ["true", "false"])
 @pytest.mark.parametrize("legacy", ["true", "false"])
-# @pytest.mark.parametrize("version", ["v2", "v1"])  # doesn't do anything!
+@pytest.mark.parametrize("version", ["v1"])  # "v2" doesn't do anything!
 @pytest.mark.skipif(os.name == 'nt', reason="don't spark on windows")
 def test_read_from_spark(tempdir, sql, int96, legacy, version):
     sql.setConf("spark.sql.parquet.int96AsTimestamp", int96)

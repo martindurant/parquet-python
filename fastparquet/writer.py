@@ -499,7 +499,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
 
     if datapage_version == 1:
         bdata = b"".join([
-            repetition_data, definition_data, encode[encoding](data, selement)
+            repetition_data, definition_data, encode[encoding](data, selement), 8 * b'\x00'
         ])
         dph = parquet_thrift.DataPageHeader(
                 num_values=tot_rows,
@@ -522,6 +522,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         write_thrift(f, ph)
         f.write(bdata)
     elif datapage_version == 2:
+        is_compressed = isinstance(compression, dict) or (
+            compression is not None and compression.upper() != "UNCOMPRESSED")
         dph = parquet_thrift.DataPageHeaderV2(
             num_values=tot_rows,
             num_nulls=num_nulls,
@@ -529,18 +531,18 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             encoding=getattr(parquet_thrift.Encoding, encoding),
             definition_levels_byte_length=len(definition_data),
             repetition_levels_byte_length=0,  # len(repetition_data),
-            is_compressed=compression is not None and compression.upper() != "UNCOMPRESSED",
+            is_compressed=is_compressed,
             statistics=s
         )
         bdata = encode[encoding](data, selement)
         lb = len(bdata)
-        if compression:
+        if is_compressed:
             bdata = compress_data(bdata, compression)
             diff = lb - len(bdata)
         else:
             diff = 0
         ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE_V2,
-                                       uncompressed_page_size=lb,
+                                       uncompressed_page_size=lb + len(definition_data),
                                        compressed_page_size=len(bdata) + len(definition_data),
                                        data_page_header_v2=dph, crc=None)
         write_thrift(f, ph)

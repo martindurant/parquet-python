@@ -240,8 +240,8 @@ def test_statistics(tempdir):
     stat = pf.statistics
     assert stat['max']['a'] == [b'c']
     assert stat['min']['a'] == [b'a']
-    assert stat['max']['b'] == [None]
-    assert stat['min']['b'] == [None]
+    assert stat['max']['b'] == [b'c']
+    assert stat['min']['b'] == [b'a']
     assert stat['max']['c'] == [b'c']
     assert stat['min']['c'] == [b'a']
 

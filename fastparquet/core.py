@@ -261,6 +261,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
             and into0)
 
+    uncompressed_page_size = (ph.uncompressed_page_size - data_header2.definition_levels_byte_length -
+                              data_header2.repetition_levels_byte_length)
     if into0 and data_header2.encoding == parquet_thrift.Encoding.PLAIN and (
             not data_header2.is_compressed or cmd.codec == parquet_thrift.CompressionCodec.UNCOMPRESSED
     ):
@@ -276,7 +278,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         # PLAIN, but with nulls or not in-place conversion
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         raw_bytes = decompress_data(infile.read(size),
-                                    ph.uncompressed_page_size, codec)
+                                    uncompressed_page_size, codec)
         values = read_plain(raw_bytes,
                             cmd.type,
                             n_values,
@@ -297,7 +299,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         # TODO: small improvement possible by file.readinto and decompress_into if we
         #  don't first read raw_bytes but seek in the open file
         infile.readinto(raw_bytes)
-        raw_bytes = decompress_data(raw_bytes, ph.uncompressed_page_size, codec)
+        raw_bytes = decompress_data(raw_bytes, uncompressed_page_size, codec)
         pagefile = encoding.NumpyIO(raw_bytes)
         if data_header2.encoding != parquet_thrift.Encoding.RLE:
             # TODO: check this bit; is the varint read only row byte-exact fastpath?
@@ -322,7 +324,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                 encoding.read_rle_bit_packed_hybrid(
                     pagefile,
                     bit_width,
-                    ph.uncompressed_page_size,
+                    uncompressed_page_size,
                     encoding.NumpyIO(assign[num:num+data_header2.num_values].view('uint8')),
                     itemsize=bit_width
                 )
@@ -331,7 +333,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                 encoding.read_rle_bit_packed_hybrid(
                     pagefile,
                     bit_width,
-                    ph.uncompressed_page_size,
+                    uncompressed_page_size,
                     encoding.NumpyIO(temp.view('uint8')),
                     itemsize=bit_width
                 )
@@ -345,14 +347,14 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         # DICTIONARY to be de-referenced, with or without nulls
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         compressed_bytes = infile.read(size)
-        raw_bytes = decompress_data(compressed_bytes, ph.uncompressed_page_size, codec)
+        raw_bytes = decompress_data(compressed_bytes, uncompressed_page_size, codec)
         out = np.empty(n_values, dtype='uint8')
         pagefile = encoding.NumpyIO(raw_bytes)
         bit_width = pagefile.read_byte()
         encoding.read_rle_bit_packed_hybrid(
             pagefile,
             bit_width,
-            ph.uncompressed_page_size,
+            uncompressed_page_size,
             encoding.NumpyIO(out),
             itemsize=1
         )
@@ -372,7 +374,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         assert data_header2.num_nulls == 0, "null delta-int not implemented"
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         raw_bytes = decompress_data(infile.read(size),
-                                    ph.uncompressed_page_size, codec)
+                                    uncompressed_page_size, codec)
         if converts_inplace(se):
             encoding.delta_binary_unpack(
                 encoding.NumpyIO(raw_bytes),
