@@ -354,9 +354,6 @@ def make_definitions(data, no_nulls, datapage_version=1):
             block = struct.pack('<i', temp.tell()) + temp.so_far()
         else:
             block = bytes(temp.so_far())
-        import pdb
-        if data.name is None or data.name == 'bcat':
-            pdb.set_trace()
         out = data
     else:
         se = parquet_thrift.SchemaElement(type=parquet_thrift.Type.BOOLEAN)
