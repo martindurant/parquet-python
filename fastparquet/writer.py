@@ -470,7 +470,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             else:
                 max = encode['PLAIN'](pd.Series([max]), selement)
                 min = encode['PLAIN'](pd.Series([min]), selement)
-        except TypeError:
+        except (TypeError, ValueError):
             pass
         ncats = len(data.cat.categories)
         data = data.cat.codes
@@ -493,7 +493,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             else:
                 max = encode['PLAIN'](pd.Series([max], name=data.name), selement)
                 min = encode['PLAIN'](pd.Series([min], name=data.name), selement)
-    except TypeError:
+    except (TypeError, ValueError):
         pass
     s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls)
 
