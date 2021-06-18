@@ -26,7 +26,8 @@ cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO
     value that's repeated. Yields the value repeated count times.
     """
     cdef:
-        int32_t count, width, i, data = 0, vals_left
+        uint32_t count, width, i, vals_left
+        int32_t data = 0
         char * inptr = file_obj.get_pointer()
         char * outptr = o.get_pointer()
     count = header >> 1

@@ -14,6 +14,7 @@ except ImportError:
 import pytest
 
 from fastparquet.test.util import tempdir
+import fastparquet
 from fastparquet import write, ParquetFile
 from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, filter_not_in
 from fastparquet.util import join_path
@@ -1020,6 +1021,7 @@ def test_timestamp_filer(tempdir):
     assert pf.to_pandas(filters=filt).val.tolist() == [34]
 
 
+@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
 def test_row_filter(tempdir):
     fn = os.path.join(tempdir, 'test.parquet')
     df = pd.DataFrame({

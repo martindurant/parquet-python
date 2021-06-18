@@ -58,7 +58,7 @@ def s3():
     proc.wait()
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def sql():
     pyspark = pytest.importorskip("pyspark")
     sc = pyspark.SparkContext.getOrCreate()

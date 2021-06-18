@@ -349,8 +349,14 @@ def make_definitions(data, no_nulls, datapage_version=1):
         l = len(data)
         cencoding.encode_unsigned_varint(l << 1, temp)
         temp.write_byte(1)
-        # TODO: adding bytes causes copy
-        block = struct.pack('<i', temp.tell()) + temp.so_far()
+        if datapage_version == 1:
+            # TODO: adding bytes causes copy
+            block = struct.pack('<i', temp.tell()) + temp.so_far()
+        else:
+            block = bytes(temp.so_far())
+        import pdb
+        if data.name is None or data.name == 'bcat':
+            pdb.set_trace()
         out = data
     else:
         se = parquet_thrift.SchemaElement(type=parquet_thrift.Type.BOOLEAN)
@@ -413,7 +419,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             data = data.astype(pdoptional_to_numpy_typemap[data.dtype])
         if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
             try:
-                if selement.type == parquet_thrift.Type.INT64:
+                if selement.type in [parquet_thrift.Type.INT64,
+                                     parquet_thrift.Type.INT32]:
                     data = data.astype(int)
                 elif selement.type == parquet_thrift.Type.BOOLEAN:
                     data = data.astype(bool)
@@ -441,10 +448,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
                 num_values=len(data.cat.categories),
                 encoding=parquet_thrift.Encoding.PLAIN)
         bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
-        # TODO: copy on bytes addition
-        bdata += 8 * b'\x00'
         l0 = len(bdata)
-        if compression:
+        if compression and compression.upper() != "UNCOMPRESSED":
             bdata = compress_data(bdata, compression)
             l1 = len(bdata)
         else:
@@ -459,15 +464,15 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         write_thrift(f, ph)
         f.write(bdata)
         try:
-            if num_nulls == 0:
-                max, min = data.values.max(), data.values.min()
-                if selement.type == parquet_thrift.Type.BYTE_ARRAY:
-                    if selement.converted_type is not None:
-                        max = encode['PLAIN'](pd.Series([max]), selement)[4:]
-                        min = encode['PLAIN'](pd.Series([min]), selement)[4:]
-                else:
-                    max = encode['PLAIN'](pd.Series([max]), selement)
-                    min = encode['PLAIN'](pd.Series([min]), selement)
+            # TODO: this max/min works, but is slow
+            max, min = np.array(data[data.notnull()]).max(), np.array(data[data.notnull()]).min()
+            if selement.type == parquet_thrift.Type.BYTE_ARRAY:
+                if selement.converted_type is not None:
+                    max = encode['PLAIN'](pd.Series([max]), selement)[4:]
+                    min = encode['PLAIN'](pd.Series([min]), selement)[4:]
+            else:
+                max = encode['PLAIN'](pd.Series([max]), selement)
+                min = encode['PLAIN'](pd.Series([min]), selement)
         except TypeError:
             pass
         ncats = len(data.cat.categories)
@@ -476,14 +481,16 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         encoding = "RLE_DICTIONARY"
     elif str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
         # encoding = "RLE"
-        # disallow bitpacking for compatability
+        # disallow bit-packing for compatibility
         data = data.astype('int32')
 
     try:
-        if encoding != 'RLE_DICTIONARY' and num_nulls == 0:
-            max, min = data.values.max(), data.values.min()
+        if encoding != 'RLE_DICTIONARY':
+            # for categorical, we already did this above
+            max, min = data[data.notnull()].values.max(), data[data.notnull()].values.min()
             if selement.type == parquet_thrift.Type.BYTE_ARRAY:
                 if selement.converted_type is not None:
+                    # max = max.encode("utf8") ?
                     max = encode['PLAIN'](pd.Series([max], name=data.name), selement)[4:]
                     min = encode['PLAIN'](pd.Series([min], name=data.name), selement)[4:]
             else:
@@ -495,7 +502,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
 
     if datapage_version == 1:
         bdata = b"".join([
-            repetition_data, definition_data, encode[encoding](data, selement), 8 * b'\x00'
+            repetition_data, definition_data, encode[encoding](data, selement)
         ])
         dph = parquet_thrift.DataPageHeader(
                 num_values=tot_rows,
@@ -524,8 +531,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             num_rows=tot_rows,
             encoding=getattr(parquet_thrift.Encoding, encoding),
             definition_levels_byte_length=len(definition_data),
-            repetition_levels_byte_length=0, # len(repetition_data),
-            is_compressed=compression is not None,
+            repetition_levels_byte_length=0,  # len(repetition_data),
+            is_compressed=compression is not None and compression.upper() != "UNCOMPRESSED",
             statistics=s
         )
         bdata = encode[encoding](data, selement)
@@ -592,7 +599,6 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             parquet_thrift.KeyValue(key='numpy_dtype', value=str(data.dtype)))
     chunk = parquet_thrift.ColumnChunk(file_offset=offset,
                                        meta_data=cmd)
-    write_thrift(f, chunk)
     return chunk
 
 
