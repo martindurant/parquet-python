@@ -46,7 +46,7 @@ def time_column():
             if col == 'x':
                 assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
             else:
-                assert pf.to_pandas().equals(df)  # warm-up
+                assert (pf.to_pandas() == df).values.all()  # warm-up
 
             with measure('%s: read, no nulls' % d.dtypes[col], result):
                 pf.to_pandas()
@@ -58,7 +58,7 @@ def time_column():
             if col == 'x':
                 assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
             else:
-                assert pf.to_pandas().equals(df)  # warm-up
+                assert (pf.to_pandas() == df).values.all()  # warm-up
 
             with measure('%s: read, no nulls, has_null=True' % d.dtypes[col], result):
                 pf.to_pandas()
@@ -78,7 +78,7 @@ def time_column():
             if col == 'x':
                 assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
             else:
-                assert pf.to_pandas().equals(df)  # warm-up
+                assert (pf.to_pandas() == df).values.all()  # warm-up
 
             with measure('%s: read, with null, has_null=True' % d.dtypes[col], result):
                 pf.to_pandas()
@@ -90,7 +90,7 @@ def time_column():
             if col == 'x':
                 assert (df.x.astype('timedelta64[us]') == df.x.astype('timedelta64[us]')).all()
             else:
-                assert pf.to_pandas().equals(df)  # warm-up
+                assert (pf.to_pandas() == df).values.all()  # warm-up
 
             with measure('%s: read, with null, has_null=False' % d.dtypes[col], result):
                 pf.to_pandas()

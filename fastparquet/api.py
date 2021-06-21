@@ -592,25 +592,9 @@ class ParquetFile(object):
                             for name, f in self.schema.root.children.items()
                             if getattr(f, 'isflat', False) is False)
         for i, (col, dt) in enumerate(dtype.copy().items()):
-            if dt.kind in ['i', 'b', 'u']:
-                # uint/int/bool columns that may have nulls become float columns
-                num_nulls = 0
-                for rg in self.row_groups:
-                    st = rg.columns[i].meta_data.statistics
-                    if st is None:
-                        num_nulls = True
-                        break
-                    if st.null_count:
-                        num_nulls = True
-                        break
-                if num_nulls:
-                    if dtype[col].itemsize == 1:
-                        dtype[col] = np.dtype('f2')
-                    elif dtype[col].itemsize == 2:
-                        dtype[col] = np.dtype('f4')
-                    else:
-                        dtype[col] = np.dtype('f8')
-            elif dt.kind == "M":
+            # int and bool columns produce masked pandas types, no need to
+            # promote types here
+            if dt.kind == "M":
                 if tz is not None and tz.get(col, False):
                     z = dataframe.tz_to_dt_tz(tz[col])
                     dtype[col] = pd.Series([], dtype='M8[ns]').dt.tz_localize(z).dtype

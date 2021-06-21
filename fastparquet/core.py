@@ -321,6 +321,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                     assign[num:num+data_header2.num_values][nulls] = -1
         else:
             if data_header2.num_nulls == 0:
+                if isinstance(assign.dtype, pd.core.arrays.masked.BaseMaskedDtype):
+                    assign = assign._data
                 encoding.read_rle_bit_packed_hybrid(
                     pagefile,
                     bit_width,
@@ -337,8 +339,11 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                     encoding.NumpyIO(temp.view('uint8')),
                     itemsize=bit_width
                 )
+                if isinstance(assign, pd.core.arrays.masked.BaseMaskedDtype):
+                    assign[num:num+data_header2.num_values]._mask[:] = ~nulls
+                else:
+                    assign[num:num+data_header2.num_values][nulls] = None
                 assign[num:num+data_header2.num_values][~nulls] = temp
-                assign[num:num+data_header2.num_values][nulls] = None
 
     elif data_header2.encoding in [
         parquet_thrift.Encoding.PLAIN_DICTIONARY,
@@ -427,7 +432,9 @@ def read_col(column, schema_helper, infile, use_cat=False,
     if use_cat:
         my_nan = -1
     else:
-        if assign.dtype.kind in ['f', 'i', 'u']:
+        if assign.dtype.kind in ['i', 'u', 'b']:
+            my_nan = pd.NA
+        elif assign.dtype.kind == 'f':
             my_nan = np.nan
         elif assign.dtype.kind in ["M", 'm']:
             # GH#489 use a NaT representation compatible with ExtensionArray
@@ -497,10 +504,11 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 null, null_val, max_defi, row_idx[0]
             )
         elif defi is not None:
-            # TODO: if output is NULLABLE (e.g., IntegerArray) can use
-            #  fastpath here, but need nulls array
             part = assign[num:num+len(defi)]
-            if part.dtype.kind != "O":
+            if isinstance(part, pd.core.arrays.masked.BaseMaskedDtype):
+                part._mask = defi != max_defi
+                part = part._data
+            elif part.dtype.kind != "O":
                 part[defi != max_defi] = my_nan
             if d and not use_cat:
                 part[defi == max_defi] = dic[val]
@@ -509,8 +517,9 @@ def read_col(column, schema_helper, infile, use_cat=False,
             else:
                 part[defi == max_defi] = val
         else:
-            # TODO: can use, fastpath here, may need nulls array if NULLABLE
             piece = assign[num:num+len(val)]
+            if isinstance(piece, pd.core.arrays.masked.BaseMaskedDtype):
+                piece = piece._data
             if use_cat and not d:
                 # only possible for multi-index
                 warnings.warn("Non-categorical multi-index is likely brittle")
