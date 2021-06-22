@@ -240,15 +240,19 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                                             encoding.NumpyIO(repi), itemsize=1)
 
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
+
+    nullable = isinstance(assign.dtype, pd.core.arrays.masked.BaseMaskedDtype)
     if max_def and data_header2.num_nulls:
         bit_width = encoding.width_from_max_int(max_def)
         # not the same as read_data(), because we know the length
         io_obj = encoding.NumpyIO(infile.read(data_header2.definition_levels_byte_length))
-        defi = np.empty(data_header2.num_values, dtype="uint8")
+        if nullable:
+            defi = assign._mask
+        else:
+            defi = np.empty(data_header2.num_values, dtype="uint8")
         encoding.read_rle_bit_packed_hybrid(io_obj, bit_width, data_header2.num_values,
                                             encoding.NumpyIO(defi), itemsize=1)
-        # TODO: for RLE read, could pass defi and max_def to unpacker, save on the copy
-        nulls = defi != max_def
+        np.equal(defi, max_def, out=defi)
     infile.seek(data)
 
     # input and output element sizes match
@@ -260,6 +264,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     # can decompress-into
     into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
             and into0)
+    if nullable:
+        assign = assign._data
 
     uncompressed_page_size = (ph.uncompressed_page_size - data_header2.definition_levels_byte_length -
                               data_header2.repetition_levels_byte_length)
@@ -506,6 +512,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
         elif defi is not None:
             part = assign[num:num+len(defi)]
             if isinstance(part, pd.core.arrays.masked.BaseMaskedDtype):
+                # TODO: could have read directly into array
                 part._mask = defi != max_defi
                 part = part._data
             elif part.dtype.kind != "O":

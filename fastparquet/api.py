@@ -127,6 +127,8 @@ class ParquetFile(object):
                         self._parse_header(f, verify)
                     fn = fn2
                 else:
+                    # TODO: get details from fs here, rather than do suffix cat in
+                    #  metadata_from_many
                     if "*" in fn:
                         allfiles = fs.glob(fn)
                     else:
