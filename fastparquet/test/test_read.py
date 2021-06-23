@@ -256,7 +256,8 @@ def test_index(tempdir):
         fastparquet.write(tempdir, d2, file_scheme='hive', write_index=True)
         pf = fastparquet.ParquetFile(tempdir)
         out = pf.to_pandas(index=column, categories=['b'])
-        pd.testing.assert_frame_equal(out, d2, check_categorical=False)
+        pd.testing.assert_frame_equal(out, d2, check_categorical=False,
+                                      check_index_type=False, check_dtype=False)
 
 
 def test_skip_length():
@@ -314,8 +315,8 @@ def test_null_sizes(tempdir):
     df = pd.DataFrame({'a': [True, None], 'b': [3000, np.nan]}, dtype="O")
     fastparquet.write(tempdir, df, has_nulls=True, file_scheme='hive')
     pf = fastparquet.ParquetFile(tempdir)
-    assert pf.dtypes['a'] == 'float16'
-    assert pf.dtypes['b'] == 'float64'
+    assert pf.dtypes['a'] == 'boolean'
+    assert pf.dtypes['b'] == 'Int64'
 
 
 def test_multi_index(tempdir):

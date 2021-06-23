@@ -630,13 +630,16 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     if isinstance(categories, dict):
         cats.update(categories)
 
-    def get_type(name):
+    def get_type(name, index=False):
         if name in categories:
             return 'category'
-        return dt.get(name, None)
+        t = dt[name]
+        if index and isinstance(t, pd.core.arrays.masked.BaseMaskedDtype):
+            return "int64"
+        return t
 
     dtypes = [get_type(c) for c in cols]
-    index_types = [get_type(i) for i in index]
+    index_types = [get_type(i, index=True) for i in index]
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
     df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,

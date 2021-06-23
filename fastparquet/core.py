@@ -249,10 +249,16 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         if nullable:
             defi = assign._mask
         else:
-            defi = np.empty(data_header2.num_values, dtype="uint8")
+            # TODO: in tabular data, nulls arrays could be reused for each column
+            defi = np.empty(data_header2.num_values, dtype=np.uint8)
         encoding.read_rle_bit_packed_hybrid(io_obj, bit_width, data_header2.num_values,
                                             encoding.NumpyIO(defi), itemsize=1)
-        np.equal(defi, max_def, out=defi)
+        if max_rep:
+            # assemble_objects needs both arrays
+            nulls = defi != max_def
+        else:
+            np.not_equal(defi.view("uint8"), max_def, out=defi)
+            nulls = defi.view(np.bool_)
     infile.seek(data)
 
     # input and output element sizes match

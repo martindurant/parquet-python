@@ -3,10 +3,11 @@ from collections import OrderedDict
 from distutils.version import LooseVersion
 import numpy as np
 from pandas import (
-    arrays, Categorical, DataFrame, Series,
+    Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    __version__ as pdver, DatetimeIndex
+    __version__ as pdver, DatetimeIndex, Int64Index
 )
+from pandas.core.arrays.masked import BaseMaskedDtype
 from pandas.api.types import is_categorical_dtype
 import warnings
 
@@ -89,7 +90,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     for t, col in zip(types, cols):
         if str(t) == 'category':
             df[str(col)] = Categorical([], categories=cat(col), fastpath=True)
-        elif str(t)[0] in {"I", "U"} or str(t) == "boolean":
+        elif isinstance(t, BaseMaskedDtype):
             # pandas masked types
             arr_type = t.construct_array_type()
             df[str(col)] = arr_type(
