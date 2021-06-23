@@ -297,8 +297,11 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                             width=se.type_length,
                             utf=se.converted_type == 0)
         if data_header2.num_nulls:
-            assign[num:num+data_header2.num_values][nulls] = None  # or nan or nat
-            assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
+            if nullable:
+                assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
+            else:
+                assign[num:num+data_header2.num_values][nulls] = None  # or nan or nat
+                assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
         else:
             assign[num:num+data_header2.num_values] = convert(values, se)
     elif (use_cat and data_header2.encoding in [
@@ -333,8 +336,6 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                     assign[num:num+data_header2.num_values][nulls] = -1
         else:
             if data_header2.num_nulls == 0:
-                if isinstance(assign.dtype, pd.core.arrays.masked.BaseMaskedDtype):
-                    assign = assign._data
                 encoding.read_rle_bit_packed_hybrid(
                     pagefile,
                     bit_width,
@@ -351,9 +352,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                     encoding.NumpyIO(temp.view('uint8')),
                     itemsize=bit_width
                 )
-                if isinstance(assign, pd.core.arrays.masked.BaseMaskedDtype):
-                    assign[num:num+data_header2.num_values]._mask[:] = ~nulls
-                else:
+                if not nullable:
                     assign[num:num+data_header2.num_values][nulls] = None
                 assign[num:num+data_header2.num_values][~nulls] = temp
 
@@ -383,7 +382,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             )
             idx[0] += data_header2.num_rows
         elif data_header2.num_nulls:
-            assign[num:num+data_header2.num_values][nulls] = None  # may be unnecessary
+            if not nullable and assign.dtype != "O":
+                assign[num:num+data_header2.num_values][nulls] = None  # may be unnecessary
             assign[num:num+data_header2.num_values][~nulls] = dic[out]
         else:
             assign[num:num+data_header2.num_values] = dic[out]

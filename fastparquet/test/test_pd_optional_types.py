@@ -92,5 +92,5 @@ def test_write_nullable_columns(tempdir, scheme, comp):
         for se in pf.schema.schema_elements
         if se.type is not None
     }
-    assert_frame_equal(EXPECTED, df)
+    assert_frame_equal(EXPECTED, df, check_index_type=False, check_dtype=False)
     assert pq_types == EXPECTED_PARQUET_TYPES
