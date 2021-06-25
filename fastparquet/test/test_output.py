@@ -818,6 +818,18 @@ def test_append_fail(tempdir):
     assert 'existing file scheme' in str(e.value)
 
 
+def test_append_fail_incompatible(tempdir):
+    fn = os.path.join(str(tempdir), 'test.parq')
+    df1 = pd.DataFrame({'a': [1, 2, 3, 0],
+                       'b': ['a', 'a', 'b', 'b']})
+    df2 = pd.DataFrame({'a': [1, 2, 3, 0]})
+    write(fn, df1, file_scheme='simple')
+    with pytest.raises(ValueError) as e:
+        write(fn, df2, file_scheme='simple', append=True)
+    assert 'schema is not compatible' in str(e.value)
+    pd.testing.assert_frame_equal(ParquetFile(fn).to_pandas(), df1)
+
+
 def test_append_w_partitioning(tempdir):
     fn = str(tempdir)
     df = pd.DataFrame({'a': np.random.choice([1, 2, 3], size=50),
