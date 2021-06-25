@@ -150,11 +150,11 @@ def test_empty_row_groups(tempdir, sql):
     pf = fastparquet.ParquetFile(files)  # don't necessarily have metadata
     assert len(files) > 1  # more than one worker was writing
     d = pf.to_pandas(index=False)
-    pd.testing.assert_frame_equal(d, d0)
+    assert d.to_dict() == d0.to_dict()
 
     # destroy empty files
     [os.unlink(f) for (f, s) in zip(files, sizes) if s < msize]
 
     # loads anyway, since empty row-groups are not touched
     d = pf.to_pandas()
-    pd.testing.assert_frame_equal(d, d0)
+    assert d.to_dict() == d0.to_dict()
