@@ -130,7 +130,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         else:
             if hasattr(t, 'base'):
                 # funky pandas not-dtype
-                t = t.base
+                 t = t.base
             d = np.empty(size, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 # 1) create the DatetimeIndex in UTC as no datetime conversion is needed and
@@ -213,7 +213,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
     mgr.axes[-1] = index
 
-    # create block manager
     # create views
     for block in df._data.blocks:
         dtype = block.dtype
@@ -226,7 +225,11 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 views[col] = block.values._codes
                 views[col+'-catdef'] = block.values
             elif getattr(block.dtype, 'tz', None):
-                views[col] = np.asarray(block.values, dtype='M8[ns]').squeeze()
+                arr = np.asarray(block.values, dtype='M8[ns]')
+                if len(arr.shape) > 1:
+                    # pandas >= 1.3 does this for some reason
+                    arr = arr.squeeze(axis=0)
+                views[col] = arr
             elif str(dtype)[0] in {"I", "U"} or str(dtype) == "boolean":
                 views[col] = block.values
             else:
