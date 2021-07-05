@@ -226,7 +226,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 views[col] = block.values._codes
                 views[col+'-catdef'] = block.values
             elif getattr(block.dtype, 'tz', None):
-                views[col] = np.asarray(block.values, dtype='M8[ns]')
+                views[col] = np.asarray(block.values, dtype='M8[ns]').squeeze()
             elif str(dtype)[0] in {"I", "U"} or str(dtype) == "boolean":
                 views[col] = block.values
             else:
