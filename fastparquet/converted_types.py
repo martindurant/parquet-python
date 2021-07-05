@@ -36,34 +36,49 @@ DAYS_TO_MILLIS = 86400000000000
 """Number of millis in a day. Used to convert a Date to a date"""
 nat = np.datetime64('NaT').view('int64')
 
-simple = {parquet_thrift.Type.INT32: pd.Int32Dtype(),
-          parquet_thrift.Type.INT64: pd.Int64Dtype(),
-          parquet_thrift.Type.FLOAT: np.dtype('float32'),
-          parquet_thrift.Type.DOUBLE: np.dtype('float64'),
-          parquet_thrift.Type.BOOLEAN: pd.BooleanDtype(),
-          parquet_thrift.Type.INT96: np.dtype('S12'),
-          parquet_thrift.Type.BYTE_ARRAY: np.dtype("O"),
-          parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY: np.dtype("O")}
-complex = {parquet_thrift.ConvertedType.UTF8: np.dtype("O"),
-           parquet_thrift.ConvertedType.DECIMAL: np.dtype('float64'),
-           parquet_thrift.ConvertedType.UINT_8: pd.UInt8Dtype(),
-           parquet_thrift.ConvertedType.UINT_16: pd.UInt16Dtype(),
-           parquet_thrift.ConvertedType.UINT_32: pd.UInt32Dtype(),
-           parquet_thrift.ConvertedType.UINT_64: pd.UInt64Dtype(),
-           parquet_thrift.ConvertedType.INT_8: pd.Int8Dtype(),
-           parquet_thrift.ConvertedType.INT_16: pd.Int16Dtype(),
-           parquet_thrift.ConvertedType.INT_32: pd.Int32Dtype(),
-           parquet_thrift.ConvertedType.INT_64: pd.Int64Dtype(),
-           parquet_thrift.ConvertedType.TIME_MILLIS: np.dtype('<m8[ns]'),
-           parquet_thrift.ConvertedType.DATE: np.dtype('<M8[ns]'),
-           parquet_thrift.ConvertedType.TIMESTAMP_MILLIS: np.dtype('<M8[ns]'),
-           parquet_thrift.ConvertedType.TIME_MICROS: np.dtype('<m8[ns]'),
-           parquet_thrift.ConvertedType.TIMESTAMP_MICROS: np.dtype('<M8[ns]')
-           }
+simple = {
+    parquet_thrift.Type.INT32: np.dtype('int32'),
+    parquet_thrift.Type.INT64: np.dtype('int64'),
+    parquet_thrift.Type.FLOAT: np.dtype('float32'),
+    parquet_thrift.Type.DOUBLE: np.dtype('float64'),
+    parquet_thrift.Type.BOOLEAN: np.dtype('bool'),
+    parquet_thrift.Type.INT96: np.dtype('S12'),
+    parquet_thrift.Type.BYTE_ARRAY: np.dtype("O"),
+    parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY: np.dtype("O")
+}
+complex = {
+    parquet_thrift.ConvertedType.UTF8: np.dtype("O"),
+    parquet_thrift.ConvertedType.DECIMAL: np.dtype('float64'),
+    parquet_thrift.ConvertedType.UINT_8: pd.UInt8Dtype(),
+    parquet_thrift.ConvertedType.UINT_16: pd.UInt16Dtype(),
+    parquet_thrift.ConvertedType.UINT_32: np.dtype('uint32'),
+    parquet_thrift.ConvertedType.UINT_64: np.dtype('uint64'),
+    parquet_thrift.ConvertedType.INT_8: pd.Int8Dtype(),
+    parquet_thrift.ConvertedType.INT_16: pd.Int16Dtype(),
+    parquet_thrift.ConvertedType.INT_32: np.dtype('int32'),
+    parquet_thrift.ConvertedType.INT_64: np.dtype('int64'),
+    parquet_thrift.ConvertedType.TIME_MILLIS: np.dtype('<m8[ns]'),
+    parquet_thrift.ConvertedType.DATE: np.dtype('<M8[ns]'),
+    parquet_thrift.ConvertedType.TIMESTAMP_MILLIS: np.dtype('<M8[ns]'),
+    parquet_thrift.ConvertedType.TIME_MICROS: np.dtype('<m8[ns]'),
+    parquet_thrift.ConvertedType.TIMESTAMP_MICROS: np.dtype('<M8[ns]')
+}
+nullable = {
+    np.dtype('int32'): pd.Int32Dtype(),
+    np.dtype('int64'): pd.Int64Dtype(),
+    np.dtype('bool'): pd.BooleanDtype()
+}
 
 
-def typemap(se):
+def typemap(se, md=None):
     """Get the final dtype - no actual conversion"""
+    md = md or {}
+    md = md.get(se.name, {})
+    if md and ("Int" in md["numpy_type"] or md["numpy_type"] == "boolean"):
+        # arrow has numpy and pandas types swapped
+        return pd.core.dtypes.base.registry.find(md["numpy_type"])
+    if md and ("Int" in md["pandas_type"] or md["pandas_type"] == "boolean"):
+        return pd.core.dtypes.base.registry.find(md["pandas_type"])
     if se.converted_type is None:
         if se.type in simple:
             return simple[se.type]

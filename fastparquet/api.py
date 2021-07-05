@@ -581,27 +581,46 @@ class ParquetFile(object):
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
         import pandas as pd
-        if self.has_pandas_metadata:
-            md = self.pandas_metadata['columns']
-            tz = {c['name']: c['metadata']['timezone'] for c in md
-                  if (c.get('metadata', {}) or {}).get('timezone', None)}
-        else:
-            tz = None
-        self.tz = tz
+        if not hasattr(self, "_base_dtype"):
+            if self.has_pandas_metadata:
+                md = self.pandas_metadata['columns']
+                md = {c['name']: c for c in md}
+                tz = {k: v["metadata"]['timezone'] for k, v in md.items()
+                      if v.get('metadata', {}) and v.get('metadata', {}).get('timezone', None)}
+            else:
+                tz = None
+                md = None
+            self.tz = tz
+
+            dtype = OrderedDict((name, (converted_types.typemap(f, md=md)
+                                if f.num_children in [None, 0] else np.dtype("O")))
+                                for name, f in self.schema.root.children.items()
+                                if getattr(f, 'isflat', False) is False)
+            for i, (col, dt) in enumerate(dtype.copy().items()):
+                # int and bool columns produce masked pandas types, no need to
+                # promote types here
+                if dt.kind == "M":
+                    if tz is not None and tz.get(col, False):
+                        z = dataframe.tz_to_dt_tz(tz[col])
+                        dtype[col] = pd.Series([], dtype='M8[ns]').dt.tz_localize(z).dtype
+                elif dt in converted_types.nullable:
+                    # uint/int/bool columns that may have nulls become nullable
+                    num_nulls = 0
+                    for rg in self.row_groups:
+                        st = rg.columns[i].meta_data.statistics
+                        if st is None:
+                            num_nulls = True
+                            break
+                        if st.null_count:
+                            num_nulls = True
+                            break
+                    if num_nulls:
+                        dtype[col] = converted_types.nullable[dt]
+                elif dt == 'S12':
+                    dtype[col] = 'M8[ns]'
+            self._base_dtype = dtype
+        dtype = self._base_dtype.copy()
         categories = self.check_categories(categories)
-        dtype = OrderedDict((name, (converted_types.typemap(f)
-                            if f.num_children in [None, 0] else np.dtype("O")))
-                            for name, f in self.schema.root.children.items()
-                            if getattr(f, 'isflat', False) is False)
-        for i, (col, dt) in enumerate(dtype.copy().items()):
-            # int and bool columns produce masked pandas types, no need to
-            # promote types here
-            if dt.kind == "M":
-                if tz is not None and tz.get(col, False):
-                    z = dataframe.tz_to_dt_tz(tz[col])
-                    dtype[col] = pd.Series([], dtype='M8[ns]').dt.tz_localize(z).dtype
-            elif dt == 'S12':
-                dtype[col] = 'M8[ns]'
         for field in categories:
             dtype[field] = 'category'
         for cat in self.cats:

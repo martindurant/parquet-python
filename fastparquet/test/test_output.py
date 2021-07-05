@@ -551,8 +551,7 @@ def test_null_time(tempdir):
     assert sum(data['t'].isnull()) == sum(expected['t'].isnull())
 
 
-@pytest.mark.xfail(reason="to be rewritten")
-def test_auto_null(tempdir):
+def test_auto_null_object(tempdir):
     tmp = str(tempdir)
     df = pd.DataFrame({'a': [1, 2, 3, 0],
                        'aa': [1, 2, 3, None],
@@ -579,7 +578,7 @@ def test_auto_null(tempdir):
 
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
                           check_dtype=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
@@ -592,7 +591,7 @@ def test_auto_null(tempdir):
 
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
                           check_dtype=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
@@ -606,7 +605,7 @@ def test_auto_null(tempdir):
             assert col.repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
@@ -620,7 +619,7 @@ def test_auto_null(tempdir):
             assert col.repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
