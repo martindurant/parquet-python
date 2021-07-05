@@ -68,6 +68,17 @@ nullable = {
     np.dtype('int64'): pd.Int64Dtype(),
     np.dtype('bool'): pd.BooleanDtype()
 }
+pandas_nullable = {
+    "Int8": pd.Int8Dtype(),
+    "Int16": pd.Int16Dtype(),
+    "Int32": pd.Int32Dtype(),
+    "Int64": pd.Int64Dtype(),
+    "UInt8": pd.UInt8Dtype(),
+    "UInt16": pd.UInt16Dtype(),
+    "UInt32": pd.UInt32Dtype(),
+    "UInt64": pd.UInt64Dtype(),
+    "boolean": pd.BooleanDtype()
+}
 
 
 def typemap(se, md=None):
@@ -76,9 +87,9 @@ def typemap(se, md=None):
     md = md.get(se.name, {})
     if md and ("Int" in md["numpy_type"] or md["numpy_type"] == "boolean"):
         # arrow has numpy and pandas types swapped
-        return pd.core.dtypes.base.registry.find(md["numpy_type"])
+        return pandas_nullable[md["numpy_type"]]
     if md and ("Int" in md["pandas_type"] or md["pandas_type"] == "boolean"):
-        return pd.core.dtypes.base.registry.find(md["pandas_type"])
+        return pandas_nullable[md["pandas_type"]]
     if se.converted_type is None:
         if se.type in simple:
             return simple[se.type]
