@@ -960,3 +960,19 @@ def test_custom_metadata(tempdir):
     write(fn, df, custom_metadata={"hello": "world"})
     pf = ParquetFile(fn)
     assert pf.key_value_metadata['hello'] == 'world'
+
+
+def test_cat_order(tempdir):
+    # #629
+    fn = os.path.join(tempdir, 'temp.parq')
+    cat = ['hot', 'moderate', 'cold']
+    catdtype = pd.CategoricalDtype(cat, ordered=True)
+    val = [30, -10, 10]
+    cities = ['Lisbonne', 'Paris', 'Paris']
+    df = pd.DataFrame({'val': val, 'cat': cat, 'city': cities})
+    df['cat'] = df['cat'].astype(catdtype)
+    write(fn, df, file_scheme='hive', partition_on=['city'])
+
+    out = ParquetFile(fn).to_pandas()
+    assert out.cat.cat.ordered
+    assert out.cat.cat.categories.tolist() == catdtype.categories.tolist()

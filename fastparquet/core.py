@@ -535,7 +535,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 piece = piece._data
             if use_cat and not d:
                 # only possible for multi-index
-                warnings.warn("Non-categorical multi-index is likely brittle")
                 val = convert(val, se)
                 try:
                     i = pd.Categorical(val)

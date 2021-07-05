@@ -463,6 +463,10 @@ class ParquetFile(object):
         i_no_name = re.compile(r"__index_level_\d+__")
         if self.has_pandas_metadata:
             md = self.pandas_metadata
+            if categories:
+                for c in md['columns']:
+                    if c['name'] in categories and c['metadata']:
+                        df[c['name']].dtype._ordered = c['metadata']['ordered']
             if md.get('column_indexes', False):
                 names = [(c['name'] if isinstance(c, dict) else c)
                          for c in md['column_indexes']]
