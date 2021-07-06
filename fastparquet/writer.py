@@ -103,6 +103,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
 
     """
     dtype = data.dtype
+    logical_type = None
     if dtype.name in typemap:
         type, converted_type, width = typemap[dtype.name]
     elif "S" in str(dtype)[:2] or "U" in str(dtype)[:2]:
@@ -151,9 +152,40 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
             type = parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY
     elif dtype.kind == "M":
         if times == 'int64':
-            type, converted_type, width = (
-                parquet_thrift.Type.INT64,
-                parquet_thrift.ConvertedType.TIMESTAMP_MICROS, None)
+            # output will have the same resolution as original data, for resolution <= ms
+            if "ns" in dtype.str:
+                type = parquet_thrift.Type.INT64
+                converted_type = None
+                logical_type = parquet_thrift.LogicalType(
+                    TIMESTAMP=parquet_thrift.TimestampType(
+                        isAdjustedToUTC=True,
+                        unit=parquet_thrift.TimeUnit(NANOS=parquet_thrift.NanoSeconds())
+                    )
+                )
+                width = None
+            elif "us" in dtype.str:
+                type, converted_type, width = (
+                    parquet_thrift.Type.INT64,
+                    parquet_thrift.ConvertedType.TIMESTAMP_MICROS, None
+                )
+                logical_type = parquet_thrift.LogicalType(
+                    TIMESTAMP=parquet_thrift.TimestampType(
+                        isAdjustedToUTC=True,
+                        unit=parquet_thrift.TimeUnit(MICROS=parquet_thrift.MicroSeconds())
+                    )
+                )
+
+            else:
+                type, converted_type, width = (
+                    parquet_thrift.Type.INT64,
+                    parquet_thrift.ConvertedType.TIMESTAMP_MILLIS, None
+                )
+                logical_type = parquet_thrift.LogicalType(
+                    TIMESTAMP=parquet_thrift.TimestampType(
+                        isAdjustedToUTC=True,
+                        unit=parquet_thrift.TimeUnit(MILLIS=parquet_thrift.MilliSeconds())
+                    )
+                )
         elif times == 'int96':
             type, converted_type, width = (parquet_thrift.Type.INT96, None,
                                            None)
@@ -184,9 +216,11 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
     se = parquet_thrift.SchemaElement(
-            name=data.name, type_length=width,
-            converted_type=converted_type, type=type,
-            repetition_type=parquet_thrift.FieldRepetitionType.REQUIRED)
+        name=data.name, type_length=width,
+        converted_type=converted_type, type=type,
+        repetition_type=parquet_thrift.FieldRepetitionType.REQUIRED,
+        logicalType=logical_type
+    )
     return se, type
 
 
@@ -258,10 +292,6 @@ def convert(data, se):
                              'encoding %s. Original error: '
                              '%s' % (data.name, ct, e))
 
-    elif converted_type == parquet_thrift.ConvertedType.TIMESTAMP_MICROS:
-        # TODO: shift inplace
-        out = np.empty(len(data), 'int64')
-        time_shift(data.values.view('int64'), out)
     elif converted_type == parquet_thrift.ConvertedType.TIME_MICROS:
         # TODO: shift inplace
         out = np.empty(len(data), 'int64')
@@ -273,6 +303,8 @@ def convert(data, se):
         out = np.empty(len(data), dtype=[('ns', 'i8'), ('day', 'i4')])
         out['ns'] = ns
         out['day'] = day
+    elif dtype.kind == "M":
+        out = data.values.view("int64")
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
     return out

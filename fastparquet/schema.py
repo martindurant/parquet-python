@@ -25,6 +25,17 @@ def schema_to_text(root, indent=[]):
     parts = []
     if root.type is not None:
         parts.append(parquet_thrift.Type._VALUES_TO_NAMES[root.type])
+    if root.logicalType is not None:
+        for key in list(root.logicalType.__dict__):
+            if getattr(root.logicalType, key) is not None:
+                if key == "TIMESTAMP":
+                    unit = [k for k, v in root.logicalType.TIMESTAMP.unit.__dict__.items() if v][0]
+                    parts.append(f"TIMESTAMP[{unit}]")
+                else:
+                    # extra parameters possible here
+                    parts.append(key)
+                break
+
     if root.converted_type is not None:
         parts.append(parquet_thrift.ConvertedType._VALUES_TO_NAMES[
                          root.converted_type])

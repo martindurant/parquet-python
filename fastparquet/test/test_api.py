@@ -73,7 +73,7 @@ def test_text_schema(tempdir):
                 '| - A: DOUBLE, OPTIONAL\n'
                 '| - B: DOUBLE, OPTIONAL\n'
                 '| - C: BYTE_ARRAY, UTF8, OPTIONAL\n'
-                '  - D: INT64, TIMESTAMP_MICROS, OPTIONAL')
+                '  - D: INT64, TIMESTAMP[NANOS], OPTIONAL')
     assert t == expected
     assert repr(p.schema) == "<Parquet Schema with 5 entries>"
 

@@ -81,6 +81,19 @@ pandas_nullable = {
 }
 
 
+def _logical_to_time_dtype(logical_timestamp_type):
+    if hasattr(logical_timestamp_type.unit, "NANOS"):
+        unit = "ns"
+    elif hasattr(logical_timestamp_type.unit, "MICROS"):
+        unit = "us"
+    elif hasattr(logical_timestamp_type.unit, "MILLIS"):
+        unit = "ms"
+    else:
+        raise ValueError("Timestamp ")
+
+    return np.dtype(f"<M8[{unit}]")
+
+
 def typemap(se, md=None):
     """Get the final dtype - no actual conversion"""
     md = md or {}
@@ -90,6 +103,8 @@ def typemap(se, md=None):
         return pandas_nullable[md["numpy_type"]]
     if md and ("Int" in md["pandas_type"] or md["pandas_type"] == "boolean"):
         return pandas_nullable[md["pandas_type"]]
+    if se.logicalType is not None and se.logicalType.TIMESTAMP is not None:
+        return _logical_to_time_dtype(se.logicalType.TIMESTAMP)
     if se.converted_type is None:
         if se.type in simple:
             return simple[se.type]
@@ -136,6 +151,9 @@ def convert(data, se, timestamp96=True):
         data2 = data.view([('ns', 'i8'), ('day', 'i4')])
         return ((data2['day'] - 2440588) * 86400000000000 +
                 data2['ns']).view('M8[ns]')
+    if se.logicalType is not None and se.logicalType.TIMESTAMP is not None:
+        dt = _logical_to_time_dtype(se.logicalType.TIMESTAMP)
+        return data.view(dt)
     if ctype is None:
         return data
     if ctype == parquet_thrift.ConvertedType.UTF8:

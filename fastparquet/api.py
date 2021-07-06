@@ -773,7 +773,7 @@ def filter_out_stats(rg, filters, schema):
                         b = ensure_bytes(max)
                         vmax = encoding.read_plain(
                             b, column.meta_data.type, 1, stat=True)
-                        if se.converted_type is not None:
+                        if se.converted_type is not None or se.logicalType is not None:
                             vmax = converted_types.convert(vmax, se)
                         s.converted_max = vmax
                     vmax = s.converted_max
@@ -783,7 +783,7 @@ def filter_out_stats(rg, filters, schema):
                         b = ensure_bytes(min)
                         vmin = encoding.read_plain(
                             b, column.meta_data.type, 1, stat=True)
-                        if se.converted_type is not None:
+                        if se.converted_type is not None or se.logicalType is not None:
                             vmin = converted_types.convert(vmin, se)
                         s.converted_min = vmin
                     vmin = s.converted_min
@@ -858,7 +858,7 @@ def statistics(obj):
         for col in obj.row_groups[0].columns:
             column = '.'.join(col.meta_data.path_in_schema)
             se = schema.schema_element(col.meta_data.path_in_schema)
-            if (se.converted_type is not None
+            if (se.converted_type is not None or se.logicalType is not None
                     or se.type == parquet_thrift.Type.INT96):
                 dtype = 'S12' if se.type == parquet_thrift.Type.INT96 else None
                 for name in ['min', 'max']:
