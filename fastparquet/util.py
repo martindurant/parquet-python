@@ -275,6 +275,9 @@ def get_column_metadata(column, name):
     # https://github.com/apache/arrow/blob/master/python/pyarrow/pandas_compat.py
     inferred_dtype = infer_dtype(column)
     dtype = column.dtype
+    if str(dtype) == "bool":
+        # pandas accidentally calls this "boolean"
+        inferred_dtype = "bool"
 
     if is_categorical_dtype(dtype):
         extra_metadata = {
@@ -328,6 +331,10 @@ def get_column_metadata(column, name):
 def get_numpy_type(dtype):
     if is_categorical_dtype(dtype):
         return 'category'
+    elif "Int" in str(dtype):
+        return str(dtype).lower()
+    elif str(dtype) == "boolean":
+        return "bool"
     else:
         return str(dtype)
 

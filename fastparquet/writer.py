@@ -737,6 +737,9 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         if pf.file_scheme not in ['simple', 'empty']:
             raise ValueError('File scheme requested is simple, but '
                              'existing file scheme is not')
+        if sorted(pf.columns) != sorted(data.columns):
+            raise ValueError('File schema is not compatible with '
+                             'existing file schema.')
         fmd = pf.fmd
         mode = 'rb+'
     else:

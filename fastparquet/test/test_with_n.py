@@ -112,10 +112,11 @@ def test_read_data():
 
 
 def test_to_pandas():
+    import pandas as pd
     fname = TEST_DATA+'/airlines_parquet/4345e5eef217aa1b-c8f16177f35fd983_1150363067_data.1.parq'
     pf = ParquetFile(fname)
     out = pf.to_pandas()
     assert len(out.columns) == 29
     # test for bad integer conversion
     assert (out.dep_time < 0).sum() == 0
-    assert out.dep_time.dtype == 'float64'
+    assert out.dep_time.dtype == pd.Int32Dtype()

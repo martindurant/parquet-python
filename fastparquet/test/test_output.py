@@ -402,7 +402,7 @@ def test_write_compression_dict(tempdir, compression):
     r = ParquetFile(fn)
     df2 = r.to_pandas()
 
-    tm.assert_frame_equal(df, df2, check_categorical=False)
+    tm.assert_frame_equal(df, df2, check_categorical=False, check_dtype=False)
 
 
 def test_write_compression_schema(tempdir):
@@ -435,7 +435,7 @@ def test_index(tempdir):
     assert meta['index_columns'] == ['z']
     out = pf.to_pandas()
     assert out.index.name == 'z'
-    pd.testing.assert_frame_equal(df, out)
+    pd.testing.assert_frame_equal(df, out, check_dtype=False)
     out = pf.to_pandas(index=False)
     assert out.index.name is None
     assert (out.index == range(3)).all()
@@ -551,7 +551,7 @@ def test_null_time(tempdir):
     assert sum(data['t'].isnull()) == sum(expected['t'].isnull())
 
 
-def test_auto_null(tempdir):
+def test_auto_null_object(tempdir):
     tmp = str(tempdir)
     df = pd.DataFrame({'a': [1, 2, 3, 0],
                        'aa': [1, 2, 3, None],
@@ -576,8 +576,9 @@ def test_auto_null(tempdir):
         assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     df2 = pf.to_pandas(categories=['e'])
 
-    tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
+                          check_dtype=False)
+    tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
@@ -588,8 +589,9 @@ def test_auto_null(tempdir):
         assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     df2 = pf.to_pandas(categories=['e'])
 
-    tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
+                          check_dtype=False)
+    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
@@ -603,7 +605,7 @@ def test_auto_null(tempdir):
             assert col.repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
@@ -617,7 +619,7 @@ def test_auto_null(tempdir):
             assert col.repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('float16'), df2[['ff']])
+    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
@@ -634,7 +636,7 @@ def test_many_categories(tempdir, n):
     pf = ParquetFile(fn)
     out = pf.to_pandas(categories={'x': n})
 
-    tm.assert_frame_equal(df, out, check_categorical=False)
+    tm.assert_frame_equal(df, out, check_categorical=False, check_dtype=False)
 
     df.set_index('x', inplace=True)
     write(fn, df, has_nulls=False, write_index=True)
@@ -750,8 +752,8 @@ def test_append_simple(tempdir):
 
     pf = ParquetFile(fn)
     expected = pd.concat([df, df], ignore_index=True)
-    pd.testing.assert_frame_equal(pf.to_pandas(), expected,
-                                       check_categorical=False)
+    pd.testing.assert_frame_equal(
+        pf.to_pandas(), expected, check_categorical=False, check_dtype=False)
 
 
 @pytest.mark.parametrize('scheme', ('hive', 'simple'))
@@ -766,9 +768,8 @@ def test_append_empty(tempdir, scheme):
     write(fn, df, append=True, write_index=False, file_scheme=scheme)
 
     pf = ParquetFile(fn)
-    pd.testing.assert_frame_equal(pf.to_pandas(), df,
-                                       check_categorical=False)
-
+    pd.testing.assert_frame_equal(
+        pf.to_pandas(), df, check_categorical=False, check_dtype=False)
 
 
 @pytest.mark.parametrize('row_groups', ([0], [0, 2]))
@@ -816,6 +817,18 @@ def test_append_fail(tempdir):
     with pytest.raises(ValueError) as e:
         write(fn2, df1, file_scheme='hive', append=True)
     assert 'existing file scheme' in str(e.value)
+
+
+def test_append_fail_incompatible(tempdir):
+    fn = os.path.join(str(tempdir), 'test.parq')
+    df1 = pd.DataFrame({'a': [1, 2, 3, 0],
+                       'b': ['a', 'a', 'b', 'b']})
+    df2 = pd.DataFrame({'a': [1, 2, 3, 0]})
+    write(fn, df1, file_scheme='simple')
+    with pytest.raises(ValueError) as e:
+        write(fn, df2, file_scheme='simple', append=True)
+    assert 'schema is not compatible' in str(e.value)
+    pd.testing.assert_frame_equal(ParquetFile(fn).to_pandas(), df1)
 
 
 def test_append_w_partitioning(tempdir):
@@ -947,3 +960,19 @@ def test_custom_metadata(tempdir):
     write(fn, df, custom_metadata={"hello": "world"})
     pf = ParquetFile(fn)
     assert pf.key_value_metadata['hello'] == 'world'
+
+
+def test_cat_order(tempdir):
+    # #629
+    fn = os.path.join(tempdir, 'temp.parq')
+    cat = ['hot', 'moderate', 'cold']
+    catdtype = pd.CategoricalDtype(cat, ordered=True)
+    val = [30, -10, 10]
+    cities = ['Lisbonne', 'Paris', 'Paris']
+    df = pd.DataFrame({'val': val, 'cat': cat, 'city': cities})
+    df['cat'] = df['cat'].astype(catdtype)
+    write(fn, df, file_scheme='hive', partition_on=['city'])
+
+    out = ParquetFile(fn).to_pandas()
+    assert out.cat.cat.ordered
+    assert out.cat.cat.categories.tolist() == catdtype.categories.tolist()

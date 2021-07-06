@@ -240,15 +240,25 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                                             encoding.NumpyIO(repi), itemsize=1)
 
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
+
+    nullable = isinstance(assign.dtype, pd.core.arrays.masked.BaseMaskedDtype)
     if max_def and data_header2.num_nulls:
         bit_width = encoding.width_from_max_int(max_def)
         # not the same as read_data(), because we know the length
         io_obj = encoding.NumpyIO(infile.read(data_header2.definition_levels_byte_length))
-        defi = np.empty(data_header2.num_values, dtype="uint8")
+        if nullable:
+            defi = assign._mask
+        else:
+            # TODO: in tabular data, nulls arrays could be reused for each column
+            defi = np.empty(data_header2.num_values, dtype=np.uint8)
         encoding.read_rle_bit_packed_hybrid(io_obj, bit_width, data_header2.num_values,
                                             encoding.NumpyIO(defi), itemsize=1)
-        # TODO: for RLE read, could pass defi and max_def to unpacker, save on the copy
-        nulls = defi != max_def
+        if max_rep:
+            # assemble_objects needs both arrays
+            nulls = defi != max_def
+        else:
+            np.not_equal(defi.view("uint8"), max_def, out=defi)
+            nulls = defi.view(np.bool_)
     infile.seek(data)
 
     # input and output element sizes match
@@ -260,6 +270,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     # can decompress-into
     into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
             and into0)
+    if nullable:
+        assign = assign._data
 
     uncompressed_page_size = (ph.uncompressed_page_size - data_header2.definition_levels_byte_length -
                               data_header2.repetition_levels_byte_length)
@@ -285,8 +297,11 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                             width=se.type_length,
                             utf=se.converted_type == 0)
         if data_header2.num_nulls:
-            assign[num:num+data_header2.num_values][nulls] = None  # or nan or nat
-            assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
+            if nullable:
+                assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
+            else:
+                assign[num:num+data_header2.num_values][nulls] = None  # or nan or nat
+                assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
         else:
             assign[num:num+data_header2.num_values] = convert(values, se)
     elif (use_cat and data_header2.encoding in [
@@ -337,8 +352,9 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                     encoding.NumpyIO(temp.view('uint8')),
                     itemsize=bit_width
                 )
+                if not nullable:
+                    assign[num:num+data_header2.num_values][nulls] = None
                 assign[num:num+data_header2.num_values][~nulls] = temp
-                assign[num:num+data_header2.num_values][nulls] = None
 
     elif data_header2.encoding in [
         parquet_thrift.Encoding.PLAIN_DICTIONARY,
@@ -366,7 +382,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             )
             idx[0] += data_header2.num_rows
         elif data_header2.num_nulls:
-            assign[num:num+data_header2.num_values][nulls] = None  # may be unnecessary
+            if not nullable and assign.dtype != "O":
+                assign[num:num+data_header2.num_values][nulls] = None  # may be unnecessary
             assign[num:num+data_header2.num_values][~nulls] = dic[out]
         else:
             assign[num:num+data_header2.num_values] = dic[out]
@@ -427,7 +444,9 @@ def read_col(column, schema_helper, infile, use_cat=False,
     if use_cat:
         my_nan = -1
     else:
-        if assign.dtype.kind in ['f', 'i', 'u']:
+        if assign.dtype.kind in ['i', 'u', 'b']:
+            my_nan = pd.NA
+        elif assign.dtype.kind == 'f':
             my_nan = np.nan
         elif assign.dtype.kind in ["M", 'm']:
             # GH#489 use a NaT representation compatible with ExtensionArray
@@ -497,10 +516,12 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 null, null_val, max_defi, row_idx[0]
             )
         elif defi is not None:
-            # TODO: if output is NULLABLE (e.g., IntegerArray) can use
-            #  fastpath here, but need nulls array
             part = assign[num:num+len(defi)]
-            if part.dtype.kind != "O":
+            if isinstance(part, pd.core.arrays.masked.BaseMaskedDtype):
+                # TODO: could have read directly into array
+                part._mask = defi != max_defi
+                part = part._data
+            elif part.dtype.kind != "O":
                 part[defi != max_defi] = my_nan
             if d and not use_cat:
                 part[defi == max_defi] = dic[val]
@@ -509,11 +530,11 @@ def read_col(column, schema_helper, infile, use_cat=False,
             else:
                 part[defi == max_defi] = val
         else:
-            # TODO: can use, fastpath here, may need nulls array if NULLABLE
             piece = assign[num:num+len(val)]
+            if isinstance(piece, pd.core.arrays.masked.BaseMaskedDtype):
+                piece = piece._data
             if use_cat and not d:
                 # only possible for multi-index
-                warnings.warn("Non-categorical multi-index is likely brittle")
                 val = convert(val, se)
                 try:
                     i = pd.Categorical(val)

@@ -5,8 +5,9 @@ import numpy as np
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    __version__ as pdver, DatetimeIndex
+    __version__ as pdver, DatetimeIndex, Int64Index
 )
+from pandas.core.arrays.masked import BaseMaskedDtype
 from pandas.api.types import is_categorical_dtype
 import warnings
 
@@ -88,8 +89,15 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     df = OrderedDict()
     for t, col in zip(types, cols):
         if str(t) == 'category':
-            df[str(col)] = Categorical([], categories=cat(col),
-                                                 fastpath=True)
+            df[str(col)] = Categorical([], categories=cat(col), fastpath=True)
+        elif isinstance(t, BaseMaskedDtype):
+            # pandas masked types
+            arr_type = t.construct_array_type()
+            df[str(col)] = arr_type(
+                values=np.empty(0, dtype=t.numpy_dtype),
+                mask=np.empty(0, dtype=np.bool_),
+                copy=False
+            )
         else:
             if hasattr(t, 'base'):
                 # funky pandas not-dtype
@@ -122,7 +130,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         else:
             if hasattr(t, 'base'):
                 # funky pandas not-dtype
-                t = t.base
+                 t = t.base
             d = np.empty(size, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 # 1) create the DatetimeIndex in UTC as no datetime conversion is needed and
@@ -162,8 +170,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col] = d
             views[col+'-catdef'] = x
 
-    axes = [df._data.axes[0], index]
-
     # Patch our blocks with desired-length arrays.  Kids: don't try this at home.
     mgr = df._data
     for block in mgr.blocks:
@@ -186,9 +192,20 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 # e.g. DatetimeLikeBlock backed by DatetimeArray/TimedeltaArray
                 if bvalues.dtype.kind == "m":
                     values = np.zeros(shape=shape, dtype="m8[ns]")
+                    values = type(bvalues)._from_sequence(values, copy=False)
                 elif bvalues.dtype.kind == "M":
                     values = np.zeros(shape=shape, dtype="M8[ns]")
-                values = type(bvalues)._from_sequence(values, copy=False)
+                    values = type(bvalues)._from_sequence(values, copy=False)
+                elif str(bvalues.dtype)[0] in {"I", "U"} or str(bvalues.dtype) == "boolean":
+                    arr_type = bvalues.dtype.construct_array_type()
+                    values = arr_type(
+                        values=np.empty(size, dtype=bvalues.dtype.numpy_dtype),
+                        mask=np.zeros(size, dtype=np.bool_)
+                    )
+                else:
+                    import pdb
+                    pdb.set_trace()
+                    raise NotImplementedError
             else:
                 values = np.empty(shape=shape, dtype=bvalues.dtype)
 
@@ -196,7 +213,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
     mgr.axes[-1] = index
 
-    # create block manager
     # create views
     for block in df._data.blocks:
         dtype = block.dtype
@@ -209,7 +225,13 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 views[col] = block.values._codes
                 views[col+'-catdef'] = block.values
             elif getattr(block.dtype, 'tz', None):
-                views[col] = np.asarray(block.values, dtype='M8[ns]')
+                arr = np.asarray(block.values, dtype='M8[ns]')
+                if len(arr.shape) > 1:
+                    # pandas >= 1.3 does this for some reason
+                    arr = arr.squeeze(axis=0)
+                views[col] = arr
+            elif str(dtype)[0] in {"I", "U"} or str(dtype) == "boolean":
+                views[col] = block.values
             else:
                 views[col] = block.values[i]
 

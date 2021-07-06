@@ -166,9 +166,9 @@ def test_iter(tempdir):
     pf = ParquetFile(fn)
     out = iter(pf.iter_row_groups(index='index'))
     d1 = next(out)
-    pd.testing.assert_frame_equal(d1, df[:2])
+    pd.testing.assert_frame_equal(d1, df[:2], check_dtype=False, check_index_type=False)
     d2 = next(out)
-    pd.testing.assert_frame_equal(d2, df[2:])
+    pd.testing.assert_frame_equal(d2, df[2:], check_dtype=False, check_index_type=False)
     with pytest.raises(StopIteration):
         next(out)
 
@@ -267,7 +267,7 @@ def test_attributes(tempdir):
     assert join_path(fn) == pf.info['name']
     assert join_path(fn) in str(pf)
     for col in df:
-        assert pf.dtypes[col] == df.dtypes[col]
+        assert getattr(pf.dtypes[col], "numpy_dtype", pf.dtypes[col]) == df.dtypes[col]
 
 
 def test_open_standard(tempdir):
@@ -279,7 +279,7 @@ def test_open_standard(tempdir):
           open_with=open)
     pf = ParquetFile(fn, open_with=open)
     d2 = pf.to_pandas()
-    pd.testing.assert_frame_equal(d2, df)
+    pd.testing.assert_frame_equal(d2, df, check_dtype=False)
 
 
 def test_filelike(tempdir):
@@ -291,12 +291,12 @@ def test_filelike(tempdir):
     with open(fn, 'rb') as f:
         pf = ParquetFile(f, open_with=open)
         d2 = pf.to_pandas()
-        pd.testing.assert_frame_equal(d2, df)
+        pd.testing.assert_frame_equal(d2, df, check_dtype=False)
 
     b = io.BytesIO(open(fn, 'rb').read())
     pf = ParquetFile(b, open_with=open)
     d2 = pf.to_pandas()
-    pd.testing.assert_frame_equal(d2, df)
+    pd.testing.assert_frame_equal(d2, df, check_dtype=False)
 
 
 def test_cast_index(tempdir):
@@ -358,7 +358,7 @@ def test_read_multiple_no_metadata(tempdir):
     pf = ParquetFile(flist)
     assert len(pf.row_groups) == 2
     out = pf.to_pandas()
-    pd.testing.assert_frame_equal(out, df)
+    pd.testing.assert_frame_equal(out, df, check_dtype=False)
 
 
 def test_single_upper_directory(tempdir):
@@ -446,7 +446,7 @@ def test_filter_without_paths(tempdir):
 
     pf = ParquetFile(fn)
     out = pf.to_pandas(filters=[['x', '>', 3]])
-    pd.testing.assert_frame_equal(out, df)
+    pd.testing.assert_frame_equal(out, df, check_dtype=False)
     out = pf.to_pandas(filters=[['x', '>', 30]])
     assert len(out) == 0
 
@@ -758,7 +758,7 @@ def test_compression_zstd(tempdir):
 
     df2 = p.to_pandas()
 
-    pd.testing.assert_frame_equal(df, df2)
+    pd.testing.assert_frame_equal(df, df2, check_dtype=False)
 
 
 def test_compression_lz4(tempdir):
@@ -797,7 +797,7 @@ def test_compression_lz4(tempdir):
 
     df2 = p.to_pandas()
 
-    pd.testing.assert_frame_equal(df, df2)
+    pd.testing.assert_frame_equal(df, df2, check_dtype=False)
 
 
 def test_compression_snappy(tempdir):
@@ -833,7 +833,7 @@ def test_compression_snappy(tempdir):
 
     df2 = p.to_pandas()
 
-    pd.testing.assert_frame_equal(df, df2)
+    pd.testing.assert_frame_equal(df, df2, check_dtype=False)
 
 
 def test_int96_stats(tempdir):
@@ -910,8 +910,8 @@ def test_multi_cat(tempdir):
 
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert df1.equals(df)
-    assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+    assert (df1.index.values == df.index.values).all()
+    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
 
 
 def test_multi_cat_single(tempdir):
@@ -925,8 +925,8 @@ def test_multi_cat_single(tempdir):
     write(fn, df)
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert df1.equals(df)
-    assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+    assert (df1.index.values == df.index.values).all()
+    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
 
 
 def test_multi_cat_split(tempdir):
@@ -943,8 +943,8 @@ def test_multi_cat_split(tempdir):
 
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert df1.equals(df)
-    assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+    assert (df1.index.values == df.index.values).all()
+    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
 
 
 def test_multi(tempdir):
@@ -959,8 +959,8 @@ def test_multi(tempdir):
 
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert df1.equals(df)
-    assert df1.loc[1, 'a'].equals(df.loc[1, 'a'])
+    assert (df1.index.values == df.index.values).all()
+    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
 
 
 def test_simple_nested():
