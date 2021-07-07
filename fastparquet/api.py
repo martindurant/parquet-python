@@ -613,6 +613,8 @@ class ParquetFile(object):
                     # uint/int/bool columns that may have nulls become nullable
                     num_nulls = 0
                     for rg in self.row_groups:
+                        if rg.num_rows == 0:
+                            continue
                         st = rg.columns[i].meta_data.statistics
                         if st is None:
                             num_nulls = True

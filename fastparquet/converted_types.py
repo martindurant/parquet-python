@@ -82,11 +82,11 @@ pandas_nullable = {
 
 
 def _logical_to_time_dtype(logical_timestamp_type):
-    if hasattr(logical_timestamp_type.unit, "NANOS"):
+    if getattr(logical_timestamp_type.unit, "NANOS", None) is not None:
         unit = "ns"
-    elif hasattr(logical_timestamp_type.unit, "MICROS"):
+    elif getattr(logical_timestamp_type.unit, "MICROS", None) is not None:
         unit = "us"
-    elif hasattr(logical_timestamp_type.unit, "MILLIS"):
+    elif getattr(logical_timestamp_type.unit, "MILLIS", None) is not None:
         unit = "ms"
     else:
         raise ValueError("Timestamp ")
@@ -131,6 +131,9 @@ def converts_inplace(se):
         parquet_thrift.ConvertedType.TIME_MICROS,
         parquet_thrift.ConvertedType.TIMESTAMP_MICROS
     ]:
+        return True
+    if getattr(se.logicalType, "TIMESTAMP", None) is not None:
+        # this will be nanos, since micro and milli hit block above
         return True
     if se.type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
         return ctype != parquet_thrift.ConvertedType.UTF8
