@@ -521,7 +521,9 @@ class ParquetFile(object):
         if set(cats) - set(categ):
             raise TypeError("Attempt to read as category a field that "
                             "was not stored as such")
-        return cats
+        if isinstance(cats, dict):
+            return cats
+        return {k: v for k, v in categ.items() if k in cats}
 
     @property
     def has_pandas_metadata(self):
