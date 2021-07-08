@@ -524,6 +524,9 @@ cpdef void write_thrift(dict data, NumpyIO output):
     cdef double d
     cdef char * c
     for i, val in data.items():
+        if not isinstance(i, int):
+            # for dynamic entries
+            continue
         delt = i - prev
         prev = i
         if isinstance(val, int):
@@ -591,6 +594,14 @@ cdef void write_list(list data, NumpyIO output):
         encode_unsigned_varint(0, output)
 
 
+import numpy as np
+cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
+
+
+def from_buffer(buffer, name=None):
+    return read_thrift(NumpyIO(buffer), name=name)
+
+
 @cython.freelist(1000)
 @cython.final
 cdef class ThriftObject(dict):
@@ -639,8 +650,22 @@ cdef class ThriftObject(dict):
             except KeyError:
                 raise AttributeError
 
-    def __reduce__(self):
-        return ThriftObject, (self.name, dict(self))
+    def __reduce_ex__(self, _):
+        # TODO: protocol 5 support (since the main product is a buffer)
+        sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})
+        o = NumpyIO(ser_buf)
+        write_thrift(self, o)
+        return from_buffer, (bytes(o.so_far()), self.name)
+
+    def copy(self):
+        return type(self)(self.name, dict.copy(self))
+
+    def __copy__(self):
+        return self.copy()
+
+    def __deepcopy__(self, memodict={}):
+        import pickle
+        return pickle.loads(pickle.dumps(self))
 
     cpdef _asdict(self):
         cdef str k
@@ -675,100 +700,186 @@ cdef class ThriftObject(dict):
             return str(alt)
 
 
-cdef dict specs = {'Statistics': {'max': 1,
-                                  'min': 2,
-                                  'null_count': 3,
-                                  'distinct_count': 4,
-                                  'max_value': 5,
-                                  'min_value': 6},
-                   'SchemaElement': {'type': 1,
-                                     'type_length': 2,
-                                     'repetition_type': 3,
-                                     'name': 4,
-                                     'num_children': 5,
-                                     'converted_type': 6,
-                                     'scale': 7,
-                                     'precision': 8,
-                                     'field_id': 9},
-                   'DataPageHeader': {'num_values': 1,
-                                      'encoding': 2,
-                                      'definition_level_encoding': 3,
-                                      'repetition_level_encoding': 4,
-                                      'statistics': 5},
-                   'IndexPageHeader': {},
-                   'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},
-                   'DataPageHeaderV2': {'num_values': 1,
-                                        'num_nulls': 2,
-                                        'num_rows': 3,
-                                        'encoding': 4,
-                                        'definition_levels_byte_length': 5,
-                                        'repetition_levels_byte_length': 6,
-                                        'is_compressed': 7,
-                                        'statistics': 8},
-                   'PageHeader': {'type': 1,
-                                  'uncompressed_page_size': 2,
-                                  'compressed_page_size': 3,
-                                  'crc': 4,
-                                  'data_page_header': 5,
-                                  'index_page_header': 6,
-                                  'dictionary_page_header': 7,
-                                  'data_page_header_v2': 8},
-                   'KeyValue': {'key': 1, 'value': 2},
-                   'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
-                   'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
-                   'ColumnMetaData': {'type': 1,
-                                      'encodings': 2,
-                                      'path_in_schema': 3,
-                                      'codec': 4,
-                                      'num_values': 5,
-                                      'total_uncompressed_size': 6,
-                                      'total_compressed_size': 7,
-                                      'key_value_metadata': 8,
-                                      'data_page_offset': 9,
-                                      'index_page_offset': 10,
-                                      'dictionary_page_offset': 11,
-                                      'statistics': 12,
-                                      'encoding_stats': 13},
-                   'ColumnChunk': {'file_path': 1, 'file_offset': 2, 'meta_data': 3},
-                   'RowGroup': {'columns': 1,
-                                'total_byte_size': 2,
-                                'num_rows': 3,
-                                'sorting_columns': 4},
-                   'TypeDefinedOrder': {},
-                   'ColumnOrder': {'TYPE_ORDER': 1},
-                   'FileMetaData': {'version': 1,
-                                    'schema': 2,
-                                    'num_rows': 3,
-                                    'row_groups': 4,
-                                    'key_value_metadata': 5,
-                                    'created_by': 6,
-                                    'column_orders': 7}
-                   }
+cdef dict specs = {
+    'Statistics': {'max': 1,
+                   'min': 2,
+                   'null_count': 3,
+                   'distinct_count': 4,
+                   'max_value': 5,
+                   'min_value': 6},
+    'StringType': {},
+    'UUIDType': {},
+    'MapType': {},
+    'ListType': {},
+    'EnumType': {},
+    'DateType': {},
+    'NullType': {},
+    'DecimalType': {'scale': 1, 'precision': 2},
+    'MilliSeconds': {},
+    'MicroSeconds': {},
+    'NanoSeconds': {},
+    'TimeUnit': {'MILLIS': 1, 'MICROS': 2, 'NANOS': 3},
+    'TimestampType': {'isAdjustedToUTC': 1, 'unit': 2},
+    'TimeType': {'isAdjustedToUTC': 1, 'unit': 2},
+    'IntType': {'bitWidth': 1, 'isSigned': 2},
+    'JsonType': {},
+    'BsonType': {},
+    'LogicalType': {'STRING': 1,
+                    'MAP': 2,
+                    'LIST': 3,
+                    'ENUM': 4,
+                    'DECIMAL': 5,
+                    'DATE': 6,
+                    'TIME': 7,
+                    'TIMESTAMP': 8,
+                    'INTEGER': 10,
+                    'UNKNOWN': 11,
+                    'JSON': 12,
+                    'BSON': 13,
+                    'UUID': 14},
+    'SchemaElement': {'type': 1,
+                      'type_length': 2,
+                      'repetition_type': 3,
+                      'name': 4,
+                      'num_children': 5,
+                      'converted_type': 6,
+                      'scale': 7,
+                      'precision': 8,
+                      'field_id': 9,
+                      'logicalType': 10},
+    'DataPageHeader': {'num_values': 1,
+                       'encoding': 2,
+                       'definition_level_encoding': 3,
+                       'repetition_level_encoding': 4,
+                       'statistics': 5},
+    'IndexPageHeader': {},
+    'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},
+    'DataPageHeaderV2': {'num_values': 1,
+                         'num_nulls': 2,
+                         'num_rows': 3,
+                         'encoding': 4,
+                         'definition_levels_byte_length': 5,
+                         'repetition_levels_byte_length': 6,
+                         'is_compressed': 7,
+                         'statistics': 8},
+    'SplitBlockAlgorithm': {},
+    'BloomFilterAlgorithm': {'BLOCK': 1},
+    'XxHash': {},
+    'BloomFilterHash': {'XXHASH': 1},
+    'Uncompressed': {},
+    'PageHeader': {'type': 1,
+                   'uncompressed_page_size': 2,
+                   'compressed_page_size': 3,
+                   'crc': 4,
+                   'data_page_header': 5,
+                   'index_page_header': 6,
+                   'dictionary_page_header': 7,
+                   'data_page_header_v2': 8},
+    'KeyValue': {'key': 1, 'value': 2},
+    'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
+    'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
+    'ColumnMetaData': {'type': 1,
+                       'encodings': 2,
+                       'path_in_schema': 3,
+                       'codec': 4,
+                       'num_values': 5,
+                       'total_uncompressed_size': 6,
+                       'total_compressed_size': 7,
+                       'key_value_metadata': 8,
+                       'data_page_offset': 9,
+                       'index_page_offset': 10,
+                       'dictionary_page_offset': 11,
+                       'statistics': 12,
+                       'encoding_stats': 13,
+                       'bloom_filter_offset': 14},
+    'ColumnChunk': {'file_path': 1,
+                    'file_offset': 2,
+                    'meta_data': 3,
+                    'offset_index_offset': 4,
+                    'offset_index_length': 5,
+                    'column_index_offset': 6,
+                    'column_index_length': 7,
+                    'crypto_metadata': 8,
+                    'encrypted_column_metadata': 9},
+    'RowGroup': {'columns': 1,
+                 'total_byte_size': 2,
+                 'num_rows': 3,
+                 'sorting_columns': 4,
+                 'file_offset': 5,
+                 'total_compressed_size': 6,
+                 'ordinal': 7},
+    'TypeDefinedOrder': {},
+    'ColumnOrder': {'TYPE_ORDER': 1},
+    'PageLocation': {'offset': 1,
+                     'compressed_page_size': 2,
+                     'first_row_index': 3},
+    'OffsetIndex': {'page_locations': 1},
+    'ColumnIndex': {'null_pages': 1,
+                    'min_values': 2,
+                    'max_values': 3,
+                    'boundary_order': 4,
+                    'null_counts': 5},
+    'FileMetaData': {'version': 1,
+                     'schema': 2,
+                     'num_rows': 3,
+                     'row_groups': 4,
+                     'key_value_metadata': 5,
+                     'created_by': 6,
+                     'column_orders': 7,
+                     'encryption_algorithm': 8,
+                     'footer_signing_key_metadata': 9},
+}
 
-cdef dict children = {'DataPageHeader': {'statistics': 'Statistics'},
-                      'DataPageHeaderV2': {'statistics': 'Statistics'},
-                      'PageHeader': {'data_page_header': 'DataPageHeader',
-                                     'index_page_header': 'IndexPageHeader',
-                                     'dictionary_page_header': 'DictionaryPageHeader',
-                                     'data_page_header_v2': 'DataPageHeaderV2'},
-                      'ColumnMetaData': {'key_value_metadata': 'KeyValue',
-                                         'statistics': 'Statistics',
-                                         'encoding_stats': 'PageEncodingStats'},
-                      'ColumnChunk': {'meta_data': 'ColumnMetaData'},
-                      'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
-                      'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
-                      'FileMetaData': {'schema': 'SchemaElement',
-                                       'row_groups': 'RowGroup',
-                                       'key_value_metadata': 'KeyValue',
-                                       'column_orders': 'ColumnOrder'}}
+cdef dict children = {
+    'TimeUnit': {'MILLIS': 'MilliSeconds',
+                 'MICROS': 'MicroSeconds',
+                 'NANOS': 'NanoSeconds'},
+    'TimestampType': {'unit': 'TimeUnit'},
+    'TimeType': {'unit': 'TimeUnit'},
+    'LogicalType': {'STRING': 'StringType',
+                    'MAP': 'MapType',
+                    'LIST': 'ListType',
+                    'ENUM': 'EnumType',
+                    'DECIMAL': 'DecimalType',
+                    'DATE': 'DateType',
+                    'TIME': 'TimeType',
+                    'TIMESTAMP': 'TimestampType',
+                    'INTEGER': 'IntType',
+                    'UNKNOWN': 'NullType',
+                    'JSON': 'JsonType',
+                    'BSON': 'BsonType',
+                    'UUID': 'UUIDType'},
+    'SchemaElement': {'logicalType': 'LogicalType'},
+    'DataPageHeader': {'statistics': 'Statistics'},
+    'DataPageHeaderV2': {'statistics': 'Statistics'},
+    'PageHeader': {'data_page_header': 'DataPageHeader',
+                   'index_page_header': 'IndexPageHeader',
+                   'dictionary_page_header': 'DictionaryPageHeader',
+                   'data_page_header_v2': 'DataPageHeaderV2'},
+    'ColumnMetaData': {'key_value_metadata': 'KeyValue',
+                       'statistics': 'Statistics',
+                       'encoding_stats': 'PageEncodingStats'},
+    'ColumnCryptoMetaData': {'ENCRYPTION_WITH_FOOTER_KEY': 'EncryptionWithFooterKey',
+                             'ENCRYPTION_WITH_COLUMN_KEY': 'EncryptionWithColumnKey'},
+    'ColumnChunk': {'meta_data': 'ColumnMetaData',
+                    'crypto_metadata': 'ColumnCryptoMetaData'},
+    'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
+    'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
+    'OffsetIndex': {'page_locations': 'PageLocation'},
+    'FileMetaData': {'schema': 'SchemaElement',
+                     'row_groups': 'RowGroup',
+                     'key_value_metadata': 'KeyValue',
+                     'column_orders': 'ColumnOrder',
+                     'encryption_algorithm': 'EncryptionAlgorithm'},
+}
 
 # specs = {}
 # for o in [o for o in fastparquet.parquet_thrift.__dict__.values() if isinstance(o, type)]:
 #     if hasattr(o, "thrift_spec"):
 #         specs[o.__name__] = {k[2]: k[0] for k in o.thrift_spec if k}
 #
-
-
+#
+#
 # children = {}
 # for o in [o for o in fastparquet.parquet_thrift.__dict__.values() if isinstance(o, type)]:
 #     if hasattr(o, "thrift_spec"):
