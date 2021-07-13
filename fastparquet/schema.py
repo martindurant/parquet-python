@@ -1,7 +1,7 @@
 """Utils for working with the parquet thrift models."""
 from collections import OrderedDict
 
-from .thrift_structures import parquet_thrift
+from . import parquet_thrift
 
 
 def schema_tree(schema, i=0):
@@ -20,7 +20,6 @@ def schema_tree(schema, i=0):
 
 
 def schema_to_text(root, indent=[]):
-    l = len(indent)
     text = "".join(indent) + '- ' + root.name + ": "
     parts = []
     if root.type is not None:
@@ -79,6 +78,8 @@ class SchemaHelper(object):
     def __init__(self, schema_elements):
         """Initialize with the specified schema_elements."""
         self.schema_elements = schema_elements
+        for se in schema_elements:
+            se.name = se.name.decode()
         self.root = schema_elements[0]
         self.schema_elements_by_name = dict(
             [(se.name, se) for se in schema_elements])

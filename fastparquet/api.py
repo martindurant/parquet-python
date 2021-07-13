@@ -9,9 +9,9 @@ import fsspec
 from fastparquet.util import join_path
 import pandas as pd
 
-from .core import read_thrift
-from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
+from . import parquet_thrift
+from .cencoding import ThriftObject
 from .util import (default_open, ParquetException, val_to_num, ops,
                    ensure_bytes, check_column_names, metadata_from_many,
                    ex_from_sep, json_decoder)
@@ -170,12 +170,14 @@ class ParquetFile(object):
             except (AssertionError, struct.error):
                 raise ParquetException('File parse failed: %s' % self.fn)
 
-        f = io.BytesIO(data)
         try:
-            fmd = read_thrift(f, parquet_thrift.FileMetaData)
+            fmd = ThriftObject.from_buffer(data, "FileMetaData")
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
+        for rg in fmd.row_groups:
+            for col in rg.columns:
+                col.file_path = col.file_path.decode()
         self._set_attrs()
 
     def _set_attrs(self):
@@ -187,7 +189,10 @@ class ParquetFile(object):
                                    for k in fmd.key_value_metadata or []}
         self.created_by = fmd.created_by
         self.schema = schema.SchemaHelper(self._schema)
-        self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python" if self.created_by is not None else False
+        self.selfmade = (
+            self.created_by.split(b' ', 1)[0] == b"fastparquet-python"
+            if self.created_by is not None else False
+        )
         self._read_partitions()
         self._dtypes()
 

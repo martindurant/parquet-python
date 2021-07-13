@@ -15,7 +15,10 @@
 import cython
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
-from cpython cimport PyBytes_FromStringAndSize, PyBytes_GET_SIZE
+from cpython cimport (
+    PyBytes_FromStringAndSize, PyBytes_GET_SIZE, PyUnicode_DecodeUTF8,
+    PyDict_GetItem, PyDict_SetItem, PyDict_DelItem
+)
 from libc.stdint cimport uint8_t, uint32_t, int32_t, uint64_t, int64_t
 
 
@@ -465,7 +468,7 @@ cdef uint64_t long_zigzag(int64_t n):
     return (n << 1) ^ (n >> 63)
 
 
-cpdef dict read_thrift(NumpyIO data, str name=None):
+cpdef dict read_thrift(NumpyIO data):
     cdef char byte, id = 0, bit
     cdef int32_t size
     cdef dict out = {}
@@ -488,9 +491,7 @@ cpdef dict read_thrift(NumpyIO data, str name=None):
             out[id] = read_list(data)
         elif bit == 12:
             out[id] = read_thrift(data)
-    if name is None:
-        return out
-    return ThriftObject(name, out)
+    return out
 
 
 cdef list read_list(NumpyIO data):
@@ -508,8 +509,9 @@ cdef list read_list(NumpyIO data):
             out.append(zigzag_long(read_unsigned_var_int(data)))
     elif typ == 8:
         for _ in range(size):
+            # all parquet list types contain str, not bytes
             bsize = read_unsigned_var_int(data)
-            out.append(PyBytes_FromStringAndSize(data.get_pointer(), bsize))
+            out.append(PyUnicode_DecodeUTF8(data.get_pointer(), bsize, "ignore"))
             data.seek(bsize, 1)
     else:
         for _ in range(size):
@@ -580,6 +582,7 @@ cdef void write_list(list data, NumpyIO output):
                 c = b
                 memcpy(<void*>output.get_pointer(), <void*>c, i)
                 output.loc += i
+        # TODO: isinstance(data[0], str):
         else: # STRUCT
             if l > 14:
                 output.write_byte(12 | 0b11110000)
@@ -598,28 +601,26 @@ import numpy as np
 cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
 
 
-def from_buffer(buffer, name=None):
-    return read_thrift(NumpyIO(buffer), name=name)
-
-
 @cython.freelist(1000)
 @cython.final
-cdef class ThriftObject(dict):
+cdef class ThriftObject:
 
     cdef str name
     cdef dict spec
     cdef dict children
-    cdef dict attrs
+    cdef dict data
 
     def __init__(self, str name, dict indict):
-        super().__init__(indict)
-        if name is not None:
-            self.name = name
-            self.spec = specs[name]
+        self.name = name
+        self.spec = specs[name]
         self.children = children.get(name, {})
-        self.attrs = {}
+        self.data = indict
 
-    def __getattr__(self, item):
+    def _internal(self):
+        # useful for debugging
+        return (self.name, self.spec, self.children, self.data)
+
+    def __getattr__(self, str item):
         cdef str ch
         if item in self.spec:
             out = self.get(self.spec[item], None)
@@ -631,34 +632,52 @@ cdef class ThriftObject(dict):
             return out
         else:
             try:
-                return self.attrs[item]
+                return self.data[item]
             except KeyError:
                 raise AttributeError
 
-    def __setattr__(self, item, value):
-        if item in self.spec:
-            self[self.spec[item]] = value
-        else:
-            self.attrs[item] = value
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+    def __getitem__(self, item):
+        return self.data[item]
+
+    def __delitem__(self, key):
+        del self.data[key]
+
+    def get(self, key, default):
+        return self.data.get(key, default)
+
+    def __setattr__(self, str item, value):
+        i = self.spec.get(item, item)
+        self.data[i] = value
 
     def __delattr__(self, item):
-        if item in self.spec:
-            del self[self.spec[item]]
-        else:
-            try:
-                del self.attrs[item]
-            except KeyError:
-                raise AttributeError
+        i = self.spec.get(item, item)
+        del self.data[i]
 
     def __reduce_ex__(self, _):
         # TODO: protocol 5 support (since the main product is a buffer)
         sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})
         o = NumpyIO(ser_buf)
-        write_thrift(self, o)
-        return from_buffer, (bytes(o.so_far()), self.name)
+        write_thrift(self.data, o)
+        return ThriftObject.from_buffer, (bytes(o.so_far()), self.name)
+
+    @staticmethod
+    def from_buffer(buffer, name=None):
+        # could be a static method in the class below
+        cdef NumpyIO buf
+        if isinstance(buffer, NumpyIO):
+            buf = buffer
+        else:
+            buf = NumpyIO(buffer)
+        cdef dict o = read_thrift(buf)
+        if name is not None:
+            return ThriftObject(name, o)
+        return o
 
     def copy(self):
-        return type(self)(self.name, dict.copy(self))
+        return type(self)(self.name, self.data.copy())
 
     def __copy__(self):
         return self.copy()

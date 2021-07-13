@@ -6,12 +6,11 @@ The implementations in this class are pure python for the widest compatibility,
 but they're not necessarily the most performant.
 """
 
-import json
 import logging
 import numpy as np
 import pandas as pd
 
-from .thrift_structures import parquet_thrift
+from . import parquet_thrift
 from .cencoding import time_shift
 from .util import json_decoder
 

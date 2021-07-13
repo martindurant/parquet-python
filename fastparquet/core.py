@@ -13,7 +13,8 @@ from .compression import decompress_data, rev_map, decom_into
 from .converted_types import convert, simple, converts_inplace
 from .schema import _is_list_like, _is_map_like
 from .speedups import unpack_byte_array
-from .thrift_structures import parquet_thrift, read_thrift
+from . import parquet_thrift
+from .cencoding import ThriftObject, read_thrift
 from .util import val_to_num, ex_from_sep
 
 
@@ -439,6 +440,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
                cmd.data_page_offset))
 
     infile.seek(off)
+    column_binary = infile.read(cmd.total_compressed_size)
+    infile = encoding.NumpyIO(column_binary)
     rows = row_filter.sum() if isinstance(row_filter, np.ndarray) else cmd.num_values
 
     if use_cat:
@@ -460,7 +463,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
     while num < rows:
         off = infile.tell()
-        ph = read_thrift(infile, parquet_thrift.PageHeader)
+        ph = ThriftObject.from_buffer(infile, "PageHeader")
         if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
             dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
             dic2 = convert(dic2, se)
@@ -565,6 +568,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     maps = {}
 
     for column in rg.columns:
+
         if (_is_list_like(schema_helper, column) or
                 _is_map_like(schema_helper, column)):
             name = ".".join(column.meta_data.path_in_schema[:-2])

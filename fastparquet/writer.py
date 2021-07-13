@@ -11,10 +11,9 @@ import pandas as pd
 from pandas.core.arrays.masked import BaseMaskedDtype
 
 from fastparquet.util import join_path
-from .thrift_structures import write_thrift
 
 from pandas.api.types import is_categorical_dtype
-from .thrift_structures import parquet_thrift
+from . import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__

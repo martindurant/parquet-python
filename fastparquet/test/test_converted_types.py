@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """test_converted_types.py - tests for decoding data to their logical data types."""
 import datetime
-import sys
 
 import numpy as np
 import pandas as pd

@@ -962,9 +962,8 @@ struct __pyx_opt_args_11fastparquet_9cencoding_encode_rle_bp;
 struct __pyx_opt_args_11fastparquet_9cencoding_7NumpyIO_read;
 struct __pyx_opt_args_11fastparquet_9cencoding_7NumpyIO_seek;
 struct __pyx_opt_args_11fastparquet_9cencoding_time_shift;
-struct __pyx_opt_args_11fastparquet_9cencoding_read_thrift;
 
-/* "fastparquet/cencoding.pyx":22
+/* "fastparquet/cencoding.pyx":25
  * 
  * 
  * cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO o, int32_t itemsize=4):             # <<<<<<<<<<<<<<
@@ -976,7 +975,7 @@ struct __pyx_opt_args_11fastparquet_9cencoding_read_rle {
   int32_t itemsize;
 };
 
-/* "fastparquet/cencoding.pyx":127
+/* "fastparquet/cencoding.pyx":130
  * 
  * 
  * cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, NumpyIO o, int32_t itemsize=4):             # <<<<<<<<<<<<<<
@@ -988,7 +987,7 @@ struct __pyx_opt_args_11fastparquet_9cencoding_read_bitpacked {
   int32_t itemsize;
 };
 
-/* "fastparquet/cencoding.pyx":190
+/* "fastparquet/cencoding.pyx":193
  * 
  * 
  * cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t length, NumpyIO o,             # <<<<<<<<<<<<<<
@@ -1000,7 +999,7 @@ struct __pyx_opt_args_11fastparquet_9cencoding_read_rle_bit_packed_hybrid {
   int32_t itemsize;
 };
 
-/* "fastparquet/cencoding.pyx":272
+/* "fastparquet/cencoding.pyx":275
  * 
  * 
  * cpdef void encode_rle_bp(int32_t[:] data, int32_t width, NumpyIO o, int32_t withlength = 0):             # <<<<<<<<<<<<<<
@@ -1012,7 +1011,7 @@ struct __pyx_opt_args_11fastparquet_9cencoding_encode_rle_bp {
   int32_t withlength;
 };
 
-/* "fastparquet/cencoding.pyx":311
+/* "fastparquet/cencoding.pyx":314
  *         return self.nbytes
  * 
  *     cpdef const uint8_t[:] read(self, int32_t x=-1):             # <<<<<<<<<<<<<<
@@ -1024,7 +1023,7 @@ struct __pyx_opt_args_11fastparquet_9cencoding_7NumpyIO_read {
   int32_t x;
 };
 
-/* "fastparquet/cencoding.pyx":358
+/* "fastparquet/cencoding.pyx":361
  *         return self.loc
  * 
  *     cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):             # <<<<<<<<<<<<<<
@@ -1036,7 +1035,7 @@ struct __pyx_opt_args_11fastparquet_9cencoding_7NumpyIO_seek {
   int32_t whence;
 };
 
-/* "fastparquet/cencoding.pyx":445
+/* "fastparquet/cencoding.pyx":448
  * 
  * 
  * cpdef void time_shift(const int64_t[::1] data, int32_t factor=1000):             # <<<<<<<<<<<<<<
@@ -1048,19 +1047,7 @@ struct __pyx_opt_args_11fastparquet_9cencoding_time_shift {
   int32_t factor;
 };
 
-/* "fastparquet/cencoding.pyx":468
- * 
- * 
- * cpdef dict read_thrift(NumpyIO data, str name=None):             # <<<<<<<<<<<<<<
- *     cdef char byte, id = 0, bit
- *     cdef int32_t size
- */
-struct __pyx_opt_args_11fastparquet_9cencoding_read_thrift {
-  int __pyx_n;
-  PyObject *name;
-};
-
-/* "fastparquet/cencoding.pyx":287
+/* "fastparquet/cencoding.pyx":290
  * @cython.freelist(100)
  * @cython.final
  * cdef class NumpyIO(object):             # <<<<<<<<<<<<<<
@@ -1078,20 +1065,20 @@ struct __pyx_obj_11fastparquet_9cencoding_NumpyIO {
 };
 
 
-/* "fastparquet/cencoding.pyx":607
+/* "fastparquet/cencoding.pyx":606
  * @cython.freelist(1000)
  * @cython.final
- * cdef class ThriftObject(dict):             # <<<<<<<<<<<<<<
+ * cdef class ThriftObject:             # <<<<<<<<<<<<<<
  * 
  *     cdef str name
  */
 struct __pyx_obj_11fastparquet_9cencoding_ThriftObject {
-  PyDictObject __pyx_base;
+  PyObject_HEAD
   struct __pyx_vtabstruct_11fastparquet_9cencoding_ThriftObject *__pyx_vtab;
   PyObject *name;
   PyObject *spec;
   PyObject *children;
-  PyObject *attrs;
+  PyObject *data;
 };
 
 
@@ -1173,7 +1160,7 @@ struct __pyx_memoryviewslice_obj {
 
 
 
-/* "fastparquet/cencoding.pyx":287
+/* "fastparquet/cencoding.pyx":290
  * @cython.freelist(100)
  * @cython.final
  * cdef class NumpyIO(object):             # <<<<<<<<<<<<<<
@@ -1208,10 +1195,10 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
 static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *, int __pyx_skip_dispatch);
 
 
-/* "fastparquet/cencoding.pyx":607
+/* "fastparquet/cencoding.pyx":606
  * @cython.freelist(1000)
  * @cython.final
- * cdef class ThriftObject(dict):             # <<<<<<<<<<<<<<
+ * cdef class ThriftObject:             # <<<<<<<<<<<<<<
  * 
  *     cdef str name
  */
@@ -1669,58 +1656,14 @@ static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject 
 static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb);
 #endif
 
-/* PyDictVersioning.proto */
-#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
-#define __PYX_DICT_VERSION_INIT  ((PY_UINT64_T) -1)
-#define __PYX_GET_DICT_VERSION(dict)  (((PyDictObject*)(dict))->ma_version_tag)
-#define __PYX_UPDATE_DICT_CACHE(dict, value, cache_var, version_var)\
-    (version_var) = __PYX_GET_DICT_VERSION(dict);\
-    (cache_var) = (value);
-#define __PYX_PY_DICT_LOOKUP_IF_MODIFIED(VAR, DICT, LOOKUP) {\
-    static PY_UINT64_T __pyx_dict_version = 0;\
-    static PyObject *__pyx_dict_cached_value = NULL;\
-    if (likely(__PYX_GET_DICT_VERSION(DICT) == __pyx_dict_version)) {\
-        (VAR) = __pyx_dict_cached_value;\
-    } else {\
-        (VAR) = __pyx_dict_cached_value = (LOOKUP);\
-        __pyx_dict_version = __PYX_GET_DICT_VERSION(DICT);\
-    }\
-}
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj);
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj);
-static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version);
-#else
-#define __PYX_GET_DICT_VERSION(dict)  (0)
-#define __PYX_UPDATE_DICT_CACHE(dict, value, cache_var, version_var)
-#define __PYX_PY_DICT_LOOKUP_IF_MODIFIED(VAR, DICT, LOOKUP)  (VAR) = (LOOKUP);
-#endif
-
-/* GetModuleGlobalName.proto */
-#if CYTHON_USE_DICT_VERSIONS
-#define __Pyx_GetModuleGlobalName(var, name)  {\
-    static PY_UINT64_T __pyx_dict_version = 0;\
-    static PyObject *__pyx_dict_cached_value = NULL;\
-    (var) = (likely(__pyx_dict_version == __PYX_GET_DICT_VERSION(__pyx_d))) ?\
-        (likely(__pyx_dict_cached_value) ? __Pyx_NewRef(__pyx_dict_cached_value) : __Pyx_GetBuiltinName(name)) :\
-        __Pyx__GetModuleGlobalName(name, &__pyx_dict_version, &__pyx_dict_cached_value);\
-}
-#define __Pyx_GetModuleGlobalNameUncached(var, name)  {\
-    PY_UINT64_T __pyx_dict_version;\
-    PyObject *__pyx_dict_cached_value;\
-    (var) = __Pyx__GetModuleGlobalName(name, &__pyx_dict_version, &__pyx_dict_cached_value);\
-}
-static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value);
-#else
-#define __Pyx_GetModuleGlobalName(var, name)  (var) = __Pyx__GetModuleGlobalName(name)
-#define __Pyx_GetModuleGlobalNameUncached(var, name)  (var) = __Pyx__GetModuleGlobalName(name)
-static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
-#endif
-
-/* GetAttr.proto */
-static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *, PyObject *);
+/* ExtTypeTest.proto */
+static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
 
 /* Import.proto */
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
+
+/* GetAttr.proto */
+static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *, PyObject *);
 
 /* IncludeStringH.proto */
 #include <string.h>
@@ -1767,8 +1710,52 @@ static CYTHON_INLINE PyObject* __Pyx_decode_c_string(
 /* GetAttr3.proto */
 static CYTHON_INLINE PyObject *__Pyx_GetAttr3(PyObject *, PyObject *, PyObject *);
 
-/* ExtTypeTest.proto */
-static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
+/* PyDictVersioning.proto */
+#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
+#define __PYX_DICT_VERSION_INIT  ((PY_UINT64_T) -1)
+#define __PYX_GET_DICT_VERSION(dict)  (((PyDictObject*)(dict))->ma_version_tag)
+#define __PYX_UPDATE_DICT_CACHE(dict, value, cache_var, version_var)\
+    (version_var) = __PYX_GET_DICT_VERSION(dict);\
+    (cache_var) = (value);
+#define __PYX_PY_DICT_LOOKUP_IF_MODIFIED(VAR, DICT, LOOKUP) {\
+    static PY_UINT64_T __pyx_dict_version = 0;\
+    static PyObject *__pyx_dict_cached_value = NULL;\
+    if (likely(__PYX_GET_DICT_VERSION(DICT) == __pyx_dict_version)) {\
+        (VAR) = __pyx_dict_cached_value;\
+    } else {\
+        (VAR) = __pyx_dict_cached_value = (LOOKUP);\
+        __pyx_dict_version = __PYX_GET_DICT_VERSION(DICT);\
+    }\
+}
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj);
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj);
+static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version);
+#else
+#define __PYX_GET_DICT_VERSION(dict)  (0)
+#define __PYX_UPDATE_DICT_CACHE(dict, value, cache_var, version_var)
+#define __PYX_PY_DICT_LOOKUP_IF_MODIFIED(VAR, DICT, LOOKUP)  (VAR) = (LOOKUP);
+#endif
+
+/* GetModuleGlobalName.proto */
+#if CYTHON_USE_DICT_VERSIONS
+#define __Pyx_GetModuleGlobalName(var, name)  {\
+    static PY_UINT64_T __pyx_dict_version = 0;\
+    static PyObject *__pyx_dict_cached_value = NULL;\
+    (var) = (likely(__pyx_dict_version == __PYX_GET_DICT_VERSION(__pyx_d))) ?\
+        (likely(__pyx_dict_cached_value) ? __Pyx_NewRef(__pyx_dict_cached_value) : __Pyx_GetBuiltinName(name)) :\
+        __Pyx__GetModuleGlobalName(name, &__pyx_dict_version, &__pyx_dict_cached_value);\
+}
+#define __Pyx_GetModuleGlobalNameUncached(var, name)  {\
+    PY_UINT64_T __pyx_dict_version;\
+    PyObject *__pyx_dict_cached_value;\
+    (var) = __Pyx__GetModuleGlobalName(name, &__pyx_dict_version, &__pyx_dict_cached_value);\
+}
+static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value);
+#else
+#define __Pyx_GetModuleGlobalName(var, name)  (var) = __Pyx__GetModuleGlobalName(name)
+#define __Pyx_GetModuleGlobalNameUncached(var, name)  (var) = __Pyx__GetModuleGlobalName(name)
+static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
+#endif
 
 /* SwapException.proto */
 #if CYTHON_FAST_THREAD_STATE
@@ -1855,6 +1842,10 @@ enum __Pyx_ImportType_CheckSize {
 };
 static PyTypeObject *__Pyx_ImportType(PyObject* module, const char *module_name, const char *class_name, size_t size, enum __Pyx_ImportType_CheckSize check_size);
 #endif
+
+/* GetNameInClass.proto */
+#define __Pyx_GetNameInClass(var, nmspace, name)  (var) = __Pyx__GetNameInClass(nmspace, name)
+static PyObject *__Pyx__GetNameInClass(PyObject *nmspace, PyObject *name);
 
 /* CLineInTraceback.proto */
 #ifdef CYTHON_CLINE_IN_TRACEBACK
@@ -2176,7 +2167,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice, int 
 static int32_t __pyx_f_11fastparquet_9cencoding_zigzag_int(uint64_t); /*proto*/
 static int64_t __pyx_f_11fastparquet_9cencoding_zigzag_long(uint64_t); /*proto*/
 static uint64_t __pyx_f_11fastparquet_9cencoding_long_zigzag(int64_t); /*proto*/
-static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *, int __pyx_skip_dispatch, struct __pyx_opt_args_11fastparquet_9cencoding_read_thrift *__pyx_optional_args); /*proto*/
+static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *, int __pyx_skip_dispatch); /*proto*/
 static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *); /*proto*/
 static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *, struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *, int __pyx_skip_dispatch); /*proto*/
 static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *, struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *); /*proto*/
@@ -2224,9 +2215,9 @@ extern int __pyx_module_is_main_fastparquet__cencoding;
 int __pyx_module_is_main_fastparquet__cencoding = 0;
 
 /* Implementation of 'fastparquet.cencoding' */
+static PyObject *__pyx_builtin_staticmethod;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_TypeError;
-static PyObject *__pyx_builtin_super;
 static PyObject *__pyx_builtin_KeyError;
 static PyObject *__pyx_builtin_AttributeError;
 static PyObject *__pyx_builtin_ImportError;
@@ -2246,6 +2237,8 @@ static const char __pyx_k_de[] = "de";
 static const char __pyx_k_id[] = "id";
 static const char __pyx_k_np[] = "np";
 static const char __pyx_k_re[] = "re";
+static const char __pyx_k_MAP[] = "MAP";
+static const char __pyx_k_buf[] = "buf";
 static const char __pyx_k_crc[] = "crc";
 static const char __pyx_k_dic[] = "dic";
 static const char __pyx_k_get[] = "get";
@@ -2257,12 +2250,19 @@ static const char __pyx_k_new[] = "__new__";
 static const char __pyx_k_obj[] = "obj";
 static const char __pyx_k_rep[] = "rep";
 static const char __pyx_k_val[] = "val";
+static const char __pyx_k_BSON[] = "BSON";
+static const char __pyx_k_DATE[] = "DATE";
+static const char __pyx_k_ENUM[] = "ENUM";
+static const char __pyx_k_JSON[] = "JSON";
+static const char __pyx_k_LIST[] = "LIST";
+static const char __pyx_k_TIME[] = "TIME";
+static const char __pyx_k_UUID[] = "UUID";
 static const char __pyx_k_base[] = "base";
+static const char __pyx_k_copy[] = "copy";
 static const char __pyx_k_data[] = "data";
 static const char __pyx_k_defi[] = "defi";
 static const char __pyx_k_dict[] = "__dict__";
 static const char __pyx_k_dump[] = "dump";
-static const char __pyx_k_init[] = "__init__";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_mode[] = "mode";
 static const char __pyx_k_name[] = "name";
@@ -2275,26 +2275,35 @@ static const char __pyx_k_step[] = "step";
 static const char __pyx_k_stop[] = "stop";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_type[] = "type";
+static const char __pyx_k_unit[] = "unit";
 static const char __pyx_k_vali[] = "vali";
 static const char __pyx_k_yaml[] = "yaml";
 static const char __pyx_k_ASCII[] = "ASCII";
+static const char __pyx_k_BLOCK[] = "BLOCK";
+static const char __pyx_k_NANOS[] = "NANOS";
 static const char __pyx_k_class[] = "__class__";
 static const char __pyx_k_codec[] = "codec";
 static const char __pyx_k_count[] = "count";
 static const char __pyx_k_dtype[] = "dtype";
+static const char __pyx_k_dumps[] = "dumps";
 static const char __pyx_k_empty[] = "empty";
 static const char __pyx_k_error[] = "error";
 static const char __pyx_k_flags[] = "flags";
 static const char __pyx_k_items[] = "items";
+static const char __pyx_k_loads[] = "loads";
 static const char __pyx_k_numpy[] = "numpy";
 static const char __pyx_k_range[] = "range";
 static const char __pyx_k_scale[] = "scale";
 static const char __pyx_k_shape[] = "shape";
 static const char __pyx_k_start[] = "start";
-static const char __pyx_k_super[] = "super";
 static const char __pyx_k_uint8[] = "uint8";
 static const char __pyx_k_value[] = "value";
 static const char __pyx_k_width[] = "width";
+static const char __pyx_k_MICROS[] = "MICROS";
+static const char __pyx_k_MILLIS[] = "MILLIS";
+static const char __pyx_k_STRING[] = "STRING";
+static const char __pyx_k_XXHASH[] = "XXHASH";
+static const char __pyx_k_XxHash[] = "XxHash";
 static const char __pyx_k_asdict[] = "_asdict";
 static const char __pyx_k_assign[] = "assign";
 static const char __pyx_k_buffer[] = "buffer";
@@ -2308,6 +2317,7 @@ static const char __pyx_k_indict[] = "indict";
 static const char __pyx_k_io_obj[] = "io_obj";
 static const char __pyx_k_length[] = "length";
 static const char __pyx_k_name_2[] = "__name__";
+static const char __pyx_k_offset[] = "offset";
 static const char __pyx_k_output[] = "output";
 static const char __pyx_k_pickle[] = "pickle";
 static const char __pyx_k_prev_i[] = "prev_i";
@@ -2318,27 +2328,47 @@ static const char __pyx_k_unpack[] = "unpack";
 static const char __pyx_k_update[] = "update";
 static const char __pyx_k_values[] = "values";
 static const char __pyx_k_whence[] = "whence";
+static const char __pyx_k_DECIMAL[] = "DECIMAL";
+static const char __pyx_k_INTEGER[] = "INTEGER";
+static const char __pyx_k_IntType[] = "IntType";
+static const char __pyx_k_MapType[] = "MapType";
 static const char __pyx_k_NumpyIO[] = "NumpyIO";
+static const char __pyx_k_UNKNOWN[] = "UNKNOWN";
 static const char __pyx_k_columns[] = "columns";
 static const char __pyx_k_counter[] = "counter";
+static const char __pyx_k_default[] = "default";
 static const char __pyx_k_fortran[] = "fortran";
 static const char __pyx_k_memview[] = "memview";
+static const char __pyx_k_ordinal[] = "ordinal";
 static const char __pyx_k_started[] = "started";
 static const char __pyx_k_version[] = "version";
+static const char __pyx_k_BsonType[] = "BsonType";
+static const char __pyx_k_DateType[] = "DateType";
 static const char __pyx_k_Ellipsis[] = "Ellipsis";
+static const char __pyx_k_EnumType[] = "EnumType";
+static const char __pyx_k_JsonType[] = "JsonType";
 static const char __pyx_k_KeyError[] = "KeyError";
 static const char __pyx_k_KeyValue[] = "KeyValue";
+static const char __pyx_k_ListType[] = "ListType";
+static const char __pyx_k_NullType[] = "NullType";
 static const char __pyx_k_RowGroup[] = "RowGroup";
+static const char __pyx_k_TimeType[] = "TimeType";
+static const char __pyx_k_TimeUnit[] = "TimeUnit";
+static const char __pyx_k_UUIDType[] = "UUIDType";
+static const char __pyx_k_bitWidth[] = "bitWidth";
 static const char __pyx_k_encoding[] = "encoding";
 static const char __pyx_k_field_id[] = "field_id";
 static const char __pyx_k_file_obj[] = "file_obj";
 static const char __pyx_k_getstate[] = "__getstate__";
+static const char __pyx_k_isSigned[] = "isSigned";
 static const char __pyx_k_itemsize[] = "itemsize";
 static const char __pyx_k_max_defi[] = "max_defi";
+static const char __pyx_k_memodict[] = "memodict";
 static const char __pyx_k_null_val[] = "null_val";
 static const char __pyx_k_num_rows[] = "num_rows";
 static const char __pyx_k_pyx_type[] = "__pyx_type";
 static const char __pyx_k_setstate[] = "__setstate__";
+static const char __pyx_k_TIMESTAMP[] = "TIMESTAMP";
 static const char __pyx_k_TypeError[] = "TypeError";
 static const char __pyx_k_bit_width[] = "bit_width";
 static const char __pyx_k_encodings[] = "encodings";
@@ -2357,12 +2387,16 @@ static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
 static const char __pyx_k_IndexError[] = "IndexError";
 static const char __pyx_k_PageHeader[] = "PageHeader";
 static const char __pyx_k_Statistics[] = "Statistics";
+static const char __pyx_k_StringType[] = "StringType";
 static const char __pyx_k_TYPE_ORDER[] = "TYPE_ORDER";
 static const char __pyx_k_ValueError[] = "ValueError";
 static const char __pyx_k_column_idx[] = "column_idx";
 static const char __pyx_k_created_by[] = "created_by";
 static const char __pyx_k_descending[] = "descending";
+static const char __pyx_k_max_values[] = "max_values";
+static const char __pyx_k_min_values[] = "min_values";
 static const char __pyx_k_null_count[] = "null_count";
+static const char __pyx_k_null_pages[] = "null_pages";
 static const char __pyx_k_num_values[] = "num_values";
 static const char __pyx_k_pyx_result[] = "__pyx_result";
 static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
@@ -2370,21 +2404,34 @@ static const char __pyx_k_row_groups[] = "row_groups";
 static const char __pyx_k_statistics[] = "statistics";
 static const char __pyx_k_withlength[] = "withlength";
 static const char __pyx_k_ColumnChunk[] = "ColumnChunk";
+static const char __pyx_k_ColumnIndex[] = "ColumnIndex";
 static const char __pyx_k_ColumnOrder[] = "ColumnOrder";
+static const char __pyx_k_DecimalType[] = "DecimalType";
 static const char __pyx_k_ImportError[] = "ImportError";
+static const char __pyx_k_LogicalType[] = "LogicalType";
 static const char __pyx_k_MemoryError[] = "MemoryError";
+static const char __pyx_k_NanoSeconds[] = "NanoSeconds";
+static const char __pyx_k_OffsetIndex[] = "OffsetIndex";
 static const char __pyx_k_PickleError[] = "PickleError";
 static const char __pyx_k_file_offset[] = "file_offset";
 static const char __pyx_k_from_buffer[] = "from_buffer";
+static const char __pyx_k_logicalType[] = "logicalType";
+static const char __pyx_k_null_counts[] = "null_counts";
 static const char __pyx_k_nulls_first[] = "nulls_first";
 static const char __pyx_k_type_length[] = "type_length";
 static const char __pyx_k_FileMetaData[] = "FileMetaData";
+static const char __pyx_k_MicroSeconds[] = "MicroSeconds";
+static const char __pyx_k_MilliSeconds[] = "MilliSeconds";
+static const char __pyx_k_PageLocation[] = "PageLocation";
 static const char __pyx_k_ThriftObject[] = "ThriftObject";
+static const char __pyx_k_Uncompressed[] = "Uncompressed";
 static const char __pyx_k_num_children[] = "num_children";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
+static const char __pyx_k_staticmethod[] = "staticmethod";
 static const char __pyx_k_stringsource[] = "stringsource";
 static const char __pyx_k_SchemaElement[] = "SchemaElement";
 static const char __pyx_k_SortingColumn[] = "SortingColumn";
+static const char __pyx_k_TimestampType[] = "TimestampType";
 static const char __pyx_k_column_orders[] = "column_orders";
 static const char __pyx_k_is_compressed[] = "is_compressed";
 static const char __pyx_k_pyx_getbuffer[] = "__pyx_getbuffer";
@@ -2392,14 +2439,20 @@ static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
 static const char __pyx_k_AttributeError[] = "AttributeError";
 static const char __pyx_k_ColumnMetaData[] = "ColumnMetaData";
 static const char __pyx_k_DataPageHeader[] = "DataPageHeader";
+static const char __pyx_k_boundary_order[] = "boundary_order";
 static const char __pyx_k_converted_type[] = "converted_type";
 static const char __pyx_k_distinct_count[] = "distinct_count";
 static const char __pyx_k_encoding_stats[] = "encoding_stats";
+static const char __pyx_k_page_locations[] = "page_locations";
 static const char __pyx_k_path_in_schema[] = "path_in_schema";
+static const char __pyx_k_BloomFilterHash[] = "BloomFilterHash";
 static const char __pyx_k_IndexPageHeader[] = "IndexPageHeader";
 static const char __pyx_k_View_MemoryView[] = "View.MemoryView";
 static const char __pyx_k_allocate_buffer[] = "allocate_buffer";
+static const char __pyx_k_crypto_metadata[] = "crypto_metadata";
 static const char __pyx_k_dtype_is_object[] = "dtype_is_object";
+static const char __pyx_k_first_row_index[] = "first_row_index";
+static const char __pyx_k_isAdjustedToUTC[] = "isAdjustedToUTC";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_repetition_type[] = "repetition_type";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
@@ -2417,9 +2470,19 @@ static const char __pyx_k_pyx_unpickle_Enum[] = "__pyx_unpickle_Enum";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_key_value_metadata[] = "key_value_metadata";
 static const char __pyx_k_strided_and_direct[] = "<strided and direct>";
+static const char __pyx_k_EncryptionAlgorithm[] = "EncryptionAlgorithm";
+static const char __pyx_k_SplitBlockAlgorithm[] = "SplitBlockAlgorithm";
+static const char __pyx_k_bloom_filter_offset[] = "bloom_filter_offset";
+static const char __pyx_k_column_index_length[] = "column_index_length";
+static const char __pyx_k_column_index_offset[] = "column_index_offset";
 static const char __pyx_k_data_page_header_v2[] = "data_page_header_v2";
+static const char __pyx_k_offset_index_length[] = "offset_index_length";
+static const char __pyx_k_offset_index_offset[] = "offset_index_offset";
+static const char __pyx_k_BloomFilterAlgorithm[] = "BloomFilterAlgorithm";
+static const char __pyx_k_ColumnCryptoMetaData[] = "ColumnCryptoMetaData";
 static const char __pyx_k_DictionaryPageHeader[] = "DictionaryPageHeader";
 static const char __pyx_k_compressed_page_size[] = "compressed_page_size";
+static const char __pyx_k_encryption_algorithm[] = "encryption_algorithm";
 static const char __pyx_k_strided_and_indirect[] = "<strided and indirect>";
 static const char __pyx_k_contiguous_and_direct[] = "<contiguous and direct>";
 static const char __pyx_k_fastparquet_cencoding[] = "fastparquet.cencoding";
@@ -2428,14 +2491,20 @@ static const char __pyx_k_MemoryView_of_r_object[] = "<MemoryView of %r object>"
 static const char __pyx_k_dictionary_page_header[] = "dictionary_page_header";
 static const char __pyx_k_dictionary_page_offset[] = "dictionary_page_offset";
 static const char __pyx_k_uncompressed_page_size[] = "uncompressed_page_size";
+static const char __pyx_k_EncryptionWithColumnKey[] = "EncryptionWithColumnKey";
+static const char __pyx_k_EncryptionWithFooterKey[] = "EncryptionWithFooterKey";
 static const char __pyx_k_MemoryView_of_r_at_0x_x[] = "<MemoryView of %r at 0x%x>";
 static const char __pyx_k_contiguous_and_indirect[] = "<contiguous and indirect>";
 static const char __pyx_k_total_uncompressed_size[] = "total_uncompressed_size";
 static const char __pyx_k_Cannot_index_with_type_s[] = "Cannot index with type '%s'";
 static const char __pyx_k_Invalid_shape_in_axis_d_d[] = "Invalid shape in axis %d: %d.";
 static const char __pyx_k_definition_level_encoding[] = "definition_level_encoding";
+static const char __pyx_k_encrypted_column_metadata[] = "encrypted_column_metadata";
 static const char __pyx_k_fastparquet_cencoding_pyx[] = "fastparquet/cencoding.pyx";
 static const char __pyx_k_repetition_level_encoding[] = "repetition_level_encoding";
+static const char __pyx_k_ENCRYPTION_WITH_COLUMN_KEY[] = "ENCRYPTION_WITH_COLUMN_KEY";
+static const char __pyx_k_ENCRYPTION_WITH_FOOTER_KEY[] = "ENCRYPTION_WITH_FOOTER_KEY";
+static const char __pyx_k_footer_signing_key_metadata[] = "footer_signing_key_metadata";
 static const char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cython.array";
 static const char __pyx_k_definition_levels_byte_length[] = "definition_levels_byte_length";
 static const char __pyx_k_repetition_levels_byte_length[] = "repetition_levels_byte_length";
@@ -2456,55 +2525,109 @@ static const char __pyx_k_no_default___reduce___due_to_non[] = "no default __red
 static const char __pyx_k_unable_to_allocate_shape_and_str[] = "unable to allocate shape and strides.";
 static PyObject *__pyx_n_s_ASCII;
 static PyObject *__pyx_n_s_AttributeError;
+static PyObject *__pyx_n_u_BLOCK;
+static PyObject *__pyx_n_u_BSON;
+static PyObject *__pyx_n_u_BloomFilterAlgorithm;
+static PyObject *__pyx_n_u_BloomFilterHash;
+static PyObject *__pyx_n_u_BsonType;
 static PyObject *__pyx_kp_s_Buffer_view_does_not_expose_stri;
 static PyObject *__pyx_kp_s_Can_only_create_a_buffer_that_is;
 static PyObject *__pyx_kp_s_Cannot_assign_to_read_only_memor;
 static PyObject *__pyx_kp_s_Cannot_create_writable_memory_vi;
 static PyObject *__pyx_kp_s_Cannot_index_with_type_s;
 static PyObject *__pyx_n_u_ColumnChunk;
+static PyObject *__pyx_n_u_ColumnCryptoMetaData;
+static PyObject *__pyx_n_u_ColumnIndex;
 static PyObject *__pyx_n_u_ColumnMetaData;
 static PyObject *__pyx_n_u_ColumnOrder;
+static PyObject *__pyx_n_u_DATE;
+static PyObject *__pyx_n_u_DECIMAL;
 static PyObject *__pyx_n_u_DataPageHeader;
 static PyObject *__pyx_n_u_DataPageHeaderV2;
+static PyObject *__pyx_n_u_DateType;
+static PyObject *__pyx_n_u_DecimalType;
 static PyObject *__pyx_n_u_DictionaryPageHeader;
+static PyObject *__pyx_n_u_ENCRYPTION_WITH_COLUMN_KEY;
+static PyObject *__pyx_n_u_ENCRYPTION_WITH_FOOTER_KEY;
+static PyObject *__pyx_n_u_ENUM;
 static PyObject *__pyx_n_s_Ellipsis;
 static PyObject *__pyx_kp_s_Empty_shape_tuple_for_cython_arr;
+static PyObject *__pyx_n_u_EncryptionAlgorithm;
+static PyObject *__pyx_n_u_EncryptionWithColumnKey;
+static PyObject *__pyx_n_u_EncryptionWithFooterKey;
+static PyObject *__pyx_n_u_EnumType;
 static PyObject *__pyx_n_u_FileMetaData;
+static PyObject *__pyx_n_u_INTEGER;
 static PyObject *__pyx_n_s_ImportError;
 static PyObject *__pyx_kp_s_Incompatible_checksums_s_vs_0xb0;
 static PyObject *__pyx_n_s_IndexError;
 static PyObject *__pyx_n_u_IndexPageHeader;
 static PyObject *__pyx_kp_s_Indirect_dimensions_not_supporte;
+static PyObject *__pyx_n_u_IntType;
 static PyObject *__pyx_kp_s_Invalid_mode_expected_c_or_fortr;
 static PyObject *__pyx_kp_s_Invalid_shape_in_axis_d_d;
+static PyObject *__pyx_n_u_JSON;
+static PyObject *__pyx_n_u_JsonType;
 static PyObject *__pyx_n_s_KeyError;
 static PyObject *__pyx_n_u_KeyValue;
+static PyObject *__pyx_n_u_LIST;
+static PyObject *__pyx_n_u_ListType;
+static PyObject *__pyx_n_u_LogicalType;
+static PyObject *__pyx_n_u_MAP;
+static PyObject *__pyx_n_u_MICROS;
+static PyObject *__pyx_n_u_MILLIS;
+static PyObject *__pyx_n_u_MapType;
 static PyObject *__pyx_n_s_MemoryError;
 static PyObject *__pyx_kp_s_MemoryView_of_r_at_0x_x;
 static PyObject *__pyx_kp_s_MemoryView_of_r_object;
+static PyObject *__pyx_n_u_MicroSeconds;
+static PyObject *__pyx_n_u_MilliSeconds;
+static PyObject *__pyx_n_u_NANOS;
+static PyObject *__pyx_n_u_NanoSeconds;
+static PyObject *__pyx_n_u_NullType;
 static PyObject *__pyx_n_s_NumpyIO;
 static PyObject *__pyx_n_b_O;
+static PyObject *__pyx_n_u_OffsetIndex;
 static PyObject *__pyx_kp_s_Out_of_bounds_on_buffer_access_a;
 static PyObject *__pyx_n_u_PageEncodingStats;
 static PyObject *__pyx_n_u_PageHeader;
+static PyObject *__pyx_n_u_PageLocation;
 static PyObject *__pyx_n_s_PickleError;
 static PyObject *__pyx_n_u_RowGroup;
+static PyObject *__pyx_n_u_STRING;
 static PyObject *__pyx_n_u_SchemaElement;
 static PyObject *__pyx_n_u_SortingColumn;
+static PyObject *__pyx_n_u_SplitBlockAlgorithm;
 static PyObject *__pyx_n_u_Statistics;
+static PyObject *__pyx_n_u_StringType;
+static PyObject *__pyx_n_u_TIME;
+static PyObject *__pyx_n_u_TIMESTAMP;
 static PyObject *__pyx_n_u_TYPE_ORDER;
 static PyObject *__pyx_n_s_ThriftObject;
+static PyObject *__pyx_n_u_TimeType;
+static PyObject *__pyx_n_u_TimeUnit;
+static PyObject *__pyx_n_u_TimestampType;
 static PyObject *__pyx_n_u_TypeDefinedOrder;
 static PyObject *__pyx_n_s_TypeError;
+static PyObject *__pyx_n_u_UNKNOWN;
+static PyObject *__pyx_n_u_UUID;
+static PyObject *__pyx_n_u_UUIDType;
 static PyObject *__pyx_kp_s_Unable_to_convert_item_to_object;
+static PyObject *__pyx_n_u_Uncompressed;
 static PyObject *__pyx_n_s_ValueError;
 static PyObject *__pyx_n_s_View_MemoryView;
+static PyObject *__pyx_n_u_XXHASH;
+static PyObject *__pyx_n_u_XxHash;
 static PyObject *__pyx_n_s_allocate_buffer;
 static PyObject *__pyx_n_s_asdict;
 static PyObject *__pyx_n_s_assemble_objects;
 static PyObject *__pyx_n_s_assign;
 static PyObject *__pyx_n_s_base;
+static PyObject *__pyx_n_u_bitWidth;
 static PyObject *__pyx_n_s_bit_width;
+static PyObject *__pyx_n_u_bloom_filter_offset;
+static PyObject *__pyx_n_u_boundary_order;
+static PyObject *__pyx_n_s_buf;
 static PyObject *__pyx_n_s_buffer;
 static PyObject *__pyx_n_s_c;
 static PyObject *__pyx_n_u_c;
@@ -2512,23 +2635,28 @@ static PyObject *__pyx_n_s_class;
 static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_u_codec;
 static PyObject *__pyx_n_u_column_idx;
+static PyObject *__pyx_n_u_column_index_length;
+static PyObject *__pyx_n_u_column_index_offset;
 static PyObject *__pyx_n_u_column_orders;
 static PyObject *__pyx_n_u_columns;
 static PyObject *__pyx_n_u_compressed_page_size;
 static PyObject *__pyx_kp_s_contiguous_and_direct;
 static PyObject *__pyx_kp_s_contiguous_and_indirect;
 static PyObject *__pyx_n_u_converted_type;
+static PyObject *__pyx_n_s_copy;
 static PyObject *__pyx_n_s_count;
 static PyObject *__pyx_n_u_count;
 static PyObject *__pyx_n_s_counter;
 static PyObject *__pyx_n_u_crc;
 static PyObject *__pyx_n_u_created_by;
+static PyObject *__pyx_n_u_crypto_metadata;
 static PyObject *__pyx_n_s_d;
 static PyObject *__pyx_n_s_data;
 static PyObject *__pyx_n_u_data_page_header;
 static PyObject *__pyx_n_u_data_page_header_v2;
 static PyObject *__pyx_n_u_data_page_offset;
 static PyObject *__pyx_n_s_de;
+static PyObject *__pyx_n_s_default;
 static PyObject *__pyx_n_s_defi;
 static PyObject *__pyx_n_u_definition_level_encoding;
 static PyObject *__pyx_n_u_definition_levels_byte_length;
@@ -2541,11 +2669,14 @@ static PyObject *__pyx_n_u_distinct_count;
 static PyObject *__pyx_n_s_dtype;
 static PyObject *__pyx_n_s_dtype_is_object;
 static PyObject *__pyx_n_s_dump;
+static PyObject *__pyx_n_s_dumps;
 static PyObject *__pyx_n_s_empty;
 static PyObject *__pyx_n_s_encode;
 static PyObject *__pyx_n_u_encoding;
 static PyObject *__pyx_n_u_encoding_stats;
 static PyObject *__pyx_n_u_encodings;
+static PyObject *__pyx_n_u_encrypted_column_metadata;
+static PyObject *__pyx_n_u_encryption_algorithm;
 static PyObject *__pyx_n_s_enumerate;
 static PyObject *__pyx_n_s_error;
 static PyObject *__pyx_n_s_extend;
@@ -2556,7 +2687,9 @@ static PyObject *__pyx_n_u_field_id;
 static PyObject *__pyx_n_s_file_obj;
 static PyObject *__pyx_n_u_file_offset;
 static PyObject *__pyx_n_u_file_path;
+static PyObject *__pyx_n_u_first_row_index;
 static PyObject *__pyx_n_s_flags;
+static PyObject *__pyx_n_u_footer_signing_key_metadata;
 static PyObject *__pyx_n_s_format;
 static PyObject *__pyx_n_s_fortran;
 static PyObject *__pyx_n_u_fortran;
@@ -2572,25 +2705,32 @@ static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_u_index_page_header;
 static PyObject *__pyx_n_u_index_page_offset;
 static PyObject *__pyx_n_s_indict;
-static PyObject *__pyx_n_s_init;
 static PyObject *__pyx_n_s_io_obj;
+static PyObject *__pyx_n_u_isAdjustedToUTC;
+static PyObject *__pyx_n_u_isSigned;
 static PyObject *__pyx_n_u_is_compressed;
 static PyObject *__pyx_n_u_is_sorted;
 static PyObject *__pyx_n_s_items;
 static PyObject *__pyx_n_s_itemsize;
 static PyObject *__pyx_kp_s_itemsize_0_for_cython_array;
+static PyObject *__pyx_n_s_key;
 static PyObject *__pyx_n_u_key;
 static PyObject *__pyx_n_u_key_value_metadata;
 static PyObject *__pyx_n_s_length;
+static PyObject *__pyx_n_s_loads;
 static PyObject *__pyx_n_s_loc;
+static PyObject *__pyx_n_u_logicalType;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_u_max;
 static PyObject *__pyx_n_s_max_defi;
 static PyObject *__pyx_n_u_max_value;
+static PyObject *__pyx_n_u_max_values;
+static PyObject *__pyx_n_s_memodict;
 static PyObject *__pyx_n_s_memview;
 static PyObject *__pyx_n_u_meta_data;
 static PyObject *__pyx_n_u_min;
 static PyObject *__pyx_n_u_min_value;
+static PyObject *__pyx_n_u_min_values;
 static PyObject *__pyx_n_s_mode;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_u_name;
@@ -2601,6 +2741,8 @@ static PyObject *__pyx_kp_s_no_default___reduce___due_to_non;
 static PyObject *__pyx_n_s_np;
 static PyObject *__pyx_n_s_null;
 static PyObject *__pyx_n_u_null_count;
+static PyObject *__pyx_n_u_null_counts;
+static PyObject *__pyx_n_u_null_pages;
 static PyObject *__pyx_n_s_null_val;
 static PyObject *__pyx_n_u_nulls_first;
 static PyObject *__pyx_n_u_num_children;
@@ -2610,8 +2752,13 @@ static PyObject *__pyx_n_u_num_values;
 static PyObject *__pyx_n_s_numpy;
 static PyObject *__pyx_n_s_o;
 static PyObject *__pyx_n_s_obj;
+static PyObject *__pyx_n_u_offset;
+static PyObject *__pyx_n_u_offset_index_length;
+static PyObject *__pyx_n_u_offset_index_offset;
+static PyObject *__pyx_n_u_ordinal;
 static PyObject *__pyx_n_s_output;
 static PyObject *__pyx_n_s_pack;
+static PyObject *__pyx_n_u_page_locations;
 static PyObject *__pyx_n_u_page_type;
 static PyObject *__pyx_n_s_part;
 static PyObject *__pyx_n_u_path_in_schema;
@@ -2645,6 +2792,7 @@ static PyObject *__pyx_n_s_size;
 static PyObject *__pyx_n_u_sorting_columns;
 static PyObject *__pyx_n_s_start;
 static PyObject *__pyx_n_s_started;
+static PyObject *__pyx_n_s_staticmethod;
 static PyObject *__pyx_n_u_statistics;
 static PyObject *__pyx_n_s_step;
 static PyObject *__pyx_n_s_stop;
@@ -2653,7 +2801,6 @@ static PyObject *__pyx_kp_s_strided_and_direct_or_indirect;
 static PyObject *__pyx_kp_s_strided_and_indirect;
 static PyObject *__pyx_kp_s_stringsource;
 static PyObject *__pyx_n_s_struct;
-static PyObject *__pyx_n_s_super;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_u_total_byte_size;
 static PyObject *__pyx_n_u_total_compressed_size;
@@ -2664,6 +2811,7 @@ static PyObject *__pyx_n_u_uint8;
 static PyObject *__pyx_kp_s_unable_to_allocate_array_data;
 static PyObject *__pyx_kp_s_unable_to_allocate_shape_and_str;
 static PyObject *__pyx_n_u_uncompressed_page_size;
+static PyObject *__pyx_n_u_unit;
 static PyObject *__pyx_n_s_unpack;
 static PyObject *__pyx_n_s_update;
 static PyObject *__pyx_n_s_val;
@@ -2702,17 +2850,25 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_20__reduce_cython__(
 static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_22__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_assign, __Pyx_memviewslice __pyx_v_defi, __Pyx_memviewslice __pyx_v_rep, PyObject *__pyx_v_val, PyObject *__pyx_v_dic, PyObject *__pyx_v_d, char __pyx_v_null, CYTHON_UNUSED PyObject *__pyx_v_null_val, int32_t __pyx_v_max_defi, int32_t __pyx_v_prev_i); /* proto */
 static PyObject *__pyx_pf_11fastparquet_9cencoding_24time_shift(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data, int32_t __pyx_v_factor); /* proto */
-static PyObject *__pyx_pf_11fastparquet_9cencoding_26read_thrift(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_data, PyObject *__pyx_v_name); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_26read_thrift(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_data); /* proto */
 static PyObject *__pyx_pf_11fastparquet_9cencoding_28write_thrift(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_data, struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_output); /* proto */
-static PyObject *__pyx_pf_11fastparquet_9cencoding_30from_buffer(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_buffer, PyObject *__pyx_v_name); /* proto */
 static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject___init__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_indict); /* proto */
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item); /* proto */
-static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_4__setattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value); /* proto */
-static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_6__delattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item); /* proto */
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v__); /* proto */
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_10_asdict(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12__dir__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2_internal(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_4__getattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item); /* proto */
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_6__setitem__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_key, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__getitem__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item); /* proto */
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_10__delitem__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_key); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12get(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_key, PyObject *__pyx_v_default); /* proto */
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__setattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_16__delattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_18__reduce_ex__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v__); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_20from_buffer(PyObject *__pyx_v_buffer, PyObject *__pyx_v_name); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_22copy(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_24__copy__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_26__deepcopy__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_memodict); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_28_asdict(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_30__dir__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_32__repr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -2776,19 +2932,20 @@ static PyObject *__pyx_int_10;
 static PyObject *__pyx_int_11;
 static PyObject *__pyx_int_12;
 static PyObject *__pyx_int_13;
+static PyObject *__pyx_int_14;
 static PyObject *__pyx_int_100000;
 static PyObject *__pyx_int_184977713;
 static PyObject *__pyx_int_neg_1;
+static PyObject *__pyx_k__3;
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
-static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_tuple__4;
 static PyObject *__pyx_tuple__5;
 static PyObject *__pyx_tuple__6;
 static PyObject *__pyx_tuple__7;
 static PyObject *__pyx_tuple__8;
 static PyObject *__pyx_tuple__9;
-static PyObject *__pyx_slice__17;
+static PyObject *__pyx_slice__18;
 static PyObject *__pyx_tuple__10;
 static PyObject *__pyx_tuple__11;
 static PyObject *__pyx_tuple__12;
@@ -2796,24 +2953,25 @@ static PyObject *__pyx_tuple__13;
 static PyObject *__pyx_tuple__14;
 static PyObject *__pyx_tuple__15;
 static PyObject *__pyx_tuple__16;
-static PyObject *__pyx_tuple__18;
+static PyObject *__pyx_tuple__17;
 static PyObject *__pyx_tuple__19;
 static PyObject *__pyx_tuple__20;
 static PyObject *__pyx_tuple__21;
-static PyObject *__pyx_tuple__23;
+static PyObject *__pyx_tuple__22;
 static PyObject *__pyx_tuple__24;
-static PyObject *__pyx_tuple__26;
+static PyObject *__pyx_tuple__25;
 static PyObject *__pyx_tuple__27;
 static PyObject *__pyx_tuple__28;
 static PyObject *__pyx_tuple__29;
 static PyObject *__pyx_tuple__30;
 static PyObject *__pyx_tuple__31;
-static PyObject *__pyx_codeobj__22;
-static PyObject *__pyx_codeobj__25;
-static PyObject *__pyx_codeobj__32;
+static PyObject *__pyx_tuple__32;
+static PyObject *__pyx_codeobj__23;
+static PyObject *__pyx_codeobj__26;
+static PyObject *__pyx_codeobj__33;
 /* Late includes */
 
-/* "fastparquet/cencoding.pyx":22
+/* "fastparquet/cencoding.pyx":25
  * 
  * 
  * cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO o, int32_t itemsize=4):             # <<<<<<<<<<<<<<
@@ -2843,7 +3001,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
     }
   }
 
-  /* "fastparquet/cencoding.pyx":30
+  /* "fastparquet/cencoding.pyx":33
  *     cdef:
  *         uint32_t count, width, i, vals_left
  *         int32_t data = 0             # <<<<<<<<<<<<<<
@@ -2852,7 +3010,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_data = 0;
 
-  /* "fastparquet/cencoding.pyx":31
+  /* "fastparquet/cencoding.pyx":34
  *         uint32_t count, width, i, vals_left
  *         int32_t data = 0
  *         char * inptr = file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -2861,7 +3019,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_inptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj);
 
-  /* "fastparquet/cencoding.pyx":32
+  /* "fastparquet/cencoding.pyx":35
  *         int32_t data = 0
  *         char * inptr = file_obj.get_pointer()
  *         char * outptr = o.get_pointer()             # <<<<<<<<<<<<<<
@@ -2870,7 +3028,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_outptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_o);
 
-  /* "fastparquet/cencoding.pyx":33
+  /* "fastparquet/cencoding.pyx":36
  *         char * inptr = file_obj.get_pointer()
  *         char * outptr = o.get_pointer()
  *     count = header >> 1             # <<<<<<<<<<<<<<
@@ -2879,7 +3037,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_count = (__pyx_v_header >> 1);
 
-  /* "fastparquet/cencoding.pyx":34
+  /* "fastparquet/cencoding.pyx":37
  *         char * outptr = o.get_pointer()
  *     count = header >> 1
  *     width = (bit_width + 7) // 8             # <<<<<<<<<<<<<<
@@ -2888,7 +3046,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_width = ((__pyx_v_bit_width + 7) / 8);
 
-  /* "fastparquet/cencoding.pyx":35
+  /* "fastparquet/cencoding.pyx":38
  *     count = header >> 1
  *     width = (bit_width + 7) // 8
  *     for i in range(width):             # <<<<<<<<<<<<<<
@@ -2900,7 +3058,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "fastparquet/cencoding.pyx":36
+    /* "fastparquet/cencoding.pyx":39
  *     width = (bit_width + 7) // 8
  *     for i in range(width):
  *         data |= (inptr[0] & 0xff) << (i * 8)             # <<<<<<<<<<<<<<
@@ -2909,7 +3067,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
     __pyx_v_data = (__pyx_v_data | (((__pyx_v_inptr[0]) & 0xff) << (__pyx_v_i * 8)));
 
-    /* "fastparquet/cencoding.pyx":37
+    /* "fastparquet/cencoding.pyx":40
  *     for i in range(width):
  *         data |= (inptr[0] & 0xff) << (i * 8)
  *         inptr += 1             # <<<<<<<<<<<<<<
@@ -2919,7 +3077,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
     __pyx_v_inptr = (__pyx_v_inptr + 1);
   }
 
-  /* "fastparquet/cencoding.pyx":38
+  /* "fastparquet/cencoding.pyx":41
  *         data |= (inptr[0] & 0xff) << (i * 8)
  *         inptr += 1
  *     vals_left = (o.nbytes - o.loc) // itemsize             # <<<<<<<<<<<<<<
@@ -2928,7 +3086,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_vals_left = ((__pyx_v_o->nbytes - __pyx_v_o->loc) / __pyx_v_itemsize);
 
-  /* "fastparquet/cencoding.pyx":39
+  /* "fastparquet/cencoding.pyx":42
  *         inptr += 1
  *     vals_left = (o.nbytes - o.loc) // itemsize
  *     if count > vals_left:             # <<<<<<<<<<<<<<
@@ -2938,7 +3096,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
   __pyx_t_4 = ((__pyx_v_count > __pyx_v_vals_left) != 0);
   if (__pyx_t_4) {
 
-    /* "fastparquet/cencoding.pyx":40
+    /* "fastparquet/cencoding.pyx":43
  *     vals_left = (o.nbytes - o.loc) // itemsize
  *     if count > vals_left:
  *         count = vals_left             # <<<<<<<<<<<<<<
@@ -2947,7 +3105,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
     __pyx_v_count = __pyx_v_vals_left;
 
-    /* "fastparquet/cencoding.pyx":39
+    /* "fastparquet/cencoding.pyx":42
  *         inptr += 1
  *     vals_left = (o.nbytes - o.loc) // itemsize
  *     if count > vals_left:             # <<<<<<<<<<<<<<
@@ -2956,7 +3114,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   }
 
-  /* "fastparquet/cencoding.pyx":41
+  /* "fastparquet/cencoding.pyx":44
  *     if count > vals_left:
  *         count = vals_left
  *     if itemsize == 4:             # <<<<<<<<<<<<<<
@@ -2966,7 +3124,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
   __pyx_t_4 = ((__pyx_v_itemsize == 4) != 0);
   if (__pyx_t_4) {
 
-    /* "fastparquet/cencoding.pyx":42
+    /* "fastparquet/cencoding.pyx":45
  *         count = vals_left
  *     if itemsize == 4:
  *         for i in range(count):             # <<<<<<<<<<<<<<
@@ -2978,7 +3136,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
     for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
       __pyx_v_i = __pyx_t_3;
 
-      /* "fastparquet/cencoding.pyx":43
+      /* "fastparquet/cencoding.pyx":46
  *     if itemsize == 4:
  *         for i in range(count):
  *             (<int32_t*>outptr)[0] = data             # <<<<<<<<<<<<<<
@@ -2987,7 +3145,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
       (((int32_t *)__pyx_v_outptr)[0]) = __pyx_v_data;
 
-      /* "fastparquet/cencoding.pyx":44
+      /* "fastparquet/cencoding.pyx":47
  *         for i in range(count):
  *             (<int32_t*>outptr)[0] = data
  *             outptr += 4             # <<<<<<<<<<<<<<
@@ -2997,7 +3155,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
       __pyx_v_outptr = (__pyx_v_outptr + 4);
     }
 
-    /* "fastparquet/cencoding.pyx":41
+    /* "fastparquet/cencoding.pyx":44
  *     if count > vals_left:
  *         count = vals_left
  *     if itemsize == 4:             # <<<<<<<<<<<<<<
@@ -3007,7 +3165,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
     goto __pyx_L6;
   }
 
-  /* "fastparquet/cencoding.pyx":46
+  /* "fastparquet/cencoding.pyx":49
  *             outptr += 4
  *     else:
  *         for i in range(count):             # <<<<<<<<<<<<<<
@@ -3020,7 +3178,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
     for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
       __pyx_v_i = __pyx_t_3;
 
-      /* "fastparquet/cencoding.pyx":47
+      /* "fastparquet/cencoding.pyx":50
  *     else:
  *         for i in range(count):
  *             outptr[0] = data & 0xff             # <<<<<<<<<<<<<<
@@ -3029,7 +3187,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
       (__pyx_v_outptr[0]) = (__pyx_v_data & 0xff);
 
-      /* "fastparquet/cencoding.pyx":48
+      /* "fastparquet/cencoding.pyx":51
  *         for i in range(count):
  *             outptr[0] = data & 0xff
  *             outptr += 1             # <<<<<<<<<<<<<<
@@ -3041,7 +3199,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
   }
   __pyx_L6:;
 
-  /* "fastparquet/cencoding.pyx":49
+  /* "fastparquet/cencoding.pyx":52
  *             outptr[0] = data & 0xff
  *             outptr += 1
  *     o.loc += outptr - o.get_pointer()             # <<<<<<<<<<<<<<
@@ -3050,7 +3208,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_o->loc = (__pyx_v_o->loc + (__pyx_v_outptr - __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_o)));
 
-  /* "fastparquet/cencoding.pyx":50
+  /* "fastparquet/cencoding.pyx":53
  *             outptr += 1
  *     o.loc += outptr - o.get_pointer()
  *     file_obj.loc += inptr - file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -3059,7 +3217,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle(struct __pyx_obj_11fastpar
  */
   __pyx_v_file_obj->loc = (__pyx_v_file_obj->loc + (__pyx_v_inptr - __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj)));
 
-  /* "fastparquet/cencoding.pyx":22
+  /* "fastparquet/cencoding.pyx":25
  * 
  * 
  * cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO o, int32_t itemsize=4):             # <<<<<<<<<<<<<<
@@ -3115,19 +3273,19 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_1read_rle(PyObject *__pyx_sel
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_header)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, 1); __PYX_ERR(0, 22, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, 1); __PYX_ERR(0, 25, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_bit_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, 2); __PYX_ERR(0, 22, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, 2); __PYX_ERR(0, 25, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, 3); __PYX_ERR(0, 22, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, 3); __PYX_ERR(0, 25, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
@@ -3137,7 +3295,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_1read_rle(PyObject *__pyx_sel
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_rle") < 0)) __PYX_ERR(0, 22, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_rle") < 0)) __PYX_ERR(0, 25, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -3152,25 +3310,25 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_1read_rle(PyObject *__pyx_sel
       }
     }
     __pyx_v_file_obj = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[0]);
-    __pyx_v_header = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_header == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 22, __pyx_L3_error)
-    __pyx_v_bit_width = __Pyx_PyInt_As_int32_t(values[2]); if (unlikely((__pyx_v_bit_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 22, __pyx_L3_error)
+    __pyx_v_header = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_header == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 25, __pyx_L3_error)
+    __pyx_v_bit_width = __Pyx_PyInt_As_int32_t(values[2]); if (unlikely((__pyx_v_bit_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 25, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[3]);
     if (values[4]) {
-      __pyx_v_itemsize = __Pyx_PyInt_As_int32_t(values[4]); if (unlikely((__pyx_v_itemsize == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 22, __pyx_L3_error)
+      __pyx_v_itemsize = __Pyx_PyInt_As_int32_t(values[4]); if (unlikely((__pyx_v_itemsize == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 25, __pyx_L3_error)
     } else {
       __pyx_v_itemsize = ((int32_t)4);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 22, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("read_rle", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 25, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.read_rle", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 22, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 25, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 25, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_read_rle(__pyx_self, __pyx_v_file_obj, __pyx_v_header, __pyx_v_bit_width, __pyx_v_o, __pyx_v_itemsize);
 
   /* function exit code */
@@ -3195,7 +3353,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_read_rle(CYTHON_UNUSED PyObje
   __pyx_t_1.__pyx_n = 1;
   __pyx_t_1.itemsize = __pyx_v_itemsize;
   __pyx_f_11fastparquet_9cencoding_read_rle(__pyx_v_file_obj, __pyx_v_header, __pyx_v_bit_width, __pyx_v_o, 0, &__pyx_t_1); 
-  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -3212,7 +3370,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_read_rle(CYTHON_UNUSED PyObje
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":53
+/* "fastparquet/cencoding.pyx":56
  * 
  * 
  * cpdef int32_t width_from_max_int(int64_t value):             # <<<<<<<<<<<<<<
@@ -3229,7 +3387,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_width_from_max_int(int64_t __pyx
   int __pyx_t_2;
   __Pyx_RefNannySetupContext("width_from_max_int", 0);
 
-  /* "fastparquet/cencoding.pyx":56
+  /* "fastparquet/cencoding.pyx":59
  *     """Convert the value specified to a bit_width."""
  *     cdef int32_t i
  *     for i in range(0, 64):             # <<<<<<<<<<<<<<
@@ -3239,7 +3397,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_width_from_max_int(int64_t __pyx
   for (__pyx_t_1 = 0; __pyx_t_1 < 64; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "fastparquet/cencoding.pyx":57
+    /* "fastparquet/cencoding.pyx":60
  *     cdef int32_t i
  *     for i in range(0, 64):
  *         if value == 0:             # <<<<<<<<<<<<<<
@@ -3249,7 +3407,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_width_from_max_int(int64_t __pyx
     __pyx_t_2 = ((__pyx_v_value == 0) != 0);
     if (__pyx_t_2) {
 
-      /* "fastparquet/cencoding.pyx":58
+      /* "fastparquet/cencoding.pyx":61
  *     for i in range(0, 64):
  *         if value == 0:
  *             return i             # <<<<<<<<<<<<<<
@@ -3259,7 +3417,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_width_from_max_int(int64_t __pyx
       __pyx_r = __pyx_v_i;
       goto __pyx_L0;
 
-      /* "fastparquet/cencoding.pyx":57
+      /* "fastparquet/cencoding.pyx":60
  *     cdef int32_t i
  *     for i in range(0, 64):
  *         if value == 0:             # <<<<<<<<<<<<<<
@@ -3268,7 +3426,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_width_from_max_int(int64_t __pyx
  */
     }
 
-    /* "fastparquet/cencoding.pyx":59
+    /* "fastparquet/cencoding.pyx":62
  *         if value == 0:
  *             return i
  *         value >>= 1             # <<<<<<<<<<<<<<
@@ -3278,7 +3436,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_width_from_max_int(int64_t __pyx
     __pyx_v_value = (__pyx_v_value >> 1);
   }
 
-  /* "fastparquet/cencoding.pyx":53
+  /* "fastparquet/cencoding.pyx":56
  * 
  * 
  * cpdef int32_t width_from_max_int(int64_t value):             # <<<<<<<<<<<<<<
@@ -3305,7 +3463,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_3width_from_max_int(PyObject 
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("width_from_max_int (wrapper)", 0);
   assert(__pyx_arg_value); {
-    __pyx_v_value = __Pyx_PyInt_As_int64_t(__pyx_arg_value); if (unlikely((__pyx_v_value == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L3_error)
+    __pyx_v_value = __Pyx_PyInt_As_int64_t(__pyx_arg_value); if (unlikely((__pyx_v_value == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 56, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3329,7 +3487,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_2width_from_max_int(CYTHON_UN
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("width_from_max_int", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(__pyx_f_11fastparquet_9cencoding_width_from_max_int(__pyx_v_value, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int32_t(__pyx_f_11fastparquet_9cencoding_width_from_max_int(__pyx_v_value, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3346,7 +3504,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_2width_from_max_int(CYTHON_UN
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":62
+/* "fastparquet/cencoding.pyx":65
  * 
  * 
  * cdef int32_t _mask_for_bits(int32_t i):             # <<<<<<<<<<<<<<
@@ -3359,7 +3517,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding__mask_for_bits(int32_t __pyx_v_i
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_mask_for_bits", 0);
 
-  /* "fastparquet/cencoding.pyx":64
+  /* "fastparquet/cencoding.pyx":67
  * cdef int32_t _mask_for_bits(int32_t i):
  *     """Generate a mask to grab `i` bits from an int value."""
  *     return (1 << i) - 1             # <<<<<<<<<<<<<<
@@ -3369,7 +3527,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding__mask_for_bits(int32_t __pyx_v_i
   __pyx_r = ((1 << __pyx_v_i) - 1);
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":62
+  /* "fastparquet/cencoding.pyx":65
  * 
  * 
  * cdef int32_t _mask_for_bits(int32_t i):             # <<<<<<<<<<<<<<
@@ -3383,7 +3541,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding__mask_for_bits(int32_t __pyx_v_i
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":67
+/* "fastparquet/cencoding.pyx":70
  * 
  * 
  * cpdef void read_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -3407,7 +3565,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
   int32_t __pyx_t_5;
   __Pyx_RefNannySetupContext("read_bitpacked1", 0);
 
-  /* "fastparquet/cencoding.pyx":70
+  /* "fastparquet/cencoding.pyx":73
  *     # implementation of np.unpackbits with output array. Output is int8 array
  *     cdef:
  *         char * inptr = file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -3416,7 +3574,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
   __pyx_v_inptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj);
 
-  /* "fastparquet/cencoding.pyx":71
+  /* "fastparquet/cencoding.pyx":74
  *     cdef:
  *         char * inptr = file_obj.get_pointer()
  *         char * outptr = o.get_pointer()             # <<<<<<<<<<<<<<
@@ -3425,7 +3583,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
   __pyx_v_outptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_o);
 
-  /* "fastparquet/cencoding.pyx":74
+  /* "fastparquet/cencoding.pyx":77
  *         char * endptr
  *         unsigned char data
  *         int32_t counter, i, startcount=count             # <<<<<<<<<<<<<<
@@ -3434,7 +3592,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
   __pyx_v_startcount = __pyx_v_count;
 
-  /* "fastparquet/cencoding.pyx":75
+  /* "fastparquet/cencoding.pyx":78
  *         unsigned char data
  *         int32_t counter, i, startcount=count
  *     if count > o.nbytes - o.loc:             # <<<<<<<<<<<<<<
@@ -3444,7 +3602,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
   __pyx_t_1 = ((__pyx_v_count > (__pyx_v_o->nbytes - __pyx_v_o->loc)) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":76
+    /* "fastparquet/cencoding.pyx":79
  *         int32_t counter, i, startcount=count
  *     if count > o.nbytes - o.loc:
  *         count = o.nbytes - o.loc             # <<<<<<<<<<<<<<
@@ -3453,7 +3611,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
     __pyx_v_count = (__pyx_v_o->nbytes - __pyx_v_o->loc);
 
-    /* "fastparquet/cencoding.pyx":75
+    /* "fastparquet/cencoding.pyx":78
  *         unsigned char data
  *         int32_t counter, i, startcount=count
  *     if count > o.nbytes - o.loc:             # <<<<<<<<<<<<<<
@@ -3462,7 +3620,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
   }
 
-  /* "fastparquet/cencoding.pyx":77
+  /* "fastparquet/cencoding.pyx":80
  *     if count > o.nbytes - o.loc:
  *         count = o.nbytes - o.loc
  *     for counter in range(count // 8):             # <<<<<<<<<<<<<<
@@ -3474,7 +3632,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_counter = __pyx_t_4;
 
-    /* "fastparquet/cencoding.pyx":79
+    /* "fastparquet/cencoding.pyx":82
  *     for counter in range(count // 8):
  *         # whole bytes
  *         data = inptr[0]             # <<<<<<<<<<<<<<
@@ -3483,7 +3641,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
     __pyx_v_data = (__pyx_v_inptr[0]);
 
-    /* "fastparquet/cencoding.pyx":80
+    /* "fastparquet/cencoding.pyx":83
  *         # whole bytes
  *         data = inptr[0]
  *         inptr += 1             # <<<<<<<<<<<<<<
@@ -3492,7 +3650,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
     __pyx_v_inptr = (__pyx_v_inptr + 1);
 
-    /* "fastparquet/cencoding.pyx":81
+    /* "fastparquet/cencoding.pyx":84
  *         data = inptr[0]
  *         inptr += 1
  *         for i in range(8):             # <<<<<<<<<<<<<<
@@ -3502,7 +3660,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
     for (__pyx_t_5 = 0; __pyx_t_5 < 8; __pyx_t_5+=1) {
       __pyx_v_i = __pyx_t_5;
 
-      /* "fastparquet/cencoding.pyx":82
+      /* "fastparquet/cencoding.pyx":85
  *         inptr += 1
  *         for i in range(8):
  *             outptr[0] = data & 1             # <<<<<<<<<<<<<<
@@ -3511,7 +3669,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
       (__pyx_v_outptr[0]) = (__pyx_v_data & 1);
 
-      /* "fastparquet/cencoding.pyx":83
+      /* "fastparquet/cencoding.pyx":86
  *         for i in range(8):
  *             outptr[0] = data & 1
  *             outptr += 1             # <<<<<<<<<<<<<<
@@ -3520,7 +3678,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
       __pyx_v_outptr = (__pyx_v_outptr + 1);
 
-      /* "fastparquet/cencoding.pyx":84
+      /* "fastparquet/cencoding.pyx":87
  *             outptr[0] = data & 1
  *             outptr += 1
  *             data >>= 1             # <<<<<<<<<<<<<<
@@ -3531,7 +3689,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
     }
   }
 
-  /* "fastparquet/cencoding.pyx":85
+  /* "fastparquet/cencoding.pyx":88
  *             outptr += 1
  *             data >>= 1
  *     if count % 8:             # <<<<<<<<<<<<<<
@@ -3541,7 +3699,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
   __pyx_t_1 = ((__pyx_v_count % 8) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":87
+    /* "fastparquet/cencoding.pyx":90
  *     if count % 8:
  *         # remaining values in the last byte
  *         data = <int32_t>inptr[0]             # <<<<<<<<<<<<<<
@@ -3550,7 +3708,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
     __pyx_v_data = ((int32_t)(__pyx_v_inptr[0]));
 
-    /* "fastparquet/cencoding.pyx":88
+    /* "fastparquet/cencoding.pyx":91
  *         # remaining values in the last byte
  *         data = <int32_t>inptr[0]
  *         inptr += 1             # <<<<<<<<<<<<<<
@@ -3559,7 +3717,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
     __pyx_v_inptr = (__pyx_v_inptr + 1);
 
-    /* "fastparquet/cencoding.pyx":89
+    /* "fastparquet/cencoding.pyx":92
  *         data = <int32_t>inptr[0]
  *         inptr += 1
  *         for i in range(count % 8):             # <<<<<<<<<<<<<<
@@ -3571,7 +3729,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "fastparquet/cencoding.pyx":90
+      /* "fastparquet/cencoding.pyx":93
  *         inptr += 1
  *         for i in range(count % 8):
  *             outptr[0] = data & 1             # <<<<<<<<<<<<<<
@@ -3580,7 +3738,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
       (__pyx_v_outptr[0]) = (__pyx_v_data & 1);
 
-      /* "fastparquet/cencoding.pyx":91
+      /* "fastparquet/cencoding.pyx":94
  *         for i in range(count % 8):
  *             outptr[0] = data & 1
  *             outptr += 1             # <<<<<<<<<<<<<<
@@ -3589,7 +3747,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
       __pyx_v_outptr = (__pyx_v_outptr + 1);
 
-      /* "fastparquet/cencoding.pyx":92
+      /* "fastparquet/cencoding.pyx":95
  *             outptr[0] = data & 1
  *             outptr += 1
  *             data >>= 1             # <<<<<<<<<<<<<<
@@ -3599,7 +3757,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
       __pyx_v_data = (__pyx_v_data >> 1);
     }
 
-    /* "fastparquet/cencoding.pyx":85
+    /* "fastparquet/cencoding.pyx":88
  *             outptr += 1
  *             data >>= 1
  *     if count % 8:             # <<<<<<<<<<<<<<
@@ -3608,7 +3766,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
   }
 
-  /* "fastparquet/cencoding.pyx":93
+  /* "fastparquet/cencoding.pyx":96
  *             outptr += 1
  *             data >>= 1
  *     file_obj.loc += (startcount + 7) // 8             # <<<<<<<<<<<<<<
@@ -3617,7 +3775,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
   __pyx_v_file_obj->loc = (__pyx_v_file_obj->loc + ((__pyx_v_startcount + 7) / 8));
 
-  /* "fastparquet/cencoding.pyx":94
+  /* "fastparquet/cencoding.pyx":97
  *             data >>= 1
  *     file_obj.loc += (startcount + 7) // 8
  *     o.loc += count             # <<<<<<<<<<<<<<
@@ -3626,7 +3784,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked1(struct __pyx_obj_11
  */
   __pyx_v_o->loc = (__pyx_v_o->loc + __pyx_v_count);
 
-  /* "fastparquet/cencoding.pyx":67
+  /* "fastparquet/cencoding.pyx":70
  * 
  * 
  * cpdef void read_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -3675,17 +3833,17 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_5read_bitpacked1(PyObject *__
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_count)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_bitpacked1", 1, 3, 3, 1); __PYX_ERR(0, 67, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_bitpacked1", 1, 3, 3, 1); __PYX_ERR(0, 70, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_bitpacked1", 1, 3, 3, 2); __PYX_ERR(0, 67, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_bitpacked1", 1, 3, 3, 2); __PYX_ERR(0, 70, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_bitpacked1") < 0)) __PYX_ERR(0, 67, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_bitpacked1") < 0)) __PYX_ERR(0, 70, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -3695,19 +3853,19 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_5read_bitpacked1(PyObject *__
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
     __pyx_v_file_obj = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[0]);
-    __pyx_v_count = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_count == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 67, __pyx_L3_error)
+    __pyx_v_count = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_count == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 70, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[2]);
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("read_bitpacked1", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 67, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("read_bitpacked1", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 70, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.read_bitpacked1", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 67, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 67, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 70, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 70, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_4read_bitpacked1(__pyx_self, __pyx_v_file_obj, __pyx_v_count, __pyx_v_o);
 
   /* function exit code */
@@ -3728,7 +3886,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_4read_bitpacked1(CYTHON_UNUSE
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("read_bitpacked1", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_read_bitpacked1(__pyx_v_file_obj, __pyx_v_count, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_read_bitpacked1(__pyx_v_file_obj, __pyx_v_count, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3745,7 +3903,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_4read_bitpacked1(CYTHON_UNUSE
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":97
+/* "fastparquet/cencoding.pyx":100
  * 
  * 
  * cpdef void write_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -3769,7 +3927,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
   int __pyx_t_5;
   __Pyx_RefNannySetupContext("write_bitpacked1", 0);
 
-  /* "fastparquet/cencoding.pyx":101
+  /* "fastparquet/cencoding.pyx":104
  *     cdef char * inptr
  *     cdef char * outptr
  *     cdef char data = 0             # <<<<<<<<<<<<<<
@@ -3778,7 +3936,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
   __pyx_v_data = 0;
 
-  /* "fastparquet/cencoding.pyx":104
+  /* "fastparquet/cencoding.pyx":107
  *     cdef int32_t counter, i
  *     cdef int64_t indata
  *     outptr = o.get_pointer()             # <<<<<<<<<<<<<<
@@ -3787,7 +3945,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
   __pyx_v_outptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_o);
 
-  /* "fastparquet/cencoding.pyx":105
+  /* "fastparquet/cencoding.pyx":108
  *     cdef int64_t indata
  *     outptr = o.get_pointer()
  *     inptr = file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -3796,7 +3954,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
   __pyx_v_inptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj);
 
-  /* "fastparquet/cencoding.pyx":106
+  /* "fastparquet/cencoding.pyx":109
  *     outptr = o.get_pointer()
  *     inptr = file_obj.get_pointer()
  *     for counter in range(count // 8):             # <<<<<<<<<<<<<<
@@ -3808,7 +3966,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_counter = __pyx_t_3;
 
-    /* "fastparquet/cencoding.pyx":108
+    /* "fastparquet/cencoding.pyx":111
  *     for counter in range(count // 8):
  *         # fetch a long in one op, instead of byte by byte
  *         indata = (<int64_t*>inptr)[0]             # <<<<<<<<<<<<<<
@@ -3817,7 +3975,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
     __pyx_v_indata = (((int64_t *)__pyx_v_inptr)[0]);
 
-    /* "fastparquet/cencoding.pyx":109
+    /* "fastparquet/cencoding.pyx":112
  *         # fetch a long in one op, instead of byte by byte
  *         indata = (<int64_t*>inptr)[0]
  *         inptr += 8             # <<<<<<<<<<<<<<
@@ -3826,7 +3984,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
     __pyx_v_inptr = (__pyx_v_inptr + 8);
 
-    /* "fastparquet/cencoding.pyx":110
+    /* "fastparquet/cencoding.pyx":113
  *         indata = (<int64_t*>inptr)[0]
  *         inptr += 8
  *         for i in range(8):             # <<<<<<<<<<<<<<
@@ -3836,7 +3994,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
     for (__pyx_t_4 = 0; __pyx_t_4 < 8; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "fastparquet/cencoding.pyx":111
+      /* "fastparquet/cencoding.pyx":114
  *         inptr += 8
  *         for i in range(8):
  *             data = data << 1 | (indata & 1)             # <<<<<<<<<<<<<<
@@ -3845,7 +4003,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
       __pyx_v_data = ((__pyx_v_data << 1) | (__pyx_v_indata & 1));
 
-      /* "fastparquet/cencoding.pyx":112
+      /* "fastparquet/cencoding.pyx":115
  *         for i in range(8):
  *             data = data << 1 | (indata & 1)
  *             indata >>= 8             # <<<<<<<<<<<<<<
@@ -3855,7 +4013,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
       __pyx_v_indata = (__pyx_v_indata >> 8);
     }
 
-    /* "fastparquet/cencoding.pyx":113
+    /* "fastparquet/cencoding.pyx":116
  *             data = data << 1 | (indata & 1)
  *             indata >>= 8
  *         outptr[0] = data             # <<<<<<<<<<<<<<
@@ -3864,7 +4022,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
     (__pyx_v_outptr[0]) = __pyx_v_data;
 
-    /* "fastparquet/cencoding.pyx":114
+    /* "fastparquet/cencoding.pyx":117
  *             indata >>= 8
  *         outptr[0] = data
  *         outptr += 1             # <<<<<<<<<<<<<<
@@ -3874,7 +4032,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
     __pyx_v_outptr = (__pyx_v_outptr + 1);
   }
 
-  /* "fastparquet/cencoding.pyx":115
+  /* "fastparquet/cencoding.pyx":118
  *         outptr[0] = data
  *         outptr += 1
  *     if count % 8:             # <<<<<<<<<<<<<<
@@ -3884,7 +4042,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
   __pyx_t_5 = ((__pyx_v_count % 8) != 0);
   if (__pyx_t_5) {
 
-    /* "fastparquet/cencoding.pyx":117
+    /* "fastparquet/cencoding.pyx":120
  *     if count % 8:
  *         # leftover partial byte
  *         data = 0             # <<<<<<<<<<<<<<
@@ -3893,7 +4051,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
     __pyx_v_data = 0;
 
-    /* "fastparquet/cencoding.pyx":118
+    /* "fastparquet/cencoding.pyx":121
  *         # leftover partial byte
  *         data = 0
  *         for i in range(count % 8):             # <<<<<<<<<<<<<<
@@ -3905,7 +4063,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
     for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
       __pyx_v_i = __pyx_t_3;
 
-      /* "fastparquet/cencoding.pyx":119
+      /* "fastparquet/cencoding.pyx":122
  *         data = 0
  *         for i in range(count % 8):
  *             data = data << 1 | (inptr[0] != 0)             # <<<<<<<<<<<<<<
@@ -3914,7 +4072,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
       __pyx_v_data = ((__pyx_v_data << 1) | ((__pyx_v_inptr[0]) != 0));
 
-      /* "fastparquet/cencoding.pyx":120
+      /* "fastparquet/cencoding.pyx":123
  *         for i in range(count % 8):
  *             data = data << 1 | (inptr[0] != 0)
  *             inptr += 1             # <<<<<<<<<<<<<<
@@ -3924,7 +4082,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
       __pyx_v_inptr = (__pyx_v_inptr + 1);
     }
 
-    /* "fastparquet/cencoding.pyx":121
+    /* "fastparquet/cencoding.pyx":124
  *             data = data << 1 | (inptr[0] != 0)
  *             inptr += 1
  *         outptr[0] = data             # <<<<<<<<<<<<<<
@@ -3933,7 +4091,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
     (__pyx_v_outptr[0]) = __pyx_v_data;
 
-    /* "fastparquet/cencoding.pyx":122
+    /* "fastparquet/cencoding.pyx":125
  *             inptr += 1
  *         outptr[0] = data
  *         outptr += 1             # <<<<<<<<<<<<<<
@@ -3942,7 +4100,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
     __pyx_v_outptr = (__pyx_v_outptr + 1);
 
-    /* "fastparquet/cencoding.pyx":115
+    /* "fastparquet/cencoding.pyx":118
  *         outptr[0] = data
  *         outptr += 1
  *     if count % 8:             # <<<<<<<<<<<<<<
@@ -3951,7 +4109,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
   }
 
-  /* "fastparquet/cencoding.pyx":123
+  /* "fastparquet/cencoding.pyx":126
  *         outptr[0] = data
  *         outptr += 1
  *     file_obj.loc += count * 4             # <<<<<<<<<<<<<<
@@ -3960,7 +4118,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
   __pyx_v_file_obj->loc = (__pyx_v_file_obj->loc + (__pyx_v_count * 4));
 
-  /* "fastparquet/cencoding.pyx":124
+  /* "fastparquet/cencoding.pyx":127
  *         outptr += 1
  *     file_obj.loc += count * 4
  *     o.loc += (count + 7) // 8             # <<<<<<<<<<<<<<
@@ -3969,7 +4127,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_bitpacked1(struct __pyx_obj_1
  */
   __pyx_v_o->loc = (__pyx_v_o->loc + ((__pyx_v_count + 7) / 8));
 
-  /* "fastparquet/cencoding.pyx":97
+  /* "fastparquet/cencoding.pyx":100
  * 
  * 
  * cpdef void write_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -4018,17 +4176,17 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7write_bitpacked1(PyObject *_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_count)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("write_bitpacked1", 1, 3, 3, 1); __PYX_ERR(0, 97, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("write_bitpacked1", 1, 3, 3, 1); __PYX_ERR(0, 100, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("write_bitpacked1", 1, 3, 3, 2); __PYX_ERR(0, 97, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("write_bitpacked1", 1, 3, 3, 2); __PYX_ERR(0, 100, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "write_bitpacked1") < 0)) __PYX_ERR(0, 97, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "write_bitpacked1") < 0)) __PYX_ERR(0, 100, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -4038,19 +4196,19 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7write_bitpacked1(PyObject *_
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
     __pyx_v_file_obj = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[0]);
-    __pyx_v_count = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_count == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L3_error)
+    __pyx_v_count = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_count == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[2]);
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("write_bitpacked1", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 97, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("write_bitpacked1", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 100, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.write_bitpacked1", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 97, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 100, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 100, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_6write_bitpacked1(__pyx_self, __pyx_v_file_obj, __pyx_v_count, __pyx_v_o);
 
   /* function exit code */
@@ -4071,7 +4229,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_6write_bitpacked1(CYTHON_UNUS
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("write_bitpacked1", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_write_bitpacked1(__pyx_v_file_obj, __pyx_v_count, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_write_bitpacked1(__pyx_v_file_obj, __pyx_v_count, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4088,7 +4246,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_6write_bitpacked1(CYTHON_UNUS
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":127
+/* "fastparquet/cencoding.pyx":130
  * 
  * 
  * cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, NumpyIO o, int32_t itemsize=4):             # <<<<<<<<<<<<<<
@@ -4117,7 +4275,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
     }
   }
 
-  /* "fastparquet/cencoding.pyx":133
+  /* "fastparquet/cencoding.pyx":136
  *     cdef:
  *         uint32_t count, mask, data, vals_left
  *         unsigned char left = 8, right = 0             # <<<<<<<<<<<<<<
@@ -4127,7 +4285,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
   __pyx_v_left = 8;
   __pyx_v_right = 0;
 
-  /* "fastparquet/cencoding.pyx":134
+  /* "fastparquet/cencoding.pyx":137
  *         uint32_t count, mask, data, vals_left
  *         unsigned char left = 8, right = 0
  *         char * inptr = file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -4136,7 +4294,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_inptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj);
 
-  /* "fastparquet/cencoding.pyx":135
+  /* "fastparquet/cencoding.pyx":138
  *         unsigned char left = 8, right = 0
  *         char * inptr = file_obj.get_pointer()
  *         char * outptr = o.get_pointer()             # <<<<<<<<<<<<<<
@@ -4145,7 +4303,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_outptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_o);
 
-  /* "fastparquet/cencoding.pyx":138
+  /* "fastparquet/cencoding.pyx":141
  *         char * endptr
  * 
  *     count = (header >> 1) * 8             # <<<<<<<<<<<<<<
@@ -4154,7 +4312,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_count = ((__pyx_v_header >> 1) * 8);
 
-  /* "fastparquet/cencoding.pyx":140
+  /* "fastparquet/cencoding.pyx":143
  *     count = (header >> 1) * 8
  *     # TODO: special case for width=1, 2, 4, 8
  *     if width == 1 and itemsize == 1:             # <<<<<<<<<<<<<<
@@ -4172,7 +4330,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":141
+    /* "fastparquet/cencoding.pyx":144
  *     # TODO: special case for width=1, 2, 4, 8
  *     if width == 1 and itemsize == 1:
  *         read_bitpacked1(file_obj, count, o)             # <<<<<<<<<<<<<<
@@ -4181,7 +4339,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
     __pyx_f_11fastparquet_9cencoding_read_bitpacked1(__pyx_v_file_obj, __pyx_v_count, __pyx_v_o, 0);
 
-    /* "fastparquet/cencoding.pyx":142
+    /* "fastparquet/cencoding.pyx":145
  *     if width == 1 and itemsize == 1:
  *         read_bitpacked1(file_obj, count, o)
  *         return             # <<<<<<<<<<<<<<
@@ -4190,7 +4348,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
     goto __pyx_L0;
 
-    /* "fastparquet/cencoding.pyx":140
+    /* "fastparquet/cencoding.pyx":143
  *     count = (header >> 1) * 8
  *     # TODO: special case for width=1, 2, 4, 8
  *     if width == 1 and itemsize == 1:             # <<<<<<<<<<<<<<
@@ -4199,7 +4357,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   }
 
-  /* "fastparquet/cencoding.pyx":143
+  /* "fastparquet/cencoding.pyx":146
  *         read_bitpacked1(file_obj, count, o)
  *         return
  *     endptr = (o.nbytes - o.loc) + outptr - itemsize             # <<<<<<<<<<<<<<
@@ -4208,7 +4366,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_endptr = (((__pyx_v_o->nbytes - __pyx_v_o->loc) + __pyx_v_outptr) - __pyx_v_itemsize);
 
-  /* "fastparquet/cencoding.pyx":144
+  /* "fastparquet/cencoding.pyx":147
  *         return
  *     endptr = (o.nbytes - o.loc) + outptr - itemsize
  *     mask = _mask_for_bits(width)             # <<<<<<<<<<<<<<
@@ -4217,7 +4375,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_mask = __pyx_f_11fastparquet_9cencoding__mask_for_bits(__pyx_v_width);
 
-  /* "fastparquet/cencoding.pyx":145
+  /* "fastparquet/cencoding.pyx":148
  *     endptr = (o.nbytes - o.loc) + outptr - itemsize
  *     mask = _mask_for_bits(width)
  *     data = 0xff & <int32_t>inptr[0]             # <<<<<<<<<<<<<<
@@ -4226,7 +4384,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_data = (0xff & ((int32_t)(__pyx_v_inptr[0])));
 
-  /* "fastparquet/cencoding.pyx":146
+  /* "fastparquet/cencoding.pyx":149
  *     mask = _mask_for_bits(width)
  *     data = 0xff & <int32_t>inptr[0]
  *     inptr += 1             # <<<<<<<<<<<<<<
@@ -4235,7 +4393,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_inptr = (__pyx_v_inptr + 1);
 
-  /* "fastparquet/cencoding.pyx":147
+  /* "fastparquet/cencoding.pyx":150
  *     data = 0xff & <int32_t>inptr[0]
  *     inptr += 1
  *     while count:             # <<<<<<<<<<<<<<
@@ -4246,7 +4404,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
     __pyx_t_1 = (__pyx_v_count != 0);
     if (!__pyx_t_1) break;
 
-    /* "fastparquet/cencoding.pyx":148
+    /* "fastparquet/cencoding.pyx":151
  *     inptr += 1
  *     while count:
  *         if right > 8:             # <<<<<<<<<<<<<<
@@ -4256,7 +4414,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
     __pyx_t_1 = ((__pyx_v_right > 8) != 0);
     if (__pyx_t_1) {
 
-      /* "fastparquet/cencoding.pyx":149
+      /* "fastparquet/cencoding.pyx":152
  *     while count:
  *         if right > 8:
  *             data >>= 8             # <<<<<<<<<<<<<<
@@ -4265,7 +4423,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       __pyx_v_data = (__pyx_v_data >> 8);
 
-      /* "fastparquet/cencoding.pyx":150
+      /* "fastparquet/cencoding.pyx":153
  *         if right > 8:
  *             data >>= 8
  *             left -= 8             # <<<<<<<<<<<<<<
@@ -4274,7 +4432,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       __pyx_v_left = (__pyx_v_left - 8);
 
-      /* "fastparquet/cencoding.pyx":151
+      /* "fastparquet/cencoding.pyx":154
  *             data >>= 8
  *             left -= 8
  *             right -= 8             # <<<<<<<<<<<<<<
@@ -4283,7 +4441,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       __pyx_v_right = (__pyx_v_right - 8);
 
-      /* "fastparquet/cencoding.pyx":148
+      /* "fastparquet/cencoding.pyx":151
  *     inptr += 1
  *     while count:
  *         if right > 8:             # <<<<<<<<<<<<<<
@@ -4293,7 +4451,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
       goto __pyx_L8;
     }
 
-    /* "fastparquet/cencoding.pyx":152
+    /* "fastparquet/cencoding.pyx":155
  *             left -= 8
  *             right -= 8
  *         elif left - right < width:             # <<<<<<<<<<<<<<
@@ -4303,7 +4461,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
     __pyx_t_1 = (((__pyx_v_left - __pyx_v_right) < __pyx_v_width) != 0);
     if (__pyx_t_1) {
 
-      /* "fastparquet/cencoding.pyx":153
+      /* "fastparquet/cencoding.pyx":156
  *             right -= 8
  *         elif left - right < width:
  *             data |= (inptr[0] & 0xff) << left             # <<<<<<<<<<<<<<
@@ -4312,7 +4470,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       __pyx_v_data = (__pyx_v_data | (((__pyx_v_inptr[0]) & 0xff) << __pyx_v_left));
 
-      /* "fastparquet/cencoding.pyx":154
+      /* "fastparquet/cencoding.pyx":157
  *         elif left - right < width:
  *             data |= (inptr[0] & 0xff) << left
  *             inptr += 1             # <<<<<<<<<<<<<<
@@ -4321,7 +4479,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       __pyx_v_inptr = (__pyx_v_inptr + 1);
 
-      /* "fastparquet/cencoding.pyx":155
+      /* "fastparquet/cencoding.pyx":158
  *             data |= (inptr[0] & 0xff) << left
  *             inptr += 1
  *             left += 8             # <<<<<<<<<<<<<<
@@ -4330,7 +4488,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       __pyx_v_left = (__pyx_v_left + 8);
 
-      /* "fastparquet/cencoding.pyx":152
+      /* "fastparquet/cencoding.pyx":155
  *             left -= 8
  *             right -= 8
  *         elif left - right < width:             # <<<<<<<<<<<<<<
@@ -4340,7 +4498,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
       goto __pyx_L8;
     }
 
-    /* "fastparquet/cencoding.pyx":157
+    /* "fastparquet/cencoding.pyx":160
  *             left += 8
  *         else:
  *             if outptr <= endptr:             # <<<<<<<<<<<<<<
@@ -4351,7 +4509,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
       __pyx_t_1 = ((__pyx_v_outptr <= __pyx_v_endptr) != 0);
       if (__pyx_t_1) {
 
-        /* "fastparquet/cencoding.pyx":158
+        /* "fastparquet/cencoding.pyx":161
  *         else:
  *             if outptr <= endptr:
  *                 if itemsize == 4:             # <<<<<<<<<<<<<<
@@ -4361,7 +4519,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
         __pyx_t_1 = ((__pyx_v_itemsize == 4) != 0);
         if (__pyx_t_1) {
 
-          /* "fastparquet/cencoding.pyx":159
+          /* "fastparquet/cencoding.pyx":162
  *             if outptr <= endptr:
  *                 if itemsize == 4:
  *                     (<int32_t*>outptr)[0] = <int32_t>(data >> right & mask)             # <<<<<<<<<<<<<<
@@ -4370,7 +4528,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
           (((int32_t *)__pyx_v_outptr)[0]) = ((int32_t)((__pyx_v_data >> __pyx_v_right) & __pyx_v_mask));
 
-          /* "fastparquet/cencoding.pyx":160
+          /* "fastparquet/cencoding.pyx":163
  *                 if itemsize == 4:
  *                     (<int32_t*>outptr)[0] = <int32_t>(data >> right & mask)
  *                     outptr += 4             # <<<<<<<<<<<<<<
@@ -4379,7 +4537,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
           __pyx_v_outptr = (__pyx_v_outptr + 4);
 
-          /* "fastparquet/cencoding.pyx":158
+          /* "fastparquet/cencoding.pyx":161
  *         else:
  *             if outptr <= endptr:
  *                 if itemsize == 4:             # <<<<<<<<<<<<<<
@@ -4389,7 +4547,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
           goto __pyx_L10;
         }
 
-        /* "fastparquet/cencoding.pyx":162
+        /* "fastparquet/cencoding.pyx":165
  *                     outptr += 4
  *                 else:
  *                     outptr[0] = data >> right & mask             # <<<<<<<<<<<<<<
@@ -4399,7 +4557,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
         /*else*/ {
           (__pyx_v_outptr[0]) = ((__pyx_v_data >> __pyx_v_right) & __pyx_v_mask);
 
-          /* "fastparquet/cencoding.pyx":163
+          /* "fastparquet/cencoding.pyx":166
  *                 else:
  *                     outptr[0] = data >> right & mask
  *                     outptr += 1             # <<<<<<<<<<<<<<
@@ -4410,7 +4568,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
         }
         __pyx_L10:;
 
-        /* "fastparquet/cencoding.pyx":157
+        /* "fastparquet/cencoding.pyx":160
  *             left += 8
  *         else:
  *             if outptr <= endptr:             # <<<<<<<<<<<<<<
@@ -4419,7 +4577,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       }
 
-      /* "fastparquet/cencoding.pyx":164
+      /* "fastparquet/cencoding.pyx":167
  *                     outptr[0] = data >> right & mask
  *                     outptr += 1
  *             count -= 1             # <<<<<<<<<<<<<<
@@ -4428,7 +4586,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
       __pyx_v_count = (__pyx_v_count - 1);
 
-      /* "fastparquet/cencoding.pyx":165
+      /* "fastparquet/cencoding.pyx":168
  *                     outptr += 1
  *             count -= 1
  *             right += width             # <<<<<<<<<<<<<<
@@ -4440,7 +4598,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
     __pyx_L8:;
   }
 
-  /* "fastparquet/cencoding.pyx":166
+  /* "fastparquet/cencoding.pyx":169
  *             count -= 1
  *             right += width
  *     o.loc = o.loc + outptr - o.get_pointer()             # <<<<<<<<<<<<<<
@@ -4449,7 +4607,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_o->loc = ((__pyx_v_o->loc + __pyx_v_outptr) - __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_o));
 
-  /* "fastparquet/cencoding.pyx":167
+  /* "fastparquet/cencoding.pyx":170
  *             right += width
  *     o.loc = o.loc + outptr - o.get_pointer()
  *     file_obj.loc += inptr - file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -4458,7 +4616,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_bitpacked(struct __pyx_obj_11f
  */
   __pyx_v_file_obj->loc = (__pyx_v_file_obj->loc + (__pyx_v_inptr - __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj)));
 
-  /* "fastparquet/cencoding.pyx":127
+  /* "fastparquet/cencoding.pyx":130
  * 
  * 
  * cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, NumpyIO o, int32_t itemsize=4):             # <<<<<<<<<<<<<<
@@ -4515,19 +4673,19 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_9read_bitpacked(PyObject *__p
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_header)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, 1); __PYX_ERR(0, 127, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, 1); __PYX_ERR(0, 130, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, 2); __PYX_ERR(0, 127, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, 2); __PYX_ERR(0, 130, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, 3); __PYX_ERR(0, 127, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, 3); __PYX_ERR(0, 130, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
@@ -4537,7 +4695,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_9read_bitpacked(PyObject *__p
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_bitpacked") < 0)) __PYX_ERR(0, 127, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_bitpacked") < 0)) __PYX_ERR(0, 130, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4552,25 +4710,25 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_9read_bitpacked(PyObject *__p
       }
     }
     __pyx_v_file_obj = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[0]);
-    __pyx_v_header = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_header == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L3_error)
-    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[2]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L3_error)
+    __pyx_v_header = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_header == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 130, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[2]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 130, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[3]);
     if (values[4]) {
-      __pyx_v_itemsize = __Pyx_PyInt_As_int32_t(values[4]); if (unlikely((__pyx_v_itemsize == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L3_error)
+      __pyx_v_itemsize = __Pyx_PyInt_As_int32_t(values[4]); if (unlikely((__pyx_v_itemsize == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 130, __pyx_L3_error)
     } else {
       __pyx_v_itemsize = ((int32_t)4);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 127, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("read_bitpacked", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 130, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.read_bitpacked", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 127, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 127, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 130, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 130, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_8read_bitpacked(__pyx_self, __pyx_v_file_obj, __pyx_v_header, __pyx_v_width, __pyx_v_o, __pyx_v_itemsize);
 
   /* function exit code */
@@ -4595,7 +4753,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_8read_bitpacked(CYTHON_UNUSED
   __pyx_t_1.__pyx_n = 1;
   __pyx_t_1.itemsize = __pyx_v_itemsize;
   __pyx_f_11fastparquet_9cencoding_read_bitpacked(__pyx_v_file_obj, __pyx_v_header, __pyx_v_width, __pyx_v_o, 0, &__pyx_t_1); 
-  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -4612,7 +4770,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_8read_bitpacked(CYTHON_UNUSED
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":170
+/* "fastparquet/cencoding.pyx":173
  * 
  * 
  * cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):             # <<<<<<<<<<<<<<
@@ -4631,7 +4789,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("read_unsigned_var_int", 0);
 
-  /* "fastparquet/cencoding.pyx":174
+  /* "fastparquet/cencoding.pyx":177
  *     file-obj is a NumpyIO of bytes; avoids struct to allow numba-jit
  *     """
  *     cdef uint64_t result = 0             # <<<<<<<<<<<<<<
@@ -4640,7 +4798,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
   __pyx_v_result = 0;
 
-  /* "fastparquet/cencoding.pyx":175
+  /* "fastparquet/cencoding.pyx":178
  *     """
  *     cdef uint64_t result = 0
  *     cdef int32_t shift = 0             # <<<<<<<<<<<<<<
@@ -4649,7 +4807,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
   __pyx_v_shift = 0;
 
-  /* "fastparquet/cencoding.pyx":177
+  /* "fastparquet/cencoding.pyx":180
  *     cdef int32_t shift = 0
  *     cdef char byte
  *     cdef char * inptr = file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -4658,7 +4816,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
   __pyx_v_inptr = __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj);
 
-  /* "fastparquet/cencoding.pyx":179
+  /* "fastparquet/cencoding.pyx":182
  *     cdef char * inptr = file_obj.get_pointer()
  * 
  *     while True:             # <<<<<<<<<<<<<<
@@ -4667,7 +4825,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
   while (1) {
 
-    /* "fastparquet/cencoding.pyx":180
+    /* "fastparquet/cencoding.pyx":183
  * 
  *     while True:
  *         byte = inptr[0]             # <<<<<<<<<<<<<<
@@ -4676,7 +4834,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
     __pyx_v_byte = (__pyx_v_inptr[0]);
 
-    /* "fastparquet/cencoding.pyx":181
+    /* "fastparquet/cencoding.pyx":184
  *     while True:
  *         byte = inptr[0]
  *         inptr += 1             # <<<<<<<<<<<<<<
@@ -4685,7 +4843,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
     __pyx_v_inptr = (__pyx_v_inptr + 1);
 
-    /* "fastparquet/cencoding.pyx":182
+    /* "fastparquet/cencoding.pyx":185
  *         byte = inptr[0]
  *         inptr += 1
  *         result |= (<int64_t>(byte & 0x7F) << shift)             # <<<<<<<<<<<<<<
@@ -4694,7 +4852,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
     __pyx_v_result = (__pyx_v_result | (((int64_t)(__pyx_v_byte & 0x7F)) << __pyx_v_shift));
 
-    /* "fastparquet/cencoding.pyx":183
+    /* "fastparquet/cencoding.pyx":186
  *         inptr += 1
  *         result |= (<int64_t>(byte & 0x7F) << shift)
  *         if (byte & 0x80) == 0:             # <<<<<<<<<<<<<<
@@ -4704,7 +4862,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
     __pyx_t_1 = (((__pyx_v_byte & 0x80) == 0) != 0);
     if (__pyx_t_1) {
 
-      /* "fastparquet/cencoding.pyx":184
+      /* "fastparquet/cencoding.pyx":187
  *         result |= (<int64_t>(byte & 0x7F) << shift)
  *         if (byte & 0x80) == 0:
  *             break             # <<<<<<<<<<<<<<
@@ -4713,7 +4871,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
       goto __pyx_L4_break;
 
-      /* "fastparquet/cencoding.pyx":183
+      /* "fastparquet/cencoding.pyx":186
  *         inptr += 1
  *         result |= (<int64_t>(byte & 0x7F) << shift)
  *         if (byte & 0x80) == 0:             # <<<<<<<<<<<<<<
@@ -4722,7 +4880,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
     }
 
-    /* "fastparquet/cencoding.pyx":185
+    /* "fastparquet/cencoding.pyx":188
  *         if (byte & 0x80) == 0:
  *             break
  *         shift += 7             # <<<<<<<<<<<<<<
@@ -4733,7 +4891,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
   }
   __pyx_L4_break:;
 
-  /* "fastparquet/cencoding.pyx":186
+  /* "fastparquet/cencoding.pyx":189
  *             break
  *         shift += 7
  *     file_obj.loc += inptr - file_obj.get_pointer()             # <<<<<<<<<<<<<<
@@ -4742,7 +4900,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
  */
   __pyx_v_file_obj->loc = (__pyx_v_file_obj->loc + (__pyx_v_inptr - __pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_file_obj)));
 
-  /* "fastparquet/cencoding.pyx":187
+  /* "fastparquet/cencoding.pyx":190
  *         shift += 7
  *     file_obj.loc += inptr - file_obj.get_pointer()
  *     return result             # <<<<<<<<<<<<<<
@@ -4752,7 +4910,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(struct __
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":170
+  /* "fastparquet/cencoding.pyx":173
  * 
  * 
  * cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):             # <<<<<<<<<<<<<<
@@ -4776,7 +4934,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_11read_unsigned_var_int(PyObj
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("read_unsigned_var_int (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 170, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 173, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_10read_unsigned_var_int(__pyx_self, ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)__pyx_v_file_obj));
 
   /* function exit code */
@@ -4797,7 +4955,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_10read_unsigned_var_int(CYTHO
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("read_unsigned_var_int", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint64_t(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_file_obj, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint64_t(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_file_obj, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4814,7 +4972,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_10read_unsigned_var_int(CYTHO
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":190
+/* "fastparquet/cencoding.pyx":193
  * 
  * 
  * cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t length, NumpyIO o,             # <<<<<<<<<<<<<<
@@ -4840,7 +4998,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
     }
   }
 
-  /* "fastparquet/cencoding.pyx":203
+  /* "fastparquet/cencoding.pyx":206
  *     """
  *     cdef int32_t start, header
  *     if length is False:             # <<<<<<<<<<<<<<
@@ -4850,7 +5008,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
   __pyx_t_1 = ((__pyx_v_length == 0) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":204
+    /* "fastparquet/cencoding.pyx":207
  *     cdef int32_t start, header
  *     if length is False:
  *         length = <uint32_t>io_obj.read_int()             # <<<<<<<<<<<<<<
@@ -4859,7 +5017,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
  */
     __pyx_v_length = ((uint32_t)__pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(__pyx_v_io_obj, 0));
 
-    /* "fastparquet/cencoding.pyx":203
+    /* "fastparquet/cencoding.pyx":206
  *     """
  *     cdef int32_t start, header
  *     if length is False:             # <<<<<<<<<<<<<<
@@ -4868,7 +5026,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
  */
   }
 
-  /* "fastparquet/cencoding.pyx":205
+  /* "fastparquet/cencoding.pyx":208
  *     if length is False:
  *         length = <uint32_t>io_obj.read_int()
  *     start = io_obj.loc             # <<<<<<<<<<<<<<
@@ -4878,7 +5036,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
   __pyx_t_2 = __pyx_v_io_obj->loc;
   __pyx_v_start = __pyx_t_2;
 
-  /* "fastparquet/cencoding.pyx":206
+  /* "fastparquet/cencoding.pyx":209
  *         length = <uint32_t>io_obj.read_int()
  *     start = io_obj.loc
  *     while io_obj.loc - start < length and o.loc < o.nbytes:             # <<<<<<<<<<<<<<
@@ -4897,7 +5055,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
     __pyx_L6_bool_binop_done:;
     if (!__pyx_t_1) break;
 
-    /* "fastparquet/cencoding.pyx":207
+    /* "fastparquet/cencoding.pyx":210
  *     start = io_obj.loc
  *     while io_obj.loc - start < length and o.loc < o.nbytes:
  *         header = <int32_t>read_unsigned_var_int(io_obj)             # <<<<<<<<<<<<<<
@@ -4906,7 +5064,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
  */
     __pyx_v_header = ((int32_t)__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_io_obj, 0));
 
-    /* "fastparquet/cencoding.pyx":208
+    /* "fastparquet/cencoding.pyx":211
  *     while io_obj.loc - start < length and o.loc < o.nbytes:
  *         header = <int32_t>read_unsigned_var_int(io_obj)
  *         if header & 1 == 0:             # <<<<<<<<<<<<<<
@@ -4916,7 +5074,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
     __pyx_t_1 = (((__pyx_v_header & 1) == 0) != 0);
     if (__pyx_t_1) {
 
-      /* "fastparquet/cencoding.pyx":209
+      /* "fastparquet/cencoding.pyx":212
  *         header = <int32_t>read_unsigned_var_int(io_obj)
  *         if header & 1 == 0:
  *             read_rle(io_obj, header, width, o, itemsize)             # <<<<<<<<<<<<<<
@@ -4927,7 +5085,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
       __pyx_t_4.itemsize = __pyx_v_itemsize;
       __pyx_f_11fastparquet_9cencoding_read_rle(__pyx_v_io_obj, __pyx_v_header, __pyx_v_width, __pyx_v_o, 0, &__pyx_t_4); 
 
-      /* "fastparquet/cencoding.pyx":208
+      /* "fastparquet/cencoding.pyx":211
  *     while io_obj.loc - start < length and o.loc < o.nbytes:
  *         header = <int32_t>read_unsigned_var_int(io_obj)
  *         if header & 1 == 0:             # <<<<<<<<<<<<<<
@@ -4937,7 +5095,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
       goto __pyx_L8;
     }
 
-    /* "fastparquet/cencoding.pyx":211
+    /* "fastparquet/cencoding.pyx":214
  *             read_rle(io_obj, header, width, o, itemsize)
  *         else:
  *             read_bitpacked(io_obj, header, width, o, itemsize)             # <<<<<<<<<<<<<<
@@ -4952,7 +5110,7 @@ static void __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(struct _
     __pyx_L8:;
   }
 
-  /* "fastparquet/cencoding.pyx":190
+  /* "fastparquet/cencoding.pyx":193
  * 
  * 
  * cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t length, NumpyIO o,             # <<<<<<<<<<<<<<
@@ -5008,19 +5166,19 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_13read_rle_bit_packed_hybrid(
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, 1); __PYX_ERR(0, 190, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, 1); __PYX_ERR(0, 193, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_length)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, 2); __PYX_ERR(0, 190, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, 2); __PYX_ERR(0, 193, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, 3); __PYX_ERR(0, 190, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, 3); __PYX_ERR(0, 193, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
@@ -5030,7 +5188,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_13read_rle_bit_packed_hybrid(
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_rle_bit_packed_hybrid") < 0)) __PYX_ERR(0, 190, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_rle_bit_packed_hybrid") < 0)) __PYX_ERR(0, 193, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -5045,25 +5203,25 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_13read_rle_bit_packed_hybrid(
       }
     }
     __pyx_v_io_obj = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[0]);
-    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
-    __pyx_v_length = __Pyx_PyInt_As_uint32_t(values[2]); if (unlikely((__pyx_v_length == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 193, __pyx_L3_error)
+    __pyx_v_length = __Pyx_PyInt_As_uint32_t(values[2]); if (unlikely((__pyx_v_length == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 193, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[3]);
     if (values[4]) {
-      __pyx_v_itemsize = __Pyx_PyInt_As_int32_t(values[4]); if (unlikely((__pyx_v_itemsize == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 191, __pyx_L3_error)
+      __pyx_v_itemsize = __Pyx_PyInt_As_int32_t(values[4]); if (unlikely((__pyx_v_itemsize == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 194, __pyx_L3_error)
     } else {
       __pyx_v_itemsize = ((int32_t)4);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 190, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("read_rle_bit_packed_hybrid", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 193, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.read_rle_bit_packed_hybrid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_io_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "io_obj", 0))) __PYX_ERR(0, 190, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 190, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_io_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "io_obj", 0))) __PYX_ERR(0, 193, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 193, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_12read_rle_bit_packed_hybrid(__pyx_self, __pyx_v_io_obj, __pyx_v_width, __pyx_v_length, __pyx_v_o, __pyx_v_itemsize);
 
   /* function exit code */
@@ -5088,7 +5246,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12read_rle_bit_packed_hybrid(
   __pyx_t_1.__pyx_n = 1;
   __pyx_t_1.itemsize = __pyx_v_itemsize;
   __pyx_f_11fastparquet_9cencoding_read_rle_bit_packed_hybrid(__pyx_v_io_obj, __pyx_v_width, __pyx_v_length, __pyx_v_o, 0, &__pyx_t_1); 
-  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -5105,7 +5263,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12read_rle_bit_packed_hybrid(
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":213
+/* "fastparquet/cencoding.pyx":216
  *             read_bitpacked(io_obj, header, width, o, itemsize)
  * 
  * cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -5145,7 +5303,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("delta_binary_unpack", 0);
 
-  /* "fastparquet/cencoding.pyx":215
+  /* "fastparquet/cencoding.pyx":218
  * cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
  *     cdef:
  *         uint64_t block_size = read_unsigned_var_int(file_obj)             # <<<<<<<<<<<<<<
@@ -5154,7 +5312,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
   __pyx_v_block_size = __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_file_obj, 0);
 
-  /* "fastparquet/cencoding.pyx":216
+  /* "fastparquet/cencoding.pyx":219
  *     cdef:
  *         uint64_t block_size = read_unsigned_var_int(file_obj)
  *         uint64_t miniblock_per_block = read_unsigned_var_int(file_obj)             # <<<<<<<<<<<<<<
@@ -5163,7 +5321,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
   __pyx_v_miniblock_per_block = __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_file_obj, 0);
 
-  /* "fastparquet/cencoding.pyx":217
+  /* "fastparquet/cencoding.pyx":220
  *         uint64_t block_size = read_unsigned_var_int(file_obj)
  *         uint64_t miniblock_per_block = read_unsigned_var_int(file_obj)
  *         int64_t count = read_unsigned_var_int(file_obj)             # <<<<<<<<<<<<<<
@@ -5172,7 +5330,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
   __pyx_v_count = __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_file_obj, 0);
 
-  /* "fastparquet/cencoding.pyx":218
+  /* "fastparquet/cencoding.pyx":221
  *         uint64_t miniblock_per_block = read_unsigned_var_int(file_obj)
  *         int64_t count = read_unsigned_var_int(file_obj)
  *         int32_t value = zigzag_int(read_unsigned_var_int(file_obj))             # <<<<<<<<<<<<<<
@@ -5181,7 +5339,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
   __pyx_v_value = __pyx_f_11fastparquet_9cencoding_zigzag_int(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_file_obj, 0));
 
-  /* "fastparquet/cencoding.pyx":222
+  /* "fastparquet/cencoding.pyx":225
  *         const uint8_t[:] bitwidths
  *         char bitwidth, header
  *     values_per_miniblock = block_size // miniblock_per_block             # <<<<<<<<<<<<<<
@@ -5190,7 +5348,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
   __pyx_v_values_per_miniblock = (__pyx_v_block_size / __pyx_v_miniblock_per_block);
 
-  /* "fastparquet/cencoding.pyx":223
+  /* "fastparquet/cencoding.pyx":226
  *         char bitwidth, header
  *     values_per_miniblock = block_size // miniblock_per_block
  *     while True:             # <<<<<<<<<<<<<<
@@ -5199,7 +5357,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
   while (1) {
 
-    /* "fastparquet/cencoding.pyx":224
+    /* "fastparquet/cencoding.pyx":227
  *     values_per_miniblock = block_size // miniblock_per_block
  *     while True:
  *         min_delta = zigzag_int(read_unsigned_var_int(file_obj))             # <<<<<<<<<<<<<<
@@ -5208,7 +5366,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
     __pyx_v_min_delta = __pyx_f_11fastparquet_9cencoding_zigzag_int(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_file_obj, 0));
 
-    /* "fastparquet/cencoding.pyx":225
+    /* "fastparquet/cencoding.pyx":228
  *     while True:
  *         min_delta = zigzag_int(read_unsigned_var_int(file_obj))
  *         bitwidths = file_obj.read(miniblock_per_block)             # <<<<<<<<<<<<<<
@@ -5217,13 +5375,13 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
     __pyx_t_2.__pyx_n = 1;
     __pyx_t_2.x = __pyx_v_miniblock_per_block;
-    __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_7NumpyIO_read(__pyx_v_file_obj, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 225, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_7NumpyIO_read(__pyx_v_file_obj, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 228, __pyx_L1_error)
     __PYX_XDEC_MEMVIEW(&__pyx_v_bitwidths, 1);
     __pyx_v_bitwidths = __pyx_t_1;
     __pyx_t_1.memview = NULL;
     __pyx_t_1.data = NULL;
 
-    /* "fastparquet/cencoding.pyx":226
+    /* "fastparquet/cencoding.pyx":229
  *         min_delta = zigzag_int(read_unsigned_var_int(file_obj))
  *         bitwidths = file_obj.read(miniblock_per_block)
  *         for i in range(miniblock_per_block):             # <<<<<<<<<<<<<<
@@ -5235,7 +5393,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
     for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
       __pyx_v_i = __pyx_t_5;
 
-      /* "fastparquet/cencoding.pyx":227
+      /* "fastparquet/cencoding.pyx":230
  *         bitwidths = file_obj.read(miniblock_per_block)
  *         for i in range(miniblock_per_block):
  *             bitwidth = bitwidths[i]             # <<<<<<<<<<<<<<
@@ -5245,7 +5403,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
       __pyx_t_6 = __pyx_v_i;
       __pyx_v_bitwidth = (*((uint8_t const  *) ( /* dim=0 */ (__pyx_v_bitwidths.data + __pyx_t_6 * __pyx_v_bitwidths.strides[0]) )));
 
-      /* "fastparquet/cencoding.pyx":228
+      /* "fastparquet/cencoding.pyx":231
  *         for i in range(miniblock_per_block):
  *             bitwidth = bitwidths[i]
  *             if bitwidth:             # <<<<<<<<<<<<<<
@@ -5255,7 +5413,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
       __pyx_t_7 = (__pyx_v_bitwidth != 0);
       if (__pyx_t_7) {
 
-        /* "fastparquet/cencoding.pyx":229
+        /* "fastparquet/cencoding.pyx":232
  *             bitwidth = bitwidths[i]
  *             if bitwidth:
  *                 header = ((block_size // miniblock_per_block) // 8) << 1             # <<<<<<<<<<<<<<
@@ -5264,7 +5422,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
         __pyx_v_header = (((__pyx_v_block_size / __pyx_v_miniblock_per_block) / 8) << 1);
 
-        /* "fastparquet/cencoding.pyx":230
+        /* "fastparquet/cencoding.pyx":233
  *             if bitwidth:
  *                 header = ((block_size // miniblock_per_block) // 8) << 1
  *                 read_bitpacked(file_obj, header, bitwidth, o, itemsize=4)             # <<<<<<<<<<<<<<
@@ -5275,7 +5433,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
         __pyx_t_8.itemsize = 4;
         __pyx_f_11fastparquet_9cencoding_read_bitpacked(__pyx_v_file_obj, __pyx_v_header, __pyx_v_bitwidth, __pyx_v_o, 0, &__pyx_t_8); 
 
-        /* "fastparquet/cencoding.pyx":231
+        /* "fastparquet/cencoding.pyx":234
  *                 header = ((block_size // miniblock_per_block) // 8) << 1
  *                 read_bitpacked(file_obj, header, bitwidth, o, itemsize=4)
  *                 for j in range(values_per_miniblock):             # <<<<<<<<<<<<<<
@@ -5287,7 +5445,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
         for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
           __pyx_v_j = __pyx_t_11;
 
-          /* "fastparquet/cencoding.pyx":232
+          /* "fastparquet/cencoding.pyx":235
  *                 read_bitpacked(file_obj, header, bitwidth, o, itemsize=4)
  *                 for j in range(values_per_miniblock):
  *                     temp = o.read_int()             # <<<<<<<<<<<<<<
@@ -5296,7 +5454,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
           __pyx_v_temp = __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(__pyx_v_o, 0);
 
-          /* "fastparquet/cencoding.pyx":233
+          /* "fastparquet/cencoding.pyx":236
  *                 for j in range(values_per_miniblock):
  *                     temp = o.read_int()
  *                     o.seek(-4, 1)             # <<<<<<<<<<<<<<
@@ -5307,7 +5465,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
           __pyx_t_12.whence = 1;
           __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(__pyx_v_o, -4, 0, &__pyx_t_12); 
 
-          /* "fastparquet/cencoding.pyx":234
+          /* "fastparquet/cencoding.pyx":237
  *                     temp = o.read_int()
  *                     o.seek(-4, 1)
  *                     o.write_int(value)             # <<<<<<<<<<<<<<
@@ -5316,7 +5474,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
           __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(__pyx_v_o, __pyx_v_value, 0);
 
-          /* "fastparquet/cencoding.pyx":235
+          /* "fastparquet/cencoding.pyx":238
  *                     o.seek(-4, 1)
  *                     o.write_int(value)
  *                     value += min_delta + temp             # <<<<<<<<<<<<<<
@@ -5326,7 +5484,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
           __pyx_v_value = (__pyx_v_value + (__pyx_v_min_delta + __pyx_v_temp));
         }
 
-        /* "fastparquet/cencoding.pyx":228
+        /* "fastparquet/cencoding.pyx":231
  *         for i in range(miniblock_per_block):
  *             bitwidth = bitwidths[i]
  *             if bitwidth:             # <<<<<<<<<<<<<<
@@ -5336,7 +5494,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
         goto __pyx_L7;
       }
 
-      /* "fastparquet/cencoding.pyx":237
+      /* "fastparquet/cencoding.pyx":240
  *                     value += min_delta + temp
  *             else:
  *                 for j in range(values_per_miniblock):             # <<<<<<<<<<<<<<
@@ -5349,7 +5507,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
         for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
           __pyx_v_j = __pyx_t_11;
 
-          /* "fastparquet/cencoding.pyx":238
+          /* "fastparquet/cencoding.pyx":241
  *             else:
  *                 for j in range(values_per_miniblock):
  *                     o.write_int(value)             # <<<<<<<<<<<<<<
@@ -5358,7 +5516,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
           __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(__pyx_v_o, __pyx_v_value, 0);
 
-          /* "fastparquet/cencoding.pyx":239
+          /* "fastparquet/cencoding.pyx":242
  *                 for j in range(values_per_miniblock):
  *                     o.write_int(value)
  *                     value += min_delta             # <<<<<<<<<<<<<<
@@ -5370,7 +5528,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
       }
       __pyx_L7:;
 
-      /* "fastparquet/cencoding.pyx":240
+      /* "fastparquet/cencoding.pyx":243
  *                     o.write_int(value)
  *                     value += min_delta
  *             count -= values_per_miniblock             # <<<<<<<<<<<<<<
@@ -5379,7 +5537,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
       __pyx_v_count = (__pyx_v_count - __pyx_v_values_per_miniblock);
 
-      /* "fastparquet/cencoding.pyx":241
+      /* "fastparquet/cencoding.pyx":244
  *                     value += min_delta
  *             count -= values_per_miniblock
  *             if count <= 0:             # <<<<<<<<<<<<<<
@@ -5389,7 +5547,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
       __pyx_t_7 = ((__pyx_v_count <= 0) != 0);
       if (__pyx_t_7) {
 
-        /* "fastparquet/cencoding.pyx":242
+        /* "fastparquet/cencoding.pyx":245
  *             count -= values_per_miniblock
  *             if count <= 0:
  *                 return             # <<<<<<<<<<<<<<
@@ -5398,7 +5556,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
  */
         goto __pyx_L0;
 
-        /* "fastparquet/cencoding.pyx":241
+        /* "fastparquet/cencoding.pyx":244
  *                     value += min_delta
  *             count -= values_per_miniblock
  *             if count <= 0:             # <<<<<<<<<<<<<<
@@ -5409,7 +5567,7 @@ static void __pyx_f_11fastparquet_9cencoding_delta_binary_unpack(struct __pyx_ob
     }
   }
 
-  /* "fastparquet/cencoding.pyx":213
+  /* "fastparquet/cencoding.pyx":216
  *             read_bitpacked(io_obj, header, width, o, itemsize)
  * 
  * cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -5461,11 +5619,11 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_15delta_binary_unpack(PyObjec
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("delta_binary_unpack", 1, 2, 2, 1); __PYX_ERR(0, 213, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("delta_binary_unpack", 1, 2, 2, 1); __PYX_ERR(0, 216, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "delta_binary_unpack") < 0)) __PYX_ERR(0, 213, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "delta_binary_unpack") < 0)) __PYX_ERR(0, 216, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -5478,14 +5636,14 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_15delta_binary_unpack(PyObjec
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("delta_binary_unpack", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 213, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("delta_binary_unpack", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 216, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.delta_binary_unpack", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 213, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 213, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_obj), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "file_obj", 0))) __PYX_ERR(0, 216, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 216, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_14delta_binary_unpack(__pyx_self, __pyx_v_file_obj, __pyx_v_o);
 
   /* function exit code */
@@ -5506,7 +5664,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_14delta_binary_unpack(CYTHON_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("delta_binary_unpack", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_delta_binary_unpack(__pyx_v_file_obj, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_delta_binary_unpack(__pyx_v_file_obj, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5523,7 +5681,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_14delta_binary_unpack(CYTHON_
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":245
+/* "fastparquet/cencoding.pyx":248
  * 
  * 
  * cpdef void encode_unsigned_varint(int32_t x, NumpyIO o):  # pragma: no cover             # <<<<<<<<<<<<<<
@@ -5537,7 +5695,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(int32_t __py
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("encode_unsigned_varint", 0);
 
-  /* "fastparquet/cencoding.pyx":246
+  /* "fastparquet/cencoding.pyx":249
  * 
  * cpdef void encode_unsigned_varint(int32_t x, NumpyIO o):  # pragma: no cover
  *     while x > 127:             # <<<<<<<<<<<<<<
@@ -5548,7 +5706,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(int32_t __py
     __pyx_t_1 = ((__pyx_v_x > 0x7F) != 0);
     if (!__pyx_t_1) break;
 
-    /* "fastparquet/cencoding.pyx":247
+    /* "fastparquet/cencoding.pyx":250
  * cpdef void encode_unsigned_varint(int32_t x, NumpyIO o):  # pragma: no cover
  *     while x > 127:
  *         o.write_byte((x & 0x7F) | 0x80)             # <<<<<<<<<<<<<<
@@ -5557,7 +5715,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(int32_t __py
  */
     __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_o, ((__pyx_v_x & 0x7F) | 0x80), 0);
 
-    /* "fastparquet/cencoding.pyx":248
+    /* "fastparquet/cencoding.pyx":251
  *     while x > 127:
  *         o.write_byte((x & 0x7F) | 0x80)
  *         x >>= 7             # <<<<<<<<<<<<<<
@@ -5567,7 +5725,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(int32_t __py
     __pyx_v_x = (__pyx_v_x >> 7);
   }
 
-  /* "fastparquet/cencoding.pyx":249
+  /* "fastparquet/cencoding.pyx":252
  *         o.write_byte((x & 0x7F) | 0x80)
  *         x >>= 7
  *     o.write_byte(x)             # <<<<<<<<<<<<<<
@@ -5576,7 +5734,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(int32_t __py
  */
   __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_o, __pyx_v_x, 0);
 
-  /* "fastparquet/cencoding.pyx":245
+  /* "fastparquet/cencoding.pyx":248
  * 
  * 
  * cpdef void encode_unsigned_varint(int32_t x, NumpyIO o):  # pragma: no cover             # <<<<<<<<<<<<<<
@@ -5622,11 +5780,11 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_17encode_unsigned_varint(PyOb
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("encode_unsigned_varint", 1, 2, 2, 1); __PYX_ERR(0, 245, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("encode_unsigned_varint", 1, 2, 2, 1); __PYX_ERR(0, 248, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "encode_unsigned_varint") < 0)) __PYX_ERR(0, 245, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "encode_unsigned_varint") < 0)) __PYX_ERR(0, 248, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -5634,18 +5792,18 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_17encode_unsigned_varint(PyOb
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_x = __Pyx_PyInt_As_int32_t(values[0]); if (unlikely((__pyx_v_x == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 245, __pyx_L3_error)
+    __pyx_v_x = __Pyx_PyInt_As_int32_t(values[0]); if (unlikely((__pyx_v_x == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 248, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[1]);
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("encode_unsigned_varint", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 245, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("encode_unsigned_varint", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 248, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.encode_unsigned_varint", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 245, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 248, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_16encode_unsigned_varint(__pyx_self, __pyx_v_x, __pyx_v_o);
 
   /* function exit code */
@@ -5666,7 +5824,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_16encode_unsigned_varint(CYTH
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("encode_unsigned_varint", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_x, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_x, __pyx_v_o, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 248, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5683,7 +5841,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_16encode_unsigned_varint(CYTH
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":252
+/* "fastparquet/cencoding.pyx":255
  * 
  * 
  * cpdef encode_bitpacked(int32_t[:] values, int32_t width, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -5707,7 +5865,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
   int __pyx_t_5;
   __Pyx_RefNannySetupContext("encode_bitpacked", 0);
 
-  /* "fastparquet/cencoding.pyx":257
+  /* "fastparquet/cencoding.pyx":260
  *     """
  * 
  *     cdef int32_t bit_packed_count = (values.shape[0] + 7) // 8             # <<<<<<<<<<<<<<
@@ -5716,7 +5874,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
   __pyx_v_bit_packed_count = (((__pyx_v_values.shape[0]) + 7) / 8);
 
-  /* "fastparquet/cencoding.pyx":258
+  /* "fastparquet/cencoding.pyx":261
  * 
  *     cdef int32_t bit_packed_count = (values.shape[0] + 7) // 8
  *     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header             # <<<<<<<<<<<<<<
@@ -5725,7 +5883,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
   __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(((__pyx_v_bit_packed_count << 1) | 1), __pyx_v_o, 0);
 
-  /* "fastparquet/cencoding.pyx":259
+  /* "fastparquet/cencoding.pyx":262
  *     cdef int32_t bit_packed_count = (values.shape[0] + 7) // 8
  *     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
  *     cdef int32_t bit=0, bits=0, v, counter             # <<<<<<<<<<<<<<
@@ -5735,7 +5893,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
   __pyx_v_bit = 0;
   __pyx_v_bits = 0;
 
-  /* "fastparquet/cencoding.pyx":260
+  /* "fastparquet/cencoding.pyx":263
  *     encode_unsigned_varint(bit_packed_count << 1 | 1, o)  # write run header
  *     cdef int32_t bit=0, bits=0, v, counter
  *     for counter in range(values.shape[0]):             # <<<<<<<<<<<<<<
@@ -5747,7 +5905,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_counter = __pyx_t_3;
 
-    /* "fastparquet/cencoding.pyx":261
+    /* "fastparquet/cencoding.pyx":264
  *     cdef int32_t bit=0, bits=0, v, counter
  *     for counter in range(values.shape[0]):
  *         v = values[counter]             # <<<<<<<<<<<<<<
@@ -5757,7 +5915,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
     __pyx_t_4 = __pyx_v_counter;
     __pyx_v_v = (*((int32_t *) ( /* dim=0 */ (__pyx_v_values.data + __pyx_t_4 * __pyx_v_values.strides[0]) )));
 
-    /* "fastparquet/cencoding.pyx":262
+    /* "fastparquet/cencoding.pyx":265
  *     for counter in range(values.shape[0]):
  *         v = values[counter]
  *         bits |= v << bit             # <<<<<<<<<<<<<<
@@ -5766,7 +5924,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
     __pyx_v_bits = (__pyx_v_bits | (__pyx_v_v << __pyx_v_bit));
 
-    /* "fastparquet/cencoding.pyx":263
+    /* "fastparquet/cencoding.pyx":266
  *         v = values[counter]
  *         bits |= v << bit
  *         bit += width             # <<<<<<<<<<<<<<
@@ -5775,7 +5933,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
     __pyx_v_bit = (__pyx_v_bit + __pyx_v_width);
 
-    /* "fastparquet/cencoding.pyx":264
+    /* "fastparquet/cencoding.pyx":267
  *         bits |= v << bit
  *         bit += width
  *         while bit >= 8:             # <<<<<<<<<<<<<<
@@ -5786,7 +5944,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
       __pyx_t_5 = ((__pyx_v_bit >= 8) != 0);
       if (!__pyx_t_5) break;
 
-      /* "fastparquet/cencoding.pyx":265
+      /* "fastparquet/cencoding.pyx":268
  *         bit += width
  *         while bit >= 8:
  *             o.write_byte(bits & 0xff)             # <<<<<<<<<<<<<<
@@ -5795,7 +5953,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_o, (__pyx_v_bits & 0xff), 0);
 
-      /* "fastparquet/cencoding.pyx":266
+      /* "fastparquet/cencoding.pyx":269
  *         while bit >= 8:
  *             o.write_byte(bits & 0xff)
  *             bit -= 8             # <<<<<<<<<<<<<<
@@ -5804,7 +5962,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
       __pyx_v_bit = (__pyx_v_bit - 8);
 
-      /* "fastparquet/cencoding.pyx":267
+      /* "fastparquet/cencoding.pyx":270
  *             o.write_byte(bits & 0xff)
  *             bit -= 8
  *             bits >>= 8             # <<<<<<<<<<<<<<
@@ -5815,7 +5973,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
     }
   }
 
-  /* "fastparquet/cencoding.pyx":268
+  /* "fastparquet/cencoding.pyx":271
  *             bit -= 8
  *             bits >>= 8
  *     if bit:             # <<<<<<<<<<<<<<
@@ -5825,7 +5983,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
   __pyx_t_5 = (__pyx_v_bit != 0);
   if (__pyx_t_5) {
 
-    /* "fastparquet/cencoding.pyx":269
+    /* "fastparquet/cencoding.pyx":272
  *             bits >>= 8
  *     if bit:
  *         o.write_byte(bits)             # <<<<<<<<<<<<<<
@@ -5834,7 +5992,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
     __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_o, __pyx_v_bits, 0);
 
-    /* "fastparquet/cencoding.pyx":268
+    /* "fastparquet/cencoding.pyx":271
  *             bit -= 8
  *             bits >>= 8
  *     if bit:             # <<<<<<<<<<<<<<
@@ -5843,7 +6001,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_encode_bitpacked(__Pyx_memview
  */
   }
 
-  /* "fastparquet/cencoding.pyx":252
+  /* "fastparquet/cencoding.pyx":255
  * 
  * 
  * cpdef encode_bitpacked(int32_t[:] values, int32_t width, NumpyIO o):             # <<<<<<<<<<<<<<
@@ -5896,17 +6054,17 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_19encode_bitpacked(PyObject *
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("encode_bitpacked", 1, 3, 3, 1); __PYX_ERR(0, 252, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("encode_bitpacked", 1, 3, 3, 1); __PYX_ERR(0, 255, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("encode_bitpacked", 1, 3, 3, 2); __PYX_ERR(0, 252, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("encode_bitpacked", 1, 3, 3, 2); __PYX_ERR(0, 255, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "encode_bitpacked") < 0)) __PYX_ERR(0, 252, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "encode_bitpacked") < 0)) __PYX_ERR(0, 255, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -5915,19 +6073,19 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_19encode_bitpacked(PyObject *
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
-    __pyx_v_values = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_int32_t(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_values.memview)) __PYX_ERR(0, 252, __pyx_L3_error)
-    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L3_error)
+    __pyx_v_values = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_int32_t(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_values.memview)) __PYX_ERR(0, 255, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 255, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[2]);
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("encode_bitpacked", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 252, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("encode_bitpacked", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 255, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.encode_bitpacked", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 252, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 255, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_18encode_bitpacked(__pyx_self, __pyx_v_values, __pyx_v_width, __pyx_v_o);
 
   /* function exit code */
@@ -5948,7 +6106,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_18encode_bitpacked(CYTHON_UNU
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("encode_bitpacked", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_encode_bitpacked(__pyx_v_values, __pyx_v_width, __pyx_v_o, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_encode_bitpacked(__pyx_v_values, __pyx_v_width, __pyx_v_o, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5966,7 +6124,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_18encode_bitpacked(CYTHON_UNU
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":272
+/* "fastparquet/cencoding.pyx":275
  * 
  * 
  * cpdef void encode_rle_bp(int32_t[:] data, int32_t width, NumpyIO o, int32_t withlength = 0):             # <<<<<<<<<<<<<<
@@ -5993,7 +6151,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
     }
   }
 
-  /* "fastparquet/cencoding.pyx":274
+  /* "fastparquet/cencoding.pyx":277
  * cpdef void encode_rle_bp(int32_t[:] data, int32_t width, NumpyIO o, int32_t withlength = 0):
  *     cdef uint32_t start, end
  *     if withlength:             # <<<<<<<<<<<<<<
@@ -6003,7 +6161,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
   __pyx_t_1 = (__pyx_v_withlength != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":275
+    /* "fastparquet/cencoding.pyx":278
  *     cdef uint32_t start, end
  *     if withlength:
  *         start = o.tell()             # <<<<<<<<<<<<<<
@@ -6012,7 +6170,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
  */
     __pyx_v_start = __pyx_f_11fastparquet_9cencoding_7NumpyIO_tell(__pyx_v_o, 0);
 
-    /* "fastparquet/cencoding.pyx":276
+    /* "fastparquet/cencoding.pyx":279
  *     if withlength:
  *         start = o.tell()
  *         o.seek(4, 1)             # <<<<<<<<<<<<<<
@@ -6023,7 +6181,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
     __pyx_t_2.whence = 1;
     __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(__pyx_v_o, 4, 0, &__pyx_t_2); 
 
-    /* "fastparquet/cencoding.pyx":274
+    /* "fastparquet/cencoding.pyx":277
  * cpdef void encode_rle_bp(int32_t[:] data, int32_t width, NumpyIO o, int32_t withlength = 0):
  *     cdef uint32_t start, end
  *     if withlength:             # <<<<<<<<<<<<<<
@@ -6032,18 +6190,18 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
  */
   }
 
-  /* "fastparquet/cencoding.pyx":277
+  /* "fastparquet/cencoding.pyx":280
  *         start = o.tell()
  *         o.seek(4, 1)
  *     encode_bitpacked(data, width, o)             # <<<<<<<<<<<<<<
  *     if withlength:
  *         end = o.tell()
  */
-  __pyx_t_3 = __pyx_f_11fastparquet_9cencoding_encode_bitpacked(__pyx_v_data, __pyx_v_width, __pyx_v_o, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_t_3 = __pyx_f_11fastparquet_9cencoding_encode_bitpacked(__pyx_v_data, __pyx_v_width, __pyx_v_o, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "fastparquet/cencoding.pyx":278
+  /* "fastparquet/cencoding.pyx":281
  *         o.seek(4, 1)
  *     encode_bitpacked(data, width, o)
  *     if withlength:             # <<<<<<<<<<<<<<
@@ -6053,7 +6211,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
   __pyx_t_1 = (__pyx_v_withlength != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":279
+    /* "fastparquet/cencoding.pyx":282
  *     encode_bitpacked(data, width, o)
  *     if withlength:
  *         end = o.tell()             # <<<<<<<<<<<<<<
@@ -6062,7 +6220,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
  */
     __pyx_v_end = __pyx_f_11fastparquet_9cencoding_7NumpyIO_tell(__pyx_v_o, 0);
 
-    /* "fastparquet/cencoding.pyx":280
+    /* "fastparquet/cencoding.pyx":283
  *     if withlength:
  *         end = o.tell()
  *         o.seek(start)             # <<<<<<<<<<<<<<
@@ -6071,7 +6229,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
  */
     (void)(__pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(__pyx_v_o, __pyx_v_start, 0, NULL));
 
-    /* "fastparquet/cencoding.pyx":281
+    /* "fastparquet/cencoding.pyx":284
  *         end = o.tell()
  *         o.seek(start)
  *         o.write_int(end - start - 4)             # <<<<<<<<<<<<<<
@@ -6080,7 +6238,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
  */
     __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(__pyx_v_o, ((__pyx_v_end - __pyx_v_start) - 4), 0);
 
-    /* "fastparquet/cencoding.pyx":282
+    /* "fastparquet/cencoding.pyx":285
  *         o.seek(start)
  *         o.write_int(end - start - 4)
  *         o.seek(end)             # <<<<<<<<<<<<<<
@@ -6089,7 +6247,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
  */
     (void)(__pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(__pyx_v_o, __pyx_v_end, 0, NULL));
 
-    /* "fastparquet/cencoding.pyx":278
+    /* "fastparquet/cencoding.pyx":281
  *         o.seek(4, 1)
  *     encode_bitpacked(data, width, o)
  *     if withlength:             # <<<<<<<<<<<<<<
@@ -6098,7 +6256,7 @@ static void __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__Pyx_memviewslice __
  */
   }
 
-  /* "fastparquet/cencoding.pyx":272
+  /* "fastparquet/cencoding.pyx":275
  * 
  * 
  * cpdef void encode_rle_bp(int32_t[:] data, int32_t width, NumpyIO o, int32_t withlength = 0):             # <<<<<<<<<<<<<<
@@ -6155,13 +6313,13 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_21encode_rle_bp(PyObject *__p
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("encode_rle_bp", 0, 3, 4, 1); __PYX_ERR(0, 272, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("encode_rle_bp", 0, 3, 4, 1); __PYX_ERR(0, 275, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_o)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("encode_rle_bp", 0, 3, 4, 2); __PYX_ERR(0, 272, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("encode_rle_bp", 0, 3, 4, 2); __PYX_ERR(0, 275, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
@@ -6171,7 +6329,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_21encode_rle_bp(PyObject *__p
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "encode_rle_bp") < 0)) __PYX_ERR(0, 272, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "encode_rle_bp") < 0)) __PYX_ERR(0, 275, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6184,24 +6342,24 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_21encode_rle_bp(PyObject *__p
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_int32_t(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 272, __pyx_L3_error)
-    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 272, __pyx_L3_error)
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_int32_t(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 275, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_width == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 275, __pyx_L3_error)
     __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[2]);
     if (values[3]) {
-      __pyx_v_withlength = __Pyx_PyInt_As_int32_t(values[3]); if (unlikely((__pyx_v_withlength == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 272, __pyx_L3_error)
+      __pyx_v_withlength = __Pyx_PyInt_As_int32_t(values[3]); if (unlikely((__pyx_v_withlength == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 275, __pyx_L3_error)
     } else {
       __pyx_v_withlength = ((int32_t)0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("encode_rle_bp", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 272, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("encode_rle_bp", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 275, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.encode_rle_bp", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 272, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_o), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "o", 0))) __PYX_ERR(0, 275, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_20encode_rle_bp(__pyx_self, __pyx_v_data, __pyx_v_width, __pyx_v_o, __pyx_v_withlength);
 
   /* function exit code */
@@ -6226,7 +6384,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_20encode_rle_bp(CYTHON_UNUSED
   __pyx_t_1.__pyx_n = 1;
   __pyx_t_1.withlength = __pyx_v_withlength;
   __pyx_f_11fastparquet_9cencoding_encode_rle_bp(__pyx_v_data, __pyx_v_width, __pyx_v_o, 0, &__pyx_t_1); 
-  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 275, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -6244,7 +6402,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_20encode_rle_bp(CYTHON_UNUSED
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":298
+/* "fastparquet/cencoding.pyx":301
  *     cdef char writable
  * 
  *     def __cinit__(self, const uint8_t[::1] data):             # <<<<<<<<<<<<<<
@@ -6281,18 +6439,18 @@ static int __pyx_pw_11fastparquet_9cencoding_7NumpyIO_1__cinit__(PyObject *__pyx
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 298, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 301, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
     }
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn_uint8_t__const__(values[0], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 298, __pyx_L3_error)
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn_uint8_t__const__(values[0], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 301, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 298, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 301, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.NumpyIO.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6311,7 +6469,7 @@ static int __pyx_pf_11fastparquet_9cencoding_7NumpyIO___cinit__(struct __pyx_obj
   Py_ssize_t __pyx_t_1;
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "fastparquet/cencoding.pyx":299
+  /* "fastparquet/cencoding.pyx":302
  * 
  *     def __cinit__(self, const uint8_t[::1] data):
  *         self.data = data             # <<<<<<<<<<<<<<
@@ -6322,7 +6480,7 @@ static int __pyx_pf_11fastparquet_9cencoding_7NumpyIO___cinit__(struct __pyx_obj
   __PYX_INC_MEMVIEW(&__pyx_v_data, 0);
   __pyx_v_self->data = __pyx_v_data;
 
-  /* "fastparquet/cencoding.pyx":300
+  /* "fastparquet/cencoding.pyx":303
  *     def __cinit__(self, const uint8_t[::1] data):
  *         self.data = data
  *         self.loc = 0             # <<<<<<<<<<<<<<
@@ -6331,7 +6489,7 @@ static int __pyx_pf_11fastparquet_9cencoding_7NumpyIO___cinit__(struct __pyx_obj
  */
   __pyx_v_self->loc = 0;
 
-  /* "fastparquet/cencoding.pyx":301
+  /* "fastparquet/cencoding.pyx":304
  *         self.data = data
  *         self.loc = 0
  *         self.ptr = <char*>&data[0]             # <<<<<<<<<<<<<<
@@ -6341,7 +6499,7 @@ static int __pyx_pf_11fastparquet_9cencoding_7NumpyIO___cinit__(struct __pyx_obj
   __pyx_t_1 = 0;
   __pyx_v_self->ptr = ((char *)(&(*((uint8_t const  *) ( /* dim=0 */ ((char *) (((uint8_t const  *) __pyx_v_data.data) + __pyx_t_1)) )))));
 
-  /* "fastparquet/cencoding.pyx":302
+  /* "fastparquet/cencoding.pyx":305
  *         self.loc = 0
  *         self.ptr = <char*>&data[0]
  *         self.nbytes = data.shape[0]             # <<<<<<<<<<<<<<
@@ -6350,7 +6508,7 @@ static int __pyx_pf_11fastparquet_9cencoding_7NumpyIO___cinit__(struct __pyx_obj
  */
   __pyx_v_self->nbytes = (__pyx_v_data.shape[0]);
 
-  /* "fastparquet/cencoding.pyx":298
+  /* "fastparquet/cencoding.pyx":301
  *     cdef char writable
  * 
  *     def __cinit__(self, const uint8_t[::1] data):             # <<<<<<<<<<<<<<
@@ -6365,7 +6523,7 @@ static int __pyx_pf_11fastparquet_9cencoding_7NumpyIO___cinit__(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":304
+/* "fastparquet/cencoding.pyx":307
  *         self.nbytes = data.shape[0]
  * 
  *     cdef char* get_pointer(self):             # <<<<<<<<<<<<<<
@@ -6378,7 +6536,7 @@ static char *__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(struct __pyx_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_pointer", 0);
 
-  /* "fastparquet/cencoding.pyx":305
+  /* "fastparquet/cencoding.pyx":308
  * 
  *     cdef char* get_pointer(self):
  *         return self.ptr + self.loc             # <<<<<<<<<<<<<<
@@ -6388,7 +6546,7 @@ static char *__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(struct __pyx_
   __pyx_r = (__pyx_v_self->ptr + __pyx_v_self->loc);
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":304
+  /* "fastparquet/cencoding.pyx":307
  *         self.nbytes = data.shape[0]
  * 
  *     cdef char* get_pointer(self):             # <<<<<<<<<<<<<<
@@ -6402,7 +6560,7 @@ static char *__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(struct __pyx_
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":308
+/* "fastparquet/cencoding.pyx":311
  * 
  *     @property
  *     def len(self):             # <<<<<<<<<<<<<<
@@ -6432,7 +6590,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_3len___get__(struct 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "fastparquet/cencoding.pyx":309
+  /* "fastparquet/cencoding.pyx":312
  *     @property
  *     def len(self):
  *         return self.nbytes             # <<<<<<<<<<<<<<
@@ -6440,13 +6598,13 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_3len___get__(struct 
  *     cpdef const uint8_t[:] read(self, int32_t x=-1):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->nbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 309, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->nbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 312, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":308
+  /* "fastparquet/cencoding.pyx":311
  * 
  *     @property
  *     def len(self):             # <<<<<<<<<<<<<<
@@ -6465,7 +6623,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_3len___get__(struct 
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":311
+/* "fastparquet/cencoding.pyx":314
  *         return self.nbytes
  * 
  *     cpdef const uint8_t[:] read(self, int32_t x=-1):             # <<<<<<<<<<<<<<
@@ -6492,7 +6650,7 @@ static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_read(struct 
     }
   }
 
-  /* "fastparquet/cencoding.pyx":313
+  /* "fastparquet/cencoding.pyx":316
  *     cpdef const uint8_t[:] read(self, int32_t x=-1):
  *         cdef const uint8_t[:] out
  *         if x < 1:             # <<<<<<<<<<<<<<
@@ -6502,7 +6660,7 @@ static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_read(struct 
   __pyx_t_1 = ((__pyx_v_x < 1) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":314
+    /* "fastparquet/cencoding.pyx":317
  *         cdef const uint8_t[:] out
  *         if x < 1:
  *             x = self.nbytes - self.loc             # <<<<<<<<<<<<<<
@@ -6511,7 +6669,7 @@ static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_read(struct 
  */
     __pyx_v_x = (__pyx_v_self->nbytes - __pyx_v_self->loc);
 
-    /* "fastparquet/cencoding.pyx":313
+    /* "fastparquet/cencoding.pyx":316
  *     cpdef const uint8_t[:] read(self, int32_t x=-1):
  *         cdef const uint8_t[:] out
  *         if x < 1:             # <<<<<<<<<<<<<<
@@ -6520,7 +6678,7 @@ static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_read(struct 
  */
   }
 
-  /* "fastparquet/cencoding.pyx":315
+  /* "fastparquet/cencoding.pyx":318
  *         if x < 1:
  *             x = self.nbytes - self.loc
  *         out = self.data[self.loc:self.loc + x]             # <<<<<<<<<<<<<<
@@ -6545,14 +6703,14 @@ static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_read(struct 
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 315, __pyx_L1_error)
+    __PYX_ERR(0, 318, __pyx_L1_error)
 }
 
 __pyx_v_out = __pyx_t_2;
   __pyx_t_2.memview = NULL;
   __pyx_t_2.data = NULL;
 
-  /* "fastparquet/cencoding.pyx":316
+  /* "fastparquet/cencoding.pyx":319
  *             x = self.nbytes - self.loc
  *         out = self.data[self.loc:self.loc + x]
  *         self.loc += x             # <<<<<<<<<<<<<<
@@ -6561,7 +6719,7 @@ __pyx_v_out = __pyx_t_2;
  */
   __pyx_v_self->loc = (__pyx_v_self->loc + __pyx_v_x);
 
-  /* "fastparquet/cencoding.pyx":317
+  /* "fastparquet/cencoding.pyx":320
  *         out = self.data[self.loc:self.loc + x]
  *         self.loc += x
  *         return out             # <<<<<<<<<<<<<<
@@ -6572,7 +6730,7 @@ __pyx_v_out = __pyx_t_2;
   __pyx_r = __pyx_v_out;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":311
+  /* "fastparquet/cencoding.pyx":314
  *         return self.nbytes
  * 
  *     cpdef const uint8_t[:] read(self, int32_t x=-1):             # <<<<<<<<<<<<<<
@@ -6628,7 +6786,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7NumpyIO_3read(PyObject *__py
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read") < 0)) __PYX_ERR(0, 311, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read") < 0)) __PYX_ERR(0, 314, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6639,14 +6797,14 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7NumpyIO_3read(PyObject *__py
       }
     }
     if (values[0]) {
-      __pyx_v_x = __Pyx_PyInt_As_int32_t(values[0]); if (unlikely((__pyx_v_x == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 311, __pyx_L3_error)
+      __pyx_v_x = __Pyx_PyInt_As_int32_t(values[0]); if (unlikely((__pyx_v_x == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 314, __pyx_L3_error)
     } else {
       __pyx_v_x = ((int32_t)-1);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("read", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 311, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("read", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 314, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.NumpyIO.read", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6672,8 +6830,8 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_2read(struct __pyx_o
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.x = __pyx_v_x;
-  __pyx_t_1 = __pyx_vtabptr_11fastparquet_9cencoding_NumpyIO->read(__pyx_v_self, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 311, __pyx_L1_error)
-  __pyx_t_3 = __pyx_memoryview_fromslice(__pyx_t_1, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t__const__, (int (*)(char *, PyObject *)) NULL, 0);; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 311, __pyx_L1_error)
+  __pyx_t_1 = __pyx_vtabptr_11fastparquet_9cencoding_NumpyIO->read(__pyx_v_self, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 314, __pyx_L1_error)
+  __pyx_t_3 = __pyx_memoryview_fromslice(__pyx_t_1, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t__const__, (int (*)(char *, PyObject *)) NULL, 0);; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 314, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __PYX_XDEC_MEMVIEW(&__pyx_t_1, 1);
   __pyx_t_1.memview = NULL;
@@ -6694,7 +6852,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_2read(struct __pyx_o
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":319
+/* "fastparquet/cencoding.pyx":322
  *         return out
  * 
  *     cpdef char read_byte(self):             # <<<<<<<<<<<<<<
@@ -6709,7 +6867,7 @@ static char __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(struct __pyx_obj
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("read_byte", 0);
 
-  /* "fastparquet/cencoding.pyx":321
+  /* "fastparquet/cencoding.pyx":324
  *     cpdef char read_byte(self):
  *         cdef char out
  *         out = self.ptr[self.loc]             # <<<<<<<<<<<<<<
@@ -6718,7 +6876,7 @@ static char __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(struct __pyx_obj
  */
   __pyx_v_out = (__pyx_v_self->ptr[__pyx_v_self->loc]);
 
-  /* "fastparquet/cencoding.pyx":322
+  /* "fastparquet/cencoding.pyx":325
  *         cdef char out
  *         out = self.ptr[self.loc]
  *         self.loc += 1             # <<<<<<<<<<<<<<
@@ -6727,7 +6885,7 @@ static char __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(struct __pyx_obj
  */
   __pyx_v_self->loc = (__pyx_v_self->loc + 1);
 
-  /* "fastparquet/cencoding.pyx":323
+  /* "fastparquet/cencoding.pyx":326
  *         out = self.ptr[self.loc]
  *         self.loc += 1
  *         return out             # <<<<<<<<<<<<<<
@@ -6737,7 +6895,7 @@ static char __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(struct __pyx_obj
   __pyx_r = __pyx_v_out;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":319
+  /* "fastparquet/cencoding.pyx":322
  *         return out
  * 
  *     cpdef char read_byte(self):             # <<<<<<<<<<<<<<
@@ -6773,7 +6931,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_4read_byte(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("read_byte", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_char(__pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_char(__pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 322, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6790,7 +6948,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_4read_byte(struct __
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":325
+/* "fastparquet/cencoding.pyx":328
  *         return out
  * 
  *     cpdef int32_t read_int(self):             # <<<<<<<<<<<<<<
@@ -6806,7 +6964,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(struct __pyx_o
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("read_int", 0);
 
-  /* "fastparquet/cencoding.pyx":327
+  /* "fastparquet/cencoding.pyx":330
  *     cpdef int32_t read_int(self):
  *         cdef int32_t i
  *         if self.nbytes - self.loc < 4:             # <<<<<<<<<<<<<<
@@ -6816,7 +6974,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(struct __pyx_o
   __pyx_t_1 = (((__pyx_v_self->nbytes - __pyx_v_self->loc) < 4) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":328
+    /* "fastparquet/cencoding.pyx":331
  *         cdef int32_t i
  *         if self.nbytes - self.loc < 4:
  *             return 0             # <<<<<<<<<<<<<<
@@ -6826,7 +6984,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(struct __pyx_o
     __pyx_r = 0;
     goto __pyx_L0;
 
-    /* "fastparquet/cencoding.pyx":327
+    /* "fastparquet/cencoding.pyx":330
  *     cpdef int32_t read_int(self):
  *         cdef int32_t i
  *         if self.nbytes - self.loc < 4:             # <<<<<<<<<<<<<<
@@ -6835,7 +6993,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(struct __pyx_o
  */
   }
 
-  /* "fastparquet/cencoding.pyx":329
+  /* "fastparquet/cencoding.pyx":332
  *         if self.nbytes - self.loc < 4:
  *             return 0
  *         i = (<int32_t*> self.get_pointer())[0]             # <<<<<<<<<<<<<<
@@ -6844,7 +7002,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(struct __pyx_o
  */
   __pyx_v_i = (((int32_t *)__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_self))[0]);
 
-  /* "fastparquet/cencoding.pyx":330
+  /* "fastparquet/cencoding.pyx":333
  *             return 0
  *         i = (<int32_t*> self.get_pointer())[0]
  *         self.loc += 4             # <<<<<<<<<<<<<<
@@ -6853,7 +7011,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(struct __pyx_o
  */
   __pyx_v_self->loc = (__pyx_v_self->loc + 4);
 
-  /* "fastparquet/cencoding.pyx":331
+  /* "fastparquet/cencoding.pyx":334
  *         i = (<int32_t*> self.get_pointer())[0]
  *         self.loc += 4
  *         return i             # <<<<<<<<<<<<<<
@@ -6863,7 +7021,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(struct __pyx_o
   __pyx_r = __pyx_v_i;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":325
+  /* "fastparquet/cencoding.pyx":328
  *         return out
  * 
  *     cpdef int32_t read_int(self):             # <<<<<<<<<<<<<<
@@ -6899,7 +7057,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_6read_int(struct __p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("read_int", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(__pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 325, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int32_t(__pyx_f_11fastparquet_9cencoding_7NumpyIO_read_int(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 328, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6916,7 +7074,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_6read_int(struct __p
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":333
+/* "fastparquet/cencoding.pyx":336
  *         return i
  * 
  *     cpdef void write(self, const char[::1] d):             # <<<<<<<<<<<<<<
@@ -6930,7 +7088,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write(struct __pyx_obj_11f
   Py_ssize_t __pyx_t_1;
   __Pyx_RefNannySetupContext("write", 0);
 
-  /* "fastparquet/cencoding.pyx":334
+  /* "fastparquet/cencoding.pyx":337
  * 
  *     cpdef void write(self, const char[::1] d):
  *         memcpy(<void*>self.ptr[self.loc], <void*>&d[0], d.shape[0])             # <<<<<<<<<<<<<<
@@ -6940,7 +7098,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write(struct __pyx_obj_11f
   __pyx_t_1 = 0;
   (void)(memcpy(((void *)(__pyx_v_self->ptr[__pyx_v_self->loc])), ((void *)(&(*((char const  *) ( /* dim=0 */ ((char *) (((char const  *) __pyx_v_d.data) + __pyx_t_1)) ))))), (__pyx_v_d.shape[0])));
 
-  /* "fastparquet/cencoding.pyx":335
+  /* "fastparquet/cencoding.pyx":338
  *     cpdef void write(self, const char[::1] d):
  *         memcpy(<void*>self.ptr[self.loc], <void*>&d[0], d.shape[0])
  *         self.loc += d.shape[0]             # <<<<<<<<<<<<<<
@@ -6949,7 +7107,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write(struct __pyx_obj_11f
  */
   __pyx_v_self->loc = (__pyx_v_self->loc + (__pyx_v_d.shape[0]));
 
-  /* "fastparquet/cencoding.pyx":333
+  /* "fastparquet/cencoding.pyx":336
  *         return i
  * 
  *     cpdef void write(self, const char[::1] d):             # <<<<<<<<<<<<<<
@@ -6972,7 +7130,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7NumpyIO_9write(PyObject *__p
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("write (wrapper)", 0);
   assert(__pyx_arg_d); {
-    __pyx_v_d = __Pyx_PyObject_to_MemoryviewSlice_dc_char__const__(__pyx_arg_d, 0); if (unlikely(!__pyx_v_d.memview)) __PYX_ERR(0, 333, __pyx_L3_error)
+    __pyx_v_d = __Pyx_PyObject_to_MemoryviewSlice_dc_char__const__(__pyx_arg_d, 0); if (unlikely(!__pyx_v_d.memview)) __PYX_ERR(0, 336, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6996,7 +7154,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_8write(struct __pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("write", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_7NumpyIO_write(__pyx_v_self, __pyx_v_d, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 333, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_7NumpyIO_write(__pyx_v_self, __pyx_v_d, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 336, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7014,7 +7172,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_8write(struct __pyx_
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":337
+/* "fastparquet/cencoding.pyx":340
  *         self.loc += d.shape[0]
  * 
  *     cpdef void write_byte(self, char b):             # <<<<<<<<<<<<<<
@@ -7028,7 +7186,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(struct __pyx_ob
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("write_byte", 0);
 
-  /* "fastparquet/cencoding.pyx":338
+  /* "fastparquet/cencoding.pyx":341
  * 
  *     cpdef void write_byte(self, char b):
  *         if self.loc >= self.nbytes:             # <<<<<<<<<<<<<<
@@ -7038,7 +7196,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(struct __pyx_ob
   __pyx_t_1 = ((__pyx_v_self->loc >= __pyx_v_self->nbytes) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":340
+    /* "fastparquet/cencoding.pyx":343
  *         if self.loc >= self.nbytes:
  *             # ignore attempt to write past end of buffer
  *             return             # <<<<<<<<<<<<<<
@@ -7047,7 +7205,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(struct __pyx_ob
  */
     goto __pyx_L0;
 
-    /* "fastparquet/cencoding.pyx":338
+    /* "fastparquet/cencoding.pyx":341
  * 
  *     cpdef void write_byte(self, char b):
  *         if self.loc >= self.nbytes:             # <<<<<<<<<<<<<<
@@ -7056,7 +7214,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(struct __pyx_ob
  */
   }
 
-  /* "fastparquet/cencoding.pyx":341
+  /* "fastparquet/cencoding.pyx":344
  *             # ignore attempt to write past end of buffer
  *             return
  *         self.ptr[self.loc] = b             # <<<<<<<<<<<<<<
@@ -7065,7 +7223,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(struct __pyx_ob
  */
   (__pyx_v_self->ptr[__pyx_v_self->loc]) = __pyx_v_b;
 
-  /* "fastparquet/cencoding.pyx":342
+  /* "fastparquet/cencoding.pyx":345
  *             return
  *         self.ptr[self.loc] = b
  *         self.loc += 1             # <<<<<<<<<<<<<<
@@ -7074,7 +7232,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(struct __pyx_ob
  */
   __pyx_v_self->loc = (__pyx_v_self->loc + 1);
 
-  /* "fastparquet/cencoding.pyx":337
+  /* "fastparquet/cencoding.pyx":340
  *         self.loc += d.shape[0]
  * 
  *     cpdef void write_byte(self, char b):             # <<<<<<<<<<<<<<
@@ -7098,7 +7256,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7NumpyIO_11write_byte(PyObjec
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("write_byte (wrapper)", 0);
   assert(__pyx_arg_b); {
-    __pyx_v_b = __Pyx_PyInt_As_char(__pyx_arg_b); if (unlikely((__pyx_v_b == (char)-1) && PyErr_Occurred())) __PYX_ERR(0, 337, __pyx_L3_error)
+    __pyx_v_b = __Pyx_PyInt_As_char(__pyx_arg_b); if (unlikely((__pyx_v_b == (char)-1) && PyErr_Occurred())) __PYX_ERR(0, 340, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7122,7 +7280,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_10write_byte(struct 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("write_byte", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_self, __pyx_v_b, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 337, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_self, __pyx_v_b, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7139,7 +7297,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_10write_byte(struct 
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":344
+/* "fastparquet/cencoding.pyx":347
  *         self.loc += 1
  * 
  *     cpdef void write_int(self, int32_t i):             # <<<<<<<<<<<<<<
@@ -7153,7 +7311,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(struct __pyx_obj
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("write_int", 0);
 
-  /* "fastparquet/cencoding.pyx":345
+  /* "fastparquet/cencoding.pyx":348
  * 
  *     cpdef void write_int(self, int32_t i):
  *         if self.nbytes - self.loc < 4:             # <<<<<<<<<<<<<<
@@ -7163,7 +7321,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(struct __pyx_obj
   __pyx_t_1 = (((__pyx_v_self->nbytes - __pyx_v_self->loc) < 4) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":346
+    /* "fastparquet/cencoding.pyx":349
  *     cpdef void write_int(self, int32_t i):
  *         if self.nbytes - self.loc < 4:
  *             return             # <<<<<<<<<<<<<<
@@ -7172,7 +7330,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(struct __pyx_obj
  */
     goto __pyx_L0;
 
-    /* "fastparquet/cencoding.pyx":345
+    /* "fastparquet/cencoding.pyx":348
  * 
  *     cpdef void write_int(self, int32_t i):
  *         if self.nbytes - self.loc < 4:             # <<<<<<<<<<<<<<
@@ -7181,7 +7339,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(struct __pyx_obj
  */
   }
 
-  /* "fastparquet/cencoding.pyx":347
+  /* "fastparquet/cencoding.pyx":350
  *         if self.nbytes - self.loc < 4:
  *             return
  *         (<int32_t*> self.get_pointer())[0] = i             # <<<<<<<<<<<<<<
@@ -7190,7 +7348,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(struct __pyx_obj
  */
   (((int32_t *)__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_self))[0]) = __pyx_v_i;
 
-  /* "fastparquet/cencoding.pyx":348
+  /* "fastparquet/cencoding.pyx":351
  *             return
  *         (<int32_t*> self.get_pointer())[0] = i
  *         self.loc += 4             # <<<<<<<<<<<<<<
@@ -7199,7 +7357,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(struct __pyx_obj
  */
   __pyx_v_self->loc = (__pyx_v_self->loc + 4);
 
-  /* "fastparquet/cencoding.pyx":344
+  /* "fastparquet/cencoding.pyx":347
  *         self.loc += 1
  * 
  *     cpdef void write_int(self, int32_t i):             # <<<<<<<<<<<<<<
@@ -7223,7 +7381,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7NumpyIO_13write_int(PyObject
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("write_int (wrapper)", 0);
   assert(__pyx_arg_i); {
-    __pyx_v_i = __Pyx_PyInt_As_int32_t(__pyx_arg_i); if (unlikely((__pyx_v_i == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 344, __pyx_L3_error)
+    __pyx_v_i = __Pyx_PyInt_As_int32_t(__pyx_arg_i); if (unlikely((__pyx_v_i == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 347, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7247,7 +7405,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_12write_int(struct _
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("write_int", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(__pyx_v_self, __pyx_v_i, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 344, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_7NumpyIO_write_int(__pyx_v_self, __pyx_v_i, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 347, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7264,7 +7422,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_12write_int(struct _
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":350
+/* "fastparquet/cencoding.pyx":353
  *         self.loc += 4
  * 
  *     cdef void write_many(self, char b, int32_t count):             # <<<<<<<<<<<<<<
@@ -7280,7 +7438,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_many(struct __pyx_ob
   int32_t __pyx_t_3;
   __Pyx_RefNannySetupContext("write_many", 0);
 
-  /* "fastparquet/cencoding.pyx":352
+  /* "fastparquet/cencoding.pyx":355
  *     cdef void write_many(self, char b, int32_t count):
  *         cdef int32_t i
  *         for i in range(count):             # <<<<<<<<<<<<<<
@@ -7292,7 +7450,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_many(struct __pyx_ob
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "fastparquet/cencoding.pyx":353
+    /* "fastparquet/cencoding.pyx":356
  *         cdef int32_t i
  *         for i in range(count):
  *             self.write_byte(b)             # <<<<<<<<<<<<<<
@@ -7302,7 +7460,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_many(struct __pyx_ob
     __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_self, __pyx_v_b, 0);
   }
 
-  /* "fastparquet/cencoding.pyx":350
+  /* "fastparquet/cencoding.pyx":353
  *         self.loc += 4
  * 
  *     cdef void write_many(self, char b, int32_t count):             # <<<<<<<<<<<<<<
@@ -7314,7 +7472,7 @@ static void __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_many(struct __pyx_ob
   __Pyx_RefNannyFinishContext();
 }
 
-/* "fastparquet/cencoding.pyx":355
+/* "fastparquet/cencoding.pyx":358
  *             self.write_byte(b)
  * 
  *     cpdef int32_t tell(self):             # <<<<<<<<<<<<<<
@@ -7328,7 +7486,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_tell(struct __pyx_obj_1
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("tell", 0);
 
-  /* "fastparquet/cencoding.pyx":356
+  /* "fastparquet/cencoding.pyx":359
  * 
  *     cpdef int32_t tell(self):
  *         return self.loc             # <<<<<<<<<<<<<<
@@ -7338,7 +7496,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_tell(struct __pyx_obj_1
   __pyx_r = __pyx_v_self->loc;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":355
+  /* "fastparquet/cencoding.pyx":358
  *             self.write_byte(b)
  * 
  *     cpdef int32_t tell(self):             # <<<<<<<<<<<<<<
@@ -7374,7 +7532,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_14tell(struct __pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("tell", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(__pyx_f_11fastparquet_9cencoding_7NumpyIO_tell(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 355, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int32_t(__pyx_f_11fastparquet_9cencoding_7NumpyIO_tell(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 358, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7391,7 +7549,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_14tell(struct __pyx_
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":358
+/* "fastparquet/cencoding.pyx":361
  *         return self.loc
  * 
  *     cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):             # <<<<<<<<<<<<<<
@@ -7413,7 +7571,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
     }
   }
 
-  /* "fastparquet/cencoding.pyx":359
+  /* "fastparquet/cencoding.pyx":362
  * 
  *     cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):
  *         if whence == 0:             # <<<<<<<<<<<<<<
@@ -7423,7 +7581,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
   switch (__pyx_v_whence) {
     case 0:
 
-    /* "fastparquet/cencoding.pyx":360
+    /* "fastparquet/cencoding.pyx":363
  *     cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):
  *         if whence == 0:
  *             self.loc = loc             # <<<<<<<<<<<<<<
@@ -7432,7 +7590,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
  */
     __pyx_v_self->loc = __pyx_v_loc;
 
-    /* "fastparquet/cencoding.pyx":359
+    /* "fastparquet/cencoding.pyx":362
  * 
  *     cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):
  *         if whence == 0:             # <<<<<<<<<<<<<<
@@ -7442,7 +7600,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
     break;
     case 1:
 
-    /* "fastparquet/cencoding.pyx":362
+    /* "fastparquet/cencoding.pyx":365
  *             self.loc = loc
  *         elif whence == 1:
  *             self.loc += loc             # <<<<<<<<<<<<<<
@@ -7451,7 +7609,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
  */
     __pyx_v_self->loc = (__pyx_v_self->loc + __pyx_v_loc);
 
-    /* "fastparquet/cencoding.pyx":361
+    /* "fastparquet/cencoding.pyx":364
  *         if whence == 0:
  *             self.loc = loc
  *         elif whence == 1:             # <<<<<<<<<<<<<<
@@ -7461,7 +7619,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
     break;
     case 2:
 
-    /* "fastparquet/cencoding.pyx":364
+    /* "fastparquet/cencoding.pyx":367
  *             self.loc += loc
  *         elif whence == 2:
  *             self.loc = self.nbytes + loc             # <<<<<<<<<<<<<<
@@ -7470,7 +7628,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
  */
     __pyx_v_self->loc = (__pyx_v_self->nbytes + __pyx_v_loc);
 
-    /* "fastparquet/cencoding.pyx":363
+    /* "fastparquet/cencoding.pyx":366
  *         elif whence == 1:
  *             self.loc += loc
  *         elif whence == 2:             # <<<<<<<<<<<<<<
@@ -7481,7 +7639,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
     default: break;
   }
 
-  /* "fastparquet/cencoding.pyx":365
+  /* "fastparquet/cencoding.pyx":368
  *         elif whence == 2:
  *             self.loc = self.nbytes + loc
  *         if self.loc > self.nbytes:             # <<<<<<<<<<<<<<
@@ -7491,7 +7649,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
   __pyx_t_1 = ((__pyx_v_self->loc > __pyx_v_self->nbytes) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":366
+    /* "fastparquet/cencoding.pyx":369
  *             self.loc = self.nbytes + loc
  *         if self.loc > self.nbytes:
  *             self.loc = self.nbytes             # <<<<<<<<<<<<<<
@@ -7501,7 +7659,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
     __pyx_t_2 = __pyx_v_self->nbytes;
     __pyx_v_self->loc = __pyx_t_2;
 
-    /* "fastparquet/cencoding.pyx":365
+    /* "fastparquet/cencoding.pyx":368
  *         elif whence == 2:
  *             self.loc = self.nbytes + loc
  *         if self.loc > self.nbytes:             # <<<<<<<<<<<<<<
@@ -7510,7 +7668,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
  */
   }
 
-  /* "fastparquet/cencoding.pyx":367
+  /* "fastparquet/cencoding.pyx":370
  *         if self.loc > self.nbytes:
  *             self.loc = self.nbytes
  *         return self.loc             # <<<<<<<<<<<<<<
@@ -7520,7 +7678,7 @@ static uint32_t __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(struct __pyx_obj_
   __pyx_r = __pyx_v_self->loc;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":358
+  /* "fastparquet/cencoding.pyx":361
  *         return self.loc
  * 
  *     cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):             # <<<<<<<<<<<<<<
@@ -7572,7 +7730,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7NumpyIO_17seek(PyObject *__p
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "seek") < 0)) __PYX_ERR(0, 358, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "seek") < 0)) __PYX_ERR(0, 361, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7583,16 +7741,16 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_7NumpyIO_17seek(PyObject *__p
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_loc = __Pyx_PyInt_As_int32_t(values[0]); if (unlikely((__pyx_v_loc == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 358, __pyx_L3_error)
+    __pyx_v_loc = __Pyx_PyInt_As_int32_t(values[0]); if (unlikely((__pyx_v_loc == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 361, __pyx_L3_error)
     if (values[1]) {
-      __pyx_v_whence = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_whence == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 358, __pyx_L3_error)
+      __pyx_v_whence = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_whence == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 361, __pyx_L3_error)
     } else {
       __pyx_v_whence = ((int32_t)0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("seek", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 358, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("seek", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 361, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.NumpyIO.seek", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7619,7 +7777,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_16seek(struct __pyx_
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.whence = __pyx_v_whence;
   __pyx_t_1 = __pyx_vtabptr_11fastparquet_9cencoding_NumpyIO->seek(__pyx_v_self, __pyx_v_loc, 1, &__pyx_t_2); 
-  __pyx_t_3 = __Pyx_PyInt_From_uint32_t(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 358, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_uint32_t(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 361, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_r = __pyx_t_3;
   __pyx_t_3 = 0;
@@ -7636,7 +7794,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_16seek(struct __pyx_
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":370
+/* "fastparquet/cencoding.pyx":373
  * 
  *     @cython.wraparound(False)
  *     cpdef const uint8_t[:] so_far(self):             # <<<<<<<<<<<<<<
@@ -7655,7 +7813,7 @@ static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("so_far", 0);
 
-  /* "fastparquet/cencoding.pyx":373
+  /* "fastparquet/cencoding.pyx":376
  *         """ In write mode, the data we have gathered until now
  *         """
  *         return self.data[:self.loc]             # <<<<<<<<<<<<<<
@@ -7680,7 +7838,7 @@ static __Pyx_memviewslice __pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far(struc
     0,
     1) < 0))
 {
-    __PYX_ERR(0, 373, __pyx_L1_error)
+    __PYX_ERR(0, 376, __pyx_L1_error)
 }
 
 __pyx_r = __pyx_t_1;
@@ -7688,7 +7846,7 @@ __pyx_r = __pyx_t_1;
   __pyx_t_1.data = NULL;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":370
+  /* "fastparquet/cencoding.pyx":373
  * 
  *     @cython.wraparound(False)
  *     cpdef const uint8_t[:] so_far(self):             # <<<<<<<<<<<<<<
@@ -7736,8 +7894,8 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_18so_far(struct __py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("so_far", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far(__pyx_v_self, 1); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 370, __pyx_L1_error)
-  __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_t_1, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t__const__, (int (*)(char *, PyObject *)) NULL, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 370, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far(__pyx_v_self, 1); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 373, __pyx_L1_error)
+  __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_t_1, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t__const__, (int (*)(char *, PyObject *)) NULL, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 373, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __PYX_XDEC_MEMVIEW(&__pyx_t_1, 1);
   __pyx_t_1.memview = NULL;
@@ -7871,7 +8029,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_7NumpyIO_22__setstate_cython_
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":376
+/* "fastparquet/cencoding.pyx":379
  * 
  * 
  * def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] rep,             # <<<<<<<<<<<<<<
@@ -7939,59 +8097,59 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_23_assemble_objects(PyObject 
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_defi)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 1); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 1); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_rep)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 2); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 2); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_val)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 3); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 3); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dic)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 4); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 4); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_d)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 5); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 5); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_null)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 6); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 6); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_null_val)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 7); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 7); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_max_defi)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 8); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 8); __PYX_ERR(0, 379, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_prev_i)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 9); __PYX_ERR(0, 376, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, 9); __PYX_ERR(0, 379, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_assemble_objects") < 0)) __PYX_ERR(0, 376, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_assemble_objects") < 0)) __PYX_ERR(0, 379, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 10) {
       goto __pyx_L5_argtuple_error;
@@ -8007,20 +8165,20 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_23_assemble_objects(PyObject 
       values[8] = PyTuple_GET_ITEM(__pyx_args, 8);
       values[9] = PyTuple_GET_ITEM(__pyx_args, 9);
     }
-    __pyx_v_assign = __Pyx_PyObject_to_MemoryviewSlice_ds_object(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_assign.memview)) __PYX_ERR(0, 376, __pyx_L3_error)
-    __pyx_v_defi = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_uint8_t__const__(values[1], 0); if (unlikely(!__pyx_v_defi.memview)) __PYX_ERR(0, 376, __pyx_L3_error)
-    __pyx_v_rep = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_uint8_t__const__(values[2], 0); if (unlikely(!__pyx_v_rep.memview)) __PYX_ERR(0, 376, __pyx_L3_error)
+    __pyx_v_assign = __Pyx_PyObject_to_MemoryviewSlice_ds_object(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_assign.memview)) __PYX_ERR(0, 379, __pyx_L3_error)
+    __pyx_v_defi = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_uint8_t__const__(values[1], 0); if (unlikely(!__pyx_v_defi.memview)) __PYX_ERR(0, 379, __pyx_L3_error)
+    __pyx_v_rep = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_uint8_t__const__(values[2], 0); if (unlikely(!__pyx_v_rep.memview)) __PYX_ERR(0, 379, __pyx_L3_error)
     __pyx_v_val = values[3];
     __pyx_v_dic = values[4];
     __pyx_v_d = values[5];
-    __pyx_v_null = __Pyx_PyInt_As_char(values[6]); if (unlikely((__pyx_v_null == (char)-1) && PyErr_Occurred())) __PYX_ERR(0, 378, __pyx_L3_error)
+    __pyx_v_null = __Pyx_PyInt_As_char(values[6]); if (unlikely((__pyx_v_null == (char)-1) && PyErr_Occurred())) __PYX_ERR(0, 381, __pyx_L3_error)
     __pyx_v_null_val = values[7];
-    __pyx_v_max_defi = __Pyx_PyInt_As_int32_t(values[8]); if (unlikely((__pyx_v_max_defi == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 378, __pyx_L3_error)
-    __pyx_v_prev_i = __Pyx_PyInt_As_int32_t(values[9]); if (unlikely((__pyx_v_prev_i == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 378, __pyx_L3_error)
+    __pyx_v_max_defi = __Pyx_PyInt_As_int32_t(values[8]); if (unlikely((__pyx_v_max_defi == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 381, __pyx_L3_error)
+    __pyx_v_prev_i = __Pyx_PyInt_As_int32_t(values[9]); if (unlikely((__pyx_v_prev_i == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 381, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 376, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_assemble_objects", 1, 10, 10, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 379, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding._assemble_objects", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8062,7 +8220,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
   __Pyx_RefNannySetupContext("_assemble_objects", 0);
   __Pyx_INCREF(__pyx_v_val);
 
-  /* "fastparquet/cencoding.pyx":403
+  /* "fastparquet/cencoding.pyx":406
  *     """
  *     cdef int32_t counter, i, re, de
  *     cdef int32_t vali = 0             # <<<<<<<<<<<<<<
@@ -8071,7 +8229,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  */
   __pyx_v_vali = 0;
 
-  /* "fastparquet/cencoding.pyx":404
+  /* "fastparquet/cencoding.pyx":407
  *     cdef int32_t counter, i, re, de
  *     cdef int32_t vali = 0
  *     cdef char started = False, have_null = False             # <<<<<<<<<<<<<<
@@ -8081,29 +8239,29 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
   __pyx_v_started = 0;
   __pyx_v_have_null = 0;
 
-  /* "fastparquet/cencoding.pyx":405
+  /* "fastparquet/cencoding.pyx":408
  *     cdef int32_t vali = 0
  *     cdef char started = False, have_null = False
  *     if d:             # <<<<<<<<<<<<<<
  *         # dereference dict values
  *         val = dic[val]
  */
-  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_d); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 405, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_d); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 408, __pyx_L1_error)
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":407
+    /* "fastparquet/cencoding.pyx":410
  *     if d:
  *         # dereference dict values
  *         val = dic[val]             # <<<<<<<<<<<<<<
  *     i = prev_i
  *     part = []
  */
-    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_dic, __pyx_v_val); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 407, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_dic, __pyx_v_val); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 410, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF_SET(__pyx_v_val, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "fastparquet/cencoding.pyx":405
+    /* "fastparquet/cencoding.pyx":408
  *     cdef int32_t vali = 0
  *     cdef char started = False, have_null = False
  *     if d:             # <<<<<<<<<<<<<<
@@ -8112,7 +8270,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  */
   }
 
-  /* "fastparquet/cencoding.pyx":408
+  /* "fastparquet/cencoding.pyx":411
  *         # dereference dict values
  *         val = dic[val]
  *     i = prev_i             # <<<<<<<<<<<<<<
@@ -8121,19 +8279,19 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  */
   __pyx_v_i = __pyx_v_prev_i;
 
-  /* "fastparquet/cencoding.pyx":409
+  /* "fastparquet/cencoding.pyx":412
  *         val = dic[val]
  *     i = prev_i
  *     part = []             # <<<<<<<<<<<<<<
  *     for counter in range(rep.shape[0]):
  *         de = defi[counter] if defi is not None else max_defi
  */
-  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 409, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_v_part = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "fastparquet/cencoding.pyx":410
+  /* "fastparquet/cencoding.pyx":413
  *     i = prev_i
  *     part = []
  *     for counter in range(rep.shape[0]):             # <<<<<<<<<<<<<<
@@ -8145,7 +8303,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
   for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
     __pyx_v_counter = __pyx_t_5;
 
-    /* "fastparquet/cencoding.pyx":411
+    /* "fastparquet/cencoding.pyx":414
  *     part = []
  *     for counter in range(rep.shape[0]):
  *         de = defi[counter] if defi is not None else max_defi             # <<<<<<<<<<<<<<
@@ -8160,7 +8318,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     }
     __pyx_v_de = __pyx_t_6;
 
-    /* "fastparquet/cencoding.pyx":412
+    /* "fastparquet/cencoding.pyx":415
  *     for counter in range(rep.shape[0]):
  *         de = defi[counter] if defi is not None else max_defi
  *         re = rep[counter]             # <<<<<<<<<<<<<<
@@ -8170,7 +8328,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     __pyx_t_7 = __pyx_v_counter;
     __pyx_v_re = (*((uint8_t const  *) ( /* dim=0 */ (__pyx_v_rep.data + __pyx_t_7 * __pyx_v_rep.strides[0]) )));
 
-    /* "fastparquet/cencoding.pyx":413
+    /* "fastparquet/cencoding.pyx":416
  *         de = defi[counter] if defi is not None else max_defi
  *         re = rep[counter]
  *         if not re:             # <<<<<<<<<<<<<<
@@ -8180,7 +8338,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     __pyx_t_1 = ((!(__pyx_v_re != 0)) != 0);
     if (__pyx_t_1) {
 
-      /* "fastparquet/cencoding.pyx":415
+      /* "fastparquet/cencoding.pyx":418
  *         if not re:
  *             # new row - save what we have
  *             if started:             # <<<<<<<<<<<<<<
@@ -8190,7 +8348,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
       __pyx_t_1 = (__pyx_v_started != 0);
       if (__pyx_t_1) {
 
-        /* "fastparquet/cencoding.pyx":416
+        /* "fastparquet/cencoding.pyx":419
  *             # new row - save what we have
  *             if started:
  *                 assign[i] = None if have_null else part             # <<<<<<<<<<<<<<
@@ -8212,19 +8370,19 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
         __Pyx_GIVEREF(*__pyx_t_8);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-        /* "fastparquet/cencoding.pyx":417
+        /* "fastparquet/cencoding.pyx":420
  *             if started:
  *                 assign[i] = None if have_null else part
  *                 part = []             # <<<<<<<<<<<<<<
  *                 i += 1
  *             else:
  */
-        __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 417, __pyx_L1_error)
+        __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 420, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF_SET(__pyx_v_part, ((PyObject*)__pyx_t_2));
         __pyx_t_2 = 0;
 
-        /* "fastparquet/cencoding.pyx":418
+        /* "fastparquet/cencoding.pyx":421
  *                 assign[i] = None if have_null else part
  *                 part = []
  *                 i += 1             # <<<<<<<<<<<<<<
@@ -8233,7 +8391,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  */
         __pyx_v_i = (__pyx_v_i + 1);
 
-        /* "fastparquet/cencoding.pyx":415
+        /* "fastparquet/cencoding.pyx":418
  *         if not re:
  *             # new row - save what we have
  *             if started:             # <<<<<<<<<<<<<<
@@ -8243,7 +8401,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
         goto __pyx_L7;
       }
 
-      /* "fastparquet/cencoding.pyx":421
+      /* "fastparquet/cencoding.pyx":424
  *             else:
  *                 # first time: no row to save yet, unless it's a row continued from previous page
  *                 if vali > 0:             # <<<<<<<<<<<<<<
@@ -8254,7 +8412,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
         __pyx_t_1 = ((__pyx_v_vali > 0) != 0);
         if (__pyx_t_1) {
 
-          /* "fastparquet/cencoding.pyx":422
+          /* "fastparquet/cencoding.pyx":425
  *                 # first time: no row to save yet, unless it's a row continued from previous page
  *                 if vali > 0:
  *                     assign[i - 1].extend(part) # add the items to previous row             # <<<<<<<<<<<<<<
@@ -8264,7 +8422,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
           __pyx_t_7 = (__pyx_v_i - 1);
           __pyx_t_9 = (PyObject *) *((PyObject * *) ( /* dim=0 */ (__pyx_v_assign.data + __pyx_t_7 * __pyx_v_assign.strides[0]) ));
           __Pyx_INCREF((PyObject*)__pyx_t_9);
-          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_extend); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 422, __pyx_L1_error)
+          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_extend); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 425, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_10);
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
           __pyx_t_9 = NULL;
@@ -8279,24 +8437,24 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
           }
           __pyx_t_2 = (__pyx_t_9) ? __Pyx_PyObject_Call2Args(__pyx_t_10, __pyx_t_9, __pyx_v_part) : __Pyx_PyObject_CallOneArg(__pyx_t_10, __pyx_v_part);
           __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 422, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 425, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-          /* "fastparquet/cencoding.pyx":423
+          /* "fastparquet/cencoding.pyx":426
  *                 if vali > 0:
  *                     assign[i - 1].extend(part) # add the items to previous row
  *                     part = []             # <<<<<<<<<<<<<<
  *                     # don't increment i since we only filled i-1
  *                 started = True
  */
-          __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 423, __pyx_L1_error)
+          __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 426, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF_SET(__pyx_v_part, ((PyObject*)__pyx_t_2));
           __pyx_t_2 = 0;
 
-          /* "fastparquet/cencoding.pyx":421
+          /* "fastparquet/cencoding.pyx":424
  *             else:
  *                 # first time: no row to save yet, unless it's a row continued from previous page
  *                 if vali > 0:             # <<<<<<<<<<<<<<
@@ -8305,7 +8463,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  */
         }
 
-        /* "fastparquet/cencoding.pyx":425
+        /* "fastparquet/cencoding.pyx":428
  *                     part = []
  *                     # don't increment i since we only filled i-1
  *                 started = True             # <<<<<<<<<<<<<<
@@ -8316,7 +8474,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
       }
       __pyx_L7:;
 
-      /* "fastparquet/cencoding.pyx":413
+      /* "fastparquet/cencoding.pyx":416
  *         de = defi[counter] if defi is not None else max_defi
  *         re = rep[counter]
  *         if not re:             # <<<<<<<<<<<<<<
@@ -8325,7 +8483,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  */
     }
 
-    /* "fastparquet/cencoding.pyx":426
+    /* "fastparquet/cencoding.pyx":429
  *                     # don't increment i since we only filled i-1
  *                 started = True
  *         if de == max_defi:             # <<<<<<<<<<<<<<
@@ -8335,19 +8493,19 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     __pyx_t_1 = ((__pyx_v_de == __pyx_v_max_defi) != 0);
     if (__pyx_t_1) {
 
-      /* "fastparquet/cencoding.pyx":428
+      /* "fastparquet/cencoding.pyx":431
  *         if de == max_defi:
  *             # append real value to current item
  *             part.append(val[vali])             # <<<<<<<<<<<<<<
  *             vali += 1
  *         elif de > null:
  */
-      __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_val, __pyx_v_vali, int32_t, 1, __Pyx_PyInt_From_int32_t, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 428, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_val, __pyx_v_vali, int32_t, 1, __Pyx_PyInt_From_int32_t, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 431, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_part, __pyx_t_2); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 428, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_part, __pyx_t_2); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 431, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "fastparquet/cencoding.pyx":429
+      /* "fastparquet/cencoding.pyx":432
  *             # append real value to current item
  *             part.append(val[vali])
  *             vali += 1             # <<<<<<<<<<<<<<
@@ -8356,7 +8514,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  */
       __pyx_v_vali = (__pyx_v_vali + 1);
 
-      /* "fastparquet/cencoding.pyx":426
+      /* "fastparquet/cencoding.pyx":429
  *                     # don't increment i since we only filled i-1
  *                 started = True
  *         if de == max_defi:             # <<<<<<<<<<<<<<
@@ -8366,7 +8524,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
       goto __pyx_L9;
     }
 
-    /* "fastparquet/cencoding.pyx":430
+    /* "fastparquet/cencoding.pyx":433
  *             part.append(val[vali])
  *             vali += 1
  *         elif de > null:             # <<<<<<<<<<<<<<
@@ -8376,16 +8534,16 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     __pyx_t_1 = ((__pyx_v_de > __pyx_v_null) != 0);
     if (__pyx_t_1) {
 
-      /* "fastparquet/cencoding.pyx":432
+      /* "fastparquet/cencoding.pyx":435
  *         elif de > null:
  *             # append null to current item
  *             part.append(None)             # <<<<<<<<<<<<<<
  *         # next object is None as opposed to an object
  *         have_null = de == 0 and null
  */
-      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_part, Py_None); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 432, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_part, Py_None); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 435, __pyx_L1_error)
 
-      /* "fastparquet/cencoding.pyx":430
+      /* "fastparquet/cencoding.pyx":433
  *             part.append(val[vali])
  *             vali += 1
  *         elif de > null:             # <<<<<<<<<<<<<<
@@ -8395,7 +8553,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     }
     __pyx_L9:;
 
-    /* "fastparquet/cencoding.pyx":434
+    /* "fastparquet/cencoding.pyx":437
  *             part.append(None)
  *         # next object is None as opposed to an object
  *         have_null = de == 0 and null             # <<<<<<<<<<<<<<
@@ -8413,7 +8571,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     __pyx_v_have_null = __pyx_t_12;
   }
 
-  /* "fastparquet/cencoding.pyx":435
+  /* "fastparquet/cencoding.pyx":438
  *         # next object is None as opposed to an object
  *         have_null = de == 0 and null
  *     if started: # normal case - add the leftovers to the next row             # <<<<<<<<<<<<<<
@@ -8423,7 +8581,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
   __pyx_t_1 = (__pyx_v_started != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":436
+    /* "fastparquet/cencoding.pyx":439
  *         have_null = de == 0 and null
  *     if started: # normal case - add the leftovers to the next row
  *         assign[i] = None if have_null else part             # <<<<<<<<<<<<<<
@@ -8445,7 +8603,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     __Pyx_GIVEREF(*__pyx_t_8);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "fastparquet/cencoding.pyx":435
+    /* "fastparquet/cencoding.pyx":438
  *         # next object is None as opposed to an object
  *         have_null = de == 0 and null
  *     if started: # normal case - add the leftovers to the next row             # <<<<<<<<<<<<<<
@@ -8455,7 +8613,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     goto __pyx_L12;
   }
 
-  /* "fastparquet/cencoding.pyx":438
+  /* "fastparquet/cencoding.pyx":441
  *         assign[i] = None if have_null else part
  *     else: # can only happen if the only elements in this page are the continuation of the last row from previous page
  *         assign[i - 1].extend(part)             # <<<<<<<<<<<<<<
@@ -8466,7 +8624,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     __pyx_t_7 = (__pyx_v_i - 1);
     __pyx_t_10 = (PyObject *) *((PyObject * *) ( /* dim=0 */ (__pyx_v_assign.data + __pyx_t_7 * __pyx_v_assign.strides[0]) ));
     __Pyx_INCREF((PyObject*)__pyx_t_10);
-    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_extend); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 438, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_extend); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 441, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_10 = NULL;
@@ -8481,14 +8639,14 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
     }
     __pyx_t_2 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_9, __pyx_t_10, __pyx_v_part) : __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_v_part);
     __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 438, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 441, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_L12:;
 
-  /* "fastparquet/cencoding.pyx":439
+  /* "fastparquet/cencoding.pyx":442
  *     else: # can only happen if the only elements in this page are the continuation of the last row from previous page
  *         assign[i - 1].extend(part)
  *     return i             # <<<<<<<<<<<<<<
@@ -8496,13 +8654,13 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyInt_From_int32_t(__pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 439, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(__pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 442, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":376
+  /* "fastparquet/cencoding.pyx":379
  * 
  * 
  * def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] rep,             # <<<<<<<<<<<<<<
@@ -8528,7 +8686,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_22_assemble_objects(CYTHON_UN
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":445
+/* "fastparquet/cencoding.pyx":448
  * 
  * 
  * cpdef void time_shift(const int64_t[::1] data, int32_t factor=1000):             # <<<<<<<<<<<<<<
@@ -8555,7 +8713,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice __pyx
     }
   }
 
-  /* "fastparquet/cencoding.pyx":449
+  /* "fastparquet/cencoding.pyx":452
  *     cdef int64_t * ptr
  *     cdef int64_t value
  *     ptr = <int64_t*>&data[0]             # <<<<<<<<<<<<<<
@@ -8565,7 +8723,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice __pyx
   __pyx_t_1 = 0;
   __pyx_v_ptr = ((int64_t *)(&(*((int64_t const  *) ( /* dim=0 */ ((char *) (((int64_t const  *) __pyx_v_data.data) + __pyx_t_1)) )))));
 
-  /* "fastparquet/cencoding.pyx":450
+  /* "fastparquet/cencoding.pyx":453
  *     cdef int64_t value
  *     ptr = <int64_t*>&data[0]
  *     for i in range(data.shape[0]):             # <<<<<<<<<<<<<<
@@ -8577,7 +8735,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice __pyx
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "fastparquet/cencoding.pyx":451
+    /* "fastparquet/cencoding.pyx":454
  *     ptr = <int64_t*>&data[0]
  *     for i in range(data.shape[0]):
  *         if ptr[0] != nat:             # <<<<<<<<<<<<<<
@@ -8587,7 +8745,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice __pyx
     __pyx_t_5 = (((__pyx_v_ptr[0]) != __pyx_v_11fastparquet_9cencoding_nat) != 0);
     if (__pyx_t_5) {
 
-      /* "fastparquet/cencoding.pyx":452
+      /* "fastparquet/cencoding.pyx":455
  *     for i in range(data.shape[0]):
  *         if ptr[0] != nat:
  *             ptr[0] *= factor             # <<<<<<<<<<<<<<
@@ -8597,7 +8755,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice __pyx
       __pyx_t_6 = 0;
       (__pyx_v_ptr[__pyx_t_6]) = ((__pyx_v_ptr[__pyx_t_6]) * __pyx_v_factor);
 
-      /* "fastparquet/cencoding.pyx":451
+      /* "fastparquet/cencoding.pyx":454
  *     ptr = <int64_t*>&data[0]
  *     for i in range(data.shape[0]):
  *         if ptr[0] != nat:             # <<<<<<<<<<<<<<
@@ -8606,7 +8764,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice __pyx
  */
     }
 
-    /* "fastparquet/cencoding.pyx":453
+    /* "fastparquet/cencoding.pyx":456
  *         if ptr[0] != nat:
  *             ptr[0] *= factor
  *         ptr += 1             # <<<<<<<<<<<<<<
@@ -8616,7 +8774,7 @@ static void __pyx_f_11fastparquet_9cencoding_time_shift(__Pyx_memviewslice __pyx
     __pyx_v_ptr = (__pyx_v_ptr + 1);
   }
 
-  /* "fastparquet/cencoding.pyx":445
+  /* "fastparquet/cencoding.pyx":448
  * 
  * 
  * cpdef void time_shift(const int64_t[::1] data, int32_t factor=1000):             # <<<<<<<<<<<<<<
@@ -8666,7 +8824,7 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_25time_shift(PyObject *__pyx_
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "time_shift") < 0)) __PYX_ERR(0, 445, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "time_shift") < 0)) __PYX_ERR(0, 448, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -8677,16 +8835,16 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_25time_shift(PyObject *__pyx_
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn_int64_t__const__(values[0], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 445, __pyx_L3_error)
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn_int64_t__const__(values[0], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 448, __pyx_L3_error)
     if (values[1]) {
-      __pyx_v_factor = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_factor == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 445, __pyx_L3_error)
+      __pyx_v_factor = __Pyx_PyInt_As_int32_t(values[1]); if (unlikely((__pyx_v_factor == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 448, __pyx_L3_error)
     } else {
       __pyx_v_factor = ((int32_t)0x3E8);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("time_shift", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 445, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("time_shift", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 448, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.time_shift", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8712,7 +8870,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_24time_shift(CYTHON_UNUSED Py
   __pyx_t_1.__pyx_n = 1;
   __pyx_t_1.factor = __pyx_v_factor;
   __pyx_f_11fastparquet_9cencoding_time_shift(__pyx_v_data, 0, &__pyx_t_1); 
-  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 445, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 448, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -8730,7 +8888,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_24time_shift(CYTHON_UNUSED Py
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":456
+/* "fastparquet/cencoding.pyx":459
  * 
  * 
  * cdef int32_t zigzag_int(uint64_t n):             # <<<<<<<<<<<<<<
@@ -8743,7 +8901,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_zigzag_int(uint64_t __pyx_v_n) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("zigzag_int", 0);
 
-  /* "fastparquet/cencoding.pyx":457
+  /* "fastparquet/cencoding.pyx":460
  * 
  * cdef int32_t zigzag_int(uint64_t n):
  *     return (n >> 1) ^ -(n & 1)             # <<<<<<<<<<<<<<
@@ -8753,7 +8911,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_zigzag_int(uint64_t __pyx_v_n) {
   __pyx_r = ((__pyx_v_n >> 1) ^ (-(__pyx_v_n & 1)));
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":456
+  /* "fastparquet/cencoding.pyx":459
  * 
  * 
  * cdef int32_t zigzag_int(uint64_t n):             # <<<<<<<<<<<<<<
@@ -8767,7 +8925,7 @@ static int32_t __pyx_f_11fastparquet_9cencoding_zigzag_int(uint64_t __pyx_v_n) {
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":460
+/* "fastparquet/cencoding.pyx":463
  * 
  * 
  * cdef int64_t zigzag_long(uint64_t n):             # <<<<<<<<<<<<<<
@@ -8780,7 +8938,7 @@ static int64_t __pyx_f_11fastparquet_9cencoding_zigzag_long(uint64_t __pyx_v_n) 
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("zigzag_long", 0);
 
-  /* "fastparquet/cencoding.pyx":461
+  /* "fastparquet/cencoding.pyx":464
  * 
  * cdef int64_t zigzag_long(uint64_t n):
  *     return (n >> 1) ^ -(n & 1)             # <<<<<<<<<<<<<<
@@ -8790,7 +8948,7 @@ static int64_t __pyx_f_11fastparquet_9cencoding_zigzag_long(uint64_t __pyx_v_n) 
   __pyx_r = ((__pyx_v_n >> 1) ^ (-(__pyx_v_n & 1)));
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":460
+  /* "fastparquet/cencoding.pyx":463
  * 
  * 
  * cdef int64_t zigzag_long(uint64_t n):             # <<<<<<<<<<<<<<
@@ -8804,7 +8962,7 @@ static int64_t __pyx_f_11fastparquet_9cencoding_zigzag_long(uint64_t __pyx_v_n) 
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":464
+/* "fastparquet/cencoding.pyx":467
  * 
  * 
  * cdef uint64_t long_zigzag(int64_t n):             # <<<<<<<<<<<<<<
@@ -8817,7 +8975,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_long_zigzag(int64_t __pyx_v_n) 
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("long_zigzag", 0);
 
-  /* "fastparquet/cencoding.pyx":465
+  /* "fastparquet/cencoding.pyx":468
  * 
  * cdef uint64_t long_zigzag(int64_t n):
  *     return (n << 1) ^ (n >> 63)             # <<<<<<<<<<<<<<
@@ -8827,7 +8985,7 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_long_zigzag(int64_t __pyx_v_n) 
   __pyx_r = ((__pyx_v_n << 1) ^ (__pyx_v_n >> 63));
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":464
+  /* "fastparquet/cencoding.pyx":467
  * 
  * 
  * cdef uint64_t long_zigzag(int64_t n):             # <<<<<<<<<<<<<<
@@ -8841,17 +8999,16 @@ static uint64_t __pyx_f_11fastparquet_9cencoding_long_zigzag(int64_t __pyx_v_n) 
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":468
+/* "fastparquet/cencoding.pyx":471
  * 
  * 
- * cpdef dict read_thrift(NumpyIO data, str name=None):             # <<<<<<<<<<<<<<
+ * cpdef dict read_thrift(NumpyIO data):             # <<<<<<<<<<<<<<
  *     cdef char byte, id = 0, bit
  *     cdef int32_t size
  */
 
-static PyObject *__pyx_pw_11fastparquet_9cencoding_27read_thrift(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_data, CYTHON_UNUSED int __pyx_skip_dispatch, struct __pyx_opt_args_11fastparquet_9cencoding_read_thrift *__pyx_optional_args) {
-  PyObject *__pyx_v_name = ((PyObject*)Py_None);
+static PyObject *__pyx_pw_11fastparquet_9cencoding_27read_thrift(PyObject *__pyx_self, PyObject *__pyx_v_data); /*proto*/
+static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_data, CYTHON_UNUSED int __pyx_skip_dispatch) {
   char __pyx_v_byte;
   char __pyx_v_id;
   char __pyx_v_bit;
@@ -8863,39 +9020,33 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
   int __pyx_t_2;
   PyObject *__pyx_t_3 = NULL;
   struct __pyx_opt_args_11fastparquet_9cencoding_7NumpyIO_seek __pyx_t_4;
-  int __pyx_t_5;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("read_thrift", 0);
-  if (__pyx_optional_args) {
-    if (__pyx_optional_args->__pyx_n > 0) {
-      __pyx_v_name = __pyx_optional_args->name;
-    }
-  }
 
-  /* "fastparquet/cencoding.pyx":469
+  /* "fastparquet/cencoding.pyx":472
  * 
- * cpdef dict read_thrift(NumpyIO data, str name=None):
+ * cpdef dict read_thrift(NumpyIO data):
  *     cdef char byte, id = 0, bit             # <<<<<<<<<<<<<<
  *     cdef int32_t size
  *     cdef dict out = {}
  */
   __pyx_v_id = 0;
 
-  /* "fastparquet/cencoding.pyx":471
+  /* "fastparquet/cencoding.pyx":474
  *     cdef char byte, id = 0, bit
  *     cdef int32_t size
  *     cdef dict out = {}             # <<<<<<<<<<<<<<
  *     while True:
  *         byte = data.read_byte()
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 471, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 474, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_out = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":472
+  /* "fastparquet/cencoding.pyx":475
  *     cdef int32_t size
  *     cdef dict out = {}
  *     while True:             # <<<<<<<<<<<<<<
@@ -8904,7 +9055,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
  */
   while (1) {
 
-    /* "fastparquet/cencoding.pyx":473
+    /* "fastparquet/cencoding.pyx":476
  *     cdef dict out = {}
  *     while True:
  *         byte = data.read_byte()             # <<<<<<<<<<<<<<
@@ -8913,7 +9064,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
  */
     __pyx_v_byte = __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(__pyx_v_data, 0);
 
-    /* "fastparquet/cencoding.pyx":474
+    /* "fastparquet/cencoding.pyx":477
  *     while True:
  *         byte = data.read_byte()
  *         if byte == 0:             # <<<<<<<<<<<<<<
@@ -8923,7 +9074,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
     __pyx_t_2 = ((__pyx_v_byte == 0) != 0);
     if (__pyx_t_2) {
 
-      /* "fastparquet/cencoding.pyx":475
+      /* "fastparquet/cencoding.pyx":478
  *         byte = data.read_byte()
  *         if byte == 0:
  *             break             # <<<<<<<<<<<<<<
@@ -8932,7 +9083,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
  */
       goto __pyx_L4_break;
 
-      /* "fastparquet/cencoding.pyx":474
+      /* "fastparquet/cencoding.pyx":477
  *     while True:
  *         byte = data.read_byte()
  *         if byte == 0:             # <<<<<<<<<<<<<<
@@ -8941,7 +9092,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
  */
     }
 
-    /* "fastparquet/cencoding.pyx":476
+    /* "fastparquet/cencoding.pyx":479
  *         if byte == 0:
  *             break
  *         id += (byte & 0b11110000) >> 4             # <<<<<<<<<<<<<<
@@ -8950,7 +9101,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
  */
     __pyx_v_id = (__pyx_v_id + ((__pyx_v_byte & 240) >> 4));
 
-    /* "fastparquet/cencoding.pyx":477
+    /* "fastparquet/cencoding.pyx":480
  *             break
  *         id += (byte & 0b11110000) >> 4
  *         bit = byte & 0b00001111             # <<<<<<<<<<<<<<
@@ -8959,7 +9110,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
  */
     __pyx_v_bit = (__pyx_v_byte & 15);
 
-    /* "fastparquet/cencoding.pyx":478
+    /* "fastparquet/cencoding.pyx":481
  *         id += (byte & 0b11110000) >> 4
  *         bit = byte & 0b00001111
  *         if bit == 5 or bit == 6:             # <<<<<<<<<<<<<<
@@ -8970,22 +9121,22 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
       case 5:
       case 6:
 
-      /* "fastparquet/cencoding.pyx":479
+      /* "fastparquet/cencoding.pyx":482
  *         bit = byte & 0b00001111
  *         if bit == 5 or bit == 6:
  *             out[id] = zigzag_long(read_unsigned_var_int(data))             # <<<<<<<<<<<<<<
  *         elif bit == 7:
  *             out[id] = <double>data.get_pointer()[0]
  */
-      __pyx_t_1 = __Pyx_PyInt_From_int64_t(__pyx_f_11fastparquet_9cencoding_zigzag_long(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_data, 0))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 479, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_From_int64_t(__pyx_f_11fastparquet_9cencoding_zigzag_long(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_data, 0))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 482, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 479, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 482, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 479, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 482, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "fastparquet/cencoding.pyx":478
+      /* "fastparquet/cencoding.pyx":481
  *         id += (byte & 0b11110000) >> 4
  *         bit = byte & 0b00001111
  *         if bit == 5 or bit == 6:             # <<<<<<<<<<<<<<
@@ -8995,22 +9146,22 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
       break;
       case 7:
 
-      /* "fastparquet/cencoding.pyx":481
+      /* "fastparquet/cencoding.pyx":484
  *             out[id] = zigzag_long(read_unsigned_var_int(data))
  *         elif bit == 7:
  *             out[id] = <double>data.get_pointer()[0]             # <<<<<<<<<<<<<<
  *             data.seek(8, 1)
  *         elif bit == 8:
  */
-      __pyx_t_1 = PyFloat_FromDouble(((double)(__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_data)[0]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 481, __pyx_L1_error)
+      __pyx_t_1 = PyFloat_FromDouble(((double)(__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_data)[0]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 484, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 481, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 484, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 481, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 484, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "fastparquet/cencoding.pyx":482
+      /* "fastparquet/cencoding.pyx":485
  *         elif bit == 7:
  *             out[id] = <double>data.get_pointer()[0]
  *             data.seek(8, 1)             # <<<<<<<<<<<<<<
@@ -9021,7 +9172,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
       __pyx_t_4.whence = 1;
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(__pyx_v_data, 8, 0, &__pyx_t_4); 
 
-      /* "fastparquet/cencoding.pyx":480
+      /* "fastparquet/cencoding.pyx":483
  *         if bit == 5 or bit == 6:
  *             out[id] = zigzag_long(read_unsigned_var_int(data))
  *         elif bit == 7:             # <<<<<<<<<<<<<<
@@ -9031,7 +9182,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
       break;
       case 8:
 
-      /* "fastparquet/cencoding.pyx":484
+      /* "fastparquet/cencoding.pyx":487
  *             data.seek(8, 1)
  *         elif bit == 8:
  *             size = read_unsigned_var_int(data)             # <<<<<<<<<<<<<<
@@ -9040,22 +9191,22 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
  */
       __pyx_v_size = __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_data, 0);
 
-      /* "fastparquet/cencoding.pyx":485
+      /* "fastparquet/cencoding.pyx":488
  *         elif bit == 8:
  *             size = read_unsigned_var_int(data)
  *             out[id] = PyBytes_FromStringAndSize(data.get_pointer(), size)             # <<<<<<<<<<<<<<
  *             data.seek(size, 1)
  *         elif bit == 9:
  */
-      __pyx_t_1 = PyBytes_FromStringAndSize(__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_data), __pyx_v_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 485, __pyx_L1_error)
+      __pyx_t_1 = PyBytes_FromStringAndSize(__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_data), __pyx_v_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 488, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 485, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 488, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 485, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 488, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "fastparquet/cencoding.pyx":486
+      /* "fastparquet/cencoding.pyx":489
  *             size = read_unsigned_var_int(data)
  *             out[id] = PyBytes_FromStringAndSize(data.get_pointer(), size)
  *             data.seek(size, 1)             # <<<<<<<<<<<<<<
@@ -9066,7 +9217,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
       __pyx_t_4.whence = 1;
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(__pyx_v_data, __pyx_v_size, 0, &__pyx_t_4); 
 
-      /* "fastparquet/cencoding.pyx":483
+      /* "fastparquet/cencoding.pyx":486
  *             out[id] = <double>data.get_pointer()[0]
  *             data.seek(8, 1)
  *         elif bit == 8:             # <<<<<<<<<<<<<<
@@ -9076,22 +9227,22 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
       break;
       case 9:
 
-      /* "fastparquet/cencoding.pyx":488
+      /* "fastparquet/cencoding.pyx":491
  *             data.seek(size, 1)
  *         elif bit == 9:
  *             out[id] = read_list(data)             # <<<<<<<<<<<<<<
  *         elif bit == 12:
  *             out[id] = read_thrift(data)
  */
-      __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_read_list(__pyx_v_data); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 488, __pyx_L1_error)
+      __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_read_list(__pyx_v_data); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 491, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 488, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 491, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 488, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 491, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "fastparquet/cencoding.pyx":487
+      /* "fastparquet/cencoding.pyx":490
  *             out[id] = PyBytes_FromStringAndSize(data.get_pointer(), size)
  *             data.seek(size, 1)
  *         elif bit == 9:             # <<<<<<<<<<<<<<
@@ -9101,27 +9252,27 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
       break;
       case 12:
 
-      /* "fastparquet/cencoding.pyx":490
+      /* "fastparquet/cencoding.pyx":493
  *             out[id] = read_list(data)
  *         elif bit == 12:
  *             out[id] = read_thrift(data)             # <<<<<<<<<<<<<<
- *     if name is None:
- *         return out
+ *     return out
+ * 
  */
-      __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_read_thrift(__pyx_v_data, 0, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 490, __pyx_L1_error)
+      __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_read_thrift(__pyx_v_data, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 493, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 490, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_char(__pyx_v_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 493, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 490, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_out, __pyx_t_3, __pyx_t_1) < 0)) __PYX_ERR(0, 493, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "fastparquet/cencoding.pyx":489
+      /* "fastparquet/cencoding.pyx":492
  *         elif bit == 9:
  *             out[id] = read_list(data)
  *         elif bit == 12:             # <<<<<<<<<<<<<<
  *             out[id] = read_thrift(data)
- *     if name is None:
+ *     return out
  */
       break;
       default: break;
@@ -9129,65 +9280,22 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
   }
   __pyx_L4_break:;
 
-  /* "fastparquet/cencoding.pyx":491
+  /* "fastparquet/cencoding.pyx":494
  *         elif bit == 12:
  *             out[id] = read_thrift(data)
- *     if name is None:             # <<<<<<<<<<<<<<
- *         return out
- *     return ThriftObject(name, out)
- */
-  __pyx_t_2 = (__pyx_v_name == ((PyObject*)Py_None));
-  __pyx_t_5 = (__pyx_t_2 != 0);
-  if (__pyx_t_5) {
-
-    /* "fastparquet/cencoding.pyx":492
- *             out[id] = read_thrift(data)
- *     if name is None:
- *         return out             # <<<<<<<<<<<<<<
- *     return ThriftObject(name, out)
- * 
- */
-    __Pyx_XDECREF(__pyx_r);
-    __Pyx_INCREF(__pyx_v_out);
-    __pyx_r = __pyx_v_out;
-    goto __pyx_L0;
-
-    /* "fastparquet/cencoding.pyx":491
- *         elif bit == 12:
- *             out[id] = read_thrift(data)
- *     if name is None:             # <<<<<<<<<<<<<<
- *         return out
- *     return ThriftObject(name, out)
- */
-  }
-
-  /* "fastparquet/cencoding.pyx":493
- *     if name is None:
- *         return out
- *     return ThriftObject(name, out)             # <<<<<<<<<<<<<<
+ *     return out             # <<<<<<<<<<<<<<
  * 
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 493, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_INCREF(__pyx_v_name);
-  __Pyx_GIVEREF(__pyx_v_name);
-  PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_name);
   __Pyx_INCREF(__pyx_v_out);
-  __Pyx_GIVEREF(__pyx_v_out);
-  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_out);
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject), __pyx_t_1, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 493, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_r = ((PyObject*)__pyx_t_3);
-  __pyx_t_3 = 0;
+  __pyx_r = __pyx_v_out;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":468
+  /* "fastparquet/cencoding.pyx":471
  * 
  * 
- * cpdef dict read_thrift(NumpyIO data, str name=None):             # <<<<<<<<<<<<<<
+ * cpdef dict read_thrift(NumpyIO data):             # <<<<<<<<<<<<<<
  *     cdef char byte, id = 0, bit
  *     cdef int32_t size
  */
@@ -9206,69 +9314,16 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_thrift(struct __pyx_obj_1
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11fastparquet_9cencoding_27read_thrift(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_11fastparquet_9cencoding_27read_thrift(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_data = 0;
-  PyObject *__pyx_v_name = 0;
+static PyObject *__pyx_pw_11fastparquet_9cencoding_27read_thrift(PyObject *__pyx_self, PyObject *__pyx_v_data); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_27read_thrift(PyObject *__pyx_self, PyObject *__pyx_v_data) {
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("read_thrift (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_data,&__pyx_n_s_name,0};
-    PyObject* values[2] = {0,0};
-    values[1] = ((PyObject*)Py_None);
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
-      switch (pos_args) {
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        CYTHON_FALLTHROUGH;
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = PyDict_Size(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_data)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        CYTHON_FALLTHROUGH;
-        case  1:
-        if (kw_args > 0) {
-          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_name);
-          if (value) { values[1] = value; kw_args--; }
-        }
-      }
-      if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_thrift") < 0)) __PYX_ERR(0, 468, __pyx_L3_error)
-      }
-    } else {
-      switch (PyTuple_GET_SIZE(__pyx_args)) {
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-    }
-    __pyx_v_data = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)values[0]);
-    __pyx_v_name = ((PyObject*)values[1]);
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("read_thrift", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 468, __pyx_L3_error)
-  __pyx_L3_error:;
-  __Pyx_AddTraceback("fastparquet.cencoding.read_thrift", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "data", 0))) __PYX_ERR(0, 468, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 468, __pyx_L1_error)
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_26read_thrift(__pyx_self, __pyx_v_data, __pyx_v_name);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "data", 0))) __PYX_ERR(0, 471, __pyx_L1_error)
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_26read_thrift(__pyx_self, ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)__pyx_v_data));
 
   /* function exit code */
   goto __pyx_L0;
@@ -9279,19 +9334,16 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_27read_thrift(PyObject *__pyx
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11fastparquet_9cencoding_26read_thrift(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_data, PyObject *__pyx_v_name) {
+static PyObject *__pyx_pf_11fastparquet_9cencoding_26read_thrift(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_data) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  struct __pyx_opt_args_11fastparquet_9cencoding_read_thrift __pyx_t_2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("read_thrift", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2.__pyx_n = 1;
-  __pyx_t_2.name = __pyx_v_name;
-  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_read_thrift(__pyx_v_data, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 468, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_read_thrift(__pyx_v_data, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 471, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9308,7 +9360,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_26read_thrift(CYTHON_UNUSED P
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":496
+/* "fastparquet/cencoding.pyx":497
  * 
  * 
  * cdef list read_list(NumpyIO data):             # <<<<<<<<<<<<<<
@@ -9337,7 +9389,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("read_list", 0);
 
-  /* "fastparquet/cencoding.pyx":499
+  /* "fastparquet/cencoding.pyx":500
  *     cdef unsigned char byte, typ
  *     cdef int32_t size, bsize, _
  *     byte = data.read_byte()             # <<<<<<<<<<<<<<
@@ -9346,7 +9398,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
  */
   __pyx_v_byte = __pyx_f_11fastparquet_9cencoding_7NumpyIO_read_byte(__pyx_v_data, 0);
 
-  /* "fastparquet/cencoding.pyx":500
+  /* "fastparquet/cencoding.pyx":501
  *     cdef int32_t size, bsize, _
  *     byte = data.read_byte()
  *     if byte >= 0xf0:  # 0b11110000             # <<<<<<<<<<<<<<
@@ -9356,7 +9408,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
   __pyx_t_1 = ((__pyx_v_byte >= 0xf0) != 0);
   if (__pyx_t_1) {
 
-    /* "fastparquet/cencoding.pyx":501
+    /* "fastparquet/cencoding.pyx":502
  *     byte = data.read_byte()
  *     if byte >= 0xf0:  # 0b11110000
  *         size = read_unsigned_var_int(data)             # <<<<<<<<<<<<<<
@@ -9365,7 +9417,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
  */
     __pyx_v_size = __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_data, 0);
 
-    /* "fastparquet/cencoding.pyx":500
+    /* "fastparquet/cencoding.pyx":501
  *     cdef int32_t size, bsize, _
  *     byte = data.read_byte()
  *     if byte >= 0xf0:  # 0b11110000             # <<<<<<<<<<<<<<
@@ -9375,7 +9427,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
     goto __pyx_L3;
   }
 
-  /* "fastparquet/cencoding.pyx":503
+  /* "fastparquet/cencoding.pyx":504
  *         size = read_unsigned_var_int(data)
  *     else:
  *         size = ((byte & 0xf0) >> 4)             # <<<<<<<<<<<<<<
@@ -9387,19 +9439,19 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
   }
   __pyx_L3:;
 
-  /* "fastparquet/cencoding.pyx":504
+  /* "fastparquet/cencoding.pyx":505
  *     else:
  *         size = ((byte & 0xf0) >> 4)
  *     out = []             # <<<<<<<<<<<<<<
  *     typ = byte & 0x0f # 0b00001111
  *     if typ == 5:
  */
-  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 504, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 505, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_v_out = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "fastparquet/cencoding.pyx":505
+  /* "fastparquet/cencoding.pyx":506
  *         size = ((byte & 0xf0) >> 4)
  *     out = []
  *     typ = byte & 0x0f # 0b00001111             # <<<<<<<<<<<<<<
@@ -9408,7 +9460,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
  */
   __pyx_v_typ = (__pyx_v_byte & 0x0f);
 
-  /* "fastparquet/cencoding.pyx":506
+  /* "fastparquet/cencoding.pyx":507
  *     out = []
  *     typ = byte & 0x0f # 0b00001111
  *     if typ == 5:             # <<<<<<<<<<<<<<
@@ -9418,7 +9470,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
   switch (__pyx_v_typ) {
     case 5:
 
-    /* "fastparquet/cencoding.pyx":507
+    /* "fastparquet/cencoding.pyx":508
  *     typ = byte & 0x0f # 0b00001111
  *     if typ == 5:
  *         for _ in range(size):             # <<<<<<<<<<<<<<
@@ -9430,20 +9482,20 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
     for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
       __pyx_v__ = __pyx_t_5;
 
-      /* "fastparquet/cencoding.pyx":508
+      /* "fastparquet/cencoding.pyx":509
  *     if typ == 5:
  *         for _ in range(size):
  *             out.append(zigzag_long(read_unsigned_var_int(data)))             # <<<<<<<<<<<<<<
  *     elif typ == 8:
  *         for _ in range(size):
  */
-      __pyx_t_2 = __Pyx_PyInt_From_int64_t(__pyx_f_11fastparquet_9cencoding_zigzag_long(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_data, 0))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 508, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyInt_From_int64_t(__pyx_f_11fastparquet_9cencoding_zigzag_long(__pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_data, 0))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 509, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 508, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 509, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     }
 
-    /* "fastparquet/cencoding.pyx":506
+    /* "fastparquet/cencoding.pyx":507
  *     out = []
  *     typ = byte & 0x0f # 0b00001111
  *     if typ == 5:             # <<<<<<<<<<<<<<
@@ -9453,42 +9505,42 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
     break;
     case 8:
 
-    /* "fastparquet/cencoding.pyx":510
+    /* "fastparquet/cencoding.pyx":511
  *             out.append(zigzag_long(read_unsigned_var_int(data)))
  *     elif typ == 8:
  *         for _ in range(size):             # <<<<<<<<<<<<<<
+ *             # all parquet list types contain str, not bytes
  *             bsize = read_unsigned_var_int(data)
- *             out.append(PyBytes_FromStringAndSize(data.get_pointer(), bsize))
  */
     __pyx_t_3 = __pyx_v_size;
     __pyx_t_4 = __pyx_t_3;
     for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
       __pyx_v__ = __pyx_t_5;
 
-      /* "fastparquet/cencoding.pyx":511
- *     elif typ == 8:
+      /* "fastparquet/cencoding.pyx":513
  *         for _ in range(size):
+ *             # all parquet list types contain str, not bytes
  *             bsize = read_unsigned_var_int(data)             # <<<<<<<<<<<<<<
- *             out.append(PyBytes_FromStringAndSize(data.get_pointer(), bsize))
+ *             out.append(PyUnicode_DecodeUTF8(data.get_pointer(), bsize, "ignore"))
  *             data.seek(bsize, 1)
  */
       __pyx_v_bsize = __pyx_f_11fastparquet_9cencoding_read_unsigned_var_int(__pyx_v_data, 0);
 
-      /* "fastparquet/cencoding.pyx":512
- *         for _ in range(size):
+      /* "fastparquet/cencoding.pyx":514
+ *             # all parquet list types contain str, not bytes
  *             bsize = read_unsigned_var_int(data)
- *             out.append(PyBytes_FromStringAndSize(data.get_pointer(), bsize))             # <<<<<<<<<<<<<<
+ *             out.append(PyUnicode_DecodeUTF8(data.get_pointer(), bsize, "ignore"))             # <<<<<<<<<<<<<<
  *             data.seek(bsize, 1)
  *     else:
  */
-      __pyx_t_2 = PyBytes_FromStringAndSize(__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_data), __pyx_v_bsize); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 512, __pyx_L1_error)
+      __pyx_t_2 = PyUnicode_DecodeUTF8(__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_data), __pyx_v_bsize, ((char *)"ignore")); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 514, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 512, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 514, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "fastparquet/cencoding.pyx":513
+      /* "fastparquet/cencoding.pyx":515
  *             bsize = read_unsigned_var_int(data)
- *             out.append(PyBytes_FromStringAndSize(data.get_pointer(), bsize))
+ *             out.append(PyUnicode_DecodeUTF8(data.get_pointer(), bsize, "ignore"))
  *             data.seek(bsize, 1)             # <<<<<<<<<<<<<<
  *     else:
  *         for _ in range(size):
@@ -9498,17 +9550,17 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_seek(__pyx_v_data, __pyx_v_bsize, 0, &__pyx_t_7); 
     }
 
-    /* "fastparquet/cencoding.pyx":509
+    /* "fastparquet/cencoding.pyx":510
  *         for _ in range(size):
  *             out.append(zigzag_long(read_unsigned_var_int(data)))
  *     elif typ == 8:             # <<<<<<<<<<<<<<
  *         for _ in range(size):
- *             bsize = read_unsigned_var_int(data)
+ *             # all parquet list types contain str, not bytes
  */
     break;
     default:
 
-    /* "fastparquet/cencoding.pyx":515
+    /* "fastparquet/cencoding.pyx":517
  *             data.seek(bsize, 1)
  *     else:
  *         for _ in range(size):             # <<<<<<<<<<<<<<
@@ -9520,22 +9572,22 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
     for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
       __pyx_v__ = __pyx_t_5;
 
-      /* "fastparquet/cencoding.pyx":516
+      /* "fastparquet/cencoding.pyx":518
  *     else:
  *         for _ in range(size):
  *             out.append(read_thrift(data))             # <<<<<<<<<<<<<<
  * 
  *     return out
  */
-      __pyx_t_2 = __pyx_f_11fastparquet_9cencoding_read_thrift(__pyx_v_data, 0, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 516, __pyx_L1_error)
+      __pyx_t_2 = __pyx_f_11fastparquet_9cencoding_read_thrift(__pyx_v_data, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 518, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 516, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 518, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     }
     break;
   }
 
-  /* "fastparquet/cencoding.pyx":518
+  /* "fastparquet/cencoding.pyx":520
  *             out.append(read_thrift(data))
  * 
  *     return out             # <<<<<<<<<<<<<<
@@ -9547,7 +9599,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
   __pyx_r = __pyx_v_out;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":496
+  /* "fastparquet/cencoding.pyx":497
  * 
  * 
  * cdef list read_list(NumpyIO data):             # <<<<<<<<<<<<<<
@@ -9567,7 +9619,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":521
+/* "fastparquet/cencoding.pyx":523
  * 
  * 
  * cpdef void write_thrift(dict data, NumpyIO output):             # <<<<<<<<<<<<<<
@@ -9602,7 +9654,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("write_thrift", 0);
 
-  /* "fastparquet/cencoding.pyx":522
+  /* "fastparquet/cencoding.pyx":524
  * 
  * cpdef void write_thrift(dict data, NumpyIO output):
  *     cdef int i, l, prev = 0             # <<<<<<<<<<<<<<
@@ -9611,7 +9663,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
   __pyx_v_prev = 0;
 
-  /* "fastparquet/cencoding.pyx":523
+  /* "fastparquet/cencoding.pyx":525
  * cpdef void write_thrift(dict data, NumpyIO output):
  *     cdef int i, l, prev = 0
  *     cdef int delt = 0             # <<<<<<<<<<<<<<
@@ -9620,7 +9672,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
   __pyx_v_delt = 0;
 
-  /* "fastparquet/cencoding.pyx":526
+  /* "fastparquet/cencoding.pyx":528
  *     cdef double d
  *     cdef char * c
  *     for i, val in data.items():             # <<<<<<<<<<<<<<
@@ -9630,9 +9682,9 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
   __pyx_t_2 = 0;
   if (unlikely(__pyx_v_data == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "items");
-    __PYX_ERR(0, 526, __pyx_L1_error)
+    __PYX_ERR(0, 528, __pyx_L1_error)
   }
-  __pyx_t_5 = __Pyx_dict_iterator(__pyx_v_data, 1, __pyx_n_s_items, (&__pyx_t_3), (&__pyx_t_4)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 526, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_dict_iterator(__pyx_v_data, 1, __pyx_n_s_items, (&__pyx_t_3), (&__pyx_t_4)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 528, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_1);
   __pyx_t_1 = __pyx_t_5;
@@ -9640,30 +9692,30 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
   while (1) {
     __pyx_t_7 = __Pyx_dict_iter_next(__pyx_t_1, __pyx_t_3, &__pyx_t_2, &__pyx_t_5, &__pyx_t_6, NULL, __pyx_t_4);
     if (unlikely(__pyx_t_7 == 0)) break;
-    if (unlikely(__pyx_t_7 == -1)) __PYX_ERR(0, 526, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 == -1)) __PYX_ERR(0, 528, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 526, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 528, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_i = __pyx_t_7;
     __Pyx_XDECREF_SET(__pyx_v_val, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "fastparquet/cencoding.pyx":527
+    /* "fastparquet/cencoding.pyx":529
  *     cdef char * c
  *     for i, val in data.items():
  *         if not isinstance(i, int):             # <<<<<<<<<<<<<<
  *             # for dynamic entries
  *             continue
  */
-    __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 527, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 529, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_8 = PyInt_Check(__pyx_t_6); 
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_9 = ((!(__pyx_t_8 != 0)) != 0);
     if (__pyx_t_9) {
 
-      /* "fastparquet/cencoding.pyx":529
+      /* "fastparquet/cencoding.pyx":531
  *         if not isinstance(i, int):
  *             # for dynamic entries
  *             continue             # <<<<<<<<<<<<<<
@@ -9672,7 +9724,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       goto __pyx_L3_continue;
 
-      /* "fastparquet/cencoding.pyx":527
+      /* "fastparquet/cencoding.pyx":529
  *     cdef char * c
  *     for i, val in data.items():
  *         if not isinstance(i, int):             # <<<<<<<<<<<<<<
@@ -9681,7 +9733,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
     }
 
-    /* "fastparquet/cencoding.pyx":530
+    /* "fastparquet/cencoding.pyx":532
  *             # for dynamic entries
  *             continue
  *         delt = i - prev             # <<<<<<<<<<<<<<
@@ -9690,7 +9742,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
     __pyx_v_delt = (__pyx_v_i - __pyx_v_prev);
 
-    /* "fastparquet/cencoding.pyx":531
+    /* "fastparquet/cencoding.pyx":533
  *             continue
  *         delt = i - prev
  *         prev = i             # <<<<<<<<<<<<<<
@@ -9699,7 +9751,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
     __pyx_v_prev = __pyx_v_i;
 
-    /* "fastparquet/cencoding.pyx":532
+    /* "fastparquet/cencoding.pyx":534
  *         delt = i - prev
  *         prev = i
  *         if isinstance(val, int):             # <<<<<<<<<<<<<<
@@ -9710,7 +9762,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
     __pyx_t_8 = (__pyx_t_9 != 0);
     if (__pyx_t_8) {
 
-      /* "fastparquet/cencoding.pyx":533
+      /* "fastparquet/cencoding.pyx":535
  *         prev = i
  *         if isinstance(val, int):
  *             output.write_byte((delt << 4) | 6)             # <<<<<<<<<<<<<<
@@ -9719,17 +9771,17 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, ((__pyx_v_delt << 4) | 6), 0);
 
-      /* "fastparquet/cencoding.pyx":534
+      /* "fastparquet/cencoding.pyx":536
  *         if isinstance(val, int):
  *             output.write_byte((delt << 4) | 6)
  *             encode_unsigned_varint(long_zigzag(val), output)             # <<<<<<<<<<<<<<
  *         elif isinstance(val, float):
  *             output.write_byte((delt << 4) | 7)
  */
-      __pyx_t_10 = __Pyx_PyInt_As_int64_t(__pyx_v_val); if (unlikely((__pyx_t_10 == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 534, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyInt_As_int64_t(__pyx_v_val); if (unlikely((__pyx_t_10 == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 536, __pyx_L1_error)
       __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_f_11fastparquet_9cencoding_long_zigzag(__pyx_t_10), __pyx_v_output, 0);
 
-      /* "fastparquet/cencoding.pyx":532
+      /* "fastparquet/cencoding.pyx":534
  *         delt = i - prev
  *         prev = i
  *         if isinstance(val, int):             # <<<<<<<<<<<<<<
@@ -9739,7 +9791,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
       goto __pyx_L6;
     }
 
-    /* "fastparquet/cencoding.pyx":535
+    /* "fastparquet/cencoding.pyx":537
  *             output.write_byte((delt << 4) | 6)
  *             encode_unsigned_varint(long_zigzag(val), output)
  *         elif isinstance(val, float):             # <<<<<<<<<<<<<<
@@ -9750,7 +9802,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
     __pyx_t_9 = (__pyx_t_8 != 0);
     if (__pyx_t_9) {
 
-      /* "fastparquet/cencoding.pyx":536
+      /* "fastparquet/cencoding.pyx":538
  *             encode_unsigned_varint(long_zigzag(val), output)
  *         elif isinstance(val, float):
  *             output.write_byte((delt << 4) | 7)             # <<<<<<<<<<<<<<
@@ -9759,17 +9811,17 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, ((__pyx_v_delt << 4) | 7), 0);
 
-      /* "fastparquet/cencoding.pyx":537
+      /* "fastparquet/cencoding.pyx":539
  *         elif isinstance(val, float):
  *             output.write_byte((delt << 4) | 7)
  *             d = val             # <<<<<<<<<<<<<<
  *             (<double*>output.get_pointer())[0] = d
  *             output.loc += 8
  */
-      __pyx_t_11 = __pyx_PyFloat_AsDouble(__pyx_v_val); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 537, __pyx_L1_error)
+      __pyx_t_11 = __pyx_PyFloat_AsDouble(__pyx_v_val); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 539, __pyx_L1_error)
       __pyx_v_d = __pyx_t_11;
 
-      /* "fastparquet/cencoding.pyx":538
+      /* "fastparquet/cencoding.pyx":540
  *             output.write_byte((delt << 4) | 7)
  *             d = val
  *             (<double*>output.get_pointer())[0] = d             # <<<<<<<<<<<<<<
@@ -9778,7 +9830,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       (((double *)__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_output))[0]) = __pyx_v_d;
 
-      /* "fastparquet/cencoding.pyx":539
+      /* "fastparquet/cencoding.pyx":541
  *             d = val
  *             (<double*>output.get_pointer())[0] = d
  *             output.loc += 8             # <<<<<<<<<<<<<<
@@ -9787,7 +9839,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_v_output->loc = (__pyx_v_output->loc + 8);
 
-      /* "fastparquet/cencoding.pyx":535
+      /* "fastparquet/cencoding.pyx":537
  *             output.write_byte((delt << 4) | 6)
  *             encode_unsigned_varint(long_zigzag(val), output)
  *         elif isinstance(val, float):             # <<<<<<<<<<<<<<
@@ -9797,7 +9849,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
       goto __pyx_L6;
     }
 
-    /* "fastparquet/cencoding.pyx":540
+    /* "fastparquet/cencoding.pyx":542
  *             (<double*>output.get_pointer())[0] = d
  *             output.loc += 8
  *         elif isinstance(val, bytes):             # <<<<<<<<<<<<<<
@@ -9808,7 +9860,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
     __pyx_t_8 = (__pyx_t_9 != 0);
     if (__pyx_t_8) {
 
-      /* "fastparquet/cencoding.pyx":541
+      /* "fastparquet/cencoding.pyx":543
  *             output.loc += 8
  *         elif isinstance(val, bytes):
  *             output.write_byte((delt << 4) | 8)             # <<<<<<<<<<<<<<
@@ -9817,7 +9869,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, ((__pyx_v_delt << 4) | 8), 0);
 
-      /* "fastparquet/cencoding.pyx":542
+      /* "fastparquet/cencoding.pyx":544
  *         elif isinstance(val, bytes):
  *             output.write_byte((delt << 4) | 8)
  *             l = PyBytes_GET_SIZE(val)             # <<<<<<<<<<<<<<
@@ -9826,7 +9878,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_v_l = PyBytes_GET_SIZE(__pyx_v_val);
 
-      /* "fastparquet/cencoding.pyx":543
+      /* "fastparquet/cencoding.pyx":545
  *             output.write_byte((delt << 4) | 8)
  *             l = PyBytes_GET_SIZE(val)
  *             encode_unsigned_varint(l, output)             # <<<<<<<<<<<<<<
@@ -9835,17 +9887,17 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_l, __pyx_v_output, 0);
 
-      /* "fastparquet/cencoding.pyx":544
+      /* "fastparquet/cencoding.pyx":546
  *             l = PyBytes_GET_SIZE(val)
  *             encode_unsigned_varint(l, output)
  *             c = val             # <<<<<<<<<<<<<<
  *             memcpy(<void*>output.get_pointer(), <void*>c, l)
  *             output.loc += l
  */
-      __pyx_t_12 = __Pyx_PyObject_AsWritableString(__pyx_v_val); if (unlikely((!__pyx_t_12) && PyErr_Occurred())) __PYX_ERR(0, 544, __pyx_L1_error)
+      __pyx_t_12 = __Pyx_PyObject_AsWritableString(__pyx_v_val); if (unlikely((!__pyx_t_12) && PyErr_Occurred())) __PYX_ERR(0, 546, __pyx_L1_error)
       __pyx_v_c = __pyx_t_12;
 
-      /* "fastparquet/cencoding.pyx":545
+      /* "fastparquet/cencoding.pyx":547
  *             encode_unsigned_varint(l, output)
  *             c = val
  *             memcpy(<void*>output.get_pointer(), <void*>c, l)             # <<<<<<<<<<<<<<
@@ -9854,7 +9906,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       (void)(memcpy(((void *)__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_output)), ((void *)__pyx_v_c), __pyx_v_l));
 
-      /* "fastparquet/cencoding.pyx":546
+      /* "fastparquet/cencoding.pyx":548
  *             c = val
  *             memcpy(<void*>output.get_pointer(), <void*>c, l)
  *             output.loc += l             # <<<<<<<<<<<<<<
@@ -9863,7 +9915,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_v_output->loc = (__pyx_v_output->loc + __pyx_v_l);
 
-      /* "fastparquet/cencoding.pyx":540
+      /* "fastparquet/cencoding.pyx":542
  *             (<double*>output.get_pointer())[0] = d
  *             output.loc += 8
  *         elif isinstance(val, bytes):             # <<<<<<<<<<<<<<
@@ -9873,7 +9925,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
       goto __pyx_L6;
     }
 
-    /* "fastparquet/cencoding.pyx":547
+    /* "fastparquet/cencoding.pyx":549
  *             memcpy(<void*>output.get_pointer(), <void*>c, l)
  *             output.loc += l
  *         elif isinstance(val, list):             # <<<<<<<<<<<<<<
@@ -9884,7 +9936,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
     __pyx_t_9 = (__pyx_t_8 != 0);
     if (__pyx_t_9) {
 
-      /* "fastparquet/cencoding.pyx":548
+      /* "fastparquet/cencoding.pyx":550
  *             output.loc += l
  *         elif isinstance(val, list):
  *             output.write_byte((delt << 4) | 9)             # <<<<<<<<<<<<<<
@@ -9893,17 +9945,17 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, ((__pyx_v_delt << 4) | 9), 0);
 
-      /* "fastparquet/cencoding.pyx":549
+      /* "fastparquet/cencoding.pyx":551
  *         elif isinstance(val, list):
  *             output.write_byte((delt << 4) | 9)
  *             write_list(val, output)             # <<<<<<<<<<<<<<
  *         else:
  *             output.write_byte((delt << 4) | 12)
  */
-      if (!(likely(PyList_CheckExact(__pyx_v_val))||((__pyx_v_val) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_val)->tp_name), 0))) __PYX_ERR(0, 549, __pyx_L1_error)
+      if (!(likely(PyList_CheckExact(__pyx_v_val))||((__pyx_v_val) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_val)->tp_name), 0))) __PYX_ERR(0, 551, __pyx_L1_error)
       __pyx_f_11fastparquet_9cencoding_write_list(((PyObject*)__pyx_v_val), __pyx_v_output);
 
-      /* "fastparquet/cencoding.pyx":547
+      /* "fastparquet/cencoding.pyx":549
  *             memcpy(<void*>output.get_pointer(), <void*>c, l)
  *             output.loc += l
  *         elif isinstance(val, list):             # <<<<<<<<<<<<<<
@@ -9913,7 +9965,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
       goto __pyx_L6;
     }
 
-    /* "fastparquet/cencoding.pyx":551
+    /* "fastparquet/cencoding.pyx":553
  *             write_list(val, output)
  *         else:
  *             output.write_byte((delt << 4) | 12)             # <<<<<<<<<<<<<<
@@ -9923,14 +9975,14 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
     /*else*/ {
       __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, ((__pyx_v_delt << 4) | 12), 0);
 
-      /* "fastparquet/cencoding.pyx":552
+      /* "fastparquet/cencoding.pyx":554
  *         else:
  *             output.write_byte((delt << 4) | 12)
  *             write_thrift(val, output)             # <<<<<<<<<<<<<<
  *     output.write_byte(0)
  * 
  */
-      if (!(likely(PyDict_CheckExact(__pyx_v_val))||((__pyx_v_val) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_val)->tp_name), 0))) __PYX_ERR(0, 552, __pyx_L1_error)
+      if (!(likely(PyDict_CheckExact(__pyx_v_val))||((__pyx_v_val) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_val)->tp_name), 0))) __PYX_ERR(0, 554, __pyx_L1_error)
       __pyx_f_11fastparquet_9cencoding_write_thrift(((PyObject*)__pyx_v_val), __pyx_v_output, 0);
     }
     __pyx_L6:;
@@ -9938,7 +9990,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":553
+  /* "fastparquet/cencoding.pyx":555
  *             output.write_byte((delt << 4) | 12)
  *             write_thrift(val, output)
  *     output.write_byte(0)             # <<<<<<<<<<<<<<
@@ -9947,7 +9999,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_thrift(PyObject *__pyx_v_data
  */
   __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, 0, 0);
 
-  /* "fastparquet/cencoding.pyx":521
+  /* "fastparquet/cencoding.pyx":523
  * 
  * 
  * cpdef void write_thrift(dict data, NumpyIO output):             # <<<<<<<<<<<<<<
@@ -10001,11 +10053,11 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_29write_thrift(PyObject *__py
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_output)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("write_thrift", 1, 2, 2, 1); __PYX_ERR(0, 521, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("write_thrift", 1, 2, 2, 1); __PYX_ERR(0, 523, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "write_thrift") < 0)) __PYX_ERR(0, 521, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "write_thrift") < 0)) __PYX_ERR(0, 523, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -10018,14 +10070,14 @@ static PyObject *__pyx_pw_11fastparquet_9cencoding_29write_thrift(PyObject *__py
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("write_thrift", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 521, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("write_thrift", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 523, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.write_thrift", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), (&PyDict_Type), 1, "data", 1))) __PYX_ERR(0, 521, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_output), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "output", 0))) __PYX_ERR(0, 521, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), (&PyDict_Type), 1, "data", 1))) __PYX_ERR(0, 523, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_output), __pyx_ptype_11fastparquet_9cencoding_NumpyIO, 1, "output", 0))) __PYX_ERR(0, 523, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_28write_thrift(__pyx_self, __pyx_v_data, __pyx_v_output);
 
   /* function exit code */
@@ -10046,7 +10098,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_28write_thrift(CYTHON_UNUSED 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("write_thrift", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_write_thrift(__pyx_v_data, __pyx_v_output, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 521, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(__pyx_f_11fastparquet_9cencoding_write_thrift(__pyx_v_data, __pyx_v_output, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 523, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10063,7 +10115,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_28write_thrift(CYTHON_UNUSED 
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":556
+/* "fastparquet/cencoding.pyx":558
  * 
  * 
  * cdef void write_list(list data, NumpyIO output):             # <<<<<<<<<<<<<<
@@ -10090,7 +10142,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("write_list", 0);
 
-  /* "fastparquet/cencoding.pyx":557
+  /* "fastparquet/cencoding.pyx":559
  * 
  * cdef void write_list(list data, NumpyIO output):
  *     cdef int l = len(data)             # <<<<<<<<<<<<<<
@@ -10099,12 +10151,12 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
   if (unlikely(__pyx_v_data == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 557, __pyx_L1_error)
+    __PYX_ERR(0, 559, __pyx_L1_error)
   }
-  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_data); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 557, __pyx_L1_error)
+  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_data); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 559, __pyx_L1_error)
   __pyx_v_l = __pyx_t_1;
 
-  /* "fastparquet/cencoding.pyx":562
+  /* "fastparquet/cencoding.pyx":564
  *     cdef bytes b
  *     cdef char * c
  *     if l:             # <<<<<<<<<<<<<<
@@ -10114,7 +10166,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
   __pyx_t_2 = (__pyx_v_l != 0);
   if (__pyx_t_2) {
 
-    /* "fastparquet/cencoding.pyx":563
+    /* "fastparquet/cencoding.pyx":565
  *     cdef char * c
  *     if l:
  *         if isinstance(data[0], int):             # <<<<<<<<<<<<<<
@@ -10123,7 +10175,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
     if (unlikely(__pyx_v_data == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 563, __pyx_L1_error)
+      __PYX_ERR(0, 565, __pyx_L1_error)
     }
     __pyx_t_3 = PyList_GET_ITEM(__pyx_v_data, 0);
     __Pyx_INCREF(__pyx_t_3);
@@ -10132,7 +10184,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
     __pyx_t_4 = (__pyx_t_2 != 0);
     if (__pyx_t_4) {
 
-      /* "fastparquet/cencoding.pyx":564
+      /* "fastparquet/cencoding.pyx":566
  *     if l:
  *         if isinstance(data[0], int):
  *             if l > 14:             # <<<<<<<<<<<<<<
@@ -10142,7 +10194,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       __pyx_t_4 = ((__pyx_v_l > 14) != 0);
       if (__pyx_t_4) {
 
-        /* "fastparquet/cencoding.pyx":565
+        /* "fastparquet/cencoding.pyx":567
  *         if isinstance(data[0], int):
  *             if l > 14:
  *                 output.write_byte(5 | 0b11110000)             # <<<<<<<<<<<<<<
@@ -10151,7 +10203,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, 0xF5, 0);
 
-        /* "fastparquet/cencoding.pyx":566
+        /* "fastparquet/cencoding.pyx":568
  *             if l > 14:
  *                 output.write_byte(5 | 0b11110000)
  *                 encode_unsigned_varint(l, output)             # <<<<<<<<<<<<<<
@@ -10160,7 +10212,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_l, __pyx_v_output, 0);
 
-        /* "fastparquet/cencoding.pyx":564
+        /* "fastparquet/cencoding.pyx":566
  *     if l:
  *         if isinstance(data[0], int):
  *             if l > 14:             # <<<<<<<<<<<<<<
@@ -10170,7 +10222,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
         goto __pyx_L5;
       }
 
-      /* "fastparquet/cencoding.pyx":568
+      /* "fastparquet/cencoding.pyx":570
  *                 encode_unsigned_varint(l, output)
  *             else:
  *                 output.write_byte(5 | (l << 4))             # <<<<<<<<<<<<<<
@@ -10182,7 +10234,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       }
       __pyx_L5:;
 
-      /* "fastparquet/cencoding.pyx":569
+      /* "fastparquet/cencoding.pyx":571
  *             else:
  *                 output.write_byte(5 | (l << 4))
  *             for i in data:             # <<<<<<<<<<<<<<
@@ -10191,22 +10243,22 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
       if (unlikely(__pyx_v_data == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-        __PYX_ERR(0, 569, __pyx_L1_error)
+        __PYX_ERR(0, 571, __pyx_L1_error)
       }
       __pyx_t_3 = __pyx_v_data; __Pyx_INCREF(__pyx_t_3); __pyx_t_1 = 0;
       for (;;) {
         if (__pyx_t_1 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_5); __pyx_t_1++; if (unlikely(0 < 0)) __PYX_ERR(0, 569, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_5); __pyx_t_1++; if (unlikely(0 < 0)) __PYX_ERR(0, 571, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 569, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 571, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
-        __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 569, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 571, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_v_i = __pyx_t_6;
 
-        /* "fastparquet/cencoding.pyx":570
+        /* "fastparquet/cencoding.pyx":572
  *                 output.write_byte(5 | (l << 4))
  *             for i in data:
  *                 encode_unsigned_varint(long_zigzag(i), output)             # <<<<<<<<<<<<<<
@@ -10215,7 +10267,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_f_11fastparquet_9cencoding_long_zigzag(__pyx_v_i), __pyx_v_output, 0);
 
-        /* "fastparquet/cencoding.pyx":569
+        /* "fastparquet/cencoding.pyx":571
  *             else:
  *                 output.write_byte(5 | (l << 4))
  *             for i in data:             # <<<<<<<<<<<<<<
@@ -10225,7 +10277,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "fastparquet/cencoding.pyx":563
+      /* "fastparquet/cencoding.pyx":565
  *     cdef char * c
  *     if l:
  *         if isinstance(data[0], int):             # <<<<<<<<<<<<<<
@@ -10235,7 +10287,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       goto __pyx_L4;
     }
 
-    /* "fastparquet/cencoding.pyx":571
+    /* "fastparquet/cencoding.pyx":573
  *             for i in data:
  *                 encode_unsigned_varint(long_zigzag(i), output)
  *         elif isinstance(data[0], bytes):             # <<<<<<<<<<<<<<
@@ -10244,7 +10296,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
     if (unlikely(__pyx_v_data == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 571, __pyx_L1_error)
+      __PYX_ERR(0, 573, __pyx_L1_error)
     }
     __pyx_t_3 = PyList_GET_ITEM(__pyx_v_data, 0);
     __Pyx_INCREF(__pyx_t_3);
@@ -10253,7 +10305,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
     __pyx_t_2 = (__pyx_t_4 != 0);
     if (__pyx_t_2) {
 
-      /* "fastparquet/cencoding.pyx":572
+      /* "fastparquet/cencoding.pyx":574
  *                 encode_unsigned_varint(long_zigzag(i), output)
  *         elif isinstance(data[0], bytes):
  *             if l > 14:             # <<<<<<<<<<<<<<
@@ -10263,7 +10315,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       __pyx_t_2 = ((__pyx_v_l > 14) != 0);
       if (__pyx_t_2) {
 
-        /* "fastparquet/cencoding.pyx":573
+        /* "fastparquet/cencoding.pyx":575
  *         elif isinstance(data[0], bytes):
  *             if l > 14:
  *                 output.write_byte(8 | 0b11110000)             # <<<<<<<<<<<<<<
@@ -10272,7 +10324,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, 0xF8, 0);
 
-        /* "fastparquet/cencoding.pyx":574
+        /* "fastparquet/cencoding.pyx":576
  *             if l > 14:
  *                 output.write_byte(8 | 0b11110000)
  *                 encode_unsigned_varint(l, output)             # <<<<<<<<<<<<<<
@@ -10281,7 +10333,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_l, __pyx_v_output, 0);
 
-        /* "fastparquet/cencoding.pyx":572
+        /* "fastparquet/cencoding.pyx":574
  *                 encode_unsigned_varint(long_zigzag(i), output)
  *         elif isinstance(data[0], bytes):
  *             if l > 14:             # <<<<<<<<<<<<<<
@@ -10291,7 +10343,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
         goto __pyx_L8;
       }
 
-      /* "fastparquet/cencoding.pyx":576
+      /* "fastparquet/cencoding.pyx":578
  *                 encode_unsigned_varint(l, output)
  *             else:
  *                 output.write_byte(8 | (l << 4))             # <<<<<<<<<<<<<<
@@ -10303,7 +10355,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       }
       __pyx_L8:;
 
-      /* "fastparquet/cencoding.pyx":577
+      /* "fastparquet/cencoding.pyx":579
  *             else:
  *                 output.write_byte(8 | (l << 4))
  *             for b in data:             # <<<<<<<<<<<<<<
@@ -10312,22 +10364,22 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
       if (unlikely(__pyx_v_data == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-        __PYX_ERR(0, 577, __pyx_L1_error)
+        __PYX_ERR(0, 579, __pyx_L1_error)
       }
       __pyx_t_3 = __pyx_v_data; __Pyx_INCREF(__pyx_t_3); __pyx_t_1 = 0;
       for (;;) {
         if (__pyx_t_1 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_5); __pyx_t_1++; if (unlikely(0 < 0)) __PYX_ERR(0, 577, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_5); __pyx_t_1++; if (unlikely(0 < 0)) __PYX_ERR(0, 579, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 577, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 579, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
-        if (!(likely(PyBytes_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "bytes", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 577, __pyx_L1_error)
+        if (!(likely(PyBytes_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "bytes", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 579, __pyx_L1_error)
         __Pyx_XDECREF_SET(__pyx_v_b, ((PyObject*)__pyx_t_5));
         __pyx_t_5 = 0;
 
-        /* "fastparquet/cencoding.pyx":578
+        /* "fastparquet/cencoding.pyx":580
  *                 output.write_byte(8 | (l << 4))
  *             for b in data:
  *                 i = PyBytes_GET_SIZE(b)             # <<<<<<<<<<<<<<
@@ -10336,7 +10388,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_v_i = PyBytes_GET_SIZE(__pyx_v_b);
 
-        /* "fastparquet/cencoding.pyx":579
+        /* "fastparquet/cencoding.pyx":581
  *             for b in data:
  *                 i = PyBytes_GET_SIZE(b)
  *                 encode_unsigned_varint(i, output)             # <<<<<<<<<<<<<<
@@ -10345,7 +10397,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_i, __pyx_v_output, 0);
 
-        /* "fastparquet/cencoding.pyx":580
+        /* "fastparquet/cencoding.pyx":582
  *                 i = PyBytes_GET_SIZE(b)
  *                 encode_unsigned_varint(i, output)
  *                 c = b             # <<<<<<<<<<<<<<
@@ -10354,30 +10406,30 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         if (unlikely(__pyx_v_b == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "expected bytes, NoneType found");
-          __PYX_ERR(0, 580, __pyx_L1_error)
+          __PYX_ERR(0, 582, __pyx_L1_error)
         }
-        __pyx_t_7 = __Pyx_PyBytes_AsWritableString(__pyx_v_b); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 580, __pyx_L1_error)
+        __pyx_t_7 = __Pyx_PyBytes_AsWritableString(__pyx_v_b); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 582, __pyx_L1_error)
         __pyx_v_c = __pyx_t_7;
 
-        /* "fastparquet/cencoding.pyx":581
+        /* "fastparquet/cencoding.pyx":583
  *                 encode_unsigned_varint(i, output)
  *                 c = b
  *                 memcpy(<void*>output.get_pointer(), <void*>c, i)             # <<<<<<<<<<<<<<
  *                 output.loc += i
- *         else: # STRUCT
+ *         # TODO: isinstance(data[0], str):
  */
         (void)(memcpy(((void *)__pyx_f_11fastparquet_9cencoding_7NumpyIO_get_pointer(__pyx_v_output)), ((void *)__pyx_v_c), __pyx_v_i));
 
-        /* "fastparquet/cencoding.pyx":582
+        /* "fastparquet/cencoding.pyx":584
  *                 c = b
  *                 memcpy(<void*>output.get_pointer(), <void*>c, i)
  *                 output.loc += i             # <<<<<<<<<<<<<<
+ *         # TODO: isinstance(data[0], str):
  *         else: # STRUCT
- *             if l > 14:
  */
         __pyx_v_output->loc = (__pyx_v_output->loc + __pyx_v_i);
 
-        /* "fastparquet/cencoding.pyx":577
+        /* "fastparquet/cencoding.pyx":579
  *             else:
  *                 output.write_byte(8 | (l << 4))
  *             for b in data:             # <<<<<<<<<<<<<<
@@ -10387,7 +10439,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "fastparquet/cencoding.pyx":571
+      /* "fastparquet/cencoding.pyx":573
  *             for i in data:
  *                 encode_unsigned_varint(long_zigzag(i), output)
  *         elif isinstance(data[0], bytes):             # <<<<<<<<<<<<<<
@@ -10397,8 +10449,8 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       goto __pyx_L4;
     }
 
-    /* "fastparquet/cencoding.pyx":584
- *                 output.loc += i
+    /* "fastparquet/cencoding.pyx":587
+ *         # TODO: isinstance(data[0], str):
  *         else: # STRUCT
  *             if l > 14:             # <<<<<<<<<<<<<<
  *                 output.write_byte(12 | 0b11110000)
@@ -10408,7 +10460,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       __pyx_t_2 = ((__pyx_v_l > 14) != 0);
       if (__pyx_t_2) {
 
-        /* "fastparquet/cencoding.pyx":585
+        /* "fastparquet/cencoding.pyx":588
  *         else: # STRUCT
  *             if l > 14:
  *                 output.write_byte(12 | 0b11110000)             # <<<<<<<<<<<<<<
@@ -10417,7 +10469,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, 0xFC, 0);
 
-        /* "fastparquet/cencoding.pyx":586
+        /* "fastparquet/cencoding.pyx":589
  *             if l > 14:
  *                 output.write_byte(12 | 0b11110000)
  *                 encode_unsigned_varint(l, output)             # <<<<<<<<<<<<<<
@@ -10426,8 +10478,8 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_l, __pyx_v_output, 0);
 
-        /* "fastparquet/cencoding.pyx":584
- *                 output.loc += i
+        /* "fastparquet/cencoding.pyx":587
+ *         # TODO: isinstance(data[0], str):
  *         else: # STRUCT
  *             if l > 14:             # <<<<<<<<<<<<<<
  *                 output.write_byte(12 | 0b11110000)
@@ -10436,7 +10488,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
         goto __pyx_L11;
       }
 
-      /* "fastparquet/cencoding.pyx":588
+      /* "fastparquet/cencoding.pyx":591
  *                 encode_unsigned_varint(l, output)
  *             else:
  *                 output.write_byte(12 | (l << 4))             # <<<<<<<<<<<<<<
@@ -10448,7 +10500,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       }
       __pyx_L11:;
 
-      /* "fastparquet/cencoding.pyx":589
+      /* "fastparquet/cencoding.pyx":592
  *             else:
  *                 output.write_byte(12 | (l << 4))
  *             for d in data:             # <<<<<<<<<<<<<<
@@ -10457,22 +10509,22 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
       if (unlikely(__pyx_v_data == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-        __PYX_ERR(0, 589, __pyx_L1_error)
+        __PYX_ERR(0, 592, __pyx_L1_error)
       }
       __pyx_t_3 = __pyx_v_data; __Pyx_INCREF(__pyx_t_3); __pyx_t_1 = 0;
       for (;;) {
         if (__pyx_t_1 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_5); __pyx_t_1++; if (unlikely(0 < 0)) __PYX_ERR(0, 589, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_5); __pyx_t_1++; if (unlikely(0 < 0)) __PYX_ERR(0, 592, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 589, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 592, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
-        if (!(likely(PyDict_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 589, __pyx_L1_error)
+        if (!(likely(PyDict_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 592, __pyx_L1_error)
         __Pyx_XDECREF_SET(__pyx_v_d, ((PyObject*)__pyx_t_5));
         __pyx_t_5 = 0;
 
-        /* "fastparquet/cencoding.pyx":590
+        /* "fastparquet/cencoding.pyx":593
  *                 output.write_byte(12 | (l << 4))
  *             for d in data:
  *                 write_thrift(d, output)             # <<<<<<<<<<<<<<
@@ -10481,7 +10533,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  */
         __pyx_f_11fastparquet_9cencoding_write_thrift(__pyx_v_d, __pyx_v_output, 0);
 
-        /* "fastparquet/cencoding.pyx":589
+        /* "fastparquet/cencoding.pyx":592
  *             else:
  *                 output.write_byte(12 | (l << 4))
  *             for d in data:             # <<<<<<<<<<<<<<
@@ -10493,7 +10545,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
     }
     __pyx_L4:;
 
-    /* "fastparquet/cencoding.pyx":562
+    /* "fastparquet/cencoding.pyx":564
  *     cdef bytes b
  *     cdef char * c
  *     if l:             # <<<<<<<<<<<<<<
@@ -10503,7 +10555,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
     goto __pyx_L3;
   }
 
-  /* "fastparquet/cencoding.pyx":593
+  /* "fastparquet/cencoding.pyx":596
  *     else:
  *         # Not sure if zero-length list is allowed
  *         output.write_byte(8 << 4)             # <<<<<<<<<<<<<<
@@ -10513,7 +10565,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
   /*else*/ {
     __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, 0x80, 0);
 
-    /* "fastparquet/cencoding.pyx":594
+    /* "fastparquet/cencoding.pyx":597
  *         # Not sure if zero-length list is allowed
  *         output.write_byte(8 << 4)
  *         encode_unsigned_varint(0, output)             # <<<<<<<<<<<<<<
@@ -10524,7 +10576,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
   }
   __pyx_L3:;
 
-  /* "fastparquet/cencoding.pyx":556
+  /* "fastparquet/cencoding.pyx":558
  * 
  * 
  * cdef void write_list(list data, NumpyIO output):             # <<<<<<<<<<<<<<
@@ -10544,140 +10596,12 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
   __Pyx_RefNannyFinishContext();
 }
 
-/* "fastparquet/cencoding.pyx":601
- * 
- * 
- * def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
- *     return read_thrift(NumpyIO(buffer), name=name)
- * 
- */
-
-/* Python wrapper */
-static PyObject *__pyx_pw_11fastparquet_9cencoding_31from_buffer(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_11fastparquet_9cencoding_31from_buffer = {"from_buffer", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_31from_buffer, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_11fastparquet_9cencoding_31from_buffer(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  PyObject *__pyx_v_buffer = 0;
-  PyObject *__pyx_v_name = 0;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  PyObject *__pyx_r = 0;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("from_buffer (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_buffer,&__pyx_n_s_name,0};
-    PyObject* values[2] = {0,0};
-    values[1] = ((PyObject *)Py_None);
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
-      switch (pos_args) {
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        CYTHON_FALLTHROUGH;
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = PyDict_Size(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_buffer)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        CYTHON_FALLTHROUGH;
-        case  1:
-        if (kw_args > 0) {
-          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_name);
-          if (value) { values[1] = value; kw_args--; }
-        }
-      }
-      if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "from_buffer") < 0)) __PYX_ERR(0, 601, __pyx_L3_error)
-      }
-    } else {
-      switch (PyTuple_GET_SIZE(__pyx_args)) {
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-    }
-    __pyx_v_buffer = values[0];
-    __pyx_v_name = values[1];
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("from_buffer", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 601, __pyx_L3_error)
-  __pyx_L3_error:;
-  __Pyx_AddTraceback("fastparquet.cencoding.from_buffer", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_30from_buffer(__pyx_self, __pyx_v_buffer, __pyx_v_name);
-
-  /* function exit code */
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_11fastparquet_9cencoding_30from_buffer(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_buffer, PyObject *__pyx_v_name) {
-  PyObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  PyObject *__pyx_t_2 = NULL;
-  struct __pyx_opt_args_11fastparquet_9cencoding_read_thrift __pyx_t_3;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("from_buffer", 0);
-
-  /* "fastparquet/cencoding.pyx":602
- * 
- * def from_buffer(buffer, name=None):
- *     return read_thrift(NumpyIO(buffer), name=name)             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_NumpyIO), __pyx_v_buffer); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 602, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyUnicode_CheckExact(__pyx_v_name))||((__pyx_v_name) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_name)->tp_name), 0))) __PYX_ERR(0, 602, __pyx_L1_error)
-  __pyx_t_3.__pyx_n = 1;
-  __pyx_t_3.name = ((PyObject*)__pyx_v_name);
-  __pyx_t_2 = __pyx_f_11fastparquet_9cencoding_read_thrift(((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)__pyx_t_1), 0, &__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 602, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_r = __pyx_t_2;
-  __pyx_t_2 = 0;
-  goto __pyx_L0;
-
-  /* "fastparquet/cencoding.pyx":601
- * 
- * 
- * def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
- *     return read_thrift(NumpyIO(buffer), name=name)
- * 
- */
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_AddTraceback("fastparquet.cencoding.from_buffer", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  __Pyx_XGIVEREF(__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "fastparquet/cencoding.pyx":614
- *     cdef dict attrs
+/* "fastparquet/cencoding.pyx":613
+ *     cdef dict data
  * 
  *     def __init__(self, str name, dict indict):             # <<<<<<<<<<<<<<
- *         super().__init__(indict)
- *         if name is not None:
+ *         self.name = name
+ *         self.spec = specs[name]
  */
 
 /* Python wrapper */
@@ -10714,11 +10638,11 @@ static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_1__init__(PyObject *
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_indict)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 614, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 613, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 614, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 613, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -10731,14 +10655,14 @@ static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_1__init__(PyObject *
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 614, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 613, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 614, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_indict), (&PyDict_Type), 1, "indict", 1))) __PYX_ERR(0, 614, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 613, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_indict), (&PyDict_Type), 1, "indict", 1))) __PYX_ERR(0, 613, __pyx_L1_error)
   __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject___init__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), __pyx_v_name, __pyx_v_indict);
 
   /* function exit code */
@@ -10755,149 +10679,86 @@ static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject___init__(struct __py
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  int __pyx_t_4;
-  int __pyx_t_5;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "fastparquet/cencoding.pyx":615
+  /* "fastparquet/cencoding.pyx":614
  * 
  *     def __init__(self, str name, dict indict):
- *         super().__init__(indict)             # <<<<<<<<<<<<<<
- *         if name is not None:
- *             self.name = name
+ *         self.name = name             # <<<<<<<<<<<<<<
+ *         self.spec = specs[name]
+ *         self.children = children.get(name, {})
  */
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 615, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject));
-  __Pyx_GIVEREF(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject));
-  PyTuple_SET_ITEM(__pyx_t_2, 0, ((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject));
-  __Pyx_INCREF(((PyObject *)__pyx_v_self));
-  __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
-  PyTuple_SET_ITEM(__pyx_t_2, 1, ((PyObject *)__pyx_v_self));
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 615, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 615, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
-    if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-      __Pyx_INCREF(__pyx_t_3);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
-    }
+  __Pyx_INCREF(__pyx_v_name);
+  __Pyx_GIVEREF(__pyx_v_name);
+  __Pyx_GOTREF(__pyx_v_self->name);
+  __Pyx_DECREF(__pyx_v_self->name);
+  __pyx_v_self->name = __pyx_v_name;
+
+  /* "fastparquet/cencoding.pyx":615
+ *     def __init__(self, str name, dict indict):
+ *         self.name = name
+ *         self.spec = specs[name]             # <<<<<<<<<<<<<<
+ *         self.children = children.get(name, {})
+ *         self.data = indict
+ */
+  if (unlikely(__pyx_v_11fastparquet_9cencoding_specs == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 615, __pyx_L1_error)
   }
-  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_v_indict) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_indict);
-  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 615, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_11fastparquet_9cencoding_specs, __pyx_v_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 615, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 615, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->spec);
+  __Pyx_DECREF(__pyx_v_self->spec);
+  __pyx_v_self->spec = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "fastparquet/cencoding.pyx":616
- *     def __init__(self, str name, dict indict):
- *         super().__init__(indict)
- *         if name is not None:             # <<<<<<<<<<<<<<
- *             self.name = name
- *             self.spec = specs[name]
- */
-  __pyx_t_4 = (__pyx_v_name != ((PyObject*)Py_None));
-  __pyx_t_5 = (__pyx_t_4 != 0);
-  if (__pyx_t_5) {
-
-    /* "fastparquet/cencoding.pyx":617
- *         super().__init__(indict)
- *         if name is not None:
- *             self.name = name             # <<<<<<<<<<<<<<
- *             self.spec = specs[name]
- *         self.children = children.get(name, {})
- */
-    __Pyx_INCREF(__pyx_v_name);
-    __Pyx_GIVEREF(__pyx_v_name);
-    __Pyx_GOTREF(__pyx_v_self->name);
-    __Pyx_DECREF(__pyx_v_self->name);
-    __pyx_v_self->name = __pyx_v_name;
-
-    /* "fastparquet/cencoding.pyx":618
- *         if name is not None:
- *             self.name = name
- *             self.spec = specs[name]             # <<<<<<<<<<<<<<
- *         self.children = children.get(name, {})
- *         self.attrs = {}
- */
-    if (unlikely(__pyx_v_11fastparquet_9cencoding_specs == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 618, __pyx_L1_error)
-    }
-    __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_11fastparquet_9cencoding_specs, __pyx_v_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 618, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 618, __pyx_L1_error)
-    __Pyx_GIVEREF(__pyx_t_1);
-    __Pyx_GOTREF(__pyx_v_self->spec);
-    __Pyx_DECREF(__pyx_v_self->spec);
-    __pyx_v_self->spec = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
-
-    /* "fastparquet/cencoding.pyx":616
- *     def __init__(self, str name, dict indict):
- *         super().__init__(indict)
- *         if name is not None:             # <<<<<<<<<<<<<<
- *             self.name = name
- *             self.spec = specs[name]
- */
-  }
-
-  /* "fastparquet/cencoding.pyx":619
- *             self.name = name
- *             self.spec = specs[name]
+ *         self.name = name
+ *         self.spec = specs[name]
  *         self.children = children.get(name, {})             # <<<<<<<<<<<<<<
- *         self.attrs = {}
+ *         self.data = indict
  * 
  */
   if (unlikely(__pyx_v_11fastparquet_9cencoding_children == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-    __PYX_ERR(0, 619, __pyx_L1_error)
+    __PYX_ERR(0, 616, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 619, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 616, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyDict_GetItemDefault(__pyx_v_11fastparquet_9cencoding_children, __pyx_v_name, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 619, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_GetItemDefault(__pyx_v_11fastparquet_9cencoding_children, __pyx_v_name, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 616, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(PyDict_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_2)->tp_name), 0))) __PYX_ERR(0, 619, __pyx_L1_error)
+  if (!(likely(PyDict_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_2)->tp_name), 0))) __PYX_ERR(0, 616, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_2);
   __Pyx_GOTREF(__pyx_v_self->children);
   __Pyx_DECREF(__pyx_v_self->children);
   __pyx_v_self->children = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "fastparquet/cencoding.pyx":620
- *             self.spec = specs[name]
+  /* "fastparquet/cencoding.pyx":617
+ *         self.spec = specs[name]
  *         self.children = children.get(name, {})
- *         self.attrs = {}             # <<<<<<<<<<<<<<
+ *         self.data = indict             # <<<<<<<<<<<<<<
  * 
- *     def __getattr__(self, item):
+ *     def _internal(self):
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 620, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_2);
-  __Pyx_GOTREF(__pyx_v_self->attrs);
-  __Pyx_DECREF(__pyx_v_self->attrs);
-  __pyx_v_self->attrs = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
+  __Pyx_INCREF(__pyx_v_indict);
+  __Pyx_GIVEREF(__pyx_v_indict);
+  __Pyx_GOTREF(__pyx_v_self->data);
+  __Pyx_DECREF(__pyx_v_self->data);
+  __pyx_v_self->data = __pyx_v_indict;
 
-  /* "fastparquet/cencoding.pyx":614
- *     cdef dict attrs
+  /* "fastparquet/cencoding.pyx":613
+ *     cdef dict data
  * 
  *     def __init__(self, str name, dict indict):             # <<<<<<<<<<<<<<
- *         super().__init__(indict)
- *         if name is not None:
+ *         self.name = name
+ *         self.spec = specs[name]
  */
 
   /* function exit code */
@@ -10906,7 +10767,6 @@ static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject___init__(struct __py
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
@@ -10914,28 +10774,111 @@ static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject___init__(struct __py
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":622
- *         self.attrs = {}
+/* "fastparquet/cencoding.pyx":619
+ *         self.data = indict
  * 
- *     def __getattr__(self, item):             # <<<<<<<<<<<<<<
- *         cdef str ch
- *         if item in self.spec:
+ *     def _internal(self):             # <<<<<<<<<<<<<<
+ *         # useful for debugging
+ *         return (self.name, self.spec, self.children, self.data)
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_3__getattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item); /*proto*/
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_3__getattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item) {
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_3_internal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_3_internal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("__getattr__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v_item));
+  __Pyx_RefNannySetupContext("_internal (wrapper)", 0);
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_2_internal(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item) {
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2_internal(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_internal", 0);
+
+  /* "fastparquet/cencoding.pyx":621
+ *     def _internal(self):
+ *         # useful for debugging
+ *         return (self.name, self.spec, self.children, self.data)             # <<<<<<<<<<<<<<
+ * 
+ *     def __getattr__(self, str item):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyTuple_New(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 621, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_v_self->name);
+  __Pyx_GIVEREF(__pyx_v_self->name);
+  PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_self->name);
+  __Pyx_INCREF(__pyx_v_self->spec);
+  __Pyx_GIVEREF(__pyx_v_self->spec);
+  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_self->spec);
+  __Pyx_INCREF(__pyx_v_self->children);
+  __Pyx_GIVEREF(__pyx_v_self->children);
+  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_v_self->children);
+  __Pyx_INCREF(__pyx_v_self->data);
+  __Pyx_GIVEREF(__pyx_v_self->data);
+  PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_v_self->data);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "fastparquet/cencoding.pyx":619
+ *         self.data = indict
+ * 
+ *     def _internal(self):             # <<<<<<<<<<<<<<
+ *         # useful for debugging
+ *         return (self.name, self.spec, self.children, self.data)
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject._internal", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":623
+ *         return (self.name, self.spec, self.children, self.data)
+ * 
+ *     def __getattr__(self, str item):             # <<<<<<<<<<<<<<
+ *         cdef str ch
+ *         if item in self.spec:
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_5__getattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_5__getattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item) {
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__getattr__ (wrapper)", 0);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_item), (&PyUnicode_Type), 1, "item", 1))) __PYX_ERR(0, 623, __pyx_L1_error)
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_4__getattr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject*)__pyx_v_item));
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_4__getattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item) {
   PyObject *__pyx_v_ch = 0;
   PyObject *__pyx_v_out = NULL;
   PyObject *__pyx_7genexpr__pyx_v_o = NULL;
@@ -10960,8 +10903,8 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__getattr__", 0);
 
-  /* "fastparquet/cencoding.pyx":624
- *     def __getattr__(self, item):
+  /* "fastparquet/cencoding.pyx":625
+ *     def __getattr__(self, str item):
  *         cdef str ch
  *         if item in self.spec:             # <<<<<<<<<<<<<<
  *             out = self.get(self.spec[item], None)
@@ -10969,26 +10912,26 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
  */
   if (unlikely(__pyx_v_self->spec == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 624, __pyx_L1_error)
+    __PYX_ERR(0, 625, __pyx_L1_error)
   }
-  __pyx_t_1 = (__Pyx_PyDict_ContainsTF(__pyx_v_item, __pyx_v_self->spec, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 624, __pyx_L1_error)
+  __pyx_t_1 = (__Pyx_PyDict_ContainsTF(__pyx_v_item, __pyx_v_self->spec, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 625, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "fastparquet/cencoding.pyx":625
+    /* "fastparquet/cencoding.pyx":626
  *         cdef str ch
  *         if item in self.spec:
  *             out = self.get(self.spec[item], None)             # <<<<<<<<<<<<<<
  *             ch = self.children.get(item)
  *             if ch is not None and out is not None:
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 625, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 626, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     if (unlikely(__pyx_v_self->spec == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 625, __pyx_L1_error)
+      __PYX_ERR(0, 626, __pyx_L1_error)
     }
-    __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_self->spec, __pyx_v_item); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 625, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_self->spec, __pyx_v_item); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 626, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_6 = NULL;
     __pyx_t_7 = 0;
@@ -11005,7 +10948,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_4)) {
       PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_t_5, Py_None};
-      __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 625, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 626, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -11014,14 +10957,14 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
       PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_t_5, Py_None};
-      __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 625, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 626, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else
     #endif
     {
-      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 625, __pyx_L1_error)
+      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 626, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -11032,7 +10975,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
       __Pyx_GIVEREF(Py_None);
       PyTuple_SET_ITEM(__pyx_t_8, 1+__pyx_t_7, Py_None);
       __pyx_t_5 = 0;
-      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_8, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 625, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_8, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 626, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     }
@@ -11040,7 +10983,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
     __pyx_v_out = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "fastparquet/cencoding.pyx":626
+    /* "fastparquet/cencoding.pyx":627
  *         if item in self.spec:
  *             out = self.get(self.spec[item], None)
  *             ch = self.children.get(item)             # <<<<<<<<<<<<<<
@@ -11049,15 +10992,15 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
  */
     if (unlikely(__pyx_v_self->children == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-      __PYX_ERR(0, 626, __pyx_L1_error)
+      __PYX_ERR(0, 627, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyDict_GetItemDefault(__pyx_v_self->children, __pyx_v_item, Py_None); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 626, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_GetItemDefault(__pyx_v_self->children, __pyx_v_item, Py_None); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 627, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 626, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 627, __pyx_L1_error)
     __pyx_v_ch = ((PyObject*)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "fastparquet/cencoding.pyx":627
+    /* "fastparquet/cencoding.pyx":628
  *             out = self.get(self.spec[item], None)
  *             ch = self.children.get(item)
  *             if ch is not None and out is not None:             # <<<<<<<<<<<<<<
@@ -11077,7 +11020,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
     __pyx_L5_bool_binop_done:;
     if (__pyx_t_2) {
 
-      /* "fastparquet/cencoding.pyx":628
+      /* "fastparquet/cencoding.pyx":629
  *             ch = self.children.get(item)
  *             if ch is not None and out is not None:
  *                 if isinstance(out, list):             # <<<<<<<<<<<<<<
@@ -11088,7 +11031,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
       __pyx_t_1 = (__pyx_t_2 != 0);
       if (__pyx_t_1) {
 
-        /* "fastparquet/cencoding.pyx":629
+        /* "fastparquet/cencoding.pyx":630
  *             if ch is not None and out is not None:
  *                 if isinstance(out, list):
  *                     return [ThriftObject(ch, o) for o in out]             # <<<<<<<<<<<<<<
@@ -11097,32 +11040,32 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
  */
         __Pyx_XDECREF(__pyx_r);
         { /* enter inner scope */
-          __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 629, __pyx_L10_error)
+          __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 630, __pyx_L10_error)
           __Pyx_GOTREF(__pyx_t_3);
           if (likely(PyList_CheckExact(__pyx_v_out)) || PyTuple_CheckExact(__pyx_v_out)) {
             __pyx_t_4 = __pyx_v_out; __Pyx_INCREF(__pyx_t_4); __pyx_t_10 = 0;
             __pyx_t_11 = NULL;
           } else {
-            __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_v_out); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 629, __pyx_L10_error)
+            __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_v_out); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 630, __pyx_L10_error)
             __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_11 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 629, __pyx_L10_error)
+            __pyx_t_11 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 630, __pyx_L10_error)
           }
           for (;;) {
             if (likely(!__pyx_t_11)) {
               if (likely(PyList_CheckExact(__pyx_t_4))) {
                 if (__pyx_t_10 >= PyList_GET_SIZE(__pyx_t_4)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_8 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_8); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 629, __pyx_L10_error)
+                __pyx_t_8 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_8); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 630, __pyx_L10_error)
                 #else
-                __pyx_t_8 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 629, __pyx_L10_error)
+                __pyx_t_8 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 630, __pyx_L10_error)
                 __Pyx_GOTREF(__pyx_t_8);
                 #endif
               } else {
                 if (__pyx_t_10 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_8 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_8); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 629, __pyx_L10_error)
+                __pyx_t_8 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_10); __Pyx_INCREF(__pyx_t_8); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 630, __pyx_L10_error)
                 #else
-                __pyx_t_8 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 629, __pyx_L10_error)
+                __pyx_t_8 = PySequence_ITEM(__pyx_t_4, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 630, __pyx_L10_error)
                 __Pyx_GOTREF(__pyx_t_8);
                 #endif
               }
@@ -11132,7 +11075,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
                 PyObject* exc_type = PyErr_Occurred();
                 if (exc_type) {
                   if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                  else __PYX_ERR(0, 629, __pyx_L10_error)
+                  else __PYX_ERR(0, 630, __pyx_L10_error)
                 }
                 break;
               }
@@ -11140,7 +11083,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
             }
             __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_o, __pyx_t_8);
             __pyx_t_8 = 0;
-            __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 629, __pyx_L10_error)
+            __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 630, __pyx_L10_error)
             __Pyx_GOTREF(__pyx_t_8);
             __Pyx_INCREF(__pyx_v_ch);
             __Pyx_GIVEREF(__pyx_v_ch);
@@ -11148,10 +11091,10 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
             __Pyx_INCREF(__pyx_7genexpr__pyx_v_o);
             __Pyx_GIVEREF(__pyx_7genexpr__pyx_v_o);
             PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_7genexpr__pyx_v_o);
-            __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject), __pyx_t_8, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 629, __pyx_L10_error)
+            __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject), __pyx_t_8, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 630, __pyx_L10_error)
             __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-            if (unlikely(__Pyx_ListComp_Append(__pyx_t_3, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 629, __pyx_L10_error)
+            if (unlikely(__Pyx_ListComp_Append(__pyx_t_3, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 630, __pyx_L10_error)
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           }
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -11166,7 +11109,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
         __pyx_t_3 = 0;
         goto __pyx_L0;
 
-        /* "fastparquet/cencoding.pyx":628
+        /* "fastparquet/cencoding.pyx":629
  *             ch = self.children.get(item)
  *             if ch is not None and out is not None:
  *                 if isinstance(out, list):             # <<<<<<<<<<<<<<
@@ -11175,7 +11118,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
  */
       }
 
-      /* "fastparquet/cencoding.pyx":630
+      /* "fastparquet/cencoding.pyx":631
  *                 if isinstance(out, list):
  *                     return [ThriftObject(ch, o) for o in out]
  *                 return ThriftObject(ch, out)             # <<<<<<<<<<<<<<
@@ -11183,7 +11126,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
  *         else:
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 630, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 631, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_v_ch);
       __Pyx_GIVEREF(__pyx_v_ch);
@@ -11191,14 +11134,14 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
       __Pyx_INCREF(__pyx_v_out);
       __Pyx_GIVEREF(__pyx_v_out);
       PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_out);
-      __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject), __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 630, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject), __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 631, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_r = __pyx_t_4;
       __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "fastparquet/cencoding.pyx":627
+      /* "fastparquet/cencoding.pyx":628
  *             out = self.get(self.spec[item], None)
  *             ch = self.children.get(item)
  *             if ch is not None and out is not None:             # <<<<<<<<<<<<<<
@@ -11207,7 +11150,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
  */
     }
 
-    /* "fastparquet/cencoding.pyx":631
+    /* "fastparquet/cencoding.pyx":632
  *                     return [ThriftObject(ch, o) for o in out]
  *                 return ThriftObject(ch, out)
  *             return out             # <<<<<<<<<<<<<<
@@ -11219,8 +11162,8 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
     __pyx_r = __pyx_v_out;
     goto __pyx_L0;
 
-    /* "fastparquet/cencoding.pyx":624
- *     def __getattr__(self, item):
+    /* "fastparquet/cencoding.pyx":625
+ *     def __getattr__(self, str item):
  *         cdef str ch
  *         if item in self.spec:             # <<<<<<<<<<<<<<
  *             out = self.get(self.spec[item], None)
@@ -11228,11 +11171,11 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
  */
   }
 
-  /* "fastparquet/cencoding.pyx":633
+  /* "fastparquet/cencoding.pyx":634
  *             return out
  *         else:
  *             try:             # <<<<<<<<<<<<<<
- *                 return self.attrs[item]
+ *                 return self.data[item]
  *             except KeyError:
  */
   /*else*/ {
@@ -11245,29 +11188,29 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
       __Pyx_XGOTREF(__pyx_t_14);
       /*try:*/ {
 
-        /* "fastparquet/cencoding.pyx":634
+        /* "fastparquet/cencoding.pyx":635
  *         else:
  *             try:
- *                 return self.attrs[item]             # <<<<<<<<<<<<<<
+ *                 return self.data[item]             # <<<<<<<<<<<<<<
  *             except KeyError:
  *                 raise AttributeError
  */
         __Pyx_XDECREF(__pyx_r);
-        if (unlikely(__pyx_v_self->attrs == Py_None)) {
+        if (unlikely(__pyx_v_self->data == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-          __PYX_ERR(0, 634, __pyx_L14_error)
+          __PYX_ERR(0, 635, __pyx_L14_error)
         }
-        __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_self->attrs, __pyx_v_item); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 634, __pyx_L14_error)
+        __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_self->data, __pyx_v_item); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 635, __pyx_L14_error)
         __Pyx_GOTREF(__pyx_t_4);
         __pyx_r = __pyx_t_4;
         __pyx_t_4 = 0;
         goto __pyx_L18_try_return;
 
-        /* "fastparquet/cencoding.pyx":633
+        /* "fastparquet/cencoding.pyx":634
  *             return out
  *         else:
  *             try:             # <<<<<<<<<<<<<<
- *                 return self.attrs[item]
+ *                 return self.data[item]
  *             except KeyError:
  */
       }
@@ -11278,9 +11221,9 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-      /* "fastparquet/cencoding.pyx":635
+      /* "fastparquet/cencoding.pyx":636
  *             try:
- *                 return self.attrs[item]
+ *                 return self.data[item]
  *             except KeyError:             # <<<<<<<<<<<<<<
  *                 raise AttributeError
  * 
@@ -11288,29 +11231,29 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
       __pyx_t_7 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
       if (__pyx_t_7) {
         __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__getattr__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_3, &__pyx_t_5) < 0) __PYX_ERR(0, 635, __pyx_L16_except_error)
+        if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_3, &__pyx_t_5) < 0) __PYX_ERR(0, 636, __pyx_L16_except_error)
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_GOTREF(__pyx_t_5);
 
-        /* "fastparquet/cencoding.pyx":636
- *                 return self.attrs[item]
+        /* "fastparquet/cencoding.pyx":637
+ *                 return self.data[item]
  *             except KeyError:
  *                 raise AttributeError             # <<<<<<<<<<<<<<
  * 
- *     def __setattr__(self, item, value):
+ *     def __setitem__(self, key, value):
  */
         __Pyx_Raise(__pyx_builtin_AttributeError, 0, 0, 0);
-        __PYX_ERR(0, 636, __pyx_L16_except_error)
+        __PYX_ERR(0, 637, __pyx_L16_except_error)
       }
       goto __pyx_L16_except_error;
       __pyx_L16_except_error:;
 
-      /* "fastparquet/cencoding.pyx":633
+      /* "fastparquet/cencoding.pyx":634
  *             return out
  *         else:
  *             try:             # <<<<<<<<<<<<<<
- *                 return self.attrs[item]
+ *                 return self.data[item]
  *             except KeyError:
  */
       __Pyx_XGIVEREF(__pyx_t_12);
@@ -11327,10 +11270,10 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
     }
   }
 
-  /* "fastparquet/cencoding.pyx":622
- *         self.attrs = {}
+  /* "fastparquet/cencoding.pyx":623
+ *         return (self.name, self.spec, self.children, self.data)
  * 
- *     def __getattr__(self, item):             # <<<<<<<<<<<<<<
+ *     def __getattr__(self, str item):             # <<<<<<<<<<<<<<
  *         cdef str ch
  *         if item in self.spec:
  */
@@ -11353,328 +11296,505 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_2__getattr__(s
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":638
+/* "fastparquet/cencoding.pyx":639
  *                 raise AttributeError
  * 
- *     def __setattr__(self, item, value):             # <<<<<<<<<<<<<<
- *         if item in self.spec:
- *             self[self.spec[item]] = value
+ *     def __setitem__(self, key, value):             # <<<<<<<<<<<<<<
+ *         self.data[key] = value
+ * 
  */
 
 /* Python wrapper */
-static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_5__setattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_5__setattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value) {
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_7__setitem__(PyObject *__pyx_v_self, PyObject *__pyx_v_key, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_7__setitem__(PyObject *__pyx_v_self, PyObject *__pyx_v_key, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("__setattr__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_4__setattr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v_item), ((PyObject *)__pyx_v_value));
+  __Pyx_RefNannySetupContext("__setitem__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_6__setitem__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v_key), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_4__setattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value) {
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_6__setitem__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_key, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  int __pyx_t_1;
-  int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__setitem__", 0);
+
+  /* "fastparquet/cencoding.pyx":640
+ * 
+ *     def __setitem__(self, key, value):
+ *         self.data[key] = value             # <<<<<<<<<<<<<<
+ * 
+ *     def __getitem__(self, item):
+ */
+  if (unlikely(__pyx_v_self->data == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 640, __pyx_L1_error)
+  }
+  if (unlikely(PyDict_SetItem(__pyx_v_self->data, __pyx_v_key, __pyx_v_value) < 0)) __PYX_ERR(0, 640, __pyx_L1_error)
+
+  /* "fastparquet/cencoding.pyx":639
+ *                 raise AttributeError
+ * 
+ *     def __setitem__(self, key, value):             # <<<<<<<<<<<<<<
+ *         self.data[key] = value
+ * 
+ */
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__setitem__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":642
+ *         self.data[key] = value
+ * 
+ *     def __getitem__(self, item):             # <<<<<<<<<<<<<<
+ *         return self.data[item]
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_9__getitem__(PyObject *__pyx_v_self, PyObject *__pyx_v_item); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_9__getitem__(PyObject *__pyx_v_self, PyObject *__pyx_v_item) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__getitem__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__getitem__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v_item));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__getitem__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__getitem__", 0);
+
+  /* "fastparquet/cencoding.pyx":643
+ * 
+ *     def __getitem__(self, item):
+ *         return self.data[item]             # <<<<<<<<<<<<<<
+ * 
+ *     def __delitem__(self, key):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  if (unlikely(__pyx_v_self->data == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 643, __pyx_L1_error)
+  }
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_self->data, __pyx_v_item); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 643, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "fastparquet/cencoding.pyx":642
+ *         self.data[key] = value
+ * 
+ *     def __getitem__(self, item):             # <<<<<<<<<<<<<<
+ *         return self.data[item]
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__getitem__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":645
+ *         return self.data[item]
+ * 
+ *     def __delitem__(self, key):             # <<<<<<<<<<<<<<
+ *         del self.data[key]
+ * 
+ */
+
+/* Python wrapper */
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_11__delitem__(PyObject *__pyx_v_self, PyObject *__pyx_v_key); /*proto*/
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_11__delitem__(PyObject *__pyx_v_self, PyObject *__pyx_v_key) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__delitem__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_10__delitem__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v_key));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_10__delitem__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_key) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__delitem__", 0);
+
+  /* "fastparquet/cencoding.pyx":646
+ * 
+ *     def __delitem__(self, key):
+ *         del self.data[key]             # <<<<<<<<<<<<<<
+ * 
+ *     def get(self, key, default):
+ */
+  if (unlikely(__pyx_v_self->data == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 646, __pyx_L1_error)
+  }
+  if (unlikely(PyDict_DelItem(__pyx_v_self->data, __pyx_v_key) < 0)) __PYX_ERR(0, 646, __pyx_L1_error)
+
+  /* "fastparquet/cencoding.pyx":645
+ *         return self.data[item]
+ * 
+ *     def __delitem__(self, key):             # <<<<<<<<<<<<<<
+ *         del self.data[key]
+ * 
+ */
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__delitem__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":648
+ *         del self.data[key]
+ * 
+ *     def get(self, key, default):             # <<<<<<<<<<<<<<
+ *         return self.data.get(key, default)
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_13get(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_13get(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_key = 0;
+  PyObject *__pyx_v_default = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_key,&__pyx_n_s_default,0};
+    PyObject* values[2] = {0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_key)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_default)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("get", 1, 2, 2, 1); __PYX_ERR(0, 648, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get") < 0)) __PYX_ERR(0, 648, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+    }
+    __pyx_v_key = values[0];
+    __pyx_v_default = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("get", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 648, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.get", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_12get(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), __pyx_v_key, __pyx_v_default);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12get(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_key, PyObject *__pyx_v_default) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get", 0);
+
+  /* "fastparquet/cencoding.pyx":649
+ * 
+ *     def get(self, key, default):
+ *         return self.data.get(key, default)             # <<<<<<<<<<<<<<
+ * 
+ *     def __setattr__(self, str item, value):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  if (unlikely(__pyx_v_self->data == Py_None)) {
+    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
+    __PYX_ERR(0, 649, __pyx_L1_error)
+  }
+  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_self->data, __pyx_v_key, __pyx_v_default); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 649, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "fastparquet/cencoding.pyx":648
+ *         del self.data[key]
+ * 
+ *     def get(self, key, default):             # <<<<<<<<<<<<<<
+ *         return self.data.get(key, default)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.get", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":651
+ *         return self.data.get(key, default)
+ * 
+ *     def __setattr__(self, str item, value):             # <<<<<<<<<<<<<<
+ *         i = self.spec.get(item, item)
+ *         self.data[i] = value
+ */
+
+/* Python wrapper */
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_15__setattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_15__setattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value) {
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__setattr__ (wrapper)", 0);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_item), (&PyUnicode_Type), 1, "item", 1))) __PYX_ERR(0, 651, __pyx_L1_error)
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__setattr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject*)__pyx_v_item), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__setattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item, PyObject *__pyx_v_value) {
+  PyObject *__pyx_v_i = NULL;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__setattr__", 0);
 
-  /* "fastparquet/cencoding.pyx":639
+  /* "fastparquet/cencoding.pyx":652
  * 
- *     def __setattr__(self, item, value):
- *         if item in self.spec:             # <<<<<<<<<<<<<<
- *             self[self.spec[item]] = value
- *         else:
+ *     def __setattr__(self, str item, value):
+ *         i = self.spec.get(item, item)             # <<<<<<<<<<<<<<
+ *         self.data[i] = value
+ * 
  */
   if (unlikely(__pyx_v_self->spec == Py_None)) {
-    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 639, __pyx_L1_error)
+    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
+    __PYX_ERR(0, 652, __pyx_L1_error)
   }
-  __pyx_t_1 = (__Pyx_PyDict_ContainsTF(__pyx_v_item, __pyx_v_self->spec, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 639, __pyx_L1_error)
-  __pyx_t_2 = (__pyx_t_1 != 0);
-  if (__pyx_t_2) {
+  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_self->spec, __pyx_v_item, __pyx_v_item); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 652, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_i = __pyx_t_1;
+  __pyx_t_1 = 0;
 
-    /* "fastparquet/cencoding.pyx":640
- *     def __setattr__(self, item, value):
- *         if item in self.spec:
- *             self[self.spec[item]] = value             # <<<<<<<<<<<<<<
- *         else:
- *             self.attrs[item] = value
- */
-    if (unlikely(__pyx_v_self->spec == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 640, __pyx_L1_error)
-    }
-    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->spec, __pyx_v_item); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 640, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_self), __pyx_t_3, __pyx_v_value) < 0)) __PYX_ERR(0, 640, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-    /* "fastparquet/cencoding.pyx":639
- * 
- *     def __setattr__(self, item, value):
- *         if item in self.spec:             # <<<<<<<<<<<<<<
- *             self[self.spec[item]] = value
- *         else:
- */
-    goto __pyx_L3;
-  }
-
-  /* "fastparquet/cencoding.pyx":642
- *             self[self.spec[item]] = value
- *         else:
- *             self.attrs[item] = value             # <<<<<<<<<<<<<<
+  /* "fastparquet/cencoding.pyx":653
+ *     def __setattr__(self, str item, value):
+ *         i = self.spec.get(item, item)
+ *         self.data[i] = value             # <<<<<<<<<<<<<<
  * 
  *     def __delattr__(self, item):
  */
-  /*else*/ {
-    if (unlikely(__pyx_v_self->attrs == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 642, __pyx_L1_error)
-    }
-    if (unlikely(PyDict_SetItem(__pyx_v_self->attrs, __pyx_v_item, __pyx_v_value) < 0)) __PYX_ERR(0, 642, __pyx_L1_error)
+  if (unlikely(__pyx_v_self->data == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 653, __pyx_L1_error)
   }
-  __pyx_L3:;
+  if (unlikely(PyDict_SetItem(__pyx_v_self->data, __pyx_v_i, __pyx_v_value) < 0)) __PYX_ERR(0, 653, __pyx_L1_error)
 
-  /* "fastparquet/cencoding.pyx":638
- *                 raise AttributeError
+  /* "fastparquet/cencoding.pyx":651
+ *         return self.data.get(key, default)
  * 
- *     def __setattr__(self, item, value):             # <<<<<<<<<<<<<<
- *         if item in self.spec:
- *             self[self.spec[item]] = value
+ *     def __setattr__(self, str item, value):             # <<<<<<<<<<<<<<
+ *         i = self.spec.get(item, item)
+ *         self.data[i] = value
  */
 
   /* function exit code */
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_1);
   __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__setattr__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_i);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":644
- *             self.attrs[item] = value
+/* "fastparquet/cencoding.pyx":655
+ *         self.data[i] = value
  * 
  *     def __delattr__(self, item):             # <<<<<<<<<<<<<<
- *         if item in self.spec:
- *             del self[self.spec[item]]
+ *         i = self.spec.get(item, item)
+ *         del self.data[i]
  */
 
 /* Python wrapper */
-static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_7__delattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item); /*proto*/
-static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_7__delattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item) {
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_17__delattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item); /*proto*/
+static int __pyx_pw_11fastparquet_9cencoding_12ThriftObject_17__delattr__(PyObject *__pyx_v_self, PyObject *__pyx_v_item) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__delattr__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_6__delattr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v_item));
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_16__delattr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v_item));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_6__delattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item) {
+static int __pyx_pf_11fastparquet_9cencoding_12ThriftObject_16__delattr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, PyObject *__pyx_v_item) {
+  PyObject *__pyx_v_i = NULL;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  int __pyx_t_1;
-  int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
-  int __pyx_t_7;
-  PyObject *__pyx_t_8 = NULL;
-  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__delattr__", 0);
 
-  /* "fastparquet/cencoding.pyx":645
+  /* "fastparquet/cencoding.pyx":656
  * 
  *     def __delattr__(self, item):
- *         if item in self.spec:             # <<<<<<<<<<<<<<
- *             del self[self.spec[item]]
- *         else:
+ *         i = self.spec.get(item, item)             # <<<<<<<<<<<<<<
+ *         del self.data[i]
+ * 
  */
   if (unlikely(__pyx_v_self->spec == Py_None)) {
-    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 645, __pyx_L1_error)
+    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
+    __PYX_ERR(0, 656, __pyx_L1_error)
   }
-  __pyx_t_1 = (__Pyx_PyDict_ContainsTF(__pyx_v_item, __pyx_v_self->spec, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 645, __pyx_L1_error)
-  __pyx_t_2 = (__pyx_t_1 != 0);
-  if (__pyx_t_2) {
+  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_self->spec, __pyx_v_item, __pyx_v_item); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 656, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_i = __pyx_t_1;
+  __pyx_t_1 = 0;
 
-    /* "fastparquet/cencoding.pyx":646
+  /* "fastparquet/cencoding.pyx":657
  *     def __delattr__(self, item):
- *         if item in self.spec:
- *             del self[self.spec[item]]             # <<<<<<<<<<<<<<
- *         else:
- *             try:
- */
-    if (unlikely(__pyx_v_self->spec == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 646, __pyx_L1_error)
-    }
-    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->spec, __pyx_v_item); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 646, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (unlikely(PyObject_DelItem(((PyObject *)__pyx_v_self), __pyx_t_3) < 0)) __PYX_ERR(0, 646, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-    /* "fastparquet/cencoding.pyx":645
- * 
- *     def __delattr__(self, item):
- *         if item in self.spec:             # <<<<<<<<<<<<<<
- *             del self[self.spec[item]]
- *         else:
- */
-    goto __pyx_L3;
-  }
-
-  /* "fastparquet/cencoding.pyx":648
- *             del self[self.spec[item]]
- *         else:
- *             try:             # <<<<<<<<<<<<<<
- *                 del self.attrs[item]
- *             except KeyError:
- */
-  /*else*/ {
-    {
-      __Pyx_PyThreadState_declare
-      __Pyx_PyThreadState_assign
-      __Pyx_ExceptionSave(&__pyx_t_4, &__pyx_t_5, &__pyx_t_6);
-      __Pyx_XGOTREF(__pyx_t_4);
-      __Pyx_XGOTREF(__pyx_t_5);
-      __Pyx_XGOTREF(__pyx_t_6);
-      /*try:*/ {
-
-        /* "fastparquet/cencoding.pyx":649
- *         else:
- *             try:
- *                 del self.attrs[item]             # <<<<<<<<<<<<<<
- *             except KeyError:
- *                 raise AttributeError
- */
-        if (unlikely(__pyx_v_self->attrs == Py_None)) {
-          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-          __PYX_ERR(0, 649, __pyx_L4_error)
-        }
-        if (unlikely(PyDict_DelItem(__pyx_v_self->attrs, __pyx_v_item) < 0)) __PYX_ERR(0, 649, __pyx_L4_error)
-
-        /* "fastparquet/cencoding.pyx":648
- *             del self[self.spec[item]]
- *         else:
- *             try:             # <<<<<<<<<<<<<<
- *                 del self.attrs[item]
- *             except KeyError:
- */
-      }
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      goto __pyx_L9_try_end;
-      __pyx_L4_error:;
-      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-      /* "fastparquet/cencoding.pyx":650
- *             try:
- *                 del self.attrs[item]
- *             except KeyError:             # <<<<<<<<<<<<<<
- *                 raise AttributeError
- * 
- */
-      __pyx_t_7 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
-      if (__pyx_t_7) {
-        __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__delattr__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_8, &__pyx_t_9) < 0) __PYX_ERR(0, 650, __pyx_L6_except_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        __Pyx_GOTREF(__pyx_t_8);
-        __Pyx_GOTREF(__pyx_t_9);
-
-        /* "fastparquet/cencoding.pyx":651
- *                 del self.attrs[item]
- *             except KeyError:
- *                 raise AttributeError             # <<<<<<<<<<<<<<
+ *         i = self.spec.get(item, item)
+ *         del self.data[i]             # <<<<<<<<<<<<<<
  * 
  *     def __reduce_ex__(self, _):
  */
-        __Pyx_Raise(__pyx_builtin_AttributeError, 0, 0, 0);
-        __PYX_ERR(0, 651, __pyx_L6_except_error)
-      }
-      goto __pyx_L6_except_error;
-      __pyx_L6_except_error:;
-
-      /* "fastparquet/cencoding.pyx":648
- *             del self[self.spec[item]]
- *         else:
- *             try:             # <<<<<<<<<<<<<<
- *                 del self.attrs[item]
- *             except KeyError:
- */
-      __Pyx_XGIVEREF(__pyx_t_4);
-      __Pyx_XGIVEREF(__pyx_t_5);
-      __Pyx_XGIVEREF(__pyx_t_6);
-      __Pyx_ExceptionReset(__pyx_t_4, __pyx_t_5, __pyx_t_6);
-      goto __pyx_L1_error;
-      __pyx_L9_try_end:;
-    }
+  if (unlikely(__pyx_v_self->data == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 657, __pyx_L1_error)
   }
-  __pyx_L3:;
+  if (unlikely(PyDict_DelItem(__pyx_v_self->data, __pyx_v_i) < 0)) __PYX_ERR(0, 657, __pyx_L1_error)
 
-  /* "fastparquet/cencoding.pyx":644
- *             self.attrs[item] = value
+  /* "fastparquet/cencoding.pyx":655
+ *         self.data[i] = value
  * 
  *     def __delattr__(self, item):             # <<<<<<<<<<<<<<
- *         if item in self.spec:
- *             del self[self.spec[item]]
+ *         i = self.spec.get(item, item)
+ *         del self.data[i]
  */
 
   /* function exit code */
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_1);
   __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__delattr__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_i);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":653
- *                 raise AttributeError
+/* "fastparquet/cencoding.pyx":659
+ *         del self.data[i]
  * 
  *     def __reduce_ex__(self, _):             # <<<<<<<<<<<<<<
+ *         # TODO: protocol 5 support (since the main product is a buffer)
  *         sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})
- *         o = NumpyIO(ser_buf)
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_9__reduce_ex__(PyObject *__pyx_v_self, PyObject *__pyx_v__); /*proto*/
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_9__reduce_ex__(PyObject *__pyx_v_self, PyObject *__pyx_v__) {
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_19__reduce_ex__(PyObject *__pyx_v_self, PyObject *__pyx_v__); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_19__reduce_ex__(PyObject *__pyx_v_self, PyObject *__pyx_v__) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__reduce_ex__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v__));
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_18__reduce_ex__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), ((PyObject *)__pyx_v__));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v__) {
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_18__reduce_ex__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v__) {
   CYTHON_UNUSED PyObject *__pyx_v_sub = NULL;
   struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_o = NULL;
   PyObject *__pyx_8genexpr1__pyx_v_k = NULL;
@@ -11697,22 +11817,22 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce_ex__", 0);
 
-  /* "fastparquet/cencoding.pyx":654
- * 
+  /* "fastparquet/cencoding.pyx":661
  *     def __reduce_ex__(self, _):
+ *         # TODO: protocol 5 support (since the main product is a buffer)
  *         sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})             # <<<<<<<<<<<<<<
  *         o = NumpyIO(ser_buf)
- *         write_thrift(self, o)
+ *         write_thrift(self.data, o)
  */
   { /* enter inner scope */
-    __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 654, __pyx_L5_error)
+    __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 661, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_3 = 0;
     if (unlikely(((PyObject *)__pyx_v_self) == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "items");
-      __PYX_ERR(0, 654, __pyx_L5_error)
+      __PYX_ERR(0, 661, __pyx_L5_error)
     }
-    __pyx_t_6 = __Pyx_dict_iterator(((PyObject *)__pyx_v_self), 0, __pyx_n_s_items, (&__pyx_t_4), (&__pyx_t_5)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 654, __pyx_L5_error)
+    __pyx_t_6 = __Pyx_dict_iterator(((PyObject *)__pyx_v_self), 0, __pyx_n_s_items, (&__pyx_t_4), (&__pyx_t_5)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 661, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_2);
     __pyx_t_2 = __pyx_t_6;
@@ -11720,7 +11840,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
     while (1) {
       __pyx_t_8 = __Pyx_dict_iter_next(__pyx_t_2, __pyx_t_4, &__pyx_t_3, &__pyx_t_6, &__pyx_t_7, NULL, __pyx_t_5);
       if (unlikely(__pyx_t_8 == 0)) break;
-      if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 654, __pyx_L5_error)
+      if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 661, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_XDECREF_SET(__pyx_8genexpr1__pyx_v_k, __pyx_t_6);
@@ -11730,7 +11850,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
       __pyx_t_9 = PyInt_Check(__pyx_8genexpr1__pyx_v_k); 
       __pyx_t_10 = (__pyx_t_9 != 0);
       if (__pyx_t_10) {
-        if (unlikely(PyDict_SetItem(__pyx_t_1, (PyObject*)__pyx_8genexpr1__pyx_v_k, (PyObject*)__pyx_8genexpr1__pyx_v_v))) __PYX_ERR(0, 654, __pyx_L5_error)
+        if (unlikely(PyDict_SetItem(__pyx_t_1, (PyObject*)__pyx_8genexpr1__pyx_v_k, (PyObject*)__pyx_8genexpr1__pyx_v_v))) __PYX_ERR(0, 661, __pyx_L5_error)
       }
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -11743,7 +11863,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
     goto __pyx_L1_error;
     __pyx_L9_exit_scope:;
   } /* exit inner scope */
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 654, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 661, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_v_self->name);
   __Pyx_GIVEREF(__pyx_v_self->name);
@@ -11754,50 +11874,53 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
   __pyx_v_sub = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "fastparquet/cencoding.pyx":655
- *     def __reduce_ex__(self, _):
+  /* "fastparquet/cencoding.pyx":662
+ *         # TODO: protocol 5 support (since the main product is a buffer)
  *         sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})
  *         o = NumpyIO(ser_buf)             # <<<<<<<<<<<<<<
- *         write_thrift(self, o)
- *         return from_buffer, (bytes(o.so_far()), self.name)
+ *         write_thrift(self.data, o)
+ *         return ThriftObject.from_buffer, (bytes(o.so_far()), self.name)
  */
-  __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_v_11fastparquet_9cencoding_ser_buf, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t, (int (*)(char *, PyObject *)) __pyx_memview_set_nn_uint8_t, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 655, __pyx_L1_error)
+  __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_v_11fastparquet_9cencoding_ser_buf, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t, (int (*)(char *, PyObject *)) __pyx_memview_set_nn_uint8_t, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 662, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_NumpyIO), __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 655, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_NumpyIO), __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 662, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_o = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":656
+  /* "fastparquet/cencoding.pyx":663
  *         sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})
  *         o = NumpyIO(ser_buf)
- *         write_thrift(self, o)             # <<<<<<<<<<<<<<
- *         return from_buffer, (bytes(o.so_far()), self.name)
+ *         write_thrift(self.data, o)             # <<<<<<<<<<<<<<
+ *         return ThriftObject.from_buffer, (bytes(o.so_far()), self.name)
  * 
  */
-  __pyx_f_11fastparquet_9cencoding_write_thrift(((PyObject*)__pyx_v_self), __pyx_v_o, 0);
+  __pyx_t_1 = __pyx_v_self->data;
+  __Pyx_INCREF(__pyx_t_1);
+  __pyx_f_11fastparquet_9cencoding_write_thrift(((PyObject*)__pyx_t_1), __pyx_v_o, 0);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":657
+  /* "fastparquet/cencoding.pyx":664
  *         o = NumpyIO(ser_buf)
- *         write_thrift(self, o)
- *         return from_buffer, (bytes(o.so_far()), self.name)             # <<<<<<<<<<<<<<
+ *         write_thrift(self.data, o)
+ *         return ThriftObject.from_buffer, (bytes(o.so_far()), self.name)             # <<<<<<<<<<<<<<
  * 
- *     cpdef _asdict(self):
+ *     @staticmethod
  */
   __Pyx_XDECREF(__pyx_r);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_from_buffer); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 657, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject), __pyx_n_s_from_buffer); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 664, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_11 = __pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far(__pyx_v_o, 0); if (unlikely(!__pyx_t_11.memview)) __PYX_ERR(0, 657, __pyx_L1_error)
-  __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_t_11, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t__const__, (int (*)(char *, PyObject *)) NULL, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 657, __pyx_L1_error)
+  __pyx_t_11 = __pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far(__pyx_v_o, 0); if (unlikely(!__pyx_t_11.memview)) __PYX_ERR(0, 664, __pyx_L1_error)
+  __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_t_11, 1, (PyObject *(*)(char *)) __pyx_memview_get_nn_uint8_t__const__, (int (*)(char *, PyObject *)) NULL, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 664, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __PYX_XDEC_MEMVIEW(&__pyx_t_11, 1);
   __pyx_t_11.memview = NULL;
   __pyx_t_11.data = NULL;
-  __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyBytes_Type)), __pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 657, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyBytes_Type)), __pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 664, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 657, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 664, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_7);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_7);
@@ -11805,7 +11928,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
   __Pyx_GIVEREF(__pyx_v_self->name);
   PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_self->name);
   __pyx_t_7 = 0;
-  __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 657, __pyx_L1_error)
+  __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 664, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_1);
@@ -11817,12 +11940,12 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
   __pyx_t_7 = 0;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":653
- *                 raise AttributeError
+  /* "fastparquet/cencoding.pyx":659
+ *         del self.data[i]
  * 
  *     def __reduce_ex__(self, _):             # <<<<<<<<<<<<<<
+ *         # TODO: protocol 5 support (since the main product is a buffer)
  *         sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})
- *         o = NumpyIO(ser_buf)
  */
 
   /* function exit code */
@@ -11844,15 +11967,614 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_8__reduce_ex__
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":659
- *         return from_buffer, (bytes(o.so_far()), self.name)
+/* "fastparquet/cencoding.pyx":667
+ * 
+ *     @staticmethod
+ *     def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
+ *         # could be a static method in the class below
+ *         cdef NumpyIO buf
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_21from_buffer(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_11fastparquet_9cencoding_12ThriftObject_21from_buffer = {"from_buffer", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_21from_buffer, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_21from_buffer(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_buffer = 0;
+  PyObject *__pyx_v_name = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("from_buffer (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_buffer,&__pyx_n_s_name,0};
+    PyObject* values[2] = {0,0};
+    values[1] = ((PyObject *)Py_None);
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_buffer)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_name);
+          if (value) { values[1] = value; kw_args--; }
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "from_buffer") < 0)) __PYX_ERR(0, 667, __pyx_L3_error)
+      }
+    } else {
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_buffer = values[0];
+    __pyx_v_name = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("from_buffer", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 667, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.from_buffer", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_20from_buffer(__pyx_v_buffer, __pyx_v_name);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_20from_buffer(PyObject *__pyx_v_buffer, PyObject *__pyx_v_name) {
+  struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *__pyx_v_buf = 0;
+  PyObject *__pyx_v_o = 0;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("from_buffer", 0);
+
+  /* "fastparquet/cencoding.pyx":670
+ *         # could be a static method in the class below
+ *         cdef NumpyIO buf
+ *         if isinstance(buffer, NumpyIO):             # <<<<<<<<<<<<<<
+ *             buf = buffer
+ *         else:
+ */
+  __pyx_t_1 = __Pyx_TypeCheck(__pyx_v_buffer, __pyx_ptype_11fastparquet_9cencoding_NumpyIO); 
+  __pyx_t_2 = (__pyx_t_1 != 0);
+  if (__pyx_t_2) {
+
+    /* "fastparquet/cencoding.pyx":671
+ *         cdef NumpyIO buf
+ *         if isinstance(buffer, NumpyIO):
+ *             buf = buffer             # <<<<<<<<<<<<<<
+ *         else:
+ *             buf = NumpyIO(buffer)
+ */
+    if (!(likely(((__pyx_v_buffer) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_buffer, __pyx_ptype_11fastparquet_9cencoding_NumpyIO))))) __PYX_ERR(0, 671, __pyx_L1_error)
+    __pyx_t_3 = __pyx_v_buffer;
+    __Pyx_INCREF(__pyx_t_3);
+    __pyx_v_buf = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)__pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "fastparquet/cencoding.pyx":670
+ *         # could be a static method in the class below
+ *         cdef NumpyIO buf
+ *         if isinstance(buffer, NumpyIO):             # <<<<<<<<<<<<<<
+ *             buf = buffer
+ *         else:
+ */
+    goto __pyx_L3;
+  }
+
+  /* "fastparquet/cencoding.pyx":673
+ *             buf = buffer
+ *         else:
+ *             buf = NumpyIO(buffer)             # <<<<<<<<<<<<<<
+ *         cdef dict o = read_thrift(buf)
+ *         if name is not None:
+ */
+  /*else*/ {
+    __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_NumpyIO), __pyx_v_buffer); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 673, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_v_buf = ((struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *)__pyx_t_3);
+    __pyx_t_3 = 0;
+  }
+  __pyx_L3:;
+
+  /* "fastparquet/cencoding.pyx":674
+ *         else:
+ *             buf = NumpyIO(buffer)
+ *         cdef dict o = read_thrift(buf)             # <<<<<<<<<<<<<<
+ *         if name is not None:
+ *             return ThriftObject(name, o)
+ */
+  __pyx_t_3 = __pyx_f_11fastparquet_9cencoding_read_thrift(__pyx_v_buf, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 674, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_v_o = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":675
+ *             buf = NumpyIO(buffer)
+ *         cdef dict o = read_thrift(buf)
+ *         if name is not None:             # <<<<<<<<<<<<<<
+ *             return ThriftObject(name, o)
+ *         return o
+ */
+  __pyx_t_2 = (__pyx_v_name != Py_None);
+  __pyx_t_1 = (__pyx_t_2 != 0);
+  if (__pyx_t_1) {
+
+    /* "fastparquet/cencoding.pyx":676
+ *         cdef dict o = read_thrift(buf)
+ *         if name is not None:
+ *             return ThriftObject(name, o)             # <<<<<<<<<<<<<<
+ *         return o
+ * 
+ */
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 676, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_INCREF(__pyx_v_name);
+    __Pyx_GIVEREF(__pyx_v_name);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_name);
+    __Pyx_INCREF(__pyx_v_o);
+    __Pyx_GIVEREF(__pyx_v_o);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_o);
+    __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject), __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 676, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_r = __pyx_t_4;
+    __pyx_t_4 = 0;
+    goto __pyx_L0;
+
+    /* "fastparquet/cencoding.pyx":675
+ *             buf = NumpyIO(buffer)
+ *         cdef dict o = read_thrift(buf)
+ *         if name is not None:             # <<<<<<<<<<<<<<
+ *             return ThriftObject(name, o)
+ *         return o
+ */
+  }
+
+  /* "fastparquet/cencoding.pyx":677
+ *         if name is not None:
+ *             return ThriftObject(name, o)
+ *         return o             # <<<<<<<<<<<<<<
+ * 
+ *     def copy(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_o);
+  __pyx_r = __pyx_v_o;
+  goto __pyx_L0;
+
+  /* "fastparquet/cencoding.pyx":667
+ * 
+ *     @staticmethod
+ *     def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
+ *         # could be a static method in the class below
+ *         cdef NumpyIO buf
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.from_buffer", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_buf);
+  __Pyx_XDECREF(__pyx_v_o);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":679
+ *         return o
+ * 
+ *     def copy(self):             # <<<<<<<<<<<<<<
+ *         return type(self)(self.name, self.data.copy())
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_23copy(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_23copy(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("copy (wrapper)", 0);
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_22copy(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_22copy(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  int __pyx_t_5;
+  PyObject *__pyx_t_6 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("copy", 0);
+
+  /* "fastparquet/cencoding.pyx":680
+ * 
+ *     def copy(self):
+ *         return type(self)(self.name, self.data.copy())             # <<<<<<<<<<<<<<
+ * 
+ *     def __copy__(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  if (unlikely(__pyx_v_self->data == Py_None)) {
+    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "copy");
+    __PYX_ERR(0, 680, __pyx_L1_error)
+  }
+  __pyx_t_2 = PyDict_Copy(__pyx_v_self->data); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 680, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_INCREF(((PyObject *)Py_TYPE(((PyObject *)__pyx_v_self))));
+  __pyx_t_3 = ((PyObject *)Py_TYPE(((PyObject *)__pyx_v_self))); __pyx_t_4 = NULL;
+  __pyx_t_5 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  #if CYTHON_FAST_PYCALL
+  if (PyFunction_Check(__pyx_t_3)) {
+    PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_self->name, __pyx_t_2};
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 680, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  } else
+  #endif
+  #if CYTHON_FAST_PYCCALL
+  if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
+    PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_self->name, __pyx_t_2};
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 680, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  } else
+  #endif
+  {
+    __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 680, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    if (__pyx_t_4) {
+      __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
+    }
+    __Pyx_INCREF(__pyx_v_self->name);
+    __Pyx_GIVEREF(__pyx_v_self->name);
+    PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_v_self->name);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_t_2);
+    __pyx_t_2 = 0;
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 680, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "fastparquet/cencoding.pyx":679
+ *         return o
+ * 
+ *     def copy(self):             # <<<<<<<<<<<<<<
+ *         return type(self)(self.name, self.data.copy())
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.copy", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":682
+ *         return type(self)(self.name, self.data.copy())
+ * 
+ *     def __copy__(self):             # <<<<<<<<<<<<<<
+ *         return self.copy()
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_25__copy__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_25__copy__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__copy__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_24__copy__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_24__copy__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__copy__", 0);
+
+  /* "fastparquet/cencoding.pyx":683
+ * 
+ *     def __copy__(self):
+ *         return self.copy()             # <<<<<<<<<<<<<<
+ * 
+ *     def __deepcopy__(self, memodict={}):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_copy); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 683, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 683, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "fastparquet/cencoding.pyx":682
+ *         return type(self)(self.name, self.data.copy())
+ * 
+ *     def __copy__(self):             # <<<<<<<<<<<<<<
+ *         return self.copy()
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__copy__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":685
+ *         return self.copy()
+ * 
+ *     def __deepcopy__(self, memodict={}):             # <<<<<<<<<<<<<<
+ *         import pickle
+ *         return pickle.loads(pickle.dumps(self))
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_27__deepcopy__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_27__deepcopy__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  CYTHON_UNUSED PyObject *__pyx_v_memodict = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__deepcopy__ (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_memodict,0};
+    PyObject* values[1] = {0};
+    values[0] = __pyx_k__3;
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_memodict);
+          if (value) { values[0] = value; kw_args--; }
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__deepcopy__") < 0)) __PYX_ERR(0, 685, __pyx_L3_error)
+      }
+    } else {
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_memodict = values[0];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__deepcopy__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 685, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__deepcopy__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_26__deepcopy__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self), __pyx_v_memodict);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_26__deepcopy__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_memodict) {
+  PyObject *__pyx_v_pickle = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__deepcopy__", 0);
+
+  /* "fastparquet/cencoding.pyx":686
+ * 
+ *     def __deepcopy__(self, memodict={}):
+ *         import pickle             # <<<<<<<<<<<<<<
+ *         return pickle.loads(pickle.dumps(self))
+ * 
+ */
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_pickle, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 686, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_pickle = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "fastparquet/cencoding.pyx":687
+ *     def __deepcopy__(self, memodict={}):
+ *         import pickle
+ *         return pickle.loads(pickle.dumps(self))             # <<<<<<<<<<<<<<
+ * 
+ *     cpdef _asdict(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_pickle, __pyx_n_s_loads); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 687, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_pickle, __pyx_n_s_dumps); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 687, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_4);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_4, function);
+    }
+  }
+  __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, ((PyObject *)__pyx_v_self)) : __Pyx_PyObject_CallOneArg(__pyx_t_4, ((PyObject *)__pyx_v_self));
+  __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 687, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 687, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "fastparquet/cencoding.pyx":685
+ *         return self.copy()
+ * 
+ *     def __deepcopy__(self, memodict={}):             # <<<<<<<<<<<<<<
+ *         import pickle
+ *         return pickle.loads(pickle.dumps(self))
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__deepcopy__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_pickle);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fastparquet/cencoding.pyx":689
+ *         return pickle.loads(pickle.dumps(self))
  * 
  *     cpdef _asdict(self):             # <<<<<<<<<<<<<<
  *         cdef str k
  *         cdef out = {}
  */
 
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_11_asdict(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_29_asdict(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
 static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self, CYTHON_UNUSED int __pyx_skip_dispatch) {
   PyObject *__pyx_v_k = 0;
   PyObject *__pyx_v_out = 0;
@@ -11881,19 +12603,19 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_asdict", 0);
 
-  /* "fastparquet/cencoding.pyx":661
+  /* "fastparquet/cencoding.pyx":691
  *     cpdef _asdict(self):
  *         cdef str k
  *         cdef out = {}             # <<<<<<<<<<<<<<
  *         for k in self.spec:
  *             if k in self.children:
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 661, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 691, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_out = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":662
+  /* "fastparquet/cencoding.pyx":692
  *         cdef str k
  *         cdef out = {}
  *         for k in self.spec:             # <<<<<<<<<<<<<<
@@ -11903,9 +12625,9 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
   __pyx_t_2 = 0;
   if (unlikely(__pyx_v_self->spec == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 662, __pyx_L1_error)
+    __PYX_ERR(0, 692, __pyx_L1_error)
   }
-  __pyx_t_5 = __Pyx_dict_iterator(__pyx_v_self->spec, 1, ((PyObject *)NULL), (&__pyx_t_3), (&__pyx_t_4)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 662, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_dict_iterator(__pyx_v_self->spec, 1, ((PyObject *)NULL), (&__pyx_t_3), (&__pyx_t_4)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 692, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_1);
   __pyx_t_1 = __pyx_t_5;
@@ -11913,13 +12635,13 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
   while (1) {
     __pyx_t_6 = __Pyx_dict_iter_next(__pyx_t_1, __pyx_t_3, &__pyx_t_2, &__pyx_t_5, NULL, NULL, __pyx_t_4);
     if (unlikely(__pyx_t_6 == 0)) break;
-    if (unlikely(__pyx_t_6 == -1)) __PYX_ERR(0, 662, __pyx_L1_error)
+    if (unlikely(__pyx_t_6 == -1)) __PYX_ERR(0, 692, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 662, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 692, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_k, ((PyObject*)__pyx_t_5));
     __pyx_t_5 = 0;
 
-    /* "fastparquet/cencoding.pyx":663
+    /* "fastparquet/cencoding.pyx":693
  *         cdef out = {}
  *         for k in self.spec:
  *             if k in self.children:             # <<<<<<<<<<<<<<
@@ -11928,25 +12650,25 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  */
     if (unlikely(__pyx_v_self->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-      __PYX_ERR(0, 663, __pyx_L1_error)
+      __PYX_ERR(0, 693, __pyx_L1_error)
     }
-    __pyx_t_7 = (__Pyx_PyDict_ContainsTF(__pyx_v_k, __pyx_v_self->children, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 663, __pyx_L1_error)
+    __pyx_t_7 = (__Pyx_PyDict_ContainsTF(__pyx_v_k, __pyx_v_self->children, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 693, __pyx_L1_error)
     __pyx_t_8 = (__pyx_t_7 != 0);
     if (__pyx_t_8) {
 
-      /* "fastparquet/cencoding.pyx":664
+      /* "fastparquet/cencoding.pyx":694
  *         for k in self.spec:
  *             if k in self.children:
  *                 lower = getattr(self, k)             # <<<<<<<<<<<<<<
  *                 if lower is None:
  *                     out[k] = None
  */
-      __pyx_t_5 = __Pyx_GetAttr(((PyObject *)__pyx_v_self), __pyx_v_k); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 664, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetAttr(((PyObject *)__pyx_v_self), __pyx_v_k); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 694, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_XDECREF_SET(__pyx_v_lower, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "fastparquet/cencoding.pyx":665
+      /* "fastparquet/cencoding.pyx":695
  *             if k in self.children:
  *                 lower = getattr(self, k)
  *                 if lower is None:             # <<<<<<<<<<<<<<
@@ -11957,16 +12679,16 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
       __pyx_t_7 = (__pyx_t_8 != 0);
       if (__pyx_t_7) {
 
-        /* "fastparquet/cencoding.pyx":666
+        /* "fastparquet/cencoding.pyx":696
  *                 lower = getattr(self, k)
  *                 if lower is None:
  *                     out[k] = None             # <<<<<<<<<<<<<<
  *                 elif isinstance(lower, list):
  *                     out[k] = [l._asdict() for l in lower]
  */
-        if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, Py_None) < 0)) __PYX_ERR(0, 666, __pyx_L1_error)
+        if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, Py_None) < 0)) __PYX_ERR(0, 696, __pyx_L1_error)
 
-        /* "fastparquet/cencoding.pyx":665
+        /* "fastparquet/cencoding.pyx":695
  *             if k in self.children:
  *                 lower = getattr(self, k)
  *                 if lower is None:             # <<<<<<<<<<<<<<
@@ -11976,7 +12698,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
         goto __pyx_L6;
       }
 
-      /* "fastparquet/cencoding.pyx":667
+      /* "fastparquet/cencoding.pyx":697
  *                 if lower is None:
  *                     out[k] = None
  *                 elif isinstance(lower, list):             # <<<<<<<<<<<<<<
@@ -11987,7 +12709,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
       __pyx_t_8 = (__pyx_t_7 != 0);
       if (__pyx_t_8) {
 
-        /* "fastparquet/cencoding.pyx":668
+        /* "fastparquet/cencoding.pyx":698
  *                     out[k] = None
  *                 elif isinstance(lower, list):
  *                     out[k] = [l._asdict() for l in lower]             # <<<<<<<<<<<<<<
@@ -11995,32 +12717,32 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  *                     out[k] = lower._asdict()
  */
         { /* enter inner scope */
-          __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 668, __pyx_L9_error)
+          __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 698, __pyx_L9_error)
           __Pyx_GOTREF(__pyx_t_5);
           if (likely(PyList_CheckExact(__pyx_v_lower)) || PyTuple_CheckExact(__pyx_v_lower)) {
             __pyx_t_9 = __pyx_v_lower; __Pyx_INCREF(__pyx_t_9); __pyx_t_10 = 0;
             __pyx_t_11 = NULL;
           } else {
-            __pyx_t_10 = -1; __pyx_t_9 = PyObject_GetIter(__pyx_v_lower); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 668, __pyx_L9_error)
+            __pyx_t_10 = -1; __pyx_t_9 = PyObject_GetIter(__pyx_v_lower); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 698, __pyx_L9_error)
             __Pyx_GOTREF(__pyx_t_9);
-            __pyx_t_11 = Py_TYPE(__pyx_t_9)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 668, __pyx_L9_error)
+            __pyx_t_11 = Py_TYPE(__pyx_t_9)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 698, __pyx_L9_error)
           }
           for (;;) {
             if (likely(!__pyx_t_11)) {
               if (likely(PyList_CheckExact(__pyx_t_9))) {
                 if (__pyx_t_10 >= PyList_GET_SIZE(__pyx_t_9)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_12 = PyList_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 668, __pyx_L9_error)
+                __pyx_t_12 = PyList_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 698, __pyx_L9_error)
                 #else
-                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 668, __pyx_L9_error)
+                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 698, __pyx_L9_error)
                 __Pyx_GOTREF(__pyx_t_12);
                 #endif
               } else {
                 if (__pyx_t_10 >= PyTuple_GET_SIZE(__pyx_t_9)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_12 = PyTuple_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 668, __pyx_L9_error)
+                __pyx_t_12 = PyTuple_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 698, __pyx_L9_error)
                 #else
-                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 668, __pyx_L9_error)
+                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 698, __pyx_L9_error)
                 __Pyx_GOTREF(__pyx_t_12);
                 #endif
               }
@@ -12030,7 +12752,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
                 PyObject* exc_type = PyErr_Occurred();
                 if (exc_type) {
                   if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                  else __PYX_ERR(0, 668, __pyx_L9_error)
+                  else __PYX_ERR(0, 698, __pyx_L9_error)
                 }
                 break;
               }
@@ -12038,7 +12760,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
             }
             __Pyx_XDECREF_SET(__pyx_8genexpr2__pyx_v_l, __pyx_t_12);
             __pyx_t_12 = 0;
-            __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_8genexpr2__pyx_v_l, __pyx_n_s_asdict); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 668, __pyx_L9_error)
+            __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_8genexpr2__pyx_v_l, __pyx_n_s_asdict); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 698, __pyx_L9_error)
             __Pyx_GOTREF(__pyx_t_13);
             __pyx_t_14 = NULL;
             if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_13))) {
@@ -12052,10 +12774,10 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
             }
             __pyx_t_12 = (__pyx_t_14) ? __Pyx_PyObject_CallOneArg(__pyx_t_13, __pyx_t_14) : __Pyx_PyObject_CallNoArg(__pyx_t_13);
             __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
-            if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 668, __pyx_L9_error)
+            if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 698, __pyx_L9_error)
             __Pyx_GOTREF(__pyx_t_12);
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-            if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_t_12))) __PYX_ERR(0, 668, __pyx_L9_error)
+            if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_t_12))) __PYX_ERR(0, 698, __pyx_L9_error)
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           }
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
@@ -12066,10 +12788,10 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
           goto __pyx_L1_error;
           __pyx_L12_exit_scope:;
         } /* exit inner scope */
-        if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, __pyx_t_5) < 0)) __PYX_ERR(0, 668, __pyx_L1_error)
+        if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, __pyx_t_5) < 0)) __PYX_ERR(0, 698, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-        /* "fastparquet/cencoding.pyx":667
+        /* "fastparquet/cencoding.pyx":697
  *                 if lower is None:
  *                     out[k] = None
  *                 elif isinstance(lower, list):             # <<<<<<<<<<<<<<
@@ -12079,7 +12801,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
         goto __pyx_L6;
       }
 
-      /* "fastparquet/cencoding.pyx":670
+      /* "fastparquet/cencoding.pyx":700
  *                     out[k] = [l._asdict() for l in lower]
  *                 else:
  *                     out[k] = lower._asdict()             # <<<<<<<<<<<<<<
@@ -12087,7 +12809,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  *                 lower = getattr(self, k)
  */
       /*else*/ {
-        __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_lower, __pyx_n_s_asdict); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 670, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_lower, __pyx_n_s_asdict); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 700, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_9);
         __pyx_t_12 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_9))) {
@@ -12101,15 +12823,15 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
         }
         __pyx_t_5 = (__pyx_t_12) ? __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_t_12) : __Pyx_PyObject_CallNoArg(__pyx_t_9);
         __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 670, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 700, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-        if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, __pyx_t_5) < 0)) __PYX_ERR(0, 670, __pyx_L1_error)
+        if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, __pyx_t_5) < 0)) __PYX_ERR(0, 700, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
       __pyx_L6:;
 
-      /* "fastparquet/cencoding.pyx":663
+      /* "fastparquet/cencoding.pyx":693
  *         cdef out = {}
  *         for k in self.spec:
  *             if k in self.children:             # <<<<<<<<<<<<<<
@@ -12119,7 +12841,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
       goto __pyx_L5;
     }
 
-    /* "fastparquet/cencoding.pyx":672
+    /* "fastparquet/cencoding.pyx":702
  *                     out[k] = lower._asdict()
  *             else:
  *                 lower = getattr(self, k)             # <<<<<<<<<<<<<<
@@ -12127,12 +12849,12 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  *                     lower = str(lower)
  */
     /*else*/ {
-      __pyx_t_5 = __Pyx_GetAttr(((PyObject *)__pyx_v_self), __pyx_v_k); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 672, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetAttr(((PyObject *)__pyx_v_self), __pyx_v_k); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 702, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_XDECREF_SET(__pyx_v_lower, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "fastparquet/cencoding.pyx":673
+      /* "fastparquet/cencoding.pyx":703
  *             else:
  *                 lower = getattr(self, k)
  *                 if isinstance(lower, bytes):             # <<<<<<<<<<<<<<
@@ -12143,19 +12865,19 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
       __pyx_t_7 = (__pyx_t_8 != 0);
       if (__pyx_t_7) {
 
-        /* "fastparquet/cencoding.pyx":674
+        /* "fastparquet/cencoding.pyx":704
  *                 lower = getattr(self, k)
  *                 if isinstance(lower, bytes):
  *                     lower = str(lower)             # <<<<<<<<<<<<<<
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
  *                     lower = [str(l) for l in lower]
  */
-        __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_v_lower); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 674, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_v_lower); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 704, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF_SET(__pyx_v_lower, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "fastparquet/cencoding.pyx":673
+        /* "fastparquet/cencoding.pyx":703
  *             else:
  *                 lower = getattr(self, k)
  *                 if isinstance(lower, bytes):             # <<<<<<<<<<<<<<
@@ -12165,7 +12887,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
         goto __pyx_L13;
       }
 
-      /* "fastparquet/cencoding.pyx":675
+      /* "fastparquet/cencoding.pyx":705
  *                 if isinstance(lower, bytes):
  *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):             # <<<<<<<<<<<<<<
@@ -12179,13 +12901,13 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
         __pyx_t_7 = __pyx_t_15;
         goto __pyx_L14_bool_binop_done;
       }
-      __pyx_t_15 = __Pyx_PyObject_IsTrue(__pyx_v_lower); if (unlikely(__pyx_t_15 < 0)) __PYX_ERR(0, 675, __pyx_L1_error)
+      __pyx_t_15 = __Pyx_PyObject_IsTrue(__pyx_v_lower); if (unlikely(__pyx_t_15 < 0)) __PYX_ERR(0, 705, __pyx_L1_error)
       if (__pyx_t_15) {
       } else {
         __pyx_t_7 = __pyx_t_15;
         goto __pyx_L14_bool_binop_done;
       }
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_lower, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 675, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_lower, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 705, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_15 = PyBytes_Check(__pyx_t_5); 
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -12194,7 +12916,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
       __pyx_L14_bool_binop_done:;
       if (__pyx_t_7) {
 
-        /* "fastparquet/cencoding.pyx":676
+        /* "fastparquet/cencoding.pyx":706
  *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
  *                     lower = [str(l) for l in lower]             # <<<<<<<<<<<<<<
@@ -12202,32 +12924,32 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  *         return out
  */
         { /* enter inner scope */
-          __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 676, __pyx_L19_error)
+          __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 706, __pyx_L19_error)
           __Pyx_GOTREF(__pyx_t_5);
           if (likely(PyList_CheckExact(__pyx_v_lower)) || PyTuple_CheckExact(__pyx_v_lower)) {
             __pyx_t_9 = __pyx_v_lower; __Pyx_INCREF(__pyx_t_9); __pyx_t_10 = 0;
             __pyx_t_11 = NULL;
           } else {
-            __pyx_t_10 = -1; __pyx_t_9 = PyObject_GetIter(__pyx_v_lower); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 676, __pyx_L19_error)
+            __pyx_t_10 = -1; __pyx_t_9 = PyObject_GetIter(__pyx_v_lower); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 706, __pyx_L19_error)
             __Pyx_GOTREF(__pyx_t_9);
-            __pyx_t_11 = Py_TYPE(__pyx_t_9)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 676, __pyx_L19_error)
+            __pyx_t_11 = Py_TYPE(__pyx_t_9)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 706, __pyx_L19_error)
           }
           for (;;) {
             if (likely(!__pyx_t_11)) {
               if (likely(PyList_CheckExact(__pyx_t_9))) {
                 if (__pyx_t_10 >= PyList_GET_SIZE(__pyx_t_9)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_12 = PyList_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 676, __pyx_L19_error)
+                __pyx_t_12 = PyList_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 706, __pyx_L19_error)
                 #else
-                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 676, __pyx_L19_error)
+                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 706, __pyx_L19_error)
                 __Pyx_GOTREF(__pyx_t_12);
                 #endif
               } else {
                 if (__pyx_t_10 >= PyTuple_GET_SIZE(__pyx_t_9)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_12 = PyTuple_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 676, __pyx_L19_error)
+                __pyx_t_12 = PyTuple_GET_ITEM(__pyx_t_9, __pyx_t_10); __Pyx_INCREF(__pyx_t_12); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 706, __pyx_L19_error)
                 #else
-                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 676, __pyx_L19_error)
+                __pyx_t_12 = PySequence_ITEM(__pyx_t_9, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 706, __pyx_L19_error)
                 __Pyx_GOTREF(__pyx_t_12);
                 #endif
               }
@@ -12237,7 +12959,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
                 PyObject* exc_type = PyErr_Occurred();
                 if (exc_type) {
                   if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                  else __PYX_ERR(0, 676, __pyx_L19_error)
+                  else __PYX_ERR(0, 706, __pyx_L19_error)
                 }
                 break;
               }
@@ -12245,9 +12967,9 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
             }
             __Pyx_XDECREF_SET(__pyx_8genexpr3__pyx_v_l, __pyx_t_12);
             __pyx_t_12 = 0;
-            __pyx_t_12 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_8genexpr3__pyx_v_l); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 676, __pyx_L19_error)
+            __pyx_t_12 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_8genexpr3__pyx_v_l); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 706, __pyx_L19_error)
             __Pyx_GOTREF(__pyx_t_12);
-            if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_t_12))) __PYX_ERR(0, 676, __pyx_L19_error)
+            if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_t_12))) __PYX_ERR(0, 706, __pyx_L19_error)
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           }
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
@@ -12261,7 +12983,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
         __Pyx_DECREF_SET(__pyx_v_lower, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "fastparquet/cencoding.pyx":675
+        /* "fastparquet/cencoding.pyx":705
  *                 if isinstance(lower, bytes):
  *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):             # <<<<<<<<<<<<<<
@@ -12271,20 +12993,20 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
       }
       __pyx_L13:;
 
-      /* "fastparquet/cencoding.pyx":677
+      /* "fastparquet/cencoding.pyx":707
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
  *                     lower = [str(l) for l in lower]
  *                 out[k] = lower             # <<<<<<<<<<<<<<
  *         return out
  * 
  */
-      if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, __pyx_v_lower) < 0)) __PYX_ERR(0, 677, __pyx_L1_error)
+      if (unlikely(PyObject_SetItem(__pyx_v_out, __pyx_v_k, __pyx_v_lower) < 0)) __PYX_ERR(0, 707, __pyx_L1_error)
     }
     __pyx_L5:;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":678
+  /* "fastparquet/cencoding.pyx":708
  *                     lower = [str(l) for l in lower]
  *                 out[k] = lower
  *         return out             # <<<<<<<<<<<<<<
@@ -12296,8 +13018,8 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
   __pyx_r = __pyx_v_out;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":659
- *         return from_buffer, (bytes(o.so_far()), self.name)
+  /* "fastparquet/cencoding.pyx":689
+ *         return pickle.loads(pickle.dumps(self))
  * 
  *     cpdef _asdict(self):             # <<<<<<<<<<<<<<
  *         cdef str k
@@ -12326,19 +13048,19 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_11_asdict(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_11_asdict(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_29_asdict(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_29_asdict(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_asdict (wrapper)", 0);
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_10_asdict(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_28_asdict(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_10_asdict(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_28_asdict(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -12347,7 +13069,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_10_asdict(stru
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_asdict", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 659, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 689, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -12364,7 +13086,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_10_asdict(stru
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":680
+/* "fastparquet/cencoding.pyx":710
  *         return out
  * 
  *     def __dir__(self):             # <<<<<<<<<<<<<<
@@ -12373,19 +13095,19 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_10_asdict(stru
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_13__dir__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_13__dir__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_31__dir__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_31__dir__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__dir__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_12__dir__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_30__dir__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12__dir__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_30__dir__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -12394,7 +13116,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12__dir__(stru
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__dir__", 0);
 
-  /* "fastparquet/cencoding.pyx":681
+  /* "fastparquet/cencoding.pyx":711
  * 
  *     def __dir__(self):
  *         return list(self.spec)             # <<<<<<<<<<<<<<
@@ -12402,13 +13124,13 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12__dir__(stru
  *     def __repr__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PySequence_List(__pyx_v_self->spec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 681, __pyx_L1_error)
+  __pyx_t_1 = PySequence_List(__pyx_v_self->spec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 711, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastparquet/cencoding.pyx":680
+  /* "fastparquet/cencoding.pyx":710
  *         return out
  * 
  *     def __dir__(self):             # <<<<<<<<<<<<<<
@@ -12427,7 +13149,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12__dir__(stru
   return __pyx_r;
 }
 
-/* "fastparquet/cencoding.pyx":683
+/* "fastparquet/cencoding.pyx":713
  *         return list(self.spec)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -12436,19 +13158,19 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_12__dir__(stru
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_15__repr__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_15__repr__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_33__repr__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_11fastparquet_9cencoding_12ThriftObject_33__repr__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__repr__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
+  __pyx_r = __pyx_pf_11fastparquet_9cencoding_12ThriftObject_32__repr__(((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
+static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_32__repr__(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_v_self) {
   PyObject *__pyx_v_alt = NULL;
   PyObject *__pyx_v_yaml = NULL;
   PyObject *__pyx_r = NULL;
@@ -12466,19 +13188,19 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "fastparquet/cencoding.pyx":684
+  /* "fastparquet/cencoding.pyx":714
  * 
  *     def __repr__(self):
  *         alt = self._asdict()             # <<<<<<<<<<<<<<
  *         try:
  *             import yaml
  */
-  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(__pyx_v_self, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 684, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(__pyx_v_self, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 714, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_alt = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":685
+  /* "fastparquet/cencoding.pyx":715
  *     def __repr__(self):
  *         alt = self._asdict()
  *         try:             # <<<<<<<<<<<<<<
@@ -12494,19 +13216,19 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
     __Pyx_XGOTREF(__pyx_t_4);
     /*try:*/ {
 
-      /* "fastparquet/cencoding.pyx":686
+      /* "fastparquet/cencoding.pyx":716
  *         alt = self._asdict()
  *         try:
  *             import yaml             # <<<<<<<<<<<<<<
  *             return yaml.dump(alt)
  *         except ImportError:
  */
-      __pyx_t_1 = __Pyx_Import(__pyx_n_s_yaml, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 686, __pyx_L3_error)
+      __pyx_t_1 = __Pyx_Import(__pyx_n_s_yaml, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 716, __pyx_L3_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_yaml = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "fastparquet/cencoding.pyx":687
+      /* "fastparquet/cencoding.pyx":717
  *         try:
  *             import yaml
  *             return yaml.dump(alt)             # <<<<<<<<<<<<<<
@@ -12514,7 +13236,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
  *             return str(alt)
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_yaml, __pyx_n_s_dump); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 687, __pyx_L3_error)
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_yaml, __pyx_n_s_dump); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 717, __pyx_L3_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_6 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -12528,14 +13250,14 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
       }
       __pyx_t_1 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_6, __pyx_v_alt) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_alt);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 687, __pyx_L3_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 717, __pyx_L3_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_r = __pyx_t_1;
       __pyx_t_1 = 0;
       goto __pyx_L7_try_return;
 
-      /* "fastparquet/cencoding.pyx":685
+      /* "fastparquet/cencoding.pyx":715
  *     def __repr__(self):
  *         alt = self._asdict()
  *         try:             # <<<<<<<<<<<<<<
@@ -12548,7 +13270,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-    /* "fastparquet/cencoding.pyx":688
+    /* "fastparquet/cencoding.pyx":718
  *             import yaml
  *             return yaml.dump(alt)
  *         except ImportError:             # <<<<<<<<<<<<<<
@@ -12558,12 +13280,12 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
     __pyx_t_7 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ImportError);
     if (__pyx_t_7) {
       __Pyx_AddTraceback("fastparquet.cencoding.ThriftObject.__repr__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_5, &__pyx_t_6) < 0) __PYX_ERR(0, 688, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_5, &__pyx_t_6) < 0) __PYX_ERR(0, 718, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_GOTREF(__pyx_t_6);
 
-      /* "fastparquet/cencoding.pyx":689
+      /* "fastparquet/cencoding.pyx":719
  *             return yaml.dump(alt)
  *         except ImportError:
  *             return str(alt)             # <<<<<<<<<<<<<<
@@ -12571,7 +13293,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
  * 
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_8 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_v_alt); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 689, __pyx_L5_except_error)
+      __pyx_t_8 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_v_alt); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 719, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_8);
       __pyx_r = __pyx_t_8;
       __pyx_t_8 = 0;
@@ -12583,7 +13305,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "fastparquet/cencoding.pyx":685
+    /* "fastparquet/cencoding.pyx":715
  *     def __repr__(self):
  *         alt = self._asdict()
  *         try:             # <<<<<<<<<<<<<<
@@ -12609,7 +13331,7 @@ static PyObject *__pyx_pf_11fastparquet_9cencoding_12ThriftObject_14__repr__(str
     goto __pyx_L0;
   }
 
-  /* "fastparquet/cencoding.pyx":683
+  /* "fastparquet/cencoding.pyx":713
  *         return list(self.spec)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -12836,7 +13558,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  *         if itemsize <= 0:
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 133, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 133, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12868,7 +13590,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  *         if not isinstance(format, bytes):
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 136, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 136, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12995,7 +13717,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 148, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -13269,7 +13991,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  *             if self.dtype_is_object:
  */
-      __pyx_t_10 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_10)) __PYX_ERR(1, 176, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_10)) __PYX_ERR(1, 176, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
       __Pyx_Raise(__pyx_t_10, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -13513,7 +14235,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(stru
  *         info.buf = self.data
  *         info.len = self.len
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 192, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 192, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14247,7 +14969,7 @@ static PyObject *__pyx_pf___pyx_array___reduce_cython__(CYTHON_UNUSED struct __p
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -14303,7 +15025,7 @@ static PyObject *__pyx_pf___pyx_array_2__setstate_cython__(CYTHON_UNUSED struct 
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -16013,7 +16735,7 @@ static int __pyx_memoryview___pyx_pf_15View_dot_MemoryView_10memoryview_6__setit
  * 
  *         have_slices, index = _unellipsify(index, self.view.ndim)
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 418, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 418, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -17061,7 +17783,7 @@ static PyObject *__pyx_memoryview_convert_item_to_object(struct __pyx_memoryview
  *         else:
  *             if len(self.view.format) == 1:
  */
-      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 495, __pyx_L5_except_error)
+      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 495, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_Raise(__pyx_t_6, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -17423,7 +18145,7 @@ static int __pyx_memoryview___pyx_pf_15View_dot_MemoryView_10memoryview_8__getbu
  * 
  *         if flags & PyBUF_ND:
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 520, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__13, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 520, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -17972,7 +18694,7 @@ static PyObject *__pyx_pf_15View_dot_MemoryView_10memoryview_7strides___get__(st
  * 
  *         return tuple([stride for stride in self.view.strides[:self.view.ndim]])
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__13, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 570, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 570, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -18089,7 +18811,7 @@ static PyObject *__pyx_pf_15View_dot_MemoryView_10memoryview_10suboffsets___get_
     __Pyx_XDECREF(__pyx_r);
     __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->view.ndim); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 577, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = PyNumber_Multiply(__pyx_tuple__14, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 577, __pyx_L1_error)
+    __pyx_t_3 = PyNumber_Multiply(__pyx_tuple__15, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 577, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_r = __pyx_t_3;
@@ -19127,7 +19849,7 @@ static PyObject *__pyx_pf___pyx_memoryview___reduce_cython__(CYTHON_UNUSED struc
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -19183,7 +19905,7 @@ static PyObject *__pyx_pf___pyx_memoryview_2__setstate_cython__(CYTHON_UNUSED st
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -19540,9 +20262,9 @@ static PyObject *_unellipsify(PyObject *__pyx_v_index, int __pyx_v_ndim) {
         __Pyx_GOTREF(__pyx_t_7);
         { Py_ssize_t __pyx_temp;
           for (__pyx_temp=0; __pyx_temp < ((__pyx_v_ndim - __pyx_t_8) + 1); __pyx_temp++) {
-            __Pyx_INCREF(__pyx_slice__17);
-            __Pyx_GIVEREF(__pyx_slice__17);
-            PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_slice__17);
+            __Pyx_INCREF(__pyx_slice__18);
+            __Pyx_GIVEREF(__pyx_slice__18);
+            PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_slice__18);
           }
         }
         __pyx_t_9 = __Pyx_PyList_Extend(__pyx_v_result, __pyx_t_7); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(1, 682, __pyx_L1_error)
@@ -19575,7 +20297,7 @@ static PyObject *_unellipsify(PyObject *__pyx_v_index, int __pyx_v_ndim) {
  *         else:
  */
       /*else*/ {
-        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_result, __pyx_slice__17); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(1, 685, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_result, __pyx_slice__18); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(1, 685, __pyx_L1_error)
       }
       __pyx_L7:;
 
@@ -19715,9 +20437,9 @@ static PyObject *_unellipsify(PyObject *__pyx_v_index, int __pyx_v_ndim) {
     __Pyx_GOTREF(__pyx_t_3);
     { Py_ssize_t __pyx_temp;
       for (__pyx_temp=0; __pyx_temp < __pyx_v_nslices; __pyx_temp++) {
-        __Pyx_INCREF(__pyx_slice__17);
-        __Pyx_GIVEREF(__pyx_slice__17);
-        PyList_SET_ITEM(__pyx_t_3, __pyx_temp, __pyx_slice__17);
+        __Pyx_INCREF(__pyx_slice__18);
+        __Pyx_GIVEREF(__pyx_slice__18);
+        PyList_SET_ITEM(__pyx_t_3, __pyx_temp, __pyx_slice__18);
       }
     }
     __pyx_t_9 = __Pyx_PyList_Extend(__pyx_v_result, __pyx_t_3); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(1, 696, __pyx_L1_error)
@@ -19844,7 +20566,7 @@ static PyObject *assert_direct_dimensions(Py_ssize_t *__pyx_v_suboffsets, int __
  * 
  * 
  */
-      __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__18, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 703, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__19, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 703, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -22028,7 +22750,7 @@ static PyObject *__pyx_pf___pyx_memoryviewslice___reduce_cython__(CYTHON_UNUSED 
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__19, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__20, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -22084,7 +22806,7 @@ static PyObject *__pyx_pf___pyx_memoryviewslice_2__setstate_cython__(CYTHON_UNUS
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__20, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__21, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -25781,16 +26503,27 @@ static PyTypeObject __pyx_type_11fastparquet_9cencoding_NumpyIO = {
 };
 static struct __pyx_vtabstruct_11fastparquet_9cencoding_ThriftObject __pyx_vtable_11fastparquet_9cencoding_ThriftObject;
 
-static PyObject *__pyx_tp_new_11fastparquet_9cencoding_ThriftObject(PyTypeObject *t, PyObject *a, PyObject *k) {
+static struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *__pyx_freelist_11fastparquet_9cencoding_ThriftObject[1000];
+static int __pyx_freecount_11fastparquet_9cencoding_ThriftObject = 0;
+
+static PyObject *__pyx_tp_new_11fastparquet_9cencoding_ThriftObject(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
   struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *p;
-  PyObject *o = (&PyDict_Type)->tp_new(t, a, k);
-  if (unlikely(!o)) return 0;
+  PyObject *o;
+  if (CYTHON_COMPILING_IN_CPYTHON && likely((__pyx_freecount_11fastparquet_9cencoding_ThriftObject > 0) & (t->tp_basicsize == sizeof(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject)))) {
+    o = (PyObject*)__pyx_freelist_11fastparquet_9cencoding_ThriftObject[--__pyx_freecount_11fastparquet_9cencoding_ThriftObject];
+    memset(o, 0, sizeof(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject));
+    (void) PyObject_INIT(o, t);
+    PyObject_GC_Track(o);
+  } else {
+    o = (*t->tp_alloc)(t, 0);
+    if (unlikely(!o)) return 0;
+  }
   p = ((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)o);
   p->__pyx_vtab = __pyx_vtabptr_11fastparquet_9cencoding_ThriftObject;
   p->name = ((PyObject*)Py_None); Py_INCREF(Py_None);
   p->spec = ((PyObject*)Py_None); Py_INCREF(Py_None);
   p->children = ((PyObject*)Py_None); Py_INCREF(Py_None);
-  p->attrs = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  p->data = ((PyObject*)Py_None); Py_INCREF(Py_None);
   return o;
 }
 
@@ -25800,23 +26533,25 @@ static void __pyx_tp_dealloc_11fastparquet_9cencoding_ThriftObject(PyObject *o) 
   Py_CLEAR(p->name);
   Py_CLEAR(p->spec);
   Py_CLEAR(p->children);
-  Py_CLEAR(p->attrs);
-  PyObject_GC_Track(o);
-  (&PyDict_Type)->tp_dealloc(o);
+  Py_CLEAR(p->data);
+  if (CYTHON_COMPILING_IN_CPYTHON && ((__pyx_freecount_11fastparquet_9cencoding_ThriftObject < 1000) & (Py_TYPE(o)->tp_basicsize == sizeof(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject)))) {
+    __pyx_freelist_11fastparquet_9cencoding_ThriftObject[__pyx_freecount_11fastparquet_9cencoding_ThriftObject++] = ((struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)o);
+  } else {
+    (*Py_TYPE(o)->tp_free)(o);
+  }
 }
 
 static int __pyx_tp_traverse_11fastparquet_9cencoding_ThriftObject(PyObject *o, visitproc v, void *a) {
   int e;
   struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *p = (struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)o;
-  if (!(&PyDict_Type)->tp_traverse); else { e = (&PyDict_Type)->tp_traverse(o,v,a); if (e) return e; }
   if (p->spec) {
     e = (*v)(p->spec, a); if (e) return e;
   }
   if (p->children) {
     e = (*v)(p->children, a); if (e) return e;
   }
-  if (p->attrs) {
-    e = (*v)(p->attrs, a); if (e) return e;
+  if (p->data) {
+    e = (*v)(p->data, a); if (e) return e;
   }
   return 0;
 }
@@ -25824,43 +26559,83 @@ static int __pyx_tp_traverse_11fastparquet_9cencoding_ThriftObject(PyObject *o, 
 static int __pyx_tp_clear_11fastparquet_9cencoding_ThriftObject(PyObject *o) {
   PyObject* tmp;
   struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *p = (struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *)o;
-  if (!(&PyDict_Type)->tp_clear); else (&PyDict_Type)->tp_clear(o);
   tmp = ((PyObject*)p->spec);
   p->spec = ((PyObject*)Py_None); Py_INCREF(Py_None);
   Py_XDECREF(tmp);
   tmp = ((PyObject*)p->children);
   p->children = ((PyObject*)Py_None); Py_INCREF(Py_None);
   Py_XDECREF(tmp);
-  tmp = ((PyObject*)p->attrs);
-  p->attrs = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  tmp = ((PyObject*)p->data);
+  p->data = ((PyObject*)Py_None); Py_INCREF(Py_None);
   Py_XDECREF(tmp);
   return 0;
+}
+static PyObject *__pyx_sq_item_11fastparquet_9cencoding_ThriftObject(PyObject *o, Py_ssize_t i) {
+  PyObject *r;
+  PyObject *x = PyInt_FromSsize_t(i); if(!x) return 0;
+  r = Py_TYPE(o)->tp_as_mapping->mp_subscript(o, x);
+  Py_DECREF(x);
+  return r;
+}
+
+static int __pyx_mp_ass_subscript_11fastparquet_9cencoding_ThriftObject(PyObject *o, PyObject *i, PyObject *v) {
+  if (v) {
+    return __pyx_pw_11fastparquet_9cencoding_12ThriftObject_7__setitem__(o, i, v);
+  }
+  else {
+    return __pyx_pw_11fastparquet_9cencoding_12ThriftObject_11__delitem__(o, i);
+  }
 }
 
 static PyObject *__pyx_tp_getattro_11fastparquet_9cencoding_ThriftObject(PyObject *o, PyObject *n) {
   PyObject *v = __Pyx_PyObject_GenericGetAttrNoDict(o, n);
   if (!v && PyErr_ExceptionMatches(PyExc_AttributeError)) {
     PyErr_Clear();
-    v = __pyx_pw_11fastparquet_9cencoding_12ThriftObject_3__getattr__(o, n);
+    v = __pyx_pw_11fastparquet_9cencoding_12ThriftObject_5__getattr__(o, n);
   }
   return v;
 }
 
 static int __pyx_tp_setattro_11fastparquet_9cencoding_ThriftObject(PyObject *o, PyObject *n, PyObject *v) {
   if (v) {
-    return __pyx_pw_11fastparquet_9cencoding_12ThriftObject_5__setattr__(o, n, v);
+    return __pyx_pw_11fastparquet_9cencoding_12ThriftObject_15__setattr__(o, n, v);
   }
   else {
-    return __pyx_pw_11fastparquet_9cencoding_12ThriftObject_7__delattr__(o, n);
+    return __pyx_pw_11fastparquet_9cencoding_12ThriftObject_17__delattr__(o, n);
   }
 }
 
 static PyMethodDef __pyx_methods_11fastparquet_9cencoding_ThriftObject[] = {
-  {"__getattr__", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_3__getattr__, METH_O|METH_COEXIST, 0},
-  {"__reduce_ex__", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_9__reduce_ex__, METH_O, 0},
-  {"_asdict", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_11_asdict, METH_NOARGS, 0},
-  {"__dir__", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_13__dir__, METH_NOARGS, 0},
+  {"_internal", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_3_internal, METH_NOARGS, 0},
+  {"__getattr__", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_5__getattr__, METH_O|METH_COEXIST, 0},
+  {"get", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_13get, METH_VARARGS|METH_KEYWORDS, 0},
+  {"__reduce_ex__", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_19__reduce_ex__, METH_O, 0},
+  {"from_buffer", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_21from_buffer, METH_VARARGS|METH_KEYWORDS, 0},
+  {"copy", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_23copy, METH_NOARGS, 0},
+  {"__copy__", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_25__copy__, METH_NOARGS, 0},
+  {"__deepcopy__", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_27__deepcopy__, METH_VARARGS|METH_KEYWORDS, 0},
+  {"_asdict", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_29_asdict, METH_NOARGS, 0},
+  {"__dir__", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_12ThriftObject_31__dir__, METH_NOARGS, 0},
   {0, 0, 0, 0}
+};
+
+static PySequenceMethods __pyx_tp_as_sequence_ThriftObject = {
+  0, /*sq_length*/
+  0, /*sq_concat*/
+  0, /*sq_repeat*/
+  __pyx_sq_item_11fastparquet_9cencoding_ThriftObject, /*sq_item*/
+  0, /*sq_slice*/
+  0, /*sq_ass_item*/
+  0, /*sq_ass_slice*/
+  0, /*sq_contains*/
+  0, /*sq_inplace_concat*/
+  0, /*sq_inplace_repeat*/
+};
+
+static PyMappingMethods __pyx_tp_as_mapping_ThriftObject = {
+  0, /*mp_length*/
+  __pyx_pw_11fastparquet_9cencoding_12ThriftObject_9__getitem__, /*mp_subscript*/
+  __pyx_mp_ass_subscript_11fastparquet_9cencoding_ThriftObject, /*mp_ass_subscript*/
 };
 
 static PyTypeObject __pyx_type_11fastparquet_9cencoding_ThriftObject = {
@@ -25883,10 +26658,10 @@ static PyTypeObject __pyx_type_11fastparquet_9cencoding_ThriftObject = {
   #if PY_MAJOR_VERSION >= 3
   0, /*tp_as_async*/
   #endif
-  __pyx_pw_11fastparquet_9cencoding_12ThriftObject_15__repr__, /*tp_repr*/
+  __pyx_pw_11fastparquet_9cencoding_12ThriftObject_33__repr__, /*tp_repr*/
   0, /*tp_as_number*/
-  0, /*tp_as_sequence*/
-  0, /*tp_as_mapping*/
+  &__pyx_tp_as_sequence_ThriftObject, /*tp_as_sequence*/
+  &__pyx_tp_as_mapping_ThriftObject, /*tp_as_mapping*/
   0, /*tp_hash*/
   0, /*tp_call*/
   0, /*tp_str*/
@@ -26660,7 +27435,7 @@ static PyMethodDef __pyx_methods[] = {
   {"encode_bitpacked", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_19encode_bitpacked, METH_VARARGS|METH_KEYWORDS, __pyx_doc_11fastparquet_9cencoding_18encode_bitpacked},
   {"encode_rle_bp", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_21encode_rle_bp, METH_VARARGS|METH_KEYWORDS, 0},
   {"time_shift", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_25time_shift, METH_VARARGS|METH_KEYWORDS, 0},
-  {"read_thrift", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_27read_thrift, METH_VARARGS|METH_KEYWORDS, 0},
+  {"read_thrift", (PyCFunction)__pyx_pw_11fastparquet_9cencoding_27read_thrift, METH_O, 0},
   {"write_thrift", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11fastparquet_9cencoding_29write_thrift, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
@@ -26709,55 +27484,109 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ASCII, __pyx_k_ASCII, sizeof(__pyx_k_ASCII), 0, 0, 1, 1},
   {&__pyx_n_s_AttributeError, __pyx_k_AttributeError, sizeof(__pyx_k_AttributeError), 0, 0, 1, 1},
+  {&__pyx_n_u_BLOCK, __pyx_k_BLOCK, sizeof(__pyx_k_BLOCK), 0, 1, 0, 1},
+  {&__pyx_n_u_BSON, __pyx_k_BSON, sizeof(__pyx_k_BSON), 0, 1, 0, 1},
+  {&__pyx_n_u_BloomFilterAlgorithm, __pyx_k_BloomFilterAlgorithm, sizeof(__pyx_k_BloomFilterAlgorithm), 0, 1, 0, 1},
+  {&__pyx_n_u_BloomFilterHash, __pyx_k_BloomFilterHash, sizeof(__pyx_k_BloomFilterHash), 0, 1, 0, 1},
+  {&__pyx_n_u_BsonType, __pyx_k_BsonType, sizeof(__pyx_k_BsonType), 0, 1, 0, 1},
   {&__pyx_kp_s_Buffer_view_does_not_expose_stri, __pyx_k_Buffer_view_does_not_expose_stri, sizeof(__pyx_k_Buffer_view_does_not_expose_stri), 0, 0, 1, 0},
   {&__pyx_kp_s_Can_only_create_a_buffer_that_is, __pyx_k_Can_only_create_a_buffer_that_is, sizeof(__pyx_k_Can_only_create_a_buffer_that_is), 0, 0, 1, 0},
   {&__pyx_kp_s_Cannot_assign_to_read_only_memor, __pyx_k_Cannot_assign_to_read_only_memor, sizeof(__pyx_k_Cannot_assign_to_read_only_memor), 0, 0, 1, 0},
   {&__pyx_kp_s_Cannot_create_writable_memory_vi, __pyx_k_Cannot_create_writable_memory_vi, sizeof(__pyx_k_Cannot_create_writable_memory_vi), 0, 0, 1, 0},
   {&__pyx_kp_s_Cannot_index_with_type_s, __pyx_k_Cannot_index_with_type_s, sizeof(__pyx_k_Cannot_index_with_type_s), 0, 0, 1, 0},
   {&__pyx_n_u_ColumnChunk, __pyx_k_ColumnChunk, sizeof(__pyx_k_ColumnChunk), 0, 1, 0, 1},
+  {&__pyx_n_u_ColumnCryptoMetaData, __pyx_k_ColumnCryptoMetaData, sizeof(__pyx_k_ColumnCryptoMetaData), 0, 1, 0, 1},
+  {&__pyx_n_u_ColumnIndex, __pyx_k_ColumnIndex, sizeof(__pyx_k_ColumnIndex), 0, 1, 0, 1},
   {&__pyx_n_u_ColumnMetaData, __pyx_k_ColumnMetaData, sizeof(__pyx_k_ColumnMetaData), 0, 1, 0, 1},
   {&__pyx_n_u_ColumnOrder, __pyx_k_ColumnOrder, sizeof(__pyx_k_ColumnOrder), 0, 1, 0, 1},
+  {&__pyx_n_u_DATE, __pyx_k_DATE, sizeof(__pyx_k_DATE), 0, 1, 0, 1},
+  {&__pyx_n_u_DECIMAL, __pyx_k_DECIMAL, sizeof(__pyx_k_DECIMAL), 0, 1, 0, 1},
   {&__pyx_n_u_DataPageHeader, __pyx_k_DataPageHeader, sizeof(__pyx_k_DataPageHeader), 0, 1, 0, 1},
   {&__pyx_n_u_DataPageHeaderV2, __pyx_k_DataPageHeaderV2, sizeof(__pyx_k_DataPageHeaderV2), 0, 1, 0, 1},
+  {&__pyx_n_u_DateType, __pyx_k_DateType, sizeof(__pyx_k_DateType), 0, 1, 0, 1},
+  {&__pyx_n_u_DecimalType, __pyx_k_DecimalType, sizeof(__pyx_k_DecimalType), 0, 1, 0, 1},
   {&__pyx_n_u_DictionaryPageHeader, __pyx_k_DictionaryPageHeader, sizeof(__pyx_k_DictionaryPageHeader), 0, 1, 0, 1},
+  {&__pyx_n_u_ENCRYPTION_WITH_COLUMN_KEY, __pyx_k_ENCRYPTION_WITH_COLUMN_KEY, sizeof(__pyx_k_ENCRYPTION_WITH_COLUMN_KEY), 0, 1, 0, 1},
+  {&__pyx_n_u_ENCRYPTION_WITH_FOOTER_KEY, __pyx_k_ENCRYPTION_WITH_FOOTER_KEY, sizeof(__pyx_k_ENCRYPTION_WITH_FOOTER_KEY), 0, 1, 0, 1},
+  {&__pyx_n_u_ENUM, __pyx_k_ENUM, sizeof(__pyx_k_ENUM), 0, 1, 0, 1},
   {&__pyx_n_s_Ellipsis, __pyx_k_Ellipsis, sizeof(__pyx_k_Ellipsis), 0, 0, 1, 1},
   {&__pyx_kp_s_Empty_shape_tuple_for_cython_arr, __pyx_k_Empty_shape_tuple_for_cython_arr, sizeof(__pyx_k_Empty_shape_tuple_for_cython_arr), 0, 0, 1, 0},
+  {&__pyx_n_u_EncryptionAlgorithm, __pyx_k_EncryptionAlgorithm, sizeof(__pyx_k_EncryptionAlgorithm), 0, 1, 0, 1},
+  {&__pyx_n_u_EncryptionWithColumnKey, __pyx_k_EncryptionWithColumnKey, sizeof(__pyx_k_EncryptionWithColumnKey), 0, 1, 0, 1},
+  {&__pyx_n_u_EncryptionWithFooterKey, __pyx_k_EncryptionWithFooterKey, sizeof(__pyx_k_EncryptionWithFooterKey), 0, 1, 0, 1},
+  {&__pyx_n_u_EnumType, __pyx_k_EnumType, sizeof(__pyx_k_EnumType), 0, 1, 0, 1},
   {&__pyx_n_u_FileMetaData, __pyx_k_FileMetaData, sizeof(__pyx_k_FileMetaData), 0, 1, 0, 1},
+  {&__pyx_n_u_INTEGER, __pyx_k_INTEGER, sizeof(__pyx_k_INTEGER), 0, 1, 0, 1},
   {&__pyx_n_s_ImportError, __pyx_k_ImportError, sizeof(__pyx_k_ImportError), 0, 0, 1, 1},
   {&__pyx_kp_s_Incompatible_checksums_s_vs_0xb0, __pyx_k_Incompatible_checksums_s_vs_0xb0, sizeof(__pyx_k_Incompatible_checksums_s_vs_0xb0), 0, 0, 1, 0},
   {&__pyx_n_s_IndexError, __pyx_k_IndexError, sizeof(__pyx_k_IndexError), 0, 0, 1, 1},
   {&__pyx_n_u_IndexPageHeader, __pyx_k_IndexPageHeader, sizeof(__pyx_k_IndexPageHeader), 0, 1, 0, 1},
   {&__pyx_kp_s_Indirect_dimensions_not_supporte, __pyx_k_Indirect_dimensions_not_supporte, sizeof(__pyx_k_Indirect_dimensions_not_supporte), 0, 0, 1, 0},
+  {&__pyx_n_u_IntType, __pyx_k_IntType, sizeof(__pyx_k_IntType), 0, 1, 0, 1},
   {&__pyx_kp_s_Invalid_mode_expected_c_or_fortr, __pyx_k_Invalid_mode_expected_c_or_fortr, sizeof(__pyx_k_Invalid_mode_expected_c_or_fortr), 0, 0, 1, 0},
   {&__pyx_kp_s_Invalid_shape_in_axis_d_d, __pyx_k_Invalid_shape_in_axis_d_d, sizeof(__pyx_k_Invalid_shape_in_axis_d_d), 0, 0, 1, 0},
+  {&__pyx_n_u_JSON, __pyx_k_JSON, sizeof(__pyx_k_JSON), 0, 1, 0, 1},
+  {&__pyx_n_u_JsonType, __pyx_k_JsonType, sizeof(__pyx_k_JsonType), 0, 1, 0, 1},
   {&__pyx_n_s_KeyError, __pyx_k_KeyError, sizeof(__pyx_k_KeyError), 0, 0, 1, 1},
   {&__pyx_n_u_KeyValue, __pyx_k_KeyValue, sizeof(__pyx_k_KeyValue), 0, 1, 0, 1},
+  {&__pyx_n_u_LIST, __pyx_k_LIST, sizeof(__pyx_k_LIST), 0, 1, 0, 1},
+  {&__pyx_n_u_ListType, __pyx_k_ListType, sizeof(__pyx_k_ListType), 0, 1, 0, 1},
+  {&__pyx_n_u_LogicalType, __pyx_k_LogicalType, sizeof(__pyx_k_LogicalType), 0, 1, 0, 1},
+  {&__pyx_n_u_MAP, __pyx_k_MAP, sizeof(__pyx_k_MAP), 0, 1, 0, 1},
+  {&__pyx_n_u_MICROS, __pyx_k_MICROS, sizeof(__pyx_k_MICROS), 0, 1, 0, 1},
+  {&__pyx_n_u_MILLIS, __pyx_k_MILLIS, sizeof(__pyx_k_MILLIS), 0, 1, 0, 1},
+  {&__pyx_n_u_MapType, __pyx_k_MapType, sizeof(__pyx_k_MapType), 0, 1, 0, 1},
   {&__pyx_n_s_MemoryError, __pyx_k_MemoryError, sizeof(__pyx_k_MemoryError), 0, 0, 1, 1},
   {&__pyx_kp_s_MemoryView_of_r_at_0x_x, __pyx_k_MemoryView_of_r_at_0x_x, sizeof(__pyx_k_MemoryView_of_r_at_0x_x), 0, 0, 1, 0},
   {&__pyx_kp_s_MemoryView_of_r_object, __pyx_k_MemoryView_of_r_object, sizeof(__pyx_k_MemoryView_of_r_object), 0, 0, 1, 0},
+  {&__pyx_n_u_MicroSeconds, __pyx_k_MicroSeconds, sizeof(__pyx_k_MicroSeconds), 0, 1, 0, 1},
+  {&__pyx_n_u_MilliSeconds, __pyx_k_MilliSeconds, sizeof(__pyx_k_MilliSeconds), 0, 1, 0, 1},
+  {&__pyx_n_u_NANOS, __pyx_k_NANOS, sizeof(__pyx_k_NANOS), 0, 1, 0, 1},
+  {&__pyx_n_u_NanoSeconds, __pyx_k_NanoSeconds, sizeof(__pyx_k_NanoSeconds), 0, 1, 0, 1},
+  {&__pyx_n_u_NullType, __pyx_k_NullType, sizeof(__pyx_k_NullType), 0, 1, 0, 1},
   {&__pyx_n_s_NumpyIO, __pyx_k_NumpyIO, sizeof(__pyx_k_NumpyIO), 0, 0, 1, 1},
   {&__pyx_n_b_O, __pyx_k_O, sizeof(__pyx_k_O), 0, 0, 0, 1},
+  {&__pyx_n_u_OffsetIndex, __pyx_k_OffsetIndex, sizeof(__pyx_k_OffsetIndex), 0, 1, 0, 1},
   {&__pyx_kp_s_Out_of_bounds_on_buffer_access_a, __pyx_k_Out_of_bounds_on_buffer_access_a, sizeof(__pyx_k_Out_of_bounds_on_buffer_access_a), 0, 0, 1, 0},
   {&__pyx_n_u_PageEncodingStats, __pyx_k_PageEncodingStats, sizeof(__pyx_k_PageEncodingStats), 0, 1, 0, 1},
   {&__pyx_n_u_PageHeader, __pyx_k_PageHeader, sizeof(__pyx_k_PageHeader), 0, 1, 0, 1},
+  {&__pyx_n_u_PageLocation, __pyx_k_PageLocation, sizeof(__pyx_k_PageLocation), 0, 1, 0, 1},
   {&__pyx_n_s_PickleError, __pyx_k_PickleError, sizeof(__pyx_k_PickleError), 0, 0, 1, 1},
   {&__pyx_n_u_RowGroup, __pyx_k_RowGroup, sizeof(__pyx_k_RowGroup), 0, 1, 0, 1},
+  {&__pyx_n_u_STRING, __pyx_k_STRING, sizeof(__pyx_k_STRING), 0, 1, 0, 1},
   {&__pyx_n_u_SchemaElement, __pyx_k_SchemaElement, sizeof(__pyx_k_SchemaElement), 0, 1, 0, 1},
   {&__pyx_n_u_SortingColumn, __pyx_k_SortingColumn, sizeof(__pyx_k_SortingColumn), 0, 1, 0, 1},
+  {&__pyx_n_u_SplitBlockAlgorithm, __pyx_k_SplitBlockAlgorithm, sizeof(__pyx_k_SplitBlockAlgorithm), 0, 1, 0, 1},
   {&__pyx_n_u_Statistics, __pyx_k_Statistics, sizeof(__pyx_k_Statistics), 0, 1, 0, 1},
+  {&__pyx_n_u_StringType, __pyx_k_StringType, sizeof(__pyx_k_StringType), 0, 1, 0, 1},
+  {&__pyx_n_u_TIME, __pyx_k_TIME, sizeof(__pyx_k_TIME), 0, 1, 0, 1},
+  {&__pyx_n_u_TIMESTAMP, __pyx_k_TIMESTAMP, sizeof(__pyx_k_TIMESTAMP), 0, 1, 0, 1},
   {&__pyx_n_u_TYPE_ORDER, __pyx_k_TYPE_ORDER, sizeof(__pyx_k_TYPE_ORDER), 0, 1, 0, 1},
   {&__pyx_n_s_ThriftObject, __pyx_k_ThriftObject, sizeof(__pyx_k_ThriftObject), 0, 0, 1, 1},
+  {&__pyx_n_u_TimeType, __pyx_k_TimeType, sizeof(__pyx_k_TimeType), 0, 1, 0, 1},
+  {&__pyx_n_u_TimeUnit, __pyx_k_TimeUnit, sizeof(__pyx_k_TimeUnit), 0, 1, 0, 1},
+  {&__pyx_n_u_TimestampType, __pyx_k_TimestampType, sizeof(__pyx_k_TimestampType), 0, 1, 0, 1},
   {&__pyx_n_u_TypeDefinedOrder, __pyx_k_TypeDefinedOrder, sizeof(__pyx_k_TypeDefinedOrder), 0, 1, 0, 1},
   {&__pyx_n_s_TypeError, __pyx_k_TypeError, sizeof(__pyx_k_TypeError), 0, 0, 1, 1},
+  {&__pyx_n_u_UNKNOWN, __pyx_k_UNKNOWN, sizeof(__pyx_k_UNKNOWN), 0, 1, 0, 1},
+  {&__pyx_n_u_UUID, __pyx_k_UUID, sizeof(__pyx_k_UUID), 0, 1, 0, 1},
+  {&__pyx_n_u_UUIDType, __pyx_k_UUIDType, sizeof(__pyx_k_UUIDType), 0, 1, 0, 1},
   {&__pyx_kp_s_Unable_to_convert_item_to_object, __pyx_k_Unable_to_convert_item_to_object, sizeof(__pyx_k_Unable_to_convert_item_to_object), 0, 0, 1, 0},
+  {&__pyx_n_u_Uncompressed, __pyx_k_Uncompressed, sizeof(__pyx_k_Uncompressed), 0, 1, 0, 1},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
   {&__pyx_n_s_View_MemoryView, __pyx_k_View_MemoryView, sizeof(__pyx_k_View_MemoryView), 0, 0, 1, 1},
+  {&__pyx_n_u_XXHASH, __pyx_k_XXHASH, sizeof(__pyx_k_XXHASH), 0, 1, 0, 1},
+  {&__pyx_n_u_XxHash, __pyx_k_XxHash, sizeof(__pyx_k_XxHash), 0, 1, 0, 1},
   {&__pyx_n_s_allocate_buffer, __pyx_k_allocate_buffer, sizeof(__pyx_k_allocate_buffer), 0, 0, 1, 1},
   {&__pyx_n_s_asdict, __pyx_k_asdict, sizeof(__pyx_k_asdict), 0, 0, 1, 1},
   {&__pyx_n_s_assemble_objects, __pyx_k_assemble_objects, sizeof(__pyx_k_assemble_objects), 0, 0, 1, 1},
   {&__pyx_n_s_assign, __pyx_k_assign, sizeof(__pyx_k_assign), 0, 0, 1, 1},
   {&__pyx_n_s_base, __pyx_k_base, sizeof(__pyx_k_base), 0, 0, 1, 1},
+  {&__pyx_n_u_bitWidth, __pyx_k_bitWidth, sizeof(__pyx_k_bitWidth), 0, 1, 0, 1},
   {&__pyx_n_s_bit_width, __pyx_k_bit_width, sizeof(__pyx_k_bit_width), 0, 0, 1, 1},
+  {&__pyx_n_u_bloom_filter_offset, __pyx_k_bloom_filter_offset, sizeof(__pyx_k_bloom_filter_offset), 0, 1, 0, 1},
+  {&__pyx_n_u_boundary_order, __pyx_k_boundary_order, sizeof(__pyx_k_boundary_order), 0, 1, 0, 1},
+  {&__pyx_n_s_buf, __pyx_k_buf, sizeof(__pyx_k_buf), 0, 0, 1, 1},
   {&__pyx_n_s_buffer, __pyx_k_buffer, sizeof(__pyx_k_buffer), 0, 0, 1, 1},
   {&__pyx_n_s_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 0, 1, 1},
   {&__pyx_n_u_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 1, 0, 1},
@@ -26765,23 +27594,28 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
   {&__pyx_n_u_codec, __pyx_k_codec, sizeof(__pyx_k_codec), 0, 1, 0, 1},
   {&__pyx_n_u_column_idx, __pyx_k_column_idx, sizeof(__pyx_k_column_idx), 0, 1, 0, 1},
+  {&__pyx_n_u_column_index_length, __pyx_k_column_index_length, sizeof(__pyx_k_column_index_length), 0, 1, 0, 1},
+  {&__pyx_n_u_column_index_offset, __pyx_k_column_index_offset, sizeof(__pyx_k_column_index_offset), 0, 1, 0, 1},
   {&__pyx_n_u_column_orders, __pyx_k_column_orders, sizeof(__pyx_k_column_orders), 0, 1, 0, 1},
   {&__pyx_n_u_columns, __pyx_k_columns, sizeof(__pyx_k_columns), 0, 1, 0, 1},
   {&__pyx_n_u_compressed_page_size, __pyx_k_compressed_page_size, sizeof(__pyx_k_compressed_page_size), 0, 1, 0, 1},
   {&__pyx_kp_s_contiguous_and_direct, __pyx_k_contiguous_and_direct, sizeof(__pyx_k_contiguous_and_direct), 0, 0, 1, 0},
   {&__pyx_kp_s_contiguous_and_indirect, __pyx_k_contiguous_and_indirect, sizeof(__pyx_k_contiguous_and_indirect), 0, 0, 1, 0},
   {&__pyx_n_u_converted_type, __pyx_k_converted_type, sizeof(__pyx_k_converted_type), 0, 1, 0, 1},
+  {&__pyx_n_s_copy, __pyx_k_copy, sizeof(__pyx_k_copy), 0, 0, 1, 1},
   {&__pyx_n_s_count, __pyx_k_count, sizeof(__pyx_k_count), 0, 0, 1, 1},
   {&__pyx_n_u_count, __pyx_k_count, sizeof(__pyx_k_count), 0, 1, 0, 1},
   {&__pyx_n_s_counter, __pyx_k_counter, sizeof(__pyx_k_counter), 0, 0, 1, 1},
   {&__pyx_n_u_crc, __pyx_k_crc, sizeof(__pyx_k_crc), 0, 1, 0, 1},
   {&__pyx_n_u_created_by, __pyx_k_created_by, sizeof(__pyx_k_created_by), 0, 1, 0, 1},
+  {&__pyx_n_u_crypto_metadata, __pyx_k_crypto_metadata, sizeof(__pyx_k_crypto_metadata), 0, 1, 0, 1},
   {&__pyx_n_s_d, __pyx_k_d, sizeof(__pyx_k_d), 0, 0, 1, 1},
   {&__pyx_n_s_data, __pyx_k_data, sizeof(__pyx_k_data), 0, 0, 1, 1},
   {&__pyx_n_u_data_page_header, __pyx_k_data_page_header, sizeof(__pyx_k_data_page_header), 0, 1, 0, 1},
   {&__pyx_n_u_data_page_header_v2, __pyx_k_data_page_header_v2, sizeof(__pyx_k_data_page_header_v2), 0, 1, 0, 1},
   {&__pyx_n_u_data_page_offset, __pyx_k_data_page_offset, sizeof(__pyx_k_data_page_offset), 0, 1, 0, 1},
   {&__pyx_n_s_de, __pyx_k_de, sizeof(__pyx_k_de), 0, 0, 1, 1},
+  {&__pyx_n_s_default, __pyx_k_default, sizeof(__pyx_k_default), 0, 0, 1, 1},
   {&__pyx_n_s_defi, __pyx_k_defi, sizeof(__pyx_k_defi), 0, 0, 1, 1},
   {&__pyx_n_u_definition_level_encoding, __pyx_k_definition_level_encoding, sizeof(__pyx_k_definition_level_encoding), 0, 1, 0, 1},
   {&__pyx_n_u_definition_levels_byte_length, __pyx_k_definition_levels_byte_length, sizeof(__pyx_k_definition_levels_byte_length), 0, 1, 0, 1},
@@ -26794,11 +27628,14 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_dtype, __pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 0, 1, 1},
   {&__pyx_n_s_dtype_is_object, __pyx_k_dtype_is_object, sizeof(__pyx_k_dtype_is_object), 0, 0, 1, 1},
   {&__pyx_n_s_dump, __pyx_k_dump, sizeof(__pyx_k_dump), 0, 0, 1, 1},
+  {&__pyx_n_s_dumps, __pyx_k_dumps, sizeof(__pyx_k_dumps), 0, 0, 1, 1},
   {&__pyx_n_s_empty, __pyx_k_empty, sizeof(__pyx_k_empty), 0, 0, 1, 1},
   {&__pyx_n_s_encode, __pyx_k_encode, sizeof(__pyx_k_encode), 0, 0, 1, 1},
   {&__pyx_n_u_encoding, __pyx_k_encoding, sizeof(__pyx_k_encoding), 0, 1, 0, 1},
   {&__pyx_n_u_encoding_stats, __pyx_k_encoding_stats, sizeof(__pyx_k_encoding_stats), 0, 1, 0, 1},
   {&__pyx_n_u_encodings, __pyx_k_encodings, sizeof(__pyx_k_encodings), 0, 1, 0, 1},
+  {&__pyx_n_u_encrypted_column_metadata, __pyx_k_encrypted_column_metadata, sizeof(__pyx_k_encrypted_column_metadata), 0, 1, 0, 1},
+  {&__pyx_n_u_encryption_algorithm, __pyx_k_encryption_algorithm, sizeof(__pyx_k_encryption_algorithm), 0, 1, 0, 1},
   {&__pyx_n_s_enumerate, __pyx_k_enumerate, sizeof(__pyx_k_enumerate), 0, 0, 1, 1},
   {&__pyx_n_s_error, __pyx_k_error, sizeof(__pyx_k_error), 0, 0, 1, 1},
   {&__pyx_n_s_extend, __pyx_k_extend, sizeof(__pyx_k_extend), 0, 0, 1, 1},
@@ -26809,7 +27646,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_file_obj, __pyx_k_file_obj, sizeof(__pyx_k_file_obj), 0, 0, 1, 1},
   {&__pyx_n_u_file_offset, __pyx_k_file_offset, sizeof(__pyx_k_file_offset), 0, 1, 0, 1},
   {&__pyx_n_u_file_path, __pyx_k_file_path, sizeof(__pyx_k_file_path), 0, 1, 0, 1},
+  {&__pyx_n_u_first_row_index, __pyx_k_first_row_index, sizeof(__pyx_k_first_row_index), 0, 1, 0, 1},
   {&__pyx_n_s_flags, __pyx_k_flags, sizeof(__pyx_k_flags), 0, 0, 1, 1},
+  {&__pyx_n_u_footer_signing_key_metadata, __pyx_k_footer_signing_key_metadata, sizeof(__pyx_k_footer_signing_key_metadata), 0, 1, 0, 1},
   {&__pyx_n_s_format, __pyx_k_format, sizeof(__pyx_k_format), 0, 0, 1, 1},
   {&__pyx_n_s_fortran, __pyx_k_fortran, sizeof(__pyx_k_fortran), 0, 0, 1, 1},
   {&__pyx_n_u_fortran, __pyx_k_fortran, sizeof(__pyx_k_fortran), 0, 1, 0, 1},
@@ -26825,25 +27664,32 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_u_index_page_header, __pyx_k_index_page_header, sizeof(__pyx_k_index_page_header), 0, 1, 0, 1},
   {&__pyx_n_u_index_page_offset, __pyx_k_index_page_offset, sizeof(__pyx_k_index_page_offset), 0, 1, 0, 1},
   {&__pyx_n_s_indict, __pyx_k_indict, sizeof(__pyx_k_indict), 0, 0, 1, 1},
-  {&__pyx_n_s_init, __pyx_k_init, sizeof(__pyx_k_init), 0, 0, 1, 1},
   {&__pyx_n_s_io_obj, __pyx_k_io_obj, sizeof(__pyx_k_io_obj), 0, 0, 1, 1},
+  {&__pyx_n_u_isAdjustedToUTC, __pyx_k_isAdjustedToUTC, sizeof(__pyx_k_isAdjustedToUTC), 0, 1, 0, 1},
+  {&__pyx_n_u_isSigned, __pyx_k_isSigned, sizeof(__pyx_k_isSigned), 0, 1, 0, 1},
   {&__pyx_n_u_is_compressed, __pyx_k_is_compressed, sizeof(__pyx_k_is_compressed), 0, 1, 0, 1},
   {&__pyx_n_u_is_sorted, __pyx_k_is_sorted, sizeof(__pyx_k_is_sorted), 0, 1, 0, 1},
   {&__pyx_n_s_items, __pyx_k_items, sizeof(__pyx_k_items), 0, 0, 1, 1},
   {&__pyx_n_s_itemsize, __pyx_k_itemsize, sizeof(__pyx_k_itemsize), 0, 0, 1, 1},
   {&__pyx_kp_s_itemsize_0_for_cython_array, __pyx_k_itemsize_0_for_cython_array, sizeof(__pyx_k_itemsize_0_for_cython_array), 0, 0, 1, 0},
+  {&__pyx_n_s_key, __pyx_k_key, sizeof(__pyx_k_key), 0, 0, 1, 1},
   {&__pyx_n_u_key, __pyx_k_key, sizeof(__pyx_k_key), 0, 1, 0, 1},
   {&__pyx_n_u_key_value_metadata, __pyx_k_key_value_metadata, sizeof(__pyx_k_key_value_metadata), 0, 1, 0, 1},
   {&__pyx_n_s_length, __pyx_k_length, sizeof(__pyx_k_length), 0, 0, 1, 1},
+  {&__pyx_n_s_loads, __pyx_k_loads, sizeof(__pyx_k_loads), 0, 0, 1, 1},
   {&__pyx_n_s_loc, __pyx_k_loc, sizeof(__pyx_k_loc), 0, 0, 1, 1},
+  {&__pyx_n_u_logicalType, __pyx_k_logicalType, sizeof(__pyx_k_logicalType), 0, 1, 0, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_u_max, __pyx_k_max, sizeof(__pyx_k_max), 0, 1, 0, 1},
   {&__pyx_n_s_max_defi, __pyx_k_max_defi, sizeof(__pyx_k_max_defi), 0, 0, 1, 1},
   {&__pyx_n_u_max_value, __pyx_k_max_value, sizeof(__pyx_k_max_value), 0, 1, 0, 1},
+  {&__pyx_n_u_max_values, __pyx_k_max_values, sizeof(__pyx_k_max_values), 0, 1, 0, 1},
+  {&__pyx_n_s_memodict, __pyx_k_memodict, sizeof(__pyx_k_memodict), 0, 0, 1, 1},
   {&__pyx_n_s_memview, __pyx_k_memview, sizeof(__pyx_k_memview), 0, 0, 1, 1},
   {&__pyx_n_u_meta_data, __pyx_k_meta_data, sizeof(__pyx_k_meta_data), 0, 1, 0, 1},
   {&__pyx_n_u_min, __pyx_k_min, sizeof(__pyx_k_min), 0, 1, 0, 1},
   {&__pyx_n_u_min_value, __pyx_k_min_value, sizeof(__pyx_k_min_value), 0, 1, 0, 1},
+  {&__pyx_n_u_min_values, __pyx_k_min_values, sizeof(__pyx_k_min_values), 0, 1, 0, 1},
   {&__pyx_n_s_mode, __pyx_k_mode, sizeof(__pyx_k_mode), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_n_u_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 1, 0, 1},
@@ -26854,6 +27700,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
   {&__pyx_n_s_null, __pyx_k_null, sizeof(__pyx_k_null), 0, 0, 1, 1},
   {&__pyx_n_u_null_count, __pyx_k_null_count, sizeof(__pyx_k_null_count), 0, 1, 0, 1},
+  {&__pyx_n_u_null_counts, __pyx_k_null_counts, sizeof(__pyx_k_null_counts), 0, 1, 0, 1},
+  {&__pyx_n_u_null_pages, __pyx_k_null_pages, sizeof(__pyx_k_null_pages), 0, 1, 0, 1},
   {&__pyx_n_s_null_val, __pyx_k_null_val, sizeof(__pyx_k_null_val), 0, 0, 1, 1},
   {&__pyx_n_u_nulls_first, __pyx_k_nulls_first, sizeof(__pyx_k_nulls_first), 0, 1, 0, 1},
   {&__pyx_n_u_num_children, __pyx_k_num_children, sizeof(__pyx_k_num_children), 0, 1, 0, 1},
@@ -26863,8 +27711,13 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
   {&__pyx_n_s_o, __pyx_k_o, sizeof(__pyx_k_o), 0, 0, 1, 1},
   {&__pyx_n_s_obj, __pyx_k_obj, sizeof(__pyx_k_obj), 0, 0, 1, 1},
+  {&__pyx_n_u_offset, __pyx_k_offset, sizeof(__pyx_k_offset), 0, 1, 0, 1},
+  {&__pyx_n_u_offset_index_length, __pyx_k_offset_index_length, sizeof(__pyx_k_offset_index_length), 0, 1, 0, 1},
+  {&__pyx_n_u_offset_index_offset, __pyx_k_offset_index_offset, sizeof(__pyx_k_offset_index_offset), 0, 1, 0, 1},
+  {&__pyx_n_u_ordinal, __pyx_k_ordinal, sizeof(__pyx_k_ordinal), 0, 1, 0, 1},
   {&__pyx_n_s_output, __pyx_k_output, sizeof(__pyx_k_output), 0, 0, 1, 1},
   {&__pyx_n_s_pack, __pyx_k_pack, sizeof(__pyx_k_pack), 0, 0, 1, 1},
+  {&__pyx_n_u_page_locations, __pyx_k_page_locations, sizeof(__pyx_k_page_locations), 0, 1, 0, 1},
   {&__pyx_n_u_page_type, __pyx_k_page_type, sizeof(__pyx_k_page_type), 0, 1, 0, 1},
   {&__pyx_n_s_part, __pyx_k_part, sizeof(__pyx_k_part), 0, 0, 1, 1},
   {&__pyx_n_u_path_in_schema, __pyx_k_path_in_schema, sizeof(__pyx_k_path_in_schema), 0, 1, 0, 1},
@@ -26898,6 +27751,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_u_sorting_columns, __pyx_k_sorting_columns, sizeof(__pyx_k_sorting_columns), 0, 1, 0, 1},
   {&__pyx_n_s_start, __pyx_k_start, sizeof(__pyx_k_start), 0, 0, 1, 1},
   {&__pyx_n_s_started, __pyx_k_started, sizeof(__pyx_k_started), 0, 0, 1, 1},
+  {&__pyx_n_s_staticmethod, __pyx_k_staticmethod, sizeof(__pyx_k_staticmethod), 0, 0, 1, 1},
   {&__pyx_n_u_statistics, __pyx_k_statistics, sizeof(__pyx_k_statistics), 0, 1, 0, 1},
   {&__pyx_n_s_step, __pyx_k_step, sizeof(__pyx_k_step), 0, 0, 1, 1},
   {&__pyx_n_s_stop, __pyx_k_stop, sizeof(__pyx_k_stop), 0, 0, 1, 1},
@@ -26906,7 +27760,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_strided_and_indirect, __pyx_k_strided_and_indirect, sizeof(__pyx_k_strided_and_indirect), 0, 0, 1, 0},
   {&__pyx_kp_s_stringsource, __pyx_k_stringsource, sizeof(__pyx_k_stringsource), 0, 0, 1, 0},
   {&__pyx_n_s_struct, __pyx_k_struct, sizeof(__pyx_k_struct), 0, 0, 1, 1},
-  {&__pyx_n_s_super, __pyx_k_super, sizeof(__pyx_k_super), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_u_total_byte_size, __pyx_k_total_byte_size, sizeof(__pyx_k_total_byte_size), 0, 1, 0, 1},
   {&__pyx_n_u_total_compressed_size, __pyx_k_total_compressed_size, sizeof(__pyx_k_total_compressed_size), 0, 1, 0, 1},
@@ -26917,6 +27770,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_unable_to_allocate_array_data, __pyx_k_unable_to_allocate_array_data, sizeof(__pyx_k_unable_to_allocate_array_data), 0, 0, 1, 0},
   {&__pyx_kp_s_unable_to_allocate_shape_and_str, __pyx_k_unable_to_allocate_shape_and_str, sizeof(__pyx_k_unable_to_allocate_shape_and_str), 0, 0, 1, 0},
   {&__pyx_n_u_uncompressed_page_size, __pyx_k_uncompressed_page_size, sizeof(__pyx_k_uncompressed_page_size), 0, 1, 0, 1},
+  {&__pyx_n_u_unit, __pyx_k_unit, sizeof(__pyx_k_unit), 0, 1, 0, 1},
   {&__pyx_n_s_unpack, __pyx_k_unpack, sizeof(__pyx_k_unpack), 0, 0, 1, 1},
   {&__pyx_n_s_update, __pyx_k_update, sizeof(__pyx_k_update), 0, 0, 1, 1},
   {&__pyx_n_s_val, __pyx_k_val, sizeof(__pyx_k_val), 0, 0, 1, 1},
@@ -26932,12 +27786,12 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_n_s_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 666, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 38, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(1, 2, __pyx_L1_error)
-  __pyx_builtin_super = __Pyx_GetBuiltinName(__pyx_n_s_super); if (!__pyx_builtin_super) __PYX_ERR(0, 615, __pyx_L1_error)
-  __pyx_builtin_KeyError = __Pyx_GetBuiltinName(__pyx_n_s_KeyError); if (!__pyx_builtin_KeyError) __PYX_ERR(0, 635, __pyx_L1_error)
-  __pyx_builtin_AttributeError = __Pyx_GetBuiltinName(__pyx_n_s_AttributeError); if (!__pyx_builtin_AttributeError) __PYX_ERR(0, 636, __pyx_L1_error)
-  __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(0, 688, __pyx_L1_error)
+  __pyx_builtin_KeyError = __Pyx_GetBuiltinName(__pyx_n_s_KeyError); if (!__pyx_builtin_KeyError) __PYX_ERR(0, 636, __pyx_L1_error)
+  __pyx_builtin_AttributeError = __Pyx_GetBuiltinName(__pyx_n_s_AttributeError); if (!__pyx_builtin_AttributeError) __PYX_ERR(0, 637, __pyx_L1_error)
+  __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(0, 718, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 133, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 148, __pyx_L1_error)
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(1, 151, __pyx_L1_error)
@@ -26979,9 +27833,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         if itemsize <= 0:
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_s_Empty_shape_tuple_for_cython_arr); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(1, 133, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_s_Empty_shape_tuple_for_cython_arr); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(1, 133, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__4);
+  __Pyx_GIVEREF(__pyx_tuple__4);
 
   /* "View.MemoryView":136
  * 
@@ -26990,9 +27844,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         if not isinstance(format, bytes):
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_s_itemsize_0_for_cython_array); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(1, 136, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__4);
-  __Pyx_GIVEREF(__pyx_tuple__4);
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_s_itemsize_0_for_cython_array); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(1, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__5);
+  __Pyx_GIVEREF(__pyx_tuple__5);
 
   /* "View.MemoryView":148
  * 
@@ -27001,9 +27855,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_shape_and_str); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(1, 148, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__5);
-  __Pyx_GIVEREF(__pyx_tuple__5);
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_shape_and_str); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(1, 148, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__6);
+  __Pyx_GIVEREF(__pyx_tuple__6);
 
   /* "View.MemoryView":176
  *             self.data = <char *>malloc(self.len)
@@ -27012,9 +27866,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *             if self.dtype_is_object:
  */
-  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_array_data); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(1, 176, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__6);
-  __Pyx_GIVEREF(__pyx_tuple__6);
+  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_array_data); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(1, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__7);
+  __Pyx_GIVEREF(__pyx_tuple__7);
 
   /* "View.MemoryView":192
  *             bufmode = PyBUF_F_CONTIGUOUS | PyBUF_ANY_CONTIGUOUS
@@ -27023,9 +27877,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         info.buf = self.data
  *         info.len = self.len
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_s_Can_only_create_a_buffer_that_is); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(1, 192, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_s_Can_only_create_a_buffer_that_is); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(1, 192, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -27033,18 +27887,18 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(1, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(1, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
 
   /* "View.MemoryView":418
  *     def __setitem__(memoryview self, object index, object value):
@@ -27053,9 +27907,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         have_slices, index = _unellipsify(index, self.view.ndim)
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_s_Cannot_assign_to_read_only_memor); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(1, 418, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_s_Cannot_assign_to_read_only_memor); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(1, 418, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
 
   /* "View.MemoryView":495
  *             result = struct.unpack(self.view.format, bytesitem)
@@ -27064,9 +27918,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         else:
  *             if len(self.view.format) == 1:
  */
-  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_s_Unable_to_convert_item_to_object); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(1, 495, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_s_Unable_to_convert_item_to_object); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(1, 495, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
 
   /* "View.MemoryView":520
  *     def __getbuffer__(self, Py_buffer *info, int flags):
@@ -27075,9 +27929,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         if flags & PyBUF_ND:
  */
-  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_s_Cannot_create_writable_memory_vi); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(1, 520, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_kp_s_Cannot_create_writable_memory_vi); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(1, 520, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
 
   /* "View.MemoryView":570
  *         if self.view.strides == NULL:
@@ -27086,9 +27940,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         return tuple([stride for stride in self.view.strides[:self.view.ndim]])
  */
-  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_kp_s_Buffer_view_does_not_expose_stri); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(1, 570, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__13);
-  __Pyx_GIVEREF(__pyx_tuple__13);
+  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_kp_s_Buffer_view_does_not_expose_stri); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(1, 570, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__14);
+  __Pyx_GIVEREF(__pyx_tuple__14);
 
   /* "View.MemoryView":577
  *     def suboffsets(self):
@@ -27097,12 +27951,12 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         return tuple([suboffset for suboffset in self.view.suboffsets[:self.view.ndim]])
  */
-  __pyx_tuple__14 = PyTuple_New(1); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(1, 577, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__14);
+  __pyx_tuple__15 = PyTuple_New(1); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(1, 577, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__15);
   __Pyx_INCREF(__pyx_int_neg_1);
   __Pyx_GIVEREF(__pyx_int_neg_1);
-  PyTuple_SET_ITEM(__pyx_tuple__14, 0, __pyx_int_neg_1);
-  __Pyx_GIVEREF(__pyx_tuple__14);
+  PyTuple_SET_ITEM(__pyx_tuple__15, 0, __pyx_int_neg_1);
+  __Pyx_GIVEREF(__pyx_tuple__15);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -27110,18 +27964,18 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(1, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__15);
-  __Pyx_GIVEREF(__pyx_tuple__15);
+  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__16);
+  __Pyx_GIVEREF(__pyx_tuple__16);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(1, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
+  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__17);
+  __Pyx_GIVEREF(__pyx_tuple__17);
 
   /* "View.MemoryView":682
  *         if item is Ellipsis:
@@ -27130,9 +27984,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *                 seen_ellipsis = True
  *             else:
  */
-  __pyx_slice__17 = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice__17)) __PYX_ERR(1, 682, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_slice__17);
-  __Pyx_GIVEREF(__pyx_slice__17);
+  __pyx_slice__18 = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice__18)) __PYX_ERR(1, 682, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_slice__18);
+  __Pyx_GIVEREF(__pyx_slice__18);
 
   /* "View.MemoryView":703
  *     for suboffset in suboffsets[:ndim]:
@@ -27141,9 +27995,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_kp_s_Indirect_dimensions_not_supporte); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(1, 703, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__18);
-  __Pyx_GIVEREF(__pyx_tuple__18);
+  __pyx_tuple__19 = PyTuple_Pack(1, __pyx_kp_s_Indirect_dimensions_not_supporte); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(1, 703, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__19);
+  __Pyx_GIVEREF(__pyx_tuple__19);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -27151,53 +28005,53 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__19 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(1, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
-  __Pyx_GIVEREF(__pyx_tuple__19);
+  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(1, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__20);
+  __Pyx_GIVEREF(__pyx_tuple__20);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(1, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__20);
-  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_tuple__21 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(1, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__21);
+  __Pyx_GIVEREF(__pyx_tuple__21);
 
-  /* "fastparquet/cencoding.pyx":376
+  /* "fastparquet/cencoding.pyx":379
  * 
  * 
  * def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] rep,             # <<<<<<<<<<<<<<
  *                       val, dic, d,
  *                       char null, null_val, int32_t max_defi, int32_t prev_i):
  */
-  __pyx_tuple__21 = PyTuple_Pack(18, __pyx_n_s_assign, __pyx_n_s_defi, __pyx_n_s_rep, __pyx_n_s_val, __pyx_n_s_dic, __pyx_n_s_d, __pyx_n_s_null, __pyx_n_s_null_val, __pyx_n_s_max_defi, __pyx_n_s_prev_i, __pyx_n_s_counter, __pyx_n_s_i, __pyx_n_s_re, __pyx_n_s_de, __pyx_n_s_vali, __pyx_n_s_started, __pyx_n_s_have_null, __pyx_n_s_part); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 376, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__21);
-  __Pyx_GIVEREF(__pyx_tuple__21);
-  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(10, 0, 18, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_cencoding_pyx, __pyx_n_s_assemble_objects, 376, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 376, __pyx_L1_error)
+  __pyx_tuple__22 = PyTuple_Pack(18, __pyx_n_s_assign, __pyx_n_s_defi, __pyx_n_s_rep, __pyx_n_s_val, __pyx_n_s_dic, __pyx_n_s_d, __pyx_n_s_null, __pyx_n_s_null_val, __pyx_n_s_max_defi, __pyx_n_s_prev_i, __pyx_n_s_counter, __pyx_n_s_i, __pyx_n_s_re, __pyx_n_s_de, __pyx_n_s_vali, __pyx_n_s_started, __pyx_n_s_have_null, __pyx_n_s_part); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 379, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__22);
+  __Pyx_GIVEREF(__pyx_tuple__22);
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(10, 0, 18, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__22, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_cencoding_pyx, __pyx_n_s_assemble_objects, 379, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 379, __pyx_L1_error)
 
-  /* "fastparquet/cencoding.pyx":598
+  /* "fastparquet/cencoding.pyx":601
  * 
  * import numpy as np
  * cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_tuple__23 = PyTuple_Pack(1, __pyx_int_100000); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 598, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__23);
-  __Pyx_GIVEREF(__pyx_tuple__23);
-
-  /* "fastparquet/cencoding.pyx":601
- * 
- * 
- * def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
- *     return read_thrift(NumpyIO(buffer), name=name)
- * 
- */
-  __pyx_tuple__24 = PyTuple_Pack(2, __pyx_n_s_buffer, __pyx_n_s_name); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 601, __pyx_L1_error)
+  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_int_100000); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 601, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__24);
   __Pyx_GIVEREF(__pyx_tuple__24);
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_cencoding_pyx, __pyx_n_s_from_buffer, 601, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 601, __pyx_L1_error)
+
+  /* "fastparquet/cencoding.pyx":667
+ * 
+ *     @staticmethod
+ *     def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
+ *         # could be a static method in the class below
+ *         cdef NumpyIO buf
+ */
+  __pyx_tuple__25 = PyTuple_Pack(4, __pyx_n_s_buffer, __pyx_n_s_name, __pyx_n_s_buf, __pyx_n_s_o); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 667, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__25);
+  __Pyx_GIVEREF(__pyx_tuple__25);
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fastparquet_cencoding_pyx, __pyx_n_s_from_buffer, 667, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 667, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -27206,9 +28060,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_tuple__26 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(1, 286, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__26);
-  __Pyx_GIVEREF(__pyx_tuple__26);
+  __pyx_tuple__27 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(1, 286, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__27);
+  __Pyx_GIVEREF(__pyx_tuple__27);
 
   /* "View.MemoryView":287
  * 
@@ -27217,9 +28071,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_tuple__27 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(1, 287, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__27);
-  __Pyx_GIVEREF(__pyx_tuple__27);
+  __pyx_tuple__28 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(1, 287, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__28);
+  __Pyx_GIVEREF(__pyx_tuple__28);
 
   /* "View.MemoryView":288
  * cdef generic = Enum("<strided and direct or indirect>")
@@ -27228,9 +28082,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__28 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(1, 288, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__28);
-  __Pyx_GIVEREF(__pyx_tuple__28);
+  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(1, 288, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__29);
+  __Pyx_GIVEREF(__pyx_tuple__29);
 
   /* "View.MemoryView":291
  * 
@@ -27239,9 +28093,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(1, 291, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__29);
-  __Pyx_GIVEREF(__pyx_tuple__29);
+  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(1, 291, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__30);
+  __Pyx_GIVEREF(__pyx_tuple__30);
 
   /* "View.MemoryView":292
  * 
@@ -27250,19 +28104,19 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(1, 292, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__30);
-  __Pyx_GIVEREF(__pyx_tuple__30);
+  __pyx_tuple__31 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(1, 292, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__31);
+  __Pyx_GIVEREF(__pyx_tuple__31);
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_Enum(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_tuple__31 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__31);
-  __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Enum, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__32);
+  __Pyx_GIVEREF(__pyx_tuple__32);
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Enum, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -27287,6 +28141,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitGlobals(void) {
   __pyx_int_11 = PyInt_FromLong(11); if (unlikely(!__pyx_int_11)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_12 = PyInt_FromLong(12); if (unlikely(!__pyx_int_12)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_13 = PyInt_FromLong(13); if (unlikely(!__pyx_int_13)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_int_14 = PyInt_FromLong(14); if (unlikely(!__pyx_int_14)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_100000 = PyInt_FromLong(100000L); if (unlikely(!__pyx_int_100000)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_184977713 = PyInt_FromLong(184977713L); if (unlikely(!__pyx_int_184977713)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_neg_1 = PyInt_FromLong(-1); if (unlikely(!__pyx_int_neg_1)) __PYX_ERR(0, 1, __pyx_L1_error)
@@ -27353,26 +28208,25 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtable_11fastparquet_9cencoding_NumpyIO.tell = (int32_t (*)(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *, int __pyx_skip_dispatch))__pyx_f_11fastparquet_9cencoding_7NumpyIO_tell;
   __pyx_vtable_11fastparquet_9cencoding_NumpyIO.seek = (uint32_t (*)(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *, int32_t, int __pyx_skip_dispatch, struct __pyx_opt_args_11fastparquet_9cencoding_7NumpyIO_seek *__pyx_optional_args))__pyx_f_11fastparquet_9cencoding_7NumpyIO_seek;
   __pyx_vtable_11fastparquet_9cencoding_NumpyIO.so_far = (__Pyx_memviewslice (*)(struct __pyx_obj_11fastparquet_9cencoding_NumpyIO *, int __pyx_skip_dispatch))__pyx_f_11fastparquet_9cencoding_7NumpyIO_so_far;
-  if (PyType_Ready(&__pyx_type_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 287, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 290, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_11fastparquet_9cencoding_NumpyIO.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_11fastparquet_9cencoding_NumpyIO.tp_dictoffset && __pyx_type_11fastparquet_9cencoding_NumpyIO.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_11fastparquet_9cencoding_NumpyIO.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
-  if (__Pyx_SetVtable(__pyx_type_11fastparquet_9cencoding_NumpyIO.tp_dict, __pyx_vtabptr_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 287, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_NumpyIO, (PyObject *)&__pyx_type_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 287, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 287, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_11fastparquet_9cencoding_NumpyIO.tp_dict, __pyx_vtabptr_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 290, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_NumpyIO, (PyObject *)&__pyx_type_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 290, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_11fastparquet_9cencoding_NumpyIO) < 0) __PYX_ERR(0, 290, __pyx_L1_error)
   __pyx_ptype_11fastparquet_9cencoding_NumpyIO = &__pyx_type_11fastparquet_9cencoding_NumpyIO;
   __pyx_vtabptr_11fastparquet_9cencoding_ThriftObject = &__pyx_vtable_11fastparquet_9cencoding_ThriftObject;
   __pyx_vtable_11fastparquet_9cencoding_ThriftObject._asdict = (PyObject *(*)(struct __pyx_obj_11fastparquet_9cencoding_ThriftObject *, int __pyx_skip_dispatch))__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict;
-  __pyx_type_11fastparquet_9cencoding_ThriftObject.tp_base = (&PyDict_Type);
-  if (PyType_Ready(&__pyx_type_11fastparquet_9cencoding_ThriftObject) < 0) __PYX_ERR(0, 607, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_11fastparquet_9cencoding_ThriftObject) < 0) __PYX_ERR(0, 606, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_11fastparquet_9cencoding_ThriftObject.tp_print = 0;
   #endif
-  if (__Pyx_SetVtable(__pyx_type_11fastparquet_9cencoding_ThriftObject.tp_dict, __pyx_vtabptr_11fastparquet_9cencoding_ThriftObject) < 0) __PYX_ERR(0, 607, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_ThriftObject, (PyObject *)&__pyx_type_11fastparquet_9cencoding_ThriftObject) < 0) __PYX_ERR(0, 607, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_11fastparquet_9cencoding_ThriftObject.tp_dict, __pyx_vtabptr_11fastparquet_9cencoding_ThriftObject) < 0) __PYX_ERR(0, 606, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_ThriftObject, (PyObject *)&__pyx_type_11fastparquet_9cencoding_ThriftObject) < 0) __PYX_ERR(0, 606, __pyx_L1_error)
   __pyx_ptype_11fastparquet_9cencoding_ThriftObject = &__pyx_type_11fastparquet_9cencoding_ThriftObject;
   __pyx_vtabptr_array = &__pyx_vtable_array;
   __pyx_vtable_array.get_memview = (PyObject *(*)(struct __pyx_array_obj *))__pyx_array_get_memview;
@@ -27691,19 +28545,19 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "fastparquet/cencoding.pyx":376
+  /* "fastparquet/cencoding.pyx":379
  * 
  * 
  * def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] rep,             # <<<<<<<<<<<<<<
  *                       val, dic, d,
  *                       char null, null_val, int32_t max_defi, int32_t prev_i):
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11fastparquet_9cencoding_23_assemble_objects, NULL, __pyx_n_s_fastparquet_cencoding); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 376, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11fastparquet_9cencoding_23_assemble_objects, NULL, __pyx_n_s_fastparquet_cencoding); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 379, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_assemble_objects, __pyx_t_1) < 0) __PYX_ERR(0, 376, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_assemble_objects, __pyx_t_1) < 0) __PYX_ERR(0, 379, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":442
+  /* "fastparquet/cencoding.pyx":445
  * 
  * 
  * cdef int64_t nat = -9223372036854775808             # <<<<<<<<<<<<<<
@@ -27712,457 +28566,955 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_v_11fastparquet_9cencoding_nat = -9223372036854775808L;
 
-  /* "fastparquet/cencoding.pyx":597
+  /* "fastparquet/cencoding.pyx":600
  * 
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
  * cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
  * 
  */
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_numpy, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 597, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_numpy, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 600, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 597, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 600, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fastparquet/cencoding.pyx":598
+  /* "fastparquet/cencoding.pyx":601
  * 
  * import numpy as np
  * cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 598, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 601, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 598, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 601, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 598, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 601, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_n_u_uint8) < 0) __PYX_ERR(0, 598, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__23, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 598, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_n_u_uint8) < 0) __PYX_ERR(0, 601, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__24, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 601, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_4 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn_uint8_t(__pyx_t_3, PyBUF_WRITABLE); if (unlikely(!__pyx_t_4.memview)) __PYX_ERR(0, 598, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn_uint8_t(__pyx_t_3, PyBUF_WRITABLE); if (unlikely(!__pyx_t_4.memview)) __PYX_ERR(0, 601, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __PYX_XDEC_MEMVIEW(&__pyx_v_11fastparquet_9cencoding_ser_buf, 1);
   __pyx_v_11fastparquet_9cencoding_ser_buf = __pyx_t_4;
   __pyx_t_4.memview = NULL;
   __pyx_t_4.data = NULL;
 
-  /* "fastparquet/cencoding.pyx":601
+  /* "fastparquet/cencoding.pyx":667
  * 
- * 
- * def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
- *     return read_thrift(NumpyIO(buffer), name=name)
- * 
+ *     @staticmethod
+ *     def from_buffer(buffer, name=None):             # <<<<<<<<<<<<<<
+ *         # could be a static method in the class below
+ *         cdef NumpyIO buf
  */
-  __pyx_t_3 = PyCFunction_NewEx(&__pyx_mdef_11fastparquet_9cencoding_31from_buffer, NULL, __pyx_n_s_fastparquet_cencoding); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 601, __pyx_L1_error)
+  __pyx_t_3 = PyCFunction_NewEx(&__pyx_mdef_11fastparquet_9cencoding_12ThriftObject_21from_buffer, NULL, __pyx_n_s_fastparquet_cencoding); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 667, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_from_buffer, __pyx_t_3) < 0) __PYX_ERR(0, 601, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject->tp_dict, __pyx_n_s_from_buffer, __pyx_t_3) < 0) __PYX_ERR(0, 667, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_11fastparquet_9cencoding_ThriftObject);
+
+  /* "fastparquet/cencoding.pyx":666
+ *         return ThriftObject.from_buffer, (bytes(o.so_far()), self.name)
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def from_buffer(buffer, name=None):
+ *         # could be a static method in the class below
+ */
+  __Pyx_GetNameInClass(__pyx_t_3, (PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject, __pyx_n_s_from_buffer); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 667, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 666, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11fastparquet_9cencoding_ThriftObject->tp_dict, __pyx_n_s_from_buffer, __pyx_t_1) < 0) __PYX_ERR(0, 667, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  PyType_Modified(__pyx_ptype_11fastparquet_9cencoding_ThriftObject);
+
+  /* "fastparquet/cencoding.pyx":685
+ *         return self.copy()
+ * 
+ *     def __deepcopy__(self, memodict={}):             # <<<<<<<<<<<<<<
+ *         import pickle
+ *         return pickle.loads(pickle.dumps(self))
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 685, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_k__3 = __pyx_t_1;
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "fastparquet/cencoding.pyx":723
+ * 
+ * cdef dict specs = {
+ *     'Statistics': {'max': 1,             # <<<<<<<<<<<<<<
+ *                    'min': 2,
+ *                    'null_count': 3,
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(42); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_max, __pyx_int_1) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_min, __pyx_int_2) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_null_count, __pyx_int_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_distinct_count, __pyx_int_4) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_max_value, __pyx_int_5) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_min_value, __pyx_int_6) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_Statistics, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "fastparquet/cencoding.pyx":692
- * 
- * 
- * cdef dict specs = {'Statistics': {'max': 1,             # <<<<<<<<<<<<<<
- *                                   'min': 2,
- *                                   'null_count': 3,
+  /* "fastparquet/cencoding.pyx":729
+ *                    'max_value': 5,
+ *                    'min_value': 6},
+ *     'StringType': {},             # <<<<<<<<<<<<<<
+ *     'UUIDType': {},
+ *     'MapType': {},
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(16); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 692, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 729, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max, __pyx_int_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_min, __pyx_int_2) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_null_count, __pyx_int_3) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_distinct_count, __pyx_int_4) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_value, __pyx_int_5) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_min_value, __pyx_int_6) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_Statistics, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":698
- *                                   'max_value': 5,
- *                                   'min_value': 6},
- *                    'SchemaElement': {'type': 1,             # <<<<<<<<<<<<<<
- *                                      'type_length': 2,
- *                                      'repetition_type': 3,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 698, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_type, __pyx_int_1) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_type_length, __pyx_int_2) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_repetition_type, __pyx_int_3) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_name, __pyx_int_4) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_children, __pyx_int_5) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_converted_type, __pyx_int_6) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_scale, __pyx_int_7) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_precision, __pyx_int_8) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_field_id, __pyx_int_9) < 0) __PYX_ERR(0, 698, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_SchemaElement, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":707
- *                                      'precision': 8,
- *                                      'field_id': 9},
- *                    'DataPageHeader': {'num_values': 1,             # <<<<<<<<<<<<<<
- *                                       'encoding': 2,
- *                                       'definition_level_encoding': 3,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 707, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_values, __pyx_int_1) < 0) __PYX_ERR(0, 707, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_encoding, __pyx_int_2) < 0) __PYX_ERR(0, 707, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_definition_level_encoding, __pyx_int_3) < 0) __PYX_ERR(0, 707, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_repetition_level_encoding, __pyx_int_4) < 0) __PYX_ERR(0, 707, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_statistics, __pyx_int_5) < 0) __PYX_ERR(0, 707, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DataPageHeader, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":712
- *                                       'repetition_level_encoding': 4,
- *                                       'statistics': 5},
- *                    'IndexPageHeader': {},             # <<<<<<<<<<<<<<
- *                    'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},
- *                    'DataPageHeaderV2': {'num_values': 1,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 712, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_IndexPageHeader, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":713
- *                                       'statistics': 5},
- *                    'IndexPageHeader': {},
- *                    'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},             # <<<<<<<<<<<<<<
- *                    'DataPageHeaderV2': {'num_values': 1,
- *                                         'num_nulls': 2,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 713, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_values, __pyx_int_1) < 0) __PYX_ERR(0, 713, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_encoding, __pyx_int_2) < 0) __PYX_ERR(0, 713, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_is_sorted, __pyx_int_3) < 0) __PYX_ERR(0, 713, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DictionaryPageHeader, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":714
- *                    'IndexPageHeader': {},
- *                    'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},
- *                    'DataPageHeaderV2': {'num_values': 1,             # <<<<<<<<<<<<<<
- *                                         'num_nulls': 2,
- *                                         'num_rows': 3,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 714, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_values, __pyx_int_1) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_nulls, __pyx_int_2) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_rows, __pyx_int_3) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_encoding, __pyx_int_4) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_definition_levels_byte_length, __pyx_int_5) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_repetition_levels_byte_length, __pyx_int_6) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_is_compressed, __pyx_int_7) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_statistics, __pyx_int_8) < 0) __PYX_ERR(0, 714, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DataPageHeaderV2, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":722
- *                                         'is_compressed': 7,
- *                                         'statistics': 8},
- *                    'PageHeader': {'type': 1,             # <<<<<<<<<<<<<<
- *                                   'uncompressed_page_size': 2,
- *                                   'compressed_page_size': 3,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 722, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_type, __pyx_int_1) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_uncompressed_page_size, __pyx_int_2) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_compressed_page_size, __pyx_int_3) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_crc, __pyx_int_4) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_data_page_header, __pyx_int_5) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_index_page_header, __pyx_int_6) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_dictionary_page_header, __pyx_int_7) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_data_page_header_v2, __pyx_int_8) < 0) __PYX_ERR(0, 722, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_PageHeader, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_StringType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "fastparquet/cencoding.pyx":730
- *                                   'dictionary_page_header': 7,
- *                                   'data_page_header_v2': 8},
- *                    'KeyValue': {'key': 1, 'value': 2},             # <<<<<<<<<<<<<<
- *                    'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
- *                    'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
+ *                    'min_value': 6},
+ *     'StringType': {},
+ *     'UUIDType': {},             # <<<<<<<<<<<<<<
+ *     'MapType': {},
+ *     'ListType': {},
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 730, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_key, __pyx_int_1) < 0) __PYX_ERR(0, 730, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_value, __pyx_int_2) < 0) __PYX_ERR(0, 730, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_KeyValue, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 730, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_UUIDType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "fastparquet/cencoding.pyx":731
- *                                   'data_page_header_v2': 8},
- *                    'KeyValue': {'key': 1, 'value': 2},
- *                    'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},             # <<<<<<<<<<<<<<
- *                    'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
- *                    'ColumnMetaData': {'type': 1,
+ *     'StringType': {},
+ *     'UUIDType': {},
+ *     'MapType': {},             # <<<<<<<<<<<<<<
+ *     'ListType': {},
+ *     'EnumType': {},
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 731, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_column_idx, __pyx_int_1) < 0) __PYX_ERR(0, 731, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_descending, __pyx_int_2) < 0) __PYX_ERR(0, 731, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_nulls_first, __pyx_int_3) < 0) __PYX_ERR(0, 731, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_SortingColumn, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 731, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_MapType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "fastparquet/cencoding.pyx":732
- *                    'KeyValue': {'key': 1, 'value': 2},
- *                    'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
- *                    'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},             # <<<<<<<<<<<<<<
- *                    'ColumnMetaData': {'type': 1,
- *                                       'encodings': 2,
+ *     'UUIDType': {},
+ *     'MapType': {},
+ *     'ListType': {},             # <<<<<<<<<<<<<<
+ *     'EnumType': {},
+ *     'DateType': {},
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 732, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_page_type, __pyx_int_1) < 0) __PYX_ERR(0, 732, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_encoding, __pyx_int_2) < 0) __PYX_ERR(0, 732, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_count, __pyx_int_3) < 0) __PYX_ERR(0, 732, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_PageEncodingStats, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 732, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ListType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "fastparquet/cencoding.pyx":733
- *                    'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
- *                    'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
- *                    'ColumnMetaData': {'type': 1,             # <<<<<<<<<<<<<<
- *                                       'encodings': 2,
- *                                       'path_in_schema': 3,
+ *     'MapType': {},
+ *     'ListType': {},
+ *     'EnumType': {},             # <<<<<<<<<<<<<<
+ *     'DateType': {},
+ *     'NullType': {},
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(13); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 733, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_type, __pyx_int_1) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_encodings, __pyx_int_2) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_path_in_schema, __pyx_int_3) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_codec, __pyx_int_4) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_values, __pyx_int_5) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_total_uncompressed_size, __pyx_int_6) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_total_compressed_size, __pyx_int_7) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_key_value_metadata, __pyx_int_8) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_data_page_offset, __pyx_int_9) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_index_page_offset, __pyx_int_10) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_dictionary_page_offset, __pyx_int_11) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_statistics, __pyx_int_12) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_encoding_stats, __pyx_int_13) < 0) __PYX_ERR(0, 733, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ColumnMetaData, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 733, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_EnumType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":734
+ *     'ListType': {},
+ *     'EnumType': {},
+ *     'DateType': {},             # <<<<<<<<<<<<<<
+ *     'NullType': {},
+ *     'DecimalType': {'scale': 1, 'precision': 2},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 734, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_DateType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":735
+ *     'EnumType': {},
+ *     'DateType': {},
+ *     'NullType': {},             # <<<<<<<<<<<<<<
+ *     'DecimalType': {'scale': 1, 'precision': 2},
+ *     'MilliSeconds': {},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 735, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_NullType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":736
+ *     'DateType': {},
+ *     'NullType': {},
+ *     'DecimalType': {'scale': 1, 'precision': 2},             # <<<<<<<<<<<<<<
+ *     'MilliSeconds': {},
+ *     'MicroSeconds': {},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 736, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_scale, __pyx_int_1) < 0) __PYX_ERR(0, 736, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_precision, __pyx_int_2) < 0) __PYX_ERR(0, 736, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_DecimalType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":737
+ *     'NullType': {},
+ *     'DecimalType': {'scale': 1, 'precision': 2},
+ *     'MilliSeconds': {},             # <<<<<<<<<<<<<<
+ *     'MicroSeconds': {},
+ *     'NanoSeconds': {},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 737, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_MilliSeconds, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":738
+ *     'DecimalType': {'scale': 1, 'precision': 2},
+ *     'MilliSeconds': {},
+ *     'MicroSeconds': {},             # <<<<<<<<<<<<<<
+ *     'NanoSeconds': {},
+ *     'TimeUnit': {'MILLIS': 1, 'MICROS': 2, 'NANOS': 3},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 738, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_MicroSeconds, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":739
+ *     'MilliSeconds': {},
+ *     'MicroSeconds': {},
+ *     'NanoSeconds': {},             # <<<<<<<<<<<<<<
+ *     'TimeUnit': {'MILLIS': 1, 'MICROS': 2, 'NANOS': 3},
+ *     'TimestampType': {'isAdjustedToUTC': 1, 'unit': 2},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 739, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_NanoSeconds, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":740
+ *     'MicroSeconds': {},
+ *     'NanoSeconds': {},
+ *     'TimeUnit': {'MILLIS': 1, 'MICROS': 2, 'NANOS': 3},             # <<<<<<<<<<<<<<
+ *     'TimestampType': {'isAdjustedToUTC': 1, 'unit': 2},
+ *     'TimeType': {'isAdjustedToUTC': 1, 'unit': 2},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 740, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_MILLIS, __pyx_int_1) < 0) __PYX_ERR(0, 740, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_MICROS, __pyx_int_2) < 0) __PYX_ERR(0, 740, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_NANOS, __pyx_int_3) < 0) __PYX_ERR(0, 740, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TimeUnit, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":741
+ *     'NanoSeconds': {},
+ *     'TimeUnit': {'MILLIS': 1, 'MICROS': 2, 'NANOS': 3},
+ *     'TimestampType': {'isAdjustedToUTC': 1, 'unit': 2},             # <<<<<<<<<<<<<<
+ *     'TimeType': {'isAdjustedToUTC': 1, 'unit': 2},
+ *     'IntType': {'bitWidth': 1, 'isSigned': 2},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 741, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_isAdjustedToUTC, __pyx_int_1) < 0) __PYX_ERR(0, 741, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_unit, __pyx_int_2) < 0) __PYX_ERR(0, 741, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TimestampType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":742
+ *     'TimeUnit': {'MILLIS': 1, 'MICROS': 2, 'NANOS': 3},
+ *     'TimestampType': {'isAdjustedToUTC': 1, 'unit': 2},
+ *     'TimeType': {'isAdjustedToUTC': 1, 'unit': 2},             # <<<<<<<<<<<<<<
+ *     'IntType': {'bitWidth': 1, 'isSigned': 2},
+ *     'JsonType': {},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 742, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_isAdjustedToUTC, __pyx_int_1) < 0) __PYX_ERR(0, 742, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_unit, __pyx_int_2) < 0) __PYX_ERR(0, 742, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TimeType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":743
+ *     'TimestampType': {'isAdjustedToUTC': 1, 'unit': 2},
+ *     'TimeType': {'isAdjustedToUTC': 1, 'unit': 2},
+ *     'IntType': {'bitWidth': 1, 'isSigned': 2},             # <<<<<<<<<<<<<<
+ *     'JsonType': {},
+ *     'BsonType': {},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 743, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_bitWidth, __pyx_int_1) < 0) __PYX_ERR(0, 743, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_isSigned, __pyx_int_2) < 0) __PYX_ERR(0, 743, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_IntType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":744
+ *     'TimeType': {'isAdjustedToUTC': 1, 'unit': 2},
+ *     'IntType': {'bitWidth': 1, 'isSigned': 2},
+ *     'JsonType': {},             # <<<<<<<<<<<<<<
+ *     'BsonType': {},
+ *     'LogicalType': {'STRING': 1,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 744, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_JsonType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":745
+ *     'IntType': {'bitWidth': 1, 'isSigned': 2},
+ *     'JsonType': {},
+ *     'BsonType': {},             # <<<<<<<<<<<<<<
+ *     'LogicalType': {'STRING': 1,
+ *                     'MAP': 2,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 745, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_BsonType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "fastparquet/cencoding.pyx":746
- *                                       'statistics': 12,
- *                                       'encoding_stats': 13},
- *                    'ColumnChunk': {'file_path': 1, 'file_offset': 2, 'meta_data': 3},             # <<<<<<<<<<<<<<
- *                    'RowGroup': {'columns': 1,
- *                                 'total_byte_size': 2,
+ *     'JsonType': {},
+ *     'BsonType': {},
+ *     'LogicalType': {'STRING': 1,             # <<<<<<<<<<<<<<
+ *                     'MAP': 2,
+ *                     'LIST': 3,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 746, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_file_path, __pyx_int_1) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_file_offset, __pyx_int_2) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_meta_data, __pyx_int_3) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ColumnChunk, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":747
- *                                       'encoding_stats': 13},
- *                    'ColumnChunk': {'file_path': 1, 'file_offset': 2, 'meta_data': 3},
- *                    'RowGroup': {'columns': 1,             # <<<<<<<<<<<<<<
- *                                 'total_byte_size': 2,
- *                                 'num_rows': 3,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 747, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_columns, __pyx_int_1) < 0) __PYX_ERR(0, 747, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_total_byte_size, __pyx_int_2) < 0) __PYX_ERR(0, 747, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_rows, __pyx_int_3) < 0) __PYX_ERR(0, 747, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_sorting_columns, __pyx_int_4) < 0) __PYX_ERR(0, 747, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_RowGroup, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":751
- *                                 'num_rows': 3,
- *                                 'sorting_columns': 4},
- *                    'TypeDefinedOrder': {},             # <<<<<<<<<<<<<<
- *                    'ColumnOrder': {'TYPE_ORDER': 1},
- *                    'FileMetaData': {'version': 1,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 751, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_TypeDefinedOrder, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":752
- *                                 'sorting_columns': 4},
- *                    'TypeDefinedOrder': {},
- *                    'ColumnOrder': {'TYPE_ORDER': 1},             # <<<<<<<<<<<<<<
- *                    'FileMetaData': {'version': 1,
- *                                     'schema': 2,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 752, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TYPE_ORDER, __pyx_int_1) < 0) __PYX_ERR(0, 752, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ColumnOrder, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":753
- *                    'TypeDefinedOrder': {},
- *                    'ColumnOrder': {'TYPE_ORDER': 1},
- *                    'FileMetaData': {'version': 1,             # <<<<<<<<<<<<<<
- *                                     'schema': 2,
- *                                     'num_rows': 3,
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 753, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_version, __pyx_int_1) < 0) __PYX_ERR(0, 753, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_schema, __pyx_int_2) < 0) __PYX_ERR(0, 753, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_num_rows, __pyx_int_3) < 0) __PYX_ERR(0, 753, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_row_groups, __pyx_int_4) < 0) __PYX_ERR(0, 753, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_key_value_metadata, __pyx_int_5) < 0) __PYX_ERR(0, 753, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_created_by, __pyx_int_6) < 0) __PYX_ERR(0, 753, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_column_orders, __pyx_int_7) < 0) __PYX_ERR(0, 753, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_FileMetaData, __pyx_t_1) < 0) __PYX_ERR(0, 692, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_XGOTREF(__pyx_v_11fastparquet_9cencoding_specs);
-  __Pyx_DECREF_SET(__pyx_v_11fastparquet_9cencoding_specs, ((PyObject*)__pyx_t_3));
-  __Pyx_GIVEREF(__pyx_t_3);
-  __pyx_t_3 = 0;
-
-  /* "fastparquet/cencoding.pyx":762
- *                    }
- * 
- * cdef dict children = {'DataPageHeader': {'statistics': 'Statistics'},             # <<<<<<<<<<<<<<
- *                       'DataPageHeaderV2': {'statistics': 'Statistics'},
- *                       'PageHeader': {'data_page_header': 'DataPageHeader',
- */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 762, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 746, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_statistics, __pyx_n_u_Statistics) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DataPageHeader, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_STRING, __pyx_int_1) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_MAP, __pyx_int_2) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_LIST, __pyx_int_3) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ENUM, __pyx_int_4) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DECIMAL, __pyx_int_5) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DATE, __pyx_int_6) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_TIME, __pyx_int_7) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_TIMESTAMP, __pyx_int_8) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_INTEGER, __pyx_int_10) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_UNKNOWN, __pyx_int_11) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_JSON, __pyx_int_12) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_BSON, __pyx_int_13) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_UUID, __pyx_int_14) < 0) __PYX_ERR(0, 746, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_LogicalType, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "fastparquet/cencoding.pyx":763
- * 
- * cdef dict children = {'DataPageHeader': {'statistics': 'Statistics'},
- *                       'DataPageHeaderV2': {'statistics': 'Statistics'},             # <<<<<<<<<<<<<<
- *                       'PageHeader': {'data_page_header': 'DataPageHeader',
- *                                      'index_page_header': 'IndexPageHeader',
+  /* "fastparquet/cencoding.pyx":759
+ *                     'BSON': 13,
+ *                     'UUID': 14},
+ *     'SchemaElement': {'type': 1,             # <<<<<<<<<<<<<<
+ *                       'type_length': 2,
+ *                       'repetition_type': 3,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 763, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_statistics, __pyx_n_u_Statistics) < 0) __PYX_ERR(0, 763, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DataPageHeaderV2, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 759, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_type, __pyx_int_1) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_type_length, __pyx_int_2) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_repetition_type, __pyx_int_3) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_name, __pyx_int_4) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_children, __pyx_int_5) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_converted_type, __pyx_int_6) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_scale, __pyx_int_7) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_precision, __pyx_int_8) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_field_id, __pyx_int_9) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_logicalType, __pyx_int_10) < 0) __PYX_ERR(0, 759, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_SchemaElement, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "fastparquet/cencoding.pyx":764
- * cdef dict children = {'DataPageHeader': {'statistics': 'Statistics'},
- *                       'DataPageHeaderV2': {'statistics': 'Statistics'},
- *                       'PageHeader': {'data_page_header': 'DataPageHeader',             # <<<<<<<<<<<<<<
- *                                      'index_page_header': 'IndexPageHeader',
- *                                      'dictionary_page_header': 'DictionaryPageHeader',
+  /* "fastparquet/cencoding.pyx":769
+ *                       'field_id': 9,
+ *                       'logicalType': 10},
+ *     'DataPageHeader': {'num_values': 1,             # <<<<<<<<<<<<<<
+ *                        'encoding': 2,
+ *                        'definition_level_encoding': 3,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 764, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_data_page_header, __pyx_n_u_DataPageHeader) < 0) __PYX_ERR(0, 764, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_index_page_header, __pyx_n_u_IndexPageHeader) < 0) __PYX_ERR(0, 764, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_dictionary_page_header, __pyx_n_u_DictionaryPageHeader) < 0) __PYX_ERR(0, 764, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_data_page_header_v2, __pyx_n_u_DataPageHeaderV2) < 0) __PYX_ERR(0, 764, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_PageHeader, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":768
- *                                      'dictionary_page_header': 'DictionaryPageHeader',
- *                                      'data_page_header_v2': 'DataPageHeaderV2'},
- *                       'ColumnMetaData': {'key_value_metadata': 'KeyValue',             # <<<<<<<<<<<<<<
- *                                          'statistics': 'Statistics',
- *                                          'encoding_stats': 'PageEncodingStats'},
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 768, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_key_value_metadata, __pyx_n_u_KeyValue) < 0) __PYX_ERR(0, 768, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_statistics, __pyx_n_u_Statistics) < 0) __PYX_ERR(0, 768, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_encoding_stats, __pyx_n_u_PageEncodingStats) < 0) __PYX_ERR(0, 768, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ColumnMetaData, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":771
- *                                          'statistics': 'Statistics',
- *                                          'encoding_stats': 'PageEncodingStats'},
- *                       'ColumnChunk': {'meta_data': 'ColumnMetaData'},             # <<<<<<<<<<<<<<
- *                       'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
- *                       'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 771, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_meta_data, __pyx_n_u_ColumnMetaData) < 0) __PYX_ERR(0, 771, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ColumnChunk, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":772
- *                                          'encoding_stats': 'PageEncodingStats'},
- *                       'ColumnChunk': {'meta_data': 'ColumnMetaData'},
- *                       'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},             # <<<<<<<<<<<<<<
- *                       'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
- *                       'FileMetaData': {'schema': 'SchemaElement',
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 772, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_columns, __pyx_n_u_ColumnChunk) < 0) __PYX_ERR(0, 772, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_sorting_columns, __pyx_n_u_SortingColumn) < 0) __PYX_ERR(0, 772, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_RowGroup, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "fastparquet/cencoding.pyx":773
- *                       'ColumnChunk': {'meta_data': 'ColumnMetaData'},
- *                       'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
- *                       'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},             # <<<<<<<<<<<<<<
- *                       'FileMetaData': {'schema': 'SchemaElement',
- *                                        'row_groups': 'RowGroup',
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 773, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TYPE_ORDER, __pyx_n_u_TypeDefinedOrder) < 0) __PYX_ERR(0, 773, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ColumnOrder, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 769, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_values, __pyx_int_1) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encoding, __pyx_int_2) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_definition_level_encoding, __pyx_int_3) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_repetition_level_encoding, __pyx_int_4) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_statistics, __pyx_int_5) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_DataPageHeader, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "fastparquet/cencoding.pyx":774
- *                       'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
- *                       'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
- *                       'FileMetaData': {'schema': 'SchemaElement',             # <<<<<<<<<<<<<<
- *                                        'row_groups': 'RowGroup',
- *                                        'key_value_metadata': 'KeyValue',
+ *                        'repetition_level_encoding': 4,
+ *                        'statistics': 5},
+ *     'IndexPageHeader': {},             # <<<<<<<<<<<<<<
+ *     'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},
+ *     'DataPageHeaderV2': {'num_values': 1,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 774, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 774, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_IndexPageHeader, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":775
+ *                        'statistics': 5},
+ *     'IndexPageHeader': {},
+ *     'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},             # <<<<<<<<<<<<<<
+ *     'DataPageHeaderV2': {'num_values': 1,
+ *                          'num_nulls': 2,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 775, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_values, __pyx_int_1) < 0) __PYX_ERR(0, 775, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encoding, __pyx_int_2) < 0) __PYX_ERR(0, 775, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_is_sorted, __pyx_int_3) < 0) __PYX_ERR(0, 775, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_DictionaryPageHeader, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":776
+ *     'IndexPageHeader': {},
+ *     'DictionaryPageHeader': {'num_values': 1, 'encoding': 2, 'is_sorted': 3},
+ *     'DataPageHeaderV2': {'num_values': 1,             # <<<<<<<<<<<<<<
+ *                          'num_nulls': 2,
+ *                          'num_rows': 3,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 776, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_values, __pyx_int_1) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_nulls, __pyx_int_2) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_rows, __pyx_int_3) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encoding, __pyx_int_4) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_definition_levels_byte_length, __pyx_int_5) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_repetition_levels_byte_length, __pyx_int_6) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_is_compressed, __pyx_int_7) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_statistics, __pyx_int_8) < 0) __PYX_ERR(0, 776, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_DataPageHeaderV2, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":784
+ *                          'is_compressed': 7,
+ *                          'statistics': 8},
+ *     'SplitBlockAlgorithm': {},             # <<<<<<<<<<<<<<
+ *     'BloomFilterAlgorithm': {'BLOCK': 1},
+ *     'XxHash': {},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 784, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_SplitBlockAlgorithm, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":785
+ *                          'statistics': 8},
+ *     'SplitBlockAlgorithm': {},
+ *     'BloomFilterAlgorithm': {'BLOCK': 1},             # <<<<<<<<<<<<<<
+ *     'XxHash': {},
+ *     'BloomFilterHash': {'XXHASH': 1},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 785, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_BLOCK, __pyx_int_1) < 0) __PYX_ERR(0, 785, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_BloomFilterAlgorithm, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":786
+ *     'SplitBlockAlgorithm': {},
+ *     'BloomFilterAlgorithm': {'BLOCK': 1},
+ *     'XxHash': {},             # <<<<<<<<<<<<<<
+ *     'BloomFilterHash': {'XXHASH': 1},
+ *     'Uncompressed': {},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 786, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_XxHash, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":787
+ *     'BloomFilterAlgorithm': {'BLOCK': 1},
+ *     'XxHash': {},
+ *     'BloomFilterHash': {'XXHASH': 1},             # <<<<<<<<<<<<<<
+ *     'Uncompressed': {},
+ *     'PageHeader': {'type': 1,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 787, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_XXHASH, __pyx_int_1) < 0) __PYX_ERR(0, 787, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_BloomFilterHash, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":788
+ *     'XxHash': {},
+ *     'BloomFilterHash': {'XXHASH': 1},
+ *     'Uncompressed': {},             # <<<<<<<<<<<<<<
+ *     'PageHeader': {'type': 1,
+ *                    'uncompressed_page_size': 2,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 788, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_Uncompressed, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":789
+ *     'BloomFilterHash': {'XXHASH': 1},
+ *     'Uncompressed': {},
+ *     'PageHeader': {'type': 1,             # <<<<<<<<<<<<<<
+ *                    'uncompressed_page_size': 2,
+ *                    'compressed_page_size': 3,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 789, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_type, __pyx_int_1) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_uncompressed_page_size, __pyx_int_2) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_compressed_page_size, __pyx_int_3) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_crc, __pyx_int_4) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_data_page_header, __pyx_int_5) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_index_page_header, __pyx_int_6) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_dictionary_page_header, __pyx_int_7) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_data_page_header_v2, __pyx_int_8) < 0) __PYX_ERR(0, 789, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_PageHeader, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":797
+ *                    'dictionary_page_header': 7,
+ *                    'data_page_header_v2': 8},
+ *     'KeyValue': {'key': 1, 'value': 2},             # <<<<<<<<<<<<<<
+ *     'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
+ *     'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 797, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_key, __pyx_int_1) < 0) __PYX_ERR(0, 797, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_value, __pyx_int_2) < 0) __PYX_ERR(0, 797, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_KeyValue, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":798
+ *                    'data_page_header_v2': 8},
+ *     'KeyValue': {'key': 1, 'value': 2},
+ *     'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},             # <<<<<<<<<<<<<<
+ *     'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
+ *     'ColumnMetaData': {'type': 1,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 798, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_column_idx, __pyx_int_1) < 0) __PYX_ERR(0, 798, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_descending, __pyx_int_2) < 0) __PYX_ERR(0, 798, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_nulls_first, __pyx_int_3) < 0) __PYX_ERR(0, 798, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_SortingColumn, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":799
+ *     'KeyValue': {'key': 1, 'value': 2},
+ *     'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
+ *     'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},             # <<<<<<<<<<<<<<
+ *     'ColumnMetaData': {'type': 1,
+ *                        'encodings': 2,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 799, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_page_type, __pyx_int_1) < 0) __PYX_ERR(0, 799, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encoding, __pyx_int_2) < 0) __PYX_ERR(0, 799, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_count, __pyx_int_3) < 0) __PYX_ERR(0, 799, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_PageEncodingStats, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":800
+ *     'SortingColumn': {'column_idx': 1, 'descending': 2, 'nulls_first': 3},
+ *     'PageEncodingStats': {'page_type': 1, 'encoding': 2, 'count': 3},
+ *     'ColumnMetaData': {'type': 1,             # <<<<<<<<<<<<<<
+ *                        'encodings': 2,
+ *                        'path_in_schema': 3,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(14); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 800, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_type, __pyx_int_1) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encodings, __pyx_int_2) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_path_in_schema, __pyx_int_3) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_codec, __pyx_int_4) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_values, __pyx_int_5) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_total_uncompressed_size, __pyx_int_6) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_total_compressed_size, __pyx_int_7) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_key_value_metadata, __pyx_int_8) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_data_page_offset, __pyx_int_9) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_index_page_offset, __pyx_int_10) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_dictionary_page_offset, __pyx_int_11) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_statistics, __pyx_int_12) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encoding_stats, __pyx_int_13) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_bloom_filter_offset, __pyx_int_14) < 0) __PYX_ERR(0, 800, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnMetaData, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":814
+ *                        'encoding_stats': 13,
+ *                        'bloom_filter_offset': 14},
+ *     'ColumnChunk': {'file_path': 1,             # <<<<<<<<<<<<<<
+ *                     'file_offset': 2,
+ *                     'meta_data': 3,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 814, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_file_path, __pyx_int_1) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_file_offset, __pyx_int_2) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_meta_data, __pyx_int_3) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_offset_index_offset, __pyx_int_4) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_offset_index_length, __pyx_int_5) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_column_index_offset, __pyx_int_6) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_column_index_length, __pyx_int_7) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_crypto_metadata, __pyx_int_8) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encrypted_column_metadata, __pyx_int_9) < 0) __PYX_ERR(0, 814, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnChunk, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":823
+ *                     'crypto_metadata': 8,
+ *                     'encrypted_column_metadata': 9},
+ *     'RowGroup': {'columns': 1,             # <<<<<<<<<<<<<<
+ *                  'total_byte_size': 2,
+ *                  'num_rows': 3,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 823, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_columns, __pyx_int_1) < 0) __PYX_ERR(0, 823, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_total_byte_size, __pyx_int_2) < 0) __PYX_ERR(0, 823, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_rows, __pyx_int_3) < 0) __PYX_ERR(0, 823, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_sorting_columns, __pyx_int_4) < 0) __PYX_ERR(0, 823, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_file_offset, __pyx_int_5) < 0) __PYX_ERR(0, 823, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_total_compressed_size, __pyx_int_6) < 0) __PYX_ERR(0, 823, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ordinal, __pyx_int_7) < 0) __PYX_ERR(0, 823, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_RowGroup, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":830
+ *                  'total_compressed_size': 6,
+ *                  'ordinal': 7},
+ *     'TypeDefinedOrder': {},             # <<<<<<<<<<<<<<
+ *     'ColumnOrder': {'TYPE_ORDER': 1},
+ *     'PageLocation': {'offset': 1,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 830, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TypeDefinedOrder, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":831
+ *                  'ordinal': 7},
+ *     'TypeDefinedOrder': {},
+ *     'ColumnOrder': {'TYPE_ORDER': 1},             # <<<<<<<<<<<<<<
+ *     'PageLocation': {'offset': 1,
+ *                      'compressed_page_size': 2,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 831, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_TYPE_ORDER, __pyx_int_1) < 0) __PYX_ERR(0, 831, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnOrder, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":832
+ *     'TypeDefinedOrder': {},
+ *     'ColumnOrder': {'TYPE_ORDER': 1},
+ *     'PageLocation': {'offset': 1,             # <<<<<<<<<<<<<<
+ *                      'compressed_page_size': 2,
+ *                      'first_row_index': 3},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 832, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_offset, __pyx_int_1) < 0) __PYX_ERR(0, 832, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_compressed_page_size, __pyx_int_2) < 0) __PYX_ERR(0, 832, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_first_row_index, __pyx_int_3) < 0) __PYX_ERR(0, 832, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_PageLocation, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":835
+ *                      'compressed_page_size': 2,
+ *                      'first_row_index': 3},
+ *     'OffsetIndex': {'page_locations': 1},             # <<<<<<<<<<<<<<
+ *     'ColumnIndex': {'null_pages': 1,
+ *                     'min_values': 2,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 835, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_page_locations, __pyx_int_1) < 0) __PYX_ERR(0, 835, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_OffsetIndex, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":836
+ *                      'first_row_index': 3},
+ *     'OffsetIndex': {'page_locations': 1},
+ *     'ColumnIndex': {'null_pages': 1,             # <<<<<<<<<<<<<<
+ *                     'min_values': 2,
+ *                     'max_values': 3,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 836, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_null_pages, __pyx_int_1) < 0) __PYX_ERR(0, 836, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_min_values, __pyx_int_2) < 0) __PYX_ERR(0, 836, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_max_values, __pyx_int_3) < 0) __PYX_ERR(0, 836, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_boundary_order, __pyx_int_4) < 0) __PYX_ERR(0, 836, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_null_counts, __pyx_int_5) < 0) __PYX_ERR(0, 836, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnIndex, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":841
+ *                     'boundary_order': 4,
+ *                     'null_counts': 5},
+ *     'FileMetaData': {'version': 1,             # <<<<<<<<<<<<<<
+ *                      'schema': 2,
+ *                      'num_rows': 3,
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 841, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_version, __pyx_int_1) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_schema, __pyx_int_2) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_num_rows, __pyx_int_3) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_row_groups, __pyx_int_4) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_key_value_metadata, __pyx_int_5) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_created_by, __pyx_int_6) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_column_orders, __pyx_int_7) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encryption_algorithm, __pyx_int_8) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_footer_signing_key_metadata, __pyx_int_9) < 0) __PYX_ERR(0, 841, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_FileMetaData, __pyx_t_3) < 0) __PYX_ERR(0, 723, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_XGOTREF(__pyx_v_11fastparquet_9cencoding_specs);
+  __Pyx_DECREF_SET(__pyx_v_11fastparquet_9cencoding_specs, ((PyObject*)__pyx_t_1));
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "fastparquet/cencoding.pyx":853
+ * 
+ * cdef dict children = {
+ *     'TimeUnit': {'MILLIS': 'MilliSeconds',             # <<<<<<<<<<<<<<
+ *                  'MICROS': 'MicroSeconds',
+ *                  'NANOS': 'NanoSeconds'},
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(15); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 853, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_schema, __pyx_n_u_SchemaElement) < 0) __PYX_ERR(0, 774, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_row_groups, __pyx_n_u_RowGroup) < 0) __PYX_ERR(0, 774, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_key_value_metadata, __pyx_n_u_KeyValue) < 0) __PYX_ERR(0, 774, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_column_orders, __pyx_n_u_ColumnOrder) < 0) __PYX_ERR(0, 774, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_FileMetaData, __pyx_t_1) < 0) __PYX_ERR(0, 762, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_MILLIS, __pyx_n_u_MilliSeconds) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_MICROS, __pyx_n_u_MicroSeconds) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_NANOS, __pyx_n_u_NanoSeconds) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TimeUnit, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":856
+ *                  'MICROS': 'MicroSeconds',
+ *                  'NANOS': 'NanoSeconds'},
+ *     'TimestampType': {'unit': 'TimeUnit'},             # <<<<<<<<<<<<<<
+ *     'TimeType': {'unit': 'TimeUnit'},
+ *     'LogicalType': {'STRING': 'StringType',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 856, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_unit, __pyx_n_u_TimeUnit) < 0) __PYX_ERR(0, 856, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TimestampType, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":857
+ *                  'NANOS': 'NanoSeconds'},
+ *     'TimestampType': {'unit': 'TimeUnit'},
+ *     'TimeType': {'unit': 'TimeUnit'},             # <<<<<<<<<<<<<<
+ *     'LogicalType': {'STRING': 'StringType',
+ *                     'MAP': 'MapType',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 857, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_unit, __pyx_n_u_TimeUnit) < 0) __PYX_ERR(0, 857, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_TimeType, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":858
+ *     'TimestampType': {'unit': 'TimeUnit'},
+ *     'TimeType': {'unit': 'TimeUnit'},
+ *     'LogicalType': {'STRING': 'StringType',             # <<<<<<<<<<<<<<
+ *                     'MAP': 'MapType',
+ *                     'LIST': 'ListType',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 858, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_STRING, __pyx_n_u_StringType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_MAP, __pyx_n_u_MapType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_LIST, __pyx_n_u_ListType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ENUM, __pyx_n_u_EnumType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DECIMAL, __pyx_n_u_DecimalType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_DATE, __pyx_n_u_DateType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_TIME, __pyx_n_u_TimeType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_TIMESTAMP, __pyx_n_u_TimestampType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_INTEGER, __pyx_n_u_IntType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_UNKNOWN, __pyx_n_u_NullType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_JSON, __pyx_n_u_JsonType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_BSON, __pyx_n_u_BsonType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_UUID, __pyx_n_u_UUIDType) < 0) __PYX_ERR(0, 858, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_LogicalType, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":871
+ *                     'BSON': 'BsonType',
+ *                     'UUID': 'UUIDType'},
+ *     'SchemaElement': {'logicalType': 'LogicalType'},             # <<<<<<<<<<<<<<
+ *     'DataPageHeader': {'statistics': 'Statistics'},
+ *     'DataPageHeaderV2': {'statistics': 'Statistics'},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 871, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_logicalType, __pyx_n_u_LogicalType) < 0) __PYX_ERR(0, 871, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_SchemaElement, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":872
+ *                     'UUID': 'UUIDType'},
+ *     'SchemaElement': {'logicalType': 'LogicalType'},
+ *     'DataPageHeader': {'statistics': 'Statistics'},             # <<<<<<<<<<<<<<
+ *     'DataPageHeaderV2': {'statistics': 'Statistics'},
+ *     'PageHeader': {'data_page_header': 'DataPageHeader',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 872, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_statistics, __pyx_n_u_Statistics) < 0) __PYX_ERR(0, 872, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_DataPageHeader, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":873
+ *     'SchemaElement': {'logicalType': 'LogicalType'},
+ *     'DataPageHeader': {'statistics': 'Statistics'},
+ *     'DataPageHeaderV2': {'statistics': 'Statistics'},             # <<<<<<<<<<<<<<
+ *     'PageHeader': {'data_page_header': 'DataPageHeader',
+ *                    'index_page_header': 'IndexPageHeader',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 873, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_statistics, __pyx_n_u_Statistics) < 0) __PYX_ERR(0, 873, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_DataPageHeaderV2, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":874
+ *     'DataPageHeader': {'statistics': 'Statistics'},
+ *     'DataPageHeaderV2': {'statistics': 'Statistics'},
+ *     'PageHeader': {'data_page_header': 'DataPageHeader',             # <<<<<<<<<<<<<<
+ *                    'index_page_header': 'IndexPageHeader',
+ *                    'dictionary_page_header': 'DictionaryPageHeader',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 874, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_data_page_header, __pyx_n_u_DataPageHeader) < 0) __PYX_ERR(0, 874, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_index_page_header, __pyx_n_u_IndexPageHeader) < 0) __PYX_ERR(0, 874, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_dictionary_page_header, __pyx_n_u_DictionaryPageHeader) < 0) __PYX_ERR(0, 874, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_data_page_header_v2, __pyx_n_u_DataPageHeaderV2) < 0) __PYX_ERR(0, 874, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_PageHeader, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":878
+ *                    'dictionary_page_header': 'DictionaryPageHeader',
+ *                    'data_page_header_v2': 'DataPageHeaderV2'},
+ *     'ColumnMetaData': {'key_value_metadata': 'KeyValue',             # <<<<<<<<<<<<<<
+ *                        'statistics': 'Statistics',
+ *                        'encoding_stats': 'PageEncodingStats'},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 878, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_key_value_metadata, __pyx_n_u_KeyValue) < 0) __PYX_ERR(0, 878, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_statistics, __pyx_n_u_Statistics) < 0) __PYX_ERR(0, 878, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encoding_stats, __pyx_n_u_PageEncodingStats) < 0) __PYX_ERR(0, 878, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnMetaData, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":881
+ *                        'statistics': 'Statistics',
+ *                        'encoding_stats': 'PageEncodingStats'},
+ *     'ColumnCryptoMetaData': {'ENCRYPTION_WITH_FOOTER_KEY': 'EncryptionWithFooterKey',             # <<<<<<<<<<<<<<
+ *                              'ENCRYPTION_WITH_COLUMN_KEY': 'EncryptionWithColumnKey'},
+ *     'ColumnChunk': {'meta_data': 'ColumnMetaData',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 881, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ENCRYPTION_WITH_FOOTER_KEY, __pyx_n_u_EncryptionWithFooterKey) < 0) __PYX_ERR(0, 881, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_ENCRYPTION_WITH_COLUMN_KEY, __pyx_n_u_EncryptionWithColumnKey) < 0) __PYX_ERR(0, 881, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnCryptoMetaData, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":883
+ *     'ColumnCryptoMetaData': {'ENCRYPTION_WITH_FOOTER_KEY': 'EncryptionWithFooterKey',
+ *                              'ENCRYPTION_WITH_COLUMN_KEY': 'EncryptionWithColumnKey'},
+ *     'ColumnChunk': {'meta_data': 'ColumnMetaData',             # <<<<<<<<<<<<<<
+ *                     'crypto_metadata': 'ColumnCryptoMetaData'},
+ *     'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 883, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_meta_data, __pyx_n_u_ColumnMetaData) < 0) __PYX_ERR(0, 883, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_crypto_metadata, __pyx_n_u_ColumnCryptoMetaData) < 0) __PYX_ERR(0, 883, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnChunk, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":885
+ *     'ColumnChunk': {'meta_data': 'ColumnMetaData',
+ *                     'crypto_metadata': 'ColumnCryptoMetaData'},
+ *     'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},             # <<<<<<<<<<<<<<
+ *     'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
+ *     'OffsetIndex': {'page_locations': 'PageLocation'},
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 885, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_columns, __pyx_n_u_ColumnChunk) < 0) __PYX_ERR(0, 885, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_sorting_columns, __pyx_n_u_SortingColumn) < 0) __PYX_ERR(0, 885, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_RowGroup, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":886
+ *                     'crypto_metadata': 'ColumnCryptoMetaData'},
+ *     'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
+ *     'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},             # <<<<<<<<<<<<<<
+ *     'OffsetIndex': {'page_locations': 'PageLocation'},
+ *     'FileMetaData': {'schema': 'SchemaElement',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 886, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_TYPE_ORDER, __pyx_n_u_TypeDefinedOrder) < 0) __PYX_ERR(0, 886, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_ColumnOrder, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":887
+ *     'RowGroup': {'columns': 'ColumnChunk', 'sorting_columns': 'SortingColumn'},
+ *     'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
+ *     'OffsetIndex': {'page_locations': 'PageLocation'},             # <<<<<<<<<<<<<<
+ *     'FileMetaData': {'schema': 'SchemaElement',
+ *                      'row_groups': 'RowGroup',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 887, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_page_locations, __pyx_n_u_PageLocation) < 0) __PYX_ERR(0, 887, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_OffsetIndex, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "fastparquet/cencoding.pyx":888
+ *     'ColumnOrder': {'TYPE_ORDER': 'TypeDefinedOrder'},
+ *     'OffsetIndex': {'page_locations': 'PageLocation'},
+ *     'FileMetaData': {'schema': 'SchemaElement',             # <<<<<<<<<<<<<<
+ *                      'row_groups': 'RowGroup',
+ *                      'key_value_metadata': 'KeyValue',
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 888, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_schema, __pyx_n_u_SchemaElement) < 0) __PYX_ERR(0, 888, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_row_groups, __pyx_n_u_RowGroup) < 0) __PYX_ERR(0, 888, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_key_value_metadata, __pyx_n_u_KeyValue) < 0) __PYX_ERR(0, 888, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_column_orders, __pyx_n_u_ColumnOrder) < 0) __PYX_ERR(0, 888, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_encryption_algorithm, __pyx_n_u_EncryptionAlgorithm) < 0) __PYX_ERR(0, 888, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_FileMetaData, __pyx_t_3) < 0) __PYX_ERR(0, 853, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_XGOTREF(__pyx_v_11fastparquet_9cencoding_children);
-  __Pyx_DECREF_SET(__pyx_v_11fastparquet_9cencoding_children, ((PyObject*)__pyx_t_3));
-  __Pyx_GIVEREF(__pyx_t_3);
-  __pyx_t_3 = 0;
+  __Pyx_DECREF_SET(__pyx_v_11fastparquet_9cencoding_children, ((PyObject*)__pyx_t_1));
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "fastparquet/cencoding.pyx":1
  * # https://cython.readthedocs.io/en/latest/src/userguide/             # <<<<<<<<<<<<<<
  * #   source_files_and_compilation.html#compiler-directives
  * # cython: profile=False
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "View.MemoryView":209
  *         info.obj = self
@@ -28171,10 +29523,10 @@ if (!__Pyx_RefNanny) {
  * 
  *     def __dealloc__(array self):
  */
-  __pyx_t_3 = __pyx_capsule_create(((void *)(&__pyx_array_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 209, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_array_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_3) < 0) __PYX_ERR(1, 209, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_1 = __pyx_capsule_create(((void *)(&__pyx_array_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_array_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_1) < 0) __PYX_ERR(1, 209, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_array_type);
 
   /* "View.MemoryView":286
@@ -28184,12 +29536,12 @@ if (!__Pyx_RefNanny) {
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__26, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 286, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__27, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 286, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(generic);
-  __Pyx_DECREF_SET(generic, __pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_3);
-  __pyx_t_3 = 0;
+  __Pyx_DECREF_SET(generic, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":287
  * 
@@ -28198,12 +29550,12 @@ if (!__Pyx_RefNanny) {
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__27, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 287, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__28, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 287, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(strided);
-  __Pyx_DECREF_SET(strided, __pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_3);
-  __pyx_t_3 = 0;
+  __Pyx_DECREF_SET(strided, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":288
  * cdef generic = Enum("<strided and direct or indirect>")
@@ -28212,12 +29564,12 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__28, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 288, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__29, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 288, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(indirect);
-  __Pyx_DECREF_SET(indirect, __pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_3);
-  __pyx_t_3 = 0;
+  __Pyx_DECREF_SET(indirect, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":291
  * 
@@ -28226,12 +29578,12 @@ if (!__Pyx_RefNanny) {
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__29, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 291, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__30, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 291, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(contiguous);
-  __Pyx_DECREF_SET(contiguous, __pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_3);
-  __pyx_t_3 = 0;
+  __Pyx_DECREF_SET(contiguous, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":292
  * 
@@ -28240,12 +29592,12 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__30, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 292, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__31, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 292, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(indirect_contiguous);
-  __Pyx_DECREF_SET(indirect_contiguous, __pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_3);
-  __pyx_t_3 = 0;
+  __Pyx_DECREF_SET(indirect_contiguous, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":316
  * 
@@ -28280,10 +29632,10 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 549, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_memoryview_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_3) < 0) __PYX_ERR(1, 549, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_1 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 549, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_memoryview_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_1) < 0) __PYX_ERR(1, 549, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_memoryview_type);
 
   /* "View.MemoryView":995
@@ -28293,10 +29645,10 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 995, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_memoryviewslice_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_3) < 0) __PYX_ERR(1, 995, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_1 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 995, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_memoryviewslice_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_1) < 0) __PYX_ERR(1, 995, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_memoryviewslice_type);
 
   /* "(tree fragment)":1
@@ -28304,10 +29656,10 @@ if (!__Pyx_RefNanny) {
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_3 = PyCFunction_NewEx(&__pyx_mdef_15View_dot_MemoryView_1__pyx_unpickle_Enum, NULL, __pyx_n_s_View_MemoryView); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Enum, __pyx_t_3) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_15View_dot_MemoryView_1__pyx_unpickle_Enum, NULL, __pyx_n_s_View_MemoryView); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Enum, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":11
  *         __pyx_unpickle_Enum__set_state(<Enum> __pyx_result, __pyx_state)
@@ -29989,78 +31341,17 @@ bad:
     return -1;
 }
 
-/* PyDictVersioning */
-#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
-}
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
-    PyObject **dictptr = NULL;
-    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
-    if (offset) {
-#if CYTHON_COMPILING_IN_CPYTHON
-        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
-#else
-        dictptr = _PyObject_GetDictPtr(obj);
-#endif
-    }
-    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
-}
-static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
+/* ExtTypeTest */
+static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
         return 0;
-    return obj_dict_version == __Pyx_get_object_dict_version(obj);
-}
-#endif
-
-/* GetModuleGlobalName */
-#if CYTHON_USE_DICT_VERSIONS
-static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
-#else
-static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
-#endif
-{
-    PyObject *result;
-#if !CYTHON_AVOID_BORROWED_REFS
-#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030500A1
-    result = _PyDict_GetItem_KnownHash(__pyx_d, name, ((PyASCIIObject *) name)->hash);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    } else if (unlikely(PyErr_Occurred())) {
-        return NULL;
     }
-#else
-    result = PyDict_GetItem(__pyx_d, name);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    }
-#endif
-#else
-    result = PyObject_GetItem(__pyx_d, name);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    }
-    PyErr_Clear();
-#endif
-    return __Pyx_GetBuiltinName(name);
-}
-
-/* GetAttr */
-static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *o, PyObject *n) {
-#if CYTHON_USE_TYPE_SLOTS
-#if PY_MAJOR_VERSION >= 3
-    if (likely(PyUnicode_Check(n)))
-#else
-    if (likely(PyString_Check(n)))
-#endif
-        return __Pyx_PyObject_GetAttrStr(o, n);
-#endif
-    return PyObject_GetAttr(o, n);
+    if (likely(__Pyx_TypeCheck(obj, type)))
+        return 1;
+    PyErr_Format(PyExc_TypeError, "Cannot convert %.200s to %.200s",
+                 Py_TYPE(obj)->tp_name, type->tp_name);
+    return 0;
 }
 
 /* Import */
@@ -30126,6 +31417,19 @@ bad:
     Py_XDECREF(empty_list);
     Py_XDECREF(empty_dict);
     return module;
+}
+
+/* GetAttr */
+static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *o, PyObject *n) {
+#if CYTHON_USE_TYPE_SLOTS
+#if PY_MAJOR_VERSION >= 3
+    if (likely(PyUnicode_Check(n)))
+#else
+    if (likely(PyString_Check(n)))
+#endif
+        return __Pyx_PyObject_GetAttrStr(o, n);
+#endif
+    return PyObject_GetAttr(o, n);
 }
 
 /* BytesEquals */
@@ -30325,17 +31629,65 @@ static CYTHON_INLINE PyObject *__Pyx_GetAttr3(PyObject *o, PyObject *n, PyObject
     return (likely(r)) ? r : __Pyx_GetAttr3Default(d);
 }
 
-/* ExtTypeTest */
-static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
+/* PyDictVersioning */
+#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
+}
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
+    PyObject **dictptr = NULL;
+    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
+    if (offset) {
+#if CYTHON_COMPILING_IN_CPYTHON
+        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
+#else
+        dictptr = _PyObject_GetDictPtr(obj);
+#endif
     }
-    if (likely(__Pyx_TypeCheck(obj, type)))
-        return 1;
-    PyErr_Format(PyExc_TypeError, "Cannot convert %.200s to %.200s",
-                 Py_TYPE(obj)->tp_name, type->tp_name);
-    return 0;
+    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
+}
+static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
+        return 0;
+    return obj_dict_version == __Pyx_get_object_dict_version(obj);
+}
+#endif
+
+/* GetModuleGlobalName */
+#if CYTHON_USE_DICT_VERSIONS
+static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
+#else
+static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
+#endif
+{
+    PyObject *result;
+#if !CYTHON_AVOID_BORROWED_REFS
+#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030500A1
+    result = _PyDict_GetItem_KnownHash(__pyx_d, name, ((PyASCIIObject *) name)->hash);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    } else if (unlikely(PyErr_Occurred())) {
+        return NULL;
+    }
+#else
+    result = PyDict_GetItem(__pyx_d, name);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    }
+#endif
+#else
+    result = PyObject_GetItem(__pyx_d, name);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    }
+    PyErr_Clear();
+#endif
+    return __Pyx_GetBuiltinName(name);
 }
 
 /* SwapException */
@@ -30868,6 +32220,26 @@ bad:
     return NULL;
 }
 #endif
+
+/* GetNameInClass */
+static PyObject *__Pyx_GetGlobalNameAfterAttributeLookup(PyObject *name) {
+    PyObject *result;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    if (unlikely(!__Pyx_PyErr_ExceptionMatches(PyExc_AttributeError)))
+        return NULL;
+    __Pyx_PyErr_Clear();
+    __Pyx_GetModuleGlobalNameUncached(result, name);
+    return result;
+}
+static PyObject *__Pyx__GetNameInClass(PyObject *nmspace, PyObject *name) {
+    PyObject *result;
+    result = __Pyx_PyObject_GetAttrStr(nmspace, name);
+    if (!result) {
+        result = __Pyx_GetGlobalNameAfterAttributeLookup(name);
+    }
+    return result;
+}
 
 /* CLineInTraceback */
 #ifndef CYTHON_CLINE_IN_TRACEBACK
