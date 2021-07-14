@@ -175,9 +175,8 @@ class ParquetFile(object):
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
-        for rg in fmd.row_groups:
-            for col in rg.columns:
-                col.file_path = col.file_path.decode()
+        for rg in fmd[4]:
+            rg[1][0][1] = rg[1][0][1].decode()
         self._set_attrs()
 
     def _set_attrs(self):
@@ -219,7 +218,7 @@ class ParquetFile(object):
         return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
 
     def _read_partitions(self):
-        paths = [rg.columns[0].file_path or "" for rg in self.row_groups if rg.columns]
+        paths = [rg[1][0][1] or "" for rg in self.row_groups if rg[1]]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def head(self, nrows, **kwargs):
@@ -618,13 +617,13 @@ class ParquetFile(object):
                     # uint/int/bool columns that may have nulls become nullable
                     num_nulls = 0
                     for rg in self.row_groups:
-                        if rg.num_rows == 0:
+                        if rg[3] == 0:
                             continue
-                        st = rg.columns[i].meta_data.statistics
+                        st = rg[1][i][3][12]
                         if st is None:
                             num_nulls = True
                             break
-                        if st.null_count:
+                        if st[3]:
                             num_nulls = True
                             break
                     if num_nulls:
