@@ -149,8 +149,15 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             # activate new code path here
             f0 = file_list[0]
             pf0 = api.ParquetFile(f0, open_with=open_with)
-            # permits concurrent fetch of footers; needs
-            pieces = fs.cat(file_list[1:], start=-int(1.4 * pf0._head_size))
+            # permits concurrent fetch of footers; needs fsspec >= 2021.6
+            size = int(1.4 * pf0._head_size)
+            pieces = fs.cat(file_list[1:], start=-size)
+            sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
+                     path, piece in pieces.items()}
+            not_bigenough = [path for path, s in sizes.items() if s > size]
+            if not_bigenough:
+                new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
+                pieces.update(new_pieces)
             legacy = False
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
@@ -192,7 +199,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             chunk.file_path = f0[len(basepath):].lstrip("/")
 
     for k, v in pieces.items():
-        rgs = _get_fmd(v).row_groups
+        rgs = _get_fmd(v).row_groups or []
         for rg in rgs:
             for chunk in rg.columns:
                 chunk.file_path = k[len(basepath):].lstrip("/")
