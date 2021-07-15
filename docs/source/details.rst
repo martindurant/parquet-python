@@ -5,6 +5,7 @@ Some additional information to bear in mind when using fastparquet,
 in no particular order. Much of what follows has implications for writing
 parquet files that are compatible with other parquet implementations, versus
 performance when writing data for reading back with fastparquet.
+Please also read the :doc:`releasenotes` for newer or experimental features.
 
 Whilst we aim to make the package simple to use, some choices on the part
 of the user may effect performance and data consistency.
@@ -132,26 +133,8 @@ A couple of caveats should be noted:
   the output will also be float, with potential machine-precision errors;
 - only UTF8 encoding for text is automatically handled, although arbitrary
   byte strings can be written as raw bytes type;
-- the time types have microsecond accuracy, whereas pandas time types normally
-  are nanosecond accuracy;
 - all times are stored as UTC, but the timezone is stored in the metadata, so
   will be recreated if loaded into pandas
-- complex numbers must have their real and imaginary parts stored as two
-  separate float columns.
-
-Spark Timestamps
-----------------
-
-Fastparquet can read and write int96-style timestamps, as typically found in Apache
-Spark and Map-Reduce output.
-
-Currently, int96-style timestamps are the only known use of the int96 type without
-an explicit schema-level converted type assignment. They will be automatically converted to
-times upon loading.
-
-Similarly on writing, the ``times`` keyword controls the encoding of timestamp columns:
-"int64" is the default and faster option, producing parquet standard compliant data, but
-"int96" is required to write data which is compatible with Spark.
 
 Reading Nested Schema
 ---------------------
@@ -265,26 +248,13 @@ To get the first row-group only, one would go:
 
     first = next(iter(pf.iter_row_groups()))
 
-Connection to Dask
-------------------
+(see also the method :func:`fastparquet.ParquetFile.head`)
 
-Dask usage is still in development. Expect the features to lag behind
-those in fastparquet, and sometimes to become incompatible, if a change has
-been made in the one but not the other.
+Dask/Pandas
+-----------
 
-`Dask <http://dask.pydata.org/>`_ provides a pandas-like dataframe interface to
-larger-than-memory and distributed datasets, as part of a general parallel
-computation engine. In this context, it allows the parallel loading and
-processing of the component pieces of a Parquet dataset across the cored of
-a CPU and/or the nodes of a distributed cluster.
-
-Dask will provide two simple end-user functions:
-
-- ``dask.dataframe.read_parquet`` with keyword options similar to
-  ``ParquetFile.to_pandas``. The URL parameter, however, can point to
-  various filesystems, such as S3 or HDFS. Loading is *lazy*, only happening
-  on demand.
-- ``dask.dataframe.DataFrame.to_parquet`` with keyword options similar to
-  ``fastparquet.write``. One row-group/file will be generated for each division
-  of the dataframe, or, if using partitioning, up to one row-group/file per
-  division per partition combination.
+Dask and Pandas fully support calling ``fastparquet`` directly, with the function
+``read_parquet`` and method ``to_parquet``, specifying ``engine="fastparquet"``.
+Please see their relevant docstrings. Remote filesystems are supported by using
+a URL with a "protocol://" specifier and any ``storage_options`` to be passed to
+the file system implementation.

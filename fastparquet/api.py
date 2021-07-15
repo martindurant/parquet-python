@@ -265,11 +265,14 @@ class ParquetFile(object):
         in which case we return the resultant dataframe
 
         row_filter can be:
-        - False (don't do row filtering)
-        - a list of filters (do filtering here for this one row-group;
-          only makes sense if assign=None
-        - bool array with a size equal to the number of rows in this group
-          and the length of the assign arrays
+
+           -  False (don't do row filtering)
+
+           -  a list of filters (do filtering here for this one row-group;
+              only makes sense if assign=None
+
+           -  bool array with a size equal to the number of rows in this group
+              and the length of the assign arrays
         """
         categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
@@ -507,7 +510,7 @@ class ParquetFile(object):
 
     @property
     def info(self):
-        """ Some dataset summary """
+        """ Dataset summary """
         return {'name': self.fn, 'columns': self.columns,
                 'partitions': list(self.cats), 'rows': self.count(),
                 "row_groups": len(self.row_groups)}

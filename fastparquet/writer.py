@@ -878,16 +878,19 @@ def write(filename, data, row_group_offsets=50000000,
         boost. The length applies to the binary representation *after*
         conversion for utf8, json or bson.
     append: bool (False) or 'overwrite'
-        - If False, construct data-set from scratch; if True, add new row-group(s)
-          to existing data-set. In the latter case, the data-set must exist,
-          and the schema must match the input data.
-        - If 'overwrite', existing partitions will be replaced in-place, where
-          the given data has any rows within a given partition. To enable this,
-          these other parameters have to be set to specific values, or will
-          raise ValueError:
-           * ``row_group_offsets=0``
-           * ``file_scheme='hive'``
-           * ``partition_on`` has to be used, set to at least a column name
+        If False, construct data-set from scratch; if True, add new row-group(s)
+        to existing data-set. In the latter case, the data-set must exist,
+        and the schema must match the input data.
+
+        If 'overwrite', existing partitions will be replaced in-place, where
+        the given data has any rows within a given partition. To enable this,
+        these other parameters have to be set to specific values, or will
+        raise ValueError:
+
+           *  ``row_group_offsets=0``
+           *  ``file_scheme='hive'``
+           *  ``partition_on`` has to be used, set to at least a column name
+
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
         be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
