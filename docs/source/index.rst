@@ -51,7 +51,14 @@ Caveats, Known Issues
 Please see the :doc:`releasenotes`. With versions 0.6.0 and 0.7.0, a LOT of new features
 and enhancements were added, so please read that page carefully, this may affect you!
 
-A list of current issues can be found `here <https://github.com/dask/fastparquet/>`_.
+Fastparquet is a free and open-source project.
+We welcome contributions in the form of bug reports, documentation, code, design proposals, and more.
+This page provides resources on how best to contribute.
+
+**Bug reports**
+
+Please file an issue on `github <https://github.com/dask/fastparquet/>`_.
+
 
 Relation to Other Projects
 --------------------------
@@ -86,7 +93,6 @@ Index
     details
     api
     filesystems
-    developer
 
 1. :ref:`genindex`
 1. :ref:`modindex`

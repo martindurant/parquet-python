@@ -6,8 +6,12 @@ planned in 2021. As of 0.7.0, only one larger item remains to be completed.
 
 .. _Future Plans: https://github.com/dask/fastparquet/issues/586
 
-Version 0.7.0 (July 2021)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _0.7.0:
+
+0.7.0
+~~~~~
+
+(July 2021)
 
 This version institutes major, breaking changes, listed here, and incremental
 fixes and additions.
@@ -56,8 +60,10 @@ fixes and additions.
    the data was written with fastparquet/pyarrow, and the metadata indicates that the original
    datatype was nullable. We already handled writing of nullable columns.
 
-Version 0.6.0 (May 2021)
-~~~~~~~~~~~~~~~~~~~~~~~~
+0.6.0
+~~~~~
+
+(May 2021)
 
 This version institutes major, breaking changes, listed here, and incremental
 fixes and additions.
