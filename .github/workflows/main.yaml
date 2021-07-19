@@ -103,8 +103,8 @@ jobs:
         run: |
           pytest --verbose dask/dask/dataframe/io/tests/test_parquet.py
   
-    dask:
-    name: dask
+  pandas:
+    name: pandas
     runs-on: ubuntu-latest
     steps:
       - name: APT
