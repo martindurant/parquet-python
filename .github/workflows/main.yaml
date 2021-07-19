@@ -102,6 +102,35 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest --verbose dask/dask/dataframe/io/tests/test_parquet.py
+  
+    dask:
+    name: dask
+    runs-on: ubuntu-latest
+    steps:
+      - name: APT
+        run: sudo apt-get install liblzo2-dev
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          auto-activate-base: false
+          activate-environment: test_env
+          environment-file: ci/environment-py38.yml
+
+      - name: pip-install
+        shell: bash -l {0}
+        run: |
+          git clone https://github.com/pandas-dev/pandas
+          pip install -e --no-build-isolation --no-use-pep517 pandas/
+
+      - name: Run Tests
+        shell: bash -l {0}
+        run: |
+          pytest --verbose pandas/tests/io/test_parquet.py pandas/tests/io/test_gcs.py pandas/tests/io/test_fsspec.py
 
   win:
     name: win
