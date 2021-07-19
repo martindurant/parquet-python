@@ -384,58 +384,7 @@ def get_file_scheme(paths):
 
 
 def join_path(*path):
-    def scrub(i, p):
-        # Convert path to standard form
-        # this means windows path separators are converted to linux
-        p = p.replace(os.sep, "/")
-        if p == "":  # empty path is assumed to be a relative path
-            return "."
-        if p[-1] == '/':  # trailing slashes are not allowed
-            p = p[:-1]
-        if i > 0 and p[0] == '/':  # only the first path can start with /
-            p = p[1:]
-        return p
-
-    abs_prefix = ''
-    if path and path[0]:
-        if path[0][0] == '/':
-            abs_prefix = '/'
-            path = list(path)
-            path[0] = path[0][1:]
-        elif os.sep == '\\' and path[0][1:].startswith(':/'):
-            # If windows, then look for the "c:/" prefix
-            abs_prefix = path[0][0:3]
-            path = list(path)
-            path[0] = path[0][3:]
-
-    scrubbed = []
-    for i, p in enumerate(path):
-        scrubbed.extend(scrub(i, p).split("/"))
-    simpler = []
-    for s in scrubbed:
-        if s == ".":
-            pass
-        elif s == "..":
-            if simpler:
-                if simpler[-1] == '..':
-                    simpler.append(s)
-                else:
-                    simpler.pop()
-            elif abs_prefix:
-                raise Exception("can not get parent of root")
-            else:
-                simpler.append(s)
-        else:
-            simpler.append(s)
-
-    if not simpler:
-        if abs_prefix:
-            joined = abs_prefix
-        else:
-            joined = "."
-    else:
-        joined = abs_prefix + ('/'.join(simpler))
-    return joined
+    return "/".join(path)
 
 
 _json_decoder = [None]
