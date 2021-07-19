@@ -383,7 +383,7 @@ def get_file_scheme(paths):
 
 
 def join_path(*path):
-    return "/".join([p.rstrip("/") for p in path if p])
+    return "/".join([p.replace("\\", "/").rstrip("/") for p in path if p])
 
 
 _json_decoder = [None]
