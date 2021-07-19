@@ -254,7 +254,6 @@ def analyse_paths(file_list, root=False):
         l = len(basepath)
         assert all(p[:l] == basepath for p in path_parts_list
                    ), "All paths must begin with the given root"
-    l = len(basepath)
     out_list = []
     for path_parts in path_parts_list:
         out_list.append('/'.join(path_parts[l:]))  # use '/'.join() instead of join_path to be consistent with split('/')
@@ -384,7 +383,7 @@ def get_file_scheme(paths):
 
 
 def join_path(*path):
-    return "/".join(path)
+    return "/".join([p.rstrip("/") for p in path if p])
 
 
 _json_decoder = [None]
