@@ -124,6 +124,7 @@ jobs:
       - name: pip-install
         shell: bash -l {0}
         run: |
+          pip install Cython
           git clone https://github.com/pandas-dev/pandas
           cd pandas
           pip install -e . --no-build-isolation --no-use-pep517
