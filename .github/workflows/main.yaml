@@ -133,7 +133,7 @@ jobs:
       - name: Run Tests
         shell: bash -l {0}
         run: |
-          pytest --verbose pandas/pandas/tests/io/test_parquet.py pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py
+          pytest --verbose pandas/pandas/tests/io/test_parquet.py pandas/pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py
 
   win:
     name: win
