@@ -126,7 +126,8 @@ jobs:
         run: |
           pip install Cython
           pip install hypothesis
-          pip install pytest-xdist
+          pip install pytest-xdist # Needed for a pandas test, also runs tests in parallel
+          pip install -e . --no-deps # Install fastparquet
           git clone https://github.com/pandas-dev/pandas
           cd pandas
           pip install -e . --no-build-isolation --no-use-pep517
