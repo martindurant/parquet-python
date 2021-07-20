@@ -125,7 +125,7 @@ jobs:
         shell: bash -l {0}
         run: |
           git clone https://github.com/pandas-dev/pandas
-          pip install -e --no-build-isolation --no-use-pep517 pandas/
+          pip install -e --no-use-pep517 pandas/
 
       - name: Run Tests
         shell: bash -l {0}
