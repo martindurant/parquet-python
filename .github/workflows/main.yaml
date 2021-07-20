@@ -126,6 +126,7 @@ jobs:
         run: |
           pip install Cython
           pip install hypothesis
+          pip install pytest-xdist
           git clone https://github.com/pandas-dev/pandas
           cd pandas
           pip install -e . --no-build-isolation --no-use-pep517
