@@ -49,12 +49,12 @@ simple = {
 complex = {
     parquet_thrift.ConvertedType.UTF8: np.dtype("O"),
     parquet_thrift.ConvertedType.DECIMAL: np.dtype('float64'),
-    parquet_thrift.ConvertedType.UINT_8: pd.UInt8Dtype(),
-    parquet_thrift.ConvertedType.UINT_16: pd.UInt16Dtype(),
+    parquet_thrift.ConvertedType.UINT_8: np.dtype("uint8"),
+    parquet_thrift.ConvertedType.UINT_16: np.dtype("uint16"),
     parquet_thrift.ConvertedType.UINT_32: np.dtype('uint32'),
     parquet_thrift.ConvertedType.UINT_64: np.dtype('uint64'),
-    parquet_thrift.ConvertedType.INT_8: pd.Int8Dtype(),
-    parquet_thrift.ConvertedType.INT_16: pd.Int16Dtype(),
+    parquet_thrift.ConvertedType.INT_8: np.dtype("int8"),
+    parquet_thrift.ConvertedType.INT_16: np.dtype("int16"),
     parquet_thrift.ConvertedType.INT_32: np.dtype('int32'),
     parquet_thrift.ConvertedType.INT_64: np.dtype('int64'),
     parquet_thrift.ConvertedType.TIME_MILLIS: np.dtype('<m8[ns]'),
@@ -64,8 +64,14 @@ complex = {
     parquet_thrift.ConvertedType.TIMESTAMP_MICROS: np.dtype('<M8[ns]')
 }
 nullable = {
+    np.dtype('int8'): pd.Int8Dtype(),
+    np.dtype('int16'): pd.Int16Dtype(),
     np.dtype('int32'): pd.Int32Dtype(),
     np.dtype('int64'): pd.Int64Dtype(),
+    np.dtype('uint8'): pd.UInt8Dtype(),
+    np.dtype('uint16'): pd.UInt16Dtype(),
+    np.dtype('uint32'): pd.UInt32Dtype(),
+    np.dtype('uint64'): pd.UInt64Dtype(),
     np.dtype('bool'): pd.BooleanDtype()
 }
 pandas_nullable = {

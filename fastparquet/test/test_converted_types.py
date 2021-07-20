@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """test_converted_types.py - tests for decoding data to their logical data types."""
 import datetime
-import sys
+import os.path
 
 import numpy as np
 import pandas as pd
@@ -167,3 +167,13 @@ def test_tz_nonstring(tmpdir):
 
     round = pd.read_parquet(fn, engine="fastparquet")
     assert (event_df == round).all().all()
+
+
+def test_pandas_simple_type(tmpdir):
+    import pandas as pd
+    fn = os.path.join(tmpdir, "out.parquet")
+    df = pd.DataFrame({"a": [1, 2, 3]}, dtype='uint8')
+    df.to_parquet(fn, engine="fastparquet")
+    df2 = pd.read_parquet(fn, engine="fastparquet")
+    assert df2.a.dtype == "uint8"
+    assert not(isinstance(df2.a.dtype, pd.UInt8Dtype))
