@@ -125,12 +125,13 @@ jobs:
         shell: bash -l {0}
         run: |
           git clone https://github.com/pandas-dev/pandas
-          pip install -e --no-use-pep517 pandas/
+          cd pandas
+          pip install -e . --no-build-isolation --no-use-pep517
 
       - name: Run Tests
         shell: bash -l {0}
         run: |
-          pytest --verbose pandas/tests/io/test_parquet.py pandas/tests/io/test_gcs.py pandas/tests/io/test_fsspec.py
+          pytest --verbose pandas/pandas/tests/io/test_parquet.py pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py
 
   win:
     name: win
