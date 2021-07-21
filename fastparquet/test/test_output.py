@@ -551,19 +551,22 @@ def test_null_time(tempdir):
     assert sum(data['t'].isnull()) == sum(expected['t'].isnull())
 
 
-def test_auto_null_object(tempdir):
+@pytest.mark.parametrize(
+    "pnull", [True, False]
+)
+def test_auto_null_object(tempdir, pnull):
     tmp = str(tempdir)
     df = pd.DataFrame({'a': [1, 2, 3, 0],
-                       'aa': [1, 2, 3, None],
+                       'aa': pd.Series([1, 2, 3, None], dtype=object),
                        'b': [1., 2., 3., np.nan],
                        'c': pd.to_timedelta([1, 2, 3, np.nan], unit='ms'),
                        'd': ['a', 'b', 'c', None],
                        'f': [True, False, True, True],
-                       'ff': [True, False, None, True]})
+                       'ff': [True, False, None, True]})  # object
     df['e'] = df['d'].astype('category')
     df['bb'] = df['b'].astype('object')
     df['aaa'] = df['a'].astype('object')
-    object_cols = ['d', 'ff', 'bb', 'aaa']
+    object_cols = ['d', 'ff', 'bb', 'aaa', 'aa']
     test_cols = list(set(df) - set(object_cols)) + ['d']
     fn = os.path.join(tmp, "test.parq")
 
@@ -571,7 +574,7 @@ def test_auto_null_object(tempdir):
         write(fn, df, has_nulls=False)
 
     write(fn, df, has_nulls=True)
-    pf = ParquetFile(fn)
+    pf = ParquetFile(fn, pandas_nulls=pnull)
     for col in pf._schema[1:]:
         assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     df2 = pf.to_pandas(categories=['e'])
@@ -581,6 +584,10 @@ def test_auto_null_object(tempdir):
     tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    if pnull:
+        tm.assert_frame_equal(df[['aa']].astype('Int64'), df2[['aa']])
+    else:
+        tm.assert_frame_equal(df[['aa']].astype('float'), df2[['aa']])
 
     # not giving any value same as has_nulls=True
     write(fn, df)
