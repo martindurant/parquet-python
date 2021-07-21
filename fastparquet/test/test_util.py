@@ -27,33 +27,14 @@ def test_analyse_paths():
     base, out = analyse_paths(file_list)
     assert (base, out) == ('c', ['cat=1/a', 'cat=2/b', 'cat=1/c'])
 
-    file_list = ['c\\cat=1\\a', 'c\\cat=2\\b', 'c\\cat=1\\c']
-    temp, os.sep = os.sep, '\\'  # We must trick linux into thinking this is windows for this test to work
-    base, out = analyse_paths(file_list)
-    os.sep = temp
-    assert (base, out) == ('c', ['cat=1/a', 'cat=2/b', 'cat=1/c'])
-
 
 def test_empty():
     assert join_path("test", ""), "test"
 
 
-def test_parents():
-    assert join_path("test", "../../..") == "../.."
-
-    with pytest.raises(Exception):
-        join_path("/test", "../../..")
-    with pytest.raises(Exception):
-        join_path("/test", "../..")
-
-
-def test_abs_and_rel_paths():
+def test_join_paths():
     assert join_path('/', 'this/is/a/test/') == '/this/is/a/test'
-    assert join_path('.', 'this/is/a/test/') == 'this/is/a/test'
     assert join_path('', 'this/is/a/test/') == 'this/is/a/test'
-    assert join_path('/test', '.') == '/test'
-    assert join_path('/test', '..', 'this') == '/this'
-    assert join_path('/test', '../this') == '/this'
 
 
 def test_file_scheme():

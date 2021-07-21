@@ -108,6 +108,7 @@ class ParquetFile(object):
         else:
             if open_with is default_open and fs is None:
                 fs = fsspec.filesystem("file")
+                fn = fs._strip_protocol(fn)
             elif fs is not None:
                 open_with = fs.open
             else:
@@ -720,7 +721,7 @@ def _path_to_cats(paths, parts, file_scheme="hive", partition_meta=None):
     for path, path_parts in zip(paths, parts):
 
         if file_scheme == "hive":
-            hivehits = s.findall(path)
+            hivehits = [p.split("=") for p in path.split("/") if "=" in p]  # s.findall(path)
             if not hivehits:
                 raise ValueError("Not a hive scheme")
         if file_scheme == "drill":

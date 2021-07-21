@@ -264,8 +264,8 @@ def test_attributes(tempdir):
     assert pf.columns == ['x', 'y', 'z']
     assert len(pf.row_groups) == 2
     assert pf.count() == 4
-    assert join_path(fn) == pf.info['name']
-    assert join_path(fn) in str(pf)
+    assert join_path(fn).replace("\\", "/") == pf.info['name']
+    assert join_path(fn).replace("\\", "/") in str(pf)
     for col in df:
         assert getattr(pf.dtypes[col], "numpy_dtype", pf.dtypes[col]) == df.dtypes[col]
 
