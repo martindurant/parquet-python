@@ -87,7 +87,8 @@ class ParquetFile(object):
     _categories = None
 
     def __init__(self, fn, verify=False, open_with=default_open,
-                 root=False, sep=None, fs=None):
+                 root=False, sep=None, fs=None, pandas_nulls=True):
+        self.pandas_nulls = pandas_nulls
         if isinstance(fn, (tuple, list)):
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
                                                open_with=open_with, root=root)
@@ -627,7 +628,10 @@ class ParquetFile(object):
                             num_nulls = True
                             break
                     if num_nulls:
-                        dtype[col] = converted_types.nullable[dt]
+                        if self.pandas_nulls:
+                            dtype[col] = converted_types.nullable[dt]
+                        else:
+                            dtype[col] = np.float_()
                 elif dt == 'S12':
                     dtype[col] = 'M8[ns]'
             self._base_dtype = dtype
