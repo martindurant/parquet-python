@@ -149,8 +149,15 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             # activate new code path here
             f0 = file_list[0]
             pf0 = api.ParquetFile(f0, open_with=open_with)
-            # permits concurrent fetch of footers; needs
-            pieces = fs.cat(file_list[1:], start=-int(1.4 * pf0._head_size))
+            # permits concurrent fetch of footers; needs fsspec >= 2021.6
+            size = int(1.4 * pf0._head_size)
+            pieces = fs.cat(file_list[1:], start=-size)
+            sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
+                     path, piece in pieces.items()}
+            not_bigenough = [path for path, s in sizes.items() if s > size]
+            if not_bigenough:
+                new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
+                pieces.update(new_pieces)
             legacy = False
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
@@ -192,7 +199,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             chunk.file_path = f0[len(basepath):].lstrip("/")
 
     for k, v in pieces.items():
-        rgs = _get_fmd(v).row_groups
+        rgs = _get_fmd(v).row_groups or []
         for rg in rgs:
             for chunk in rg.columns:
                 chunk.file_path = k[len(basepath):].lstrip("/")
@@ -247,7 +254,6 @@ def analyse_paths(file_list, root=False):
         l = len(basepath)
         assert all(p[:l] == basepath for p in path_parts_list
                    ), "All paths must begin with the given root"
-    l = len(basepath)
     out_list = []
     for path_parts in path_parts_list:
         out_list.append('/'.join(path_parts[l:]))  # use '/'.join() instead of join_path to be consistent with split('/')
@@ -377,58 +383,7 @@ def get_file_scheme(paths):
 
 
 def join_path(*path):
-    def scrub(i, p):
-        # Convert path to standard form
-        # this means windows path separators are converted to linux
-        p = p.replace(os.sep, "/")
-        if p == "":  # empty path is assumed to be a relative path
-            return "."
-        if p[-1] == '/':  # trailing slashes are not allowed
-            p = p[:-1]
-        if i > 0 and p[0] == '/':  # only the first path can start with /
-            p = p[1:]
-        return p
-
-    abs_prefix = ''
-    if path and path[0]:
-        if path[0][0] == '/':
-            abs_prefix = '/'
-            path = list(path)
-            path[0] = path[0][1:]
-        elif os.sep == '\\' and path[0][1:].startswith(':/'):
-            # If windows, then look for the "c:/" prefix
-            abs_prefix = path[0][0:3]
-            path = list(path)
-            path[0] = path[0][3:]
-
-    scrubbed = []
-    for i, p in enumerate(path):
-        scrubbed.extend(scrub(i, p).split("/"))
-    simpler = []
-    for s in scrubbed:
-        if s == ".":
-            pass
-        elif s == "..":
-            if simpler:
-                if simpler[-1] == '..':
-                    simpler.append(s)
-                else:
-                    simpler.pop()
-            elif abs_prefix:
-                raise Exception("can not get parent of root")
-            else:
-                simpler.append(s)
-        else:
-            simpler.append(s)
-
-    if not simpler:
-        if abs_prefix:
-            joined = abs_prefix
-        else:
-            joined = "."
-    else:
-        joined = abs_prefix + ('/'.join(simpler))
-    return joined
+    return "/".join([p.replace("\\", "/").rstrip("/") for p in path if p])
 
 
 _json_decoder = [None]

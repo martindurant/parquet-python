@@ -1,0 +1,96 @@
+Release Notes
+-------------
+
+Please see the issue `Future Plans`_ for a list of features completed or
+planned in 2021. As of 0.7.0, only one larger item remains to be completed.
+
+.. _Future Plans: https://github.com/dask/fastparquet/issues/586
+
+.. _0.7.0:
+
+0.7.0
+~~~~~
+
+(July 2021)
+
+This version institutes major, breaking changes, listed here, and incremental
+fixes and additions.
+
+
+#. Reading a directory without a ``_metadata`` summary file now works by providing
+   only the directory, instead of a list of constituent files. This change also
+   makes direct of use of fsspec filesystems, if given, to be able to load the
+   footer metadata areas of the files concurrently, if the storage backend supports
+   it, and not directly instantiating intermediate ParquetFile instances
+#. row-level filtering of the data. Whereas previously, only full row-groups could be
+   excluded on the basis of their parquet metadata statistics (if present), filtering
+   can now be done within row-groups too. The syntax is the same as before, allowing
+   for multiple column expressions to be combined with AND|OR, depending on the
+   list structure. This mechanism requires two passes: one to load the columns needed
+   to create the boolean mask, and another to load the columns actually needed in the
+   output. This will not be faster, and may be slower, but in some cases can save
+   significant memory footprint, if a small fraction of rows are considered good and
+   the columns for the filter expression are not in the output. Not currently
+   supported for reading with DataPageV2.
+#. DELTA integer encoding (read-only): experimentally working, but we only have one
+   test file to verify against, since it is not trivial to persuade Spark to
+   produce files encoded this way. DELTA can be extremely compact a representation
+   for slowly varying and/or monotonically increasing integers.
+#. nanosecond resolution times: the new extended "logical" types system supports
+   nanoseconds alongside the previous millis and micros. We now emit these for the
+   default pandas time type, and produce full parquet schema including both "converted"
+   and "logical" type information. Note that all output has ``isAdjustedToUTC=True``,
+   i.e., these are timestamps rather than local time. The time-zone is stored in the
+   metadata, as before, and will be successfully recreated only in fastparquet and (py)arrow.
+   Otherwise, the times will appear to be UTC.
+#. DataPageV2 writing:   now we support both reading and writing. For writing,
+   can be enabled with the environment variable FASTPARQUET_DATAPAGE_V2, or module
+   global ``fastparquet.writer.DATAPAGE_VERSION`` and is off by default. It will become
+   on by default in the future. In many cases, V2 will result in
+   better read performance, because the data and page headers are encoded separately, so data
+   can be directly read into the output without addition allocation/copies. This feature
+   is considered experimental, but we believe it working well for most use cases (i.e.,
+   our test suite) and should be readable by all modern parquet frameworks including
+   arrow and spark.
+#. pandas nullable types: pandas supports "masked" extension arrays for types that previously
+   could not support NULL at all: ints and bools. Fatsparquet used to cast such columns
+   to float, so that we could represent NULLs as NaN; now we use the new(er) masked types
+   by default. This means faster reading of such columns, as there is no conversion. If the
+   metadata guarantees that there are no nulls, we still use the non-nullable variant *unless*
+   the data was written with fastparquet/pyarrow, and the metadata indicates that the original
+   datatype was nullable. We already handled writing of nullable columns.
+
+0.6.0
+~~~~~
+
+(May 2021)
+
+This version institutes major, breaking changes, listed here, and incremental
+fixes and additions.
+
+
+NB: minor versions up to 0.6.3 fix build issues
+
+#. replacement of the numba dependency with cythonized code. This also brought many
+   performance improvements, by reducing memory copies in many places, and an overhaul
+   of many parts of the code. Replacing numba by cython did not affect the performance
+   of specific functions, but has made installation of fastparquet much simpler, for not needing
+   the numba/LLVM stack, and imports faster, for not having to compile any code at runtime.
+#. distribution as pip-installable wheels. Since we are cythonizing more, we want to
+   make installation as simple as we can. So we now produce wheels.
+#. using `cramjam`_ as the comp/decompression backend, instead of separate libraries
+   for snappy, zstd, brotli... . This decreases the size and complexity of the install,
+   guarantees the availability of codecs (cramjam is a required dependency, but with
+   no dependencies of its own), and for the parquet read case, where we know the size
+   of the original data, brings a handy speed-up.
+#. implementation of DataPageV2: reading (see also 0.7.0 entry): this has been in the parquet
+   spec for a long time, but
+   only seen sporadic take-up until recently. Using standard reference files from the parquet
+   project, we ensure correct reading of some V2-encoded files.
+#. RLE_DICT: this one is more of a fix. The parquet spec renamed PLAIN_DICTIONARY, or
+   perhaps renamed the previous definition. We now follow the new definitions for writing
+   and support both for reading.
+#. support custom key/value metadata on write and preserve this metadata on append or
+   consolidate of many data files.
+
+.. _cramjam: https://github.com/milesgranger/pyrus-cramjam

@@ -108,6 +108,7 @@ class ParquetFile(object):
         else:
             if open_with is default_open and fs is None:
                 fs = fsspec.filesystem("file")
+                fn = fs._strip_protocol(fn)
             elif fs is not None:
                 open_with = fs.open
             else:
@@ -269,11 +270,14 @@ class ParquetFile(object):
         in which case we return the resultant dataframe
 
         row_filter can be:
-        - False (don't do row filtering)
-        - a list of filters (do filtering here for this one row-group;
-          only makes sense if assign=None
-        - bool array with a size equal to the number of rows in this group
-          and the length of the assign arrays
+
+           -  False (don't do row filtering)
+
+           -  a list of filters (do filtering here for this one row-group;
+              only makes sense if assign=None
+
+           -  bool array with a size equal to the number of rows in this group
+              and the length of the assign arrays
         """
         categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
@@ -511,7 +515,7 @@ class ParquetFile(object):
 
     @property
     def info(self):
-        """ Some dataset summary """
+        """ Dataset summary """
         return {'name': self.fn, 'columns': self.columns,
                 'partitions': list(self.cats), 'rows': self.count(),
                 "row_groups": len(self.row_groups)}
@@ -721,7 +725,7 @@ def _path_to_cats(paths, parts, file_scheme="hive", partition_meta=None):
     for path, path_parts in zip(paths, parts):
 
         if file_scheme == "hive":
-            hivehits = s.findall(path)
+            hivehits = [p.split("=") for p in path.split("/") if "=" in p]  # s.findall(path)
             if not hivehits:
                 raise ValueError("Not a hive scheme")
         if file_scheme == "drill":

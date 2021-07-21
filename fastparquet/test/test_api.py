@@ -264,8 +264,8 @@ def test_attributes(tempdir):
     assert pf.columns == ['x', 'y', 'z']
     assert len(pf.row_groups) == 2
     assert pf.count() == 4
-    assert join_path(fn) == pf.info['name']
-    assert join_path(fn) in str(pf)
+    assert join_path(fn).replace("\\", "/") == pf.info['name']
+    assert join_path(fn).replace("\\", "/") in str(pf)
     for col in df:
         assert getattr(pf.dtypes[col], "numpy_dtype", pf.dtypes[col]) == df.dtypes[col]
 
@@ -1065,3 +1065,12 @@ def test_head(tempdir):
 
     pf = ParquetFile(fn)
     assert pf.head(1).val.tolist() == [2]
+
+
+def test_spark_date_empty_rg():
+    # https://github.com/dask/fastparquet/issues/634
+    # first file has header size much smaller than others as it contains no row groups
+    fn = os.path.join(TEST_DATA, 'spark-date-empty-rg.parq')
+    pf = ParquetFile(fn)
+    out = pf.to_pandas(columns=['Date'])
+    assert out.Date.tolist() == [pd.Timestamp("2020-1-1"), pd.Timestamp("2020-1-2")]

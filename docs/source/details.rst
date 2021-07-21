@@ -5,6 +5,7 @@ Some additional information to bear in mind when using fastparquet,
 in no particular order. Much of what follows has implications for writing
 parquet files that are compatible with other parquet implementations, versus
 performance when writing data for reading back with fastparquet.
+Please also read the :doc:`releasenotes` for newer or experimental features.
 
 Whilst we aim to make the package simple to use, some choices on the part
 of the user may effect performance and data consistency.
@@ -25,12 +26,12 @@ category type:
     df[col] = df[col].astype('category')
 
 Fastparquet will automatically use metadata information to load such columns
-as categorical *if* the data was written by fastparquet.
+as categorical *if* the data was written by fastparquet/pyarrow.
 
 To efficiently load a column as a categorical type for data from other
 parquet frameworks, include it in the optional
 keyword parameter ``categories``; however it must be encoded as dictionary
-throughout the dataset.
+throughout the dataset, *with the same labels in every part*.
 
 .. code-block:: python
 
@@ -40,24 +41,15 @@ throughout the dataset.
 Where we provide a hint that the column ``cat`` has up to 12 possible values.
 ``categories`` can also take a list, in which case up to 32767 (2**15 - 1)
 labels are assumed.
-Columns that are encoded as dictionary but not included in ``categories`` will
-be de-referenced on load which is potentially expensive.
-
-Note that before loading, it is not possible to know whether the above condition
-will be met, so the ``dtypes`` attribute of a ``ParquetFile`` will show the
-data type appropriate for the values of column, unless the data originates with
-fastparquet.
+For data not written by fastparquet/pyarrow, columns that are encoded as dictionary
+but not included in ``categories`` will
+be de-referenced on load, which is potentially expensive.
 
 Byte Arrays
 -----------
 
-Often, information in a column can be encoded in a small number of characters,
-perhaps a single character. Variable-length byte arrays are also slow and
-inefficient, however, since the length of each value needs to be stored.
-
-Fixed-length byte arrays provide the best of both, and will probably be the
-most efficient storage where the values are 1-4 bytes long, especially if the
-cardinality is relatively high for dictionary encoding. To automatically
+Fixed-length byte arrays provide a modest speed boost for binary data (bytestrings)
+whose lengths really are all the same or nearly so. To automatically
 convert string values to fixed-length when writing, use the ``fixed_text``
 optional keyword, with a predetermined length.
 
@@ -65,21 +57,16 @@ optional keyword, with a predetermined length.
 
     write('out.parq', df, fixed_text={'char_code': 1})
 
-Such an encoding will be the fastest to read, especially if the values are
-bytes type, as opposed to UTF8 strings. The values will be converted back
-to objects upon loading.
-
-Fixed-length byte arrays are not supported by Spark, so
-files written using this may not be portable.
+This is not recommended for strings, since UTF8 encoding/decoding must be done anyway,
+and converting to fixed will probably just waste time.
 
 Nulls
 -----
 
 In pandas, there is no internal representation difference between NULL (no value)
-and NaN (not a valid number) for float, time and category columns. Whether to
-enocde these values using parquet NULL or the "sentinel" values is a choice for
-the user. The parquet framework that will read the data will likely treat
-NULL and NaN differently (e.g., in `in Spark`_). In the typical case of tabular
+and NaN/NaT (not a valid number) for float and time columns. Other parquet frameworks
+(e.g., in `in Spark`_) might likely treat
+NULL and NaN differently. In the typical case of tabular
 data (as opposed to strict numerics), users often mean the NULL semantics, and
 so should write NULLs information. Furthermore, it is typical for some parquet
 frameworks to define all columns as optional, whether or not they are intended to
@@ -96,62 +83,35 @@ upon writing, while determining that there are zero NULL values.
 
 The following cases are allowed for ``has_nulls``:
 
-    - True: all columns become optional, and NaNs are always stored as NULL. This is
-      the best option for compatibility. This is the default.
-
-    - False: all columns become required, and any NaNs are stored as NaN; if there
-      are any fields which cannot store such sentinel values (e.g,. string),
-      but do contain None, there will be an error.
-
-    - 'infer': only object columns will become optional, since float, time, and
-      category columns can store sentinel values, and pandas int columns cannot
-      contain any NaNs. This is the best-performing
-      option if the data will only be read by fastparquet.
-
-    - list of strings: the named columns will be optional, others required (no NULLs)
-
-This value can be stored in float and time fields, and will be read back such
-that the original data is recovered. They are not, however, the same thing
-as missing values, and if querying the resultant files using other frameworks,
-this should be born in mind. With ``has_nulls=None`` (the default) on writing,
-float, time and category fields will not write separate NULLs information, and
-the metadata will give num_nulls=0.
-
+#. True: all columns become optional, and NaNs are always stored as NULL. This is
+   the best option for compatibility. This is the default.
+#. False: all columns become required, and any NaNs are stored as NaN; if there
+   are any fields which cannot store such sentinel values (e.g,. string),
+   but do contain None, there will be an error.
+#. 'infer': only object columns will become optional, since float, time, and
+   category columns can store sentinel values, and ordinary pandas int columns cannot
+   contain any NaNs. This is the best-performing
+   option if the data will only be read by fastparquet. Pandas nullable columns
+   will be stored as optional, whether or not they contain nulls.
+#. list of strings: the named columns will be optional, others required (no NULLs)
 
 Data Types
 ----------
 
 There is fairly good correspondence between pandas data-types and Parquet
-simple and logical data types. The `types documentation <https://github.com/apache/parquet-format/blob/master/LogicalTypes.md>`_
+simple and logical data types.
+The `types documentation <https://github.com/apache/parquet-format/blob/master/LogicalTypes.md>`_
 gives details of the implementation spec.
 
 A couple of caveats should be noted:
 
-- fastparquet will
-  not write any Decimal columns, only float, and when reading such columns,
-  the output will also be float, with potential machine-precision errors;
-- only UTF8 encoding for text is automatically handled, although arbitrary
-  byte strings can be written as raw bytes type;
-- the time types have microsecond accuracy, whereas pandas time types normally
-  are nanosecond accuracy;
-- all times are stored as UTC, but the timezone is stored in the metadata, so
-  will be recreated if loaded into pandas
-- complex numbers must have their real and imaginary parts stored as two
-  separate float columns.
-
-Spark Timestamps
-----------------
-
-Fastparquet can read and write int96-style timestamps, as typically found in Apache
-Spark and Map-Reduce output.
-
-Currently, int96-style timestamps are the only known use of the int96 type without
-an explicit schema-level converted type assignment. They will be automatically converted to
-times upon loading.
-
-Similarly on writing, the ``times`` keyword controls the encoding of timestamp columns:
-"int64" is the default and faster option, producing parquet standard compliant data, but
-"int96" is required to write data which is compatible with Spark.
+#. fastparquet will
+   not write any Decimal columns, only float, and when reading such columns,
+   the output will also be float, with potential machine-precision errors;
+#. only UTF8 encoding for text is automatically handled, although arbitrary
+   byte strings can be written as raw bytes type;
+#. all times are stored as UTC, but the timezone is stored in the metadata, so
+   will be recreated if loaded into pandas
 
 Reading Nested Schema
 ---------------------
@@ -168,7 +128,8 @@ like
         - network_id: BYTE_ARRAY, UTF8, OPTIONAL
 
 then the ``ParquetFile`` will include entries "visitor.ip" and "visitor.network_id" in its
-``columns``, and these will become ordinary Pandas columns.
+``columns``, and these will become ordinary Pandas columns. We do not generate a hierarchical
+column index.
 
 Fastparquet also handles some parquet LIST and MAP types. For instance, the schema may include
 
@@ -265,26 +226,14 @@ To get the first row-group only, one would go:
 
     first = next(iter(pf.iter_row_groups()))
 
-Connection to Dask
-------------------
+You can also grab the first N rows of the first row-group with :func:`fastparquet.ParquetFile.head`,
+or select from among a data-set's row-groups using slice notation ``pf_subset = pf[2:8]``.
 
-Dask usage is still in development. Expect the features to lag behind
-those in fastparquet, and sometimes to become incompatible, if a change has
-been made in the one but not the other.
+Dask/Pandas
+-----------
 
-`Dask <http://dask.pydata.org/>`_ provides a pandas-like dataframe interface to
-larger-than-memory and distributed datasets, as part of a general parallel
-computation engine. In this context, it allows the parallel loading and
-processing of the component pieces of a Parquet dataset across the cored of
-a CPU and/or the nodes of a distributed cluster.
-
-Dask will provide two simple end-user functions:
-
-- ``dask.dataframe.read_parquet`` with keyword options similar to
-  ``ParquetFile.to_pandas``. The URL parameter, however, can point to
-  various filesystems, such as S3 or HDFS. Loading is *lazy*, only happening
-  on demand.
-- ``dask.dataframe.DataFrame.to_parquet`` with keyword options similar to
-  ``fastparquet.write``. One row-group/file will be generated for each division
-  of the dataframe, or, if using partitioning, up to one row-group/file per
-  division per partition combination.
+Dask and Pandas fully support calling ``fastparquet`` directly, with the function
+``read_parquet`` and method ``to_parquet``, specifying ``engine="fastparquet"``.
+Please see their relevant docstrings. Remote filesystems are supported by using
+a URL with a "protocol://" specifier and any ``storage_options`` to be passed to
+the file system implementation.

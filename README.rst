@@ -1,48 +1,37 @@
 fastparquet
 ===========
 
-.. image:: https://travis-ci.org/jcrobak/parquet-python.svg?branch=master
-    :target: https://github.com/dask/fastparquet
+.. image:: https://github.com/dask/fastparquet/actions/workflows/main.yaml/badge.svg
+    :target: https://github.com/dask/fastparquet/actions/workflows/main.yaml
+
+.. image:: https://readthedocs.org/projects/fastparquet/badge/?version=latest
+    :target: https://fastparquet.readthedocs.io/en/latest/
 
 fastparquet is a python implementation of the `parquet
 format <https://github.com/apache/parquet-format>`_, aiming integrate
-into python-based big data work-flows.
+into python-based big data work-flows. It is used implicitly by
+the projects Dask, Pandas and intake-parquet.
 
-Not all parts of the parquet-format have been implemented yet or tested
-e.g. see the Todos linked below. With that said,
-fastparquet is capable of reading all the data files from the
-`parquet-compatability <https://github.com/Parquet/parquet-compatibility>`_
-project.
+We offer a high degree of support for the features of the parquet format, and
+very competitive performance, in a small install size and codebase.
 
-Introduction
-------------
-
-Details of this project can be found in the documentation_.
+Details of this project, how to use it and comparisons to other work can be found in the documentation_.
 
 .. _documentation: https://fastparquet.readthedocs.io
-
-The original plan listing expected features can be found in
-`this issue`_.
-Please feel free to comment on that list as to missing items and priorities,
-or raise new issues with bugs or requests.
-
-.. _this issue: https://github.com/dask/fastparquet/issues/1
-
-
 
 Requirements
 ------------
 
-(all development is against recent versions in the default anaconda channels)
+(all development is against recent versions in the default anaconda channels
+and/or conda-forge)
 
 Required:
 
-- numba
 - numpy
 - pandas
-- cython
-
-.. _LLVM 4.0.x: https://github.com/llvm-mirror/llvm 
+- cython (if building from pyx files)
+- cramjam
+- fsspec
 
 Supported compression algorithms:
 
@@ -62,22 +51,28 @@ Supported compression algorithms:
 Installation
 ------------
 
-Install using conda::
+Install using conda, to get the latest compiled version::
 
    conda install -c conda-forge fastparquet
 
-install from pypi::
+or install from PyPI::
 
    pip install fastparquet
 
-or install latest version from github::
+You may wish to install numpy first, to help pip's resolver.
+This may install an appropriate wheel, or compile from source. For the latter,
+you will need a suitable C compiler toolchain on your system.
+
+You can also install latest version from github::
 
    pip install git+https://github.com/dask/fastparquet
 
-For the pip methods, numba must have been previously installed (using conda).
+in which case you should also have ``cython`` to be able to rebuild the C files.
 
 Usage
 -----
+
+Please refer to the documentation_.
 
 *Reading*
 
@@ -110,9 +105,8 @@ similar to *numpy.savez*.
 History
 -------
 
-Since early October 2016, this fork of `parquet-python`_ has been
-undergoing considerable redevelopment. The aim is to have a small and simple
-and performant library for reading and writing the parquet format from python.
+This project forked in October 2016 from `parquet-python`_, which was not designed
+for vectorised loading of big data or parallel access.
 
 .. _parquet-python: https://github.com/jcrobak/parquet-python
 

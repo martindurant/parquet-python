@@ -16,11 +16,12 @@ jobs:
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: windows-2019
-            architecture: 'x64'
             skip: "*2*win* *win32 pp*"
           - os: ubuntu-20.04
-            architecture: 'x64'
             linux_archs: aarch64
+            skip: "pp*"
+          - os: ubuntu-20.04
+            linux_archs: auto
             skip: "pp*"
 
     name: Python ${{ matrix.os }}
@@ -38,7 +39,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.8"
-          architecture: ${{ matrix.architecture }}
 
       - name: Set up QEMU
         if: runner.os == 'Linux'

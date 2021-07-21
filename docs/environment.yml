@@ -1,9 +1,9 @@
 name: fastparquet
 dependencies:
-    - numba
     - pandas
     - numpy
     - thrift
     - numpydoc
-    - python=3
+    - python=3.8
     - cython
+    - conda-forge::cramjam
