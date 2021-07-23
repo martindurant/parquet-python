@@ -581,13 +581,14 @@ def test_auto_null_object(tempdir, pnull):
 
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
                           check_dtype=False)
-    tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
     if pnull:
         tm.assert_frame_equal(df[['aa']].astype('Int64'), df2[['aa']])
+        tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
     else:
         tm.assert_frame_equal(df[['aa']].astype('float'), df2[['aa']])
+        tm.assert_frame_equal(df[['ff']].astype("float"), df2[['ff']])
 
     # not giving any value same as has_nulls=True
     write(fn, df)

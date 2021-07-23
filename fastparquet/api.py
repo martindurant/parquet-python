@@ -628,7 +628,7 @@ class ParquetFile(object):
                             num_nulls = True
                             break
                     if num_nulls:
-                        if self.pandas_nulls or dt.kind == 'b':
+                        if self.pandas_nulls:
                             dtype[col] = converted_types.nullable[dt]
                         else:
                             dtype[col] = np.float_()
