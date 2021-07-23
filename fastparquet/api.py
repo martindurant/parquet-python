@@ -48,6 +48,12 @@ class ParquetFile(object):
         value. Use this to specify the dataset root directory, if required.
     fs: fsspec-compatible filesystem
         You can use this instead of open_with (otherwise, it will be inferred)
+    pandas_nulls: bool (True)
+        If True, columns that are int or bool in parquet, but have nulls, will become
+        pandas nullale types (Uint, Int, boolean). If False (the only behaviour
+        prior to v0.7.0), both kinds will be cast to float, and nulls will be NaN.
+        Pandas nullable types were introduces in v1.0.0, but were still marked as
+        experimental in v1.3.0.
 
     Attributes
     ----------

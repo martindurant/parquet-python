@@ -6,6 +6,15 @@ planned in 2021. As of 0.7.0, only one larger item remains to be completed.
 
 .. _Future Plans: https://github.com/dask/fastparquet/issues/586
 
+Dev
+---
+
+#. Make pandas nullable types opt-out. The old behaviour (casting to float)
+   is still available with ``ParquetFile(..., pandas_nulls=False)``.
+#. Micro improvements to the speed of ParquetFile creation by using simple
+   simple string ops instead of regex and regularising filenames once at
+   the start. Effects datasets with many files.
+
 .. _0.7.0:
 
 0.7.0
@@ -42,7 +51,8 @@ fixes and additions.
    and "logical" type information. Note that all output has ``isAdjustedToUTC=True``,
    i.e., these are timestamps rather than local time. The time-zone is stored in the
    metadata, as before, and will be successfully recreated only in fastparquet and (py)arrow.
-   Otherwise, the times will appear to be UTC.
+   Otherwise, the times will appear to be UTC. For compatibility with Spark, you may
+   still want to use ``times="int96"`` when writing.
 #. DataPageV2 writing:   now we support both reading and writing. For writing,
    can be enabled with the environment variable FASTPARQUET_DATAPAGE_V2, or module
    global ``fastparquet.writer.DATAPAGE_VERSION`` and is off by default. It will become
@@ -53,7 +63,7 @@ fixes and additions.
    our test suite) and should be readable by all modern parquet frameworks including
    arrow and spark.
 #. pandas nullable types: pandas supports "masked" extension arrays for types that previously
-   could not support NULL at all: ints and bools. Fatsparquet used to cast such columns
+   could not support NULL at all: ints and bools. Fastparquet used to cast such columns
    to float, so that we could represent NULLs as NaN; now we use the new(er) masked types
    by default. This means faster reading of such columns, as there is no conversion. If the
    metadata guarantees that there are no nulls, we still use the non-nullable variant *unless*
