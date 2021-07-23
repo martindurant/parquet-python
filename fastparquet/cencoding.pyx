@@ -13,6 +13,7 @@
 # cython: always_allow_keywords=False
 
 import cython
+from pickle import PickleBuffer
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
 from cpython cimport (
@@ -524,11 +525,13 @@ cpdef void write_thrift(dict data, NumpyIO output):
     cdef int i, l, prev = 0
     cdef int delt = 0
     cdef double d
+    cdef bytes b
     cdef char * c
-    for i, val in data.items():
-        if not isinstance(i, int):
+    for j, val in data.items():
+        if not isinstance(j, int):
             # for dynamic entries
             continue
+        i = j
         delt = i - prev
         prev = i
         if isinstance(val, int):
@@ -546,6 +549,14 @@ cpdef void write_thrift(dict data, NumpyIO output):
             c = val
             memcpy(<void*>output.get_pointer(), <void*>c, l)
             output.loc += l
+        elif isinstance(val, str):
+            output.write_byte((delt << 4) | 8)
+            b = val.encode()
+            l = PyBytes_GET_SIZE(b)
+            encode_unsigned_varint(l, output)
+            c = b
+            memcpy(<void*>output.get_pointer(), <void*>c, l)
+            output.loc += l
         elif isinstance(val, list):
             output.write_byte((delt << 4) | 9)
             write_list(val, output)
@@ -560,6 +571,7 @@ cdef void write_list(list data, NumpyIO output):
     cdef int i
     cdef dict d
     cdef bytes b
+    cdef str s
     cdef char * c
     if l:
         if isinstance(data[0], int):
@@ -582,7 +594,19 @@ cdef void write_list(list data, NumpyIO output):
                 c = b
                 memcpy(<void*>output.get_pointer(), <void*>c, i)
                 output.loc += i
-        # TODO: isinstance(data[0], str):
+        elif isinstance(data[0], str):
+            if l > 14:
+                output.write_byte(8 | 0b11110000)
+                encode_unsigned_varint(l, output)
+            else:
+                output.write_byte(8 | (l << 4))
+            for s in data:
+                b = s.encode("utf8", "ignore")
+                i = PyBytes_GET_SIZE(b)
+                encode_unsigned_varint(i, output)
+                c = b
+                memcpy(<void*>output.get_pointer(), <void*>c, i)
+                output.loc += i
         else: # STRUCT
             if l > 14:
                 output.write_byte(12 | 0b11110000)
@@ -599,6 +623,18 @@ cdef void write_list(list data, NumpyIO output):
 
 import numpy as np
 cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
+
+
+def from_buffer(buffer, name=None):
+    cdef NumpyIO buf
+    if isinstance(buffer, NumpyIO):
+        buf = buffer
+    else:
+        buf = NumpyIO(buffer)
+    cdef dict o = read_thrift(buf)
+    if name is not None:
+        return ThriftObject(name, o)
+    return o
 
 
 @cython.freelist(1000)
@@ -657,24 +693,13 @@ cdef class ThriftObject:
         del self.data[i]
 
     def __reduce_ex__(self, _):
-        # TODO: protocol 5 support (since the main product is a buffer)
-        sub = (self.name, {k: v for k, v in self.items() if isinstance(k, int)})
-        o = NumpyIO(ser_buf)
+        # TODO: how to guess the size here?
+        cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
+        cdef NumpyIO o = NumpyIO(ser_buf)
         write_thrift(self.data, o)
-        return ThriftObject.from_buffer, (bytes(o.so_far()), self.name)
+        return from_buffer, (bytes(o.so_far()), self.name)
 
-    @staticmethod
-    def from_buffer(buffer, name=None):
-        # could be a static method in the class below
-        cdef NumpyIO buf
-        if isinstance(buffer, NumpyIO):
-            buf = buffer
-        else:
-            buf = NumpyIO(buffer)
-        cdef dict o = read_thrift(buf)
-        if name is not None:
-            return ThriftObject(name, o)
-        return o
+    from_buffer = from_buffer
 
     def copy(self):
         return type(self)(self.name, self.data.copy())
