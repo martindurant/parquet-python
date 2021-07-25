@@ -1,4 +1,4 @@
-name: Test PyPi wheels
+name: Test wheels
 
 on: [push, pull_request]
 
@@ -13,7 +13,7 @@ jobs:
         os: [ubuntu-20.04, windows-2019]
         architecture: ['x64']
         linux_archs: ["native"]
-        numpy_version: ["numpy#latest", "numpy~=1.18.0", "numpy~=1.19.0", "numpy~=1.20.0", "numpy~=1.21.0"]
+        numpy_version: ["numpy~=1.18.0", "numpy~=1.19.0", "numpy~=1.20.0", "numpy~=1.21.0", "numpy#latest"]
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: windows-2019
@@ -63,12 +63,11 @@ jobs:
         run: |
           pip install ./wheelhouse/*.whl
 
-
       - name: Run Tests after installing numpy (${{matrix.numpy_version}})
         shell: bash -l {0}
         run: |
           pip install pytest pytest-cov
-          mv fastparquet fastparquet-src           #in order to avoid conflicts between the fastparquet directory and the fastparquet installed module
+          mv ./fastparquet ./fastparquet-src           #in order to avoid conflicts between the fastparquet directory and the fastparquet installed module
           pip install ${{matrix.numpy_version}}    #installing a different numpy version than the one fastparquet wheel was compiled with
           pytest --verbose --cov=fastparquet-src   #verifying that Fastparquet still works
 
