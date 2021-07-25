@@ -13,7 +13,7 @@ except ImportError:
     from pandas import Timestamp
 import pytest
 
-from fastparquet.test.util import tempdir
+from .util import tempdir
 import fastparquet
 from fastparquet import write, ParquetFile
 from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, filter_not_in

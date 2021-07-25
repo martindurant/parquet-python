@@ -3,7 +3,7 @@ import os
 import pickle
 
 from fastparquet import ParquetFile
-from fastparquet.test.util import TEST_DATA
+from .util import TEST_DATA
 from fastparquet.schema import schema_tree
 
 fn = os.path.join(TEST_DATA, "nation.impala.parquet")

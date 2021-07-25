@@ -12,7 +12,7 @@ from pandas.api.types import CategoricalDtype
 import pytest
 
 from fastparquet.util import default_mkdirs
-from fastparquet.test.util import s3, tempdir, sql, TEST_DATA
+from .util import s3, tempdir, sql, TEST_DATA
 from fastparquet import cencoding
 
 

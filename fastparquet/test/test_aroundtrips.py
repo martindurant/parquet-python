@@ -8,7 +8,7 @@ import pytest
 import fastparquet
 from fastparquet import write
 from fastparquet.compression import compressions
-from fastparquet.test.util import sql, s3, tempdir, TEST_DATA
+from .util import sql, s3, tempdir, TEST_DATA
 
 
 def test_map_array(sql):

@@ -6,7 +6,7 @@
 import pandas as pd
 import pytest
 from fastparquet import write, ParquetFile
-from fastparquet.test.util import tempdir
+from .util import tempdir
 
 
 def test_write_with_rgp_by_date_as_index(tempdir):
