@@ -53,7 +53,7 @@ jobs:
       - name: delvewheel install
         if: runner.os == 'Windows'
         run: |
-          python -m pip install delvewheel==0.0.9 cython numpy
+          python -m pip install delvewheel==0.0.9 cython
 
       - name: Build wheels
         uses: joerick/cibuildwheel@v1.9.0
