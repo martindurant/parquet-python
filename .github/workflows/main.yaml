@@ -130,12 +130,15 @@ jobs:
           pip install -e . --no-deps # Install fastparquet
           git clone https://github.com/pandas-dev/pandas
           cd pandas
+          python setup.py build_ext -j 4
           pip install -e . --no-build-isolation --no-use-pep517
 
       - name: Run Tests
         shell: bash -l {0}
         run: |
-          pytest --verbose pandas/pandas/tests/io/test_parquet.py pandas/pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py
+          pytest --verbose pandas/pandas/tests/io/test_parquet.py
+          # Test parquet with different filesystems
+          pytest --verbose pandas/pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py -k "parquet" 
 
   win:
     name: win
