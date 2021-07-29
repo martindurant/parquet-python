@@ -95,9 +95,16 @@ class ParquetFile(object):
     def __init__(self, fn, verify=False, open_with=default_open,
                  root=False, sep=None, fs=None, pandas_nulls=True):
         self.pandas_nulls = pandas_nulls
+        if open_with is default_open and fs is None:
+            fs = fsspec.filesystem("file")
+        elif fs is not None:
+            open_with = fs.open
+        else:
+            fs = getattr(open_with, "__self__", None)
         if isinstance(fn, (tuple, list)):
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
-                                               open_with=open_with, root=root)
+                                               open_with=open_with, root=root,
+                                               fs=fs)
             if basepath:
                 self.fn = join_path(basepath, '_metadata')  # effective file
             else:
@@ -113,16 +120,11 @@ class ParquetFile(object):
                                  'with multi-file data')
             open_with = lambda *args, **kwargs: fn
         else:
-            if open_with is default_open and fs is None:
-                fs = fsspec.filesystem("file")
+            if fs is not None:
                 fn = fs._strip_protocol(fn)
-            elif fs is not None:
-                open_with = fs.open
-            else:
-                fs = getattr(open_with, "__self__", None)
-                if not isinstance(fs, fsspec.AbstractFileSystem):
-                    raise ValueError("Opening directories without a _metadata requires"
-                                     "a filesystem compatible with fsspec")
+            if not isinstance(fs, fsspec.AbstractFileSystem):
+                raise ValueError("Opening directories without a _metadata requires"
+                                 "a filesystem compatible with fsspec")
             if fs.isfile(fn):
                 self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:
@@ -163,6 +165,7 @@ class ParquetFile(object):
         if self.fn and self.fn.endswith("_metadata"):
             #  no point attempting to read footer only for pure metadata
             data = f.read()[4:-8]
+            self._head_size = len(data)
         else:
             try:
                 f.seek(0)

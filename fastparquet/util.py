@@ -149,16 +149,20 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             # activate new code path here
             f0 = file_list[0]
             pf0 = api.ParquetFile(f0, open_with=open_with)
-            # permits concurrent fetch of footers; needs fsspec >= 2021.6
-            size = int(1.4 * pf0._head_size)
-            pieces = fs.cat(file_list[1:], start=-size)
-            sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
-                     path, piece in pieces.items()}
-            not_bigenough = [path for path, s in sizes.items() if s > size]
-            if not_bigenough:
-                new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
-                pieces.update(new_pieces)
-            legacy = False
+            if pf0.file_scheme not in ['empty', 'simple']:
+                # set of directories, revert
+                pfs = [pf0] + [api.ParquetFile(fn, open_with=open_with) for fn in file_list[1:]]
+            else:
+                # permits concurrent fetch of footers; needs fsspec >= 2021.6
+                size = int(1.4 * pf0._head_size)
+                pieces = fs.cat(file_list[1:], start=-size)
+                sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
+                         path, piece in pieces.items()}
+                not_bigenough = [path for path, s in sizes.items() if s > size]
+                if not_bigenough:
+                    new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
+                    pieces.update(new_pieces)
+                legacy = False
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
     basepath, file_list = analyse_paths(file_list, root=root)
