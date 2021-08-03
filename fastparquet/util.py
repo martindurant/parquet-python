@@ -162,7 +162,8 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                 if not_bigenough:
                     new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
                     pieces.update(new_pieces)
-                pieces = {fn: pieces[fn] for fn in file_list[1:]}  # recover ordering
+                pieces = {k: _get_fmd(v) for k, v in pieces.items()}
+                pieces = [(fn, pieces[fn]) for fn in file_list[1:]]  # recover ordering
                 legacy = False
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
@@ -202,9 +203,9 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
         # chunks of first file, which would have file_path=None
         rg.columns[0].file_path = f0[len(basepath):].lstrip("/")
 
-    for k, v in pieces.items():
+    for k, v in pieces:
         # Set file paths on other files
-        rgs = _get_fmd(v).row_groups or []
+        rgs = v.row_groups or []
         for rg in rgs:
             rg.columns[0].file_path = k[len(basepath):].lstrip("/")
         pf0.fmd.row_groups.extend(rgs)
