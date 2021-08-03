@@ -6,11 +6,14 @@ planned in 2021. As of 0.7.0, only one larger item remains to be completed.
 
 .. _Future Plans: https://github.com/dask/fastparquet/issues/586
 
-Dev
----
+0.7.1
+-----
 
+#. Back compile for older versions of numpy
 #. Make pandas nullable types opt-out. The old behaviour (casting to float)
    is still available with ``ParquetFile(..., pandas_nulls=False)``.
+#. Fix time field regression: IsAdjustedToUTC will be False when there is no
+   timezone
 #. Micro improvements to the speed of ParquetFile creation by using simple
    simple string ops instead of regex and regularising filenames once at
    the start. Effects datasets with many files.
