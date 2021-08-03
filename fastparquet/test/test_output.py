@@ -984,3 +984,16 @@ def test_cat_order(tempdir):
     out = ParquetFile(fn).to_pandas()
     assert out.cat.cat.ordered
     assert out.cat.cat.categories.tolist() == catdtype.categories.tolist()
+
+
+@pytest.mark.parametrize("tz", [True, False])
+def test_tz_local(tempdir, tz):
+    # #650
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame({'a': [pd.to_datetime("now")]})
+    if tz:
+        df['a'] = df.a.dt.tz_localize("UTC")
+    write(fn, df)
+
+    pf = ParquetFile(fn)
+    assert pf.schema.schema_element(['a']).logicalType.TIMESTAMP.isAdjustedToUTC is tz
