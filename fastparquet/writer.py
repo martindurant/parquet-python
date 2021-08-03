@@ -153,12 +153,13 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     elif dtype.kind == "M":
         if times == 'int64':
             # output will have the same resolution as original data, for resolution <= ms
+            tz = getattr(dtype, "tz", None) is not None
             if "ns" in dtype.str:
                 type = parquet_thrift.Type.INT64
                 converted_type = None
                 logical_type = parquet_thrift.LogicalType(
                     TIMESTAMP=parquet_thrift.TimestampType(
-                        isAdjustedToUTC=True,
+                        isAdjustedToUTC=tz,
                         unit=parquet_thrift.TimeUnit(NANOS=parquet_thrift.NanoSeconds())
                     )
                 )
@@ -170,7 +171,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
                 )
                 logical_type = parquet_thrift.LogicalType(
                     TIMESTAMP=parquet_thrift.TimestampType(
-                        isAdjustedToUTC=True,
+                        isAdjustedToUTC=tz,
                         unit=parquet_thrift.TimeUnit(MICROS=parquet_thrift.MicroSeconds())
                     )
                 )
@@ -182,7 +183,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
                 )
                 logical_type = parquet_thrift.LogicalType(
                     TIMESTAMP=parquet_thrift.TimestampType(
-                        isAdjustedToUTC=True,
+                        isAdjustedToUTC=tz,
                         unit=parquet_thrift.TimeUnit(MILLIS=parquet_thrift.MilliSeconds())
                     )
                 )
