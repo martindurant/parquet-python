@@ -13,12 +13,11 @@
 # cython: always_allow_keywords=False
 
 import cython
-from pickle import PickleBuffer
+import numpy as np
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n)
 from cpython cimport (
     PyBytes_FromStringAndSize, PyBytes_GET_SIZE, PyUnicode_DecodeUTF8,
-    PyDict_GetItem, PyDict_SetItem, PyDict_DelItem
 )
 from libc.stdint cimport uint8_t, uint32_t, int32_t, uint64_t, int64_t
 
@@ -619,10 +618,6 @@ cdef void write_list(list data, NumpyIO output):
         # Not sure if zero-length list is allowed
         output.write_byte(8 << 4)
         encode_unsigned_varint(0, output)
-
-
-import numpy as np
-cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
 
 
 def from_buffer(buffer, name=None):
