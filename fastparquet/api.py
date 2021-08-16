@@ -564,11 +564,11 @@ class ParquetFile(object):
             metadata = self.pandas_metadata
             cats = {}
             for m in metadata['columns']:
-                if m['pandas_type'] != 'categorical':
-                    continue
                 out = False
                 if "fastparquet" in self.created_by:
                     # if pandas was categorical, we will have used dict encoding
+                    if m['pandas_type'] != 'categorical':
+                        continue
                     cats[m['name']] = m['metadata']['num_categories']
                     continue
                 for rg in self.row_groups:
@@ -587,7 +587,7 @@ class ParquetFile(object):
                                 out = True
                                 break
                 if out is False:
-                    cats[m['name']] = m['metadata']['num_categories']
+                    cats[m['name']] = (m.get('metadata') or {}).get('num_categories', 2**31 - 1)
             self._categories = cats
             return cats
         # old track
