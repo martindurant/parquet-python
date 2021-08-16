@@ -162,7 +162,7 @@ class ParquetFile(object):
                 if verify:
                     assert f.read(4) == b'PAR1'
                 f.seek(-8, 2)
-                head_size = struct.unpack('<i', f.read(4))[0]
+                head_size = struct.unpack('<I', f.read(4))[0]
                 if verify:
                     assert f.read() == b'PAR1'
                 self._head_size = head_size
@@ -177,7 +177,10 @@ class ParquetFile(object):
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
         for rg in fmd[4]:
-            rg[1][0][1] = rg[1][0][1].decode()
+            chunk = rg[1][0]
+            s = chunk.get(1)
+            if s:
+                chunk[1] = s.decode()
         self._set_attrs()
 
     def _set_attrs(self):
@@ -219,7 +222,7 @@ class ParquetFile(object):
         return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
 
     def _read_partitions(self):
-        paths = [rg[1][0][1] or "" for rg in self.row_groups if rg[1]]
+        paths = [rg[1][0].get(1, "") for rg in self.row_groups if rg[1]]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def head(self, nrows, **kwargs):
@@ -623,7 +626,7 @@ class ParquetFile(object):
                     for rg in self.row_groups:
                         if rg[3] == 0:
                             continue
-                        st = rg[1][i][3][12]
+                        st = rg[1][i][3].get(12)
                         if st is None:
                             num_nulls = True
                             break

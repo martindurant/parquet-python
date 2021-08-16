@@ -530,6 +530,9 @@ cpdef void write_thrift(dict data, NumpyIO output):
         if not isinstance(j, int):
             # for dynamic entries
             continue
+        if val is None:
+            # not defined - skip (None is default on load)
+            continue
         i = j
         delt = i - prev
         prev = i
@@ -569,11 +572,13 @@ cdef void write_list(list data, NumpyIO output):
     cdef int l = len(data)
     cdef int i
     cdef dict d
+    cdef ThriftObject dd
     cdef bytes b
     cdef str s
     cdef char * c
     if l:
-        if isinstance(data[0], int):
+        first = data[0]
+        if isinstance(first, int):
             if l > 14:
                 output.write_byte(5 | 0b11110000)
                 encode_unsigned_varint(l, output)
@@ -581,7 +586,7 @@ cdef void write_list(list data, NumpyIO output):
                 output.write_byte(5 | (l << 4))
             for i in data:
                 encode_unsigned_varint(long_zigzag(i), output)
-        elif isinstance(data[0], bytes):
+        elif isinstance(first, bytes):
             if l > 14:
                 output.write_byte(8 | 0b11110000)
                 encode_unsigned_varint(l, output)
@@ -593,7 +598,7 @@ cdef void write_list(list data, NumpyIO output):
                 c = b
                 memcpy(<void*>output.get_pointer(), <void*>c, i)
                 output.loc += i
-        elif isinstance(data[0], str):
+        elif isinstance(first, str):
             if l > 14:
                 output.write_byte(8 | 0b11110000)
                 encode_unsigned_varint(l, output)
@@ -616,7 +621,6 @@ cdef void write_list(list data, NumpyIO output):
                 write_thrift(d, output)
     else:
         # Not sure if zero-length list is allowed
-        output.write_byte(8 << 4)
         encode_unsigned_varint(0, output)
 
 
@@ -649,7 +653,7 @@ cdef class ThriftObject:
 
     def _internal(self):
         # useful for debugging
-        return (self.name, self.spec, self.children, self.data)
+        return self.name, self.data
 
     def __getattr__(self, str item):
         cdef str ch
@@ -658,8 +662,8 @@ cdef class ThriftObject:
             ch = self.children.get(item)
             if ch is not None and out is not None:
                 if isinstance(out, list):
-                    return [ThriftObject(ch, o) for o in out]
-                return ThriftObject(ch, out)
+                    return [ThriftObject(ch, o) if isinstance(o, dict) else o for o in out]
+                return ThriftObject(ch, out) if isinstance(out, dict) else out
             return out
         else:
             try:
@@ -671,32 +675,47 @@ cdef class ThriftObject:
         self.data[key] = value
 
     def __getitem__(self, item):
-        return self.data[item]
+        return self.data.get(item)
 
     def __delitem__(self, key):
-        del self.data[key]
+        self.data.pop(key)
 
     def get(self, key, default):
         return self.data.get(key, default)
 
     def __setattr__(self, str item, value):
         i = self.spec.get(item, item)
-        self.data[i] = value
+        if i not in self.data:
+            print(self.name, item, value)
+        if isinstance(value, ThriftObject):
+            self.data[i] = value.data
+        elif isinstance(value, list):
+            self.data[i] = [(<ThriftObject>v).data for v in value]
+        else:
+            self.data[i] = value
+        self.check()
 
     def __delattr__(self, item):
         i = self.spec.get(item, item)
         del self.data[i]
 
-    def __reduce_ex__(self, _):
-        # TODO: how to guess the size here?
+    cpdef bytes to_bytes(self):
+        """raw serialise of internal state"""
+        # TODO: guess size for row-group (by ncols) and file-meta-data (ncols * nrow-groups)
+        #  constant for all others
+        # TODO: better output as memoryview?
         cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
         cdef NumpyIO o = NumpyIO(ser_buf)
         write_thrift(self.data, o)
-        return from_buffer, (bytes(o.so_far()), self.name)
+        return bytes(o.so_far())
+
+    def __reduce_ex__(self, _):
+        return from_buffer, (self.to_bytes(), self.name)
 
     from_buffer = from_buffer
 
     def copy(self):
+        """shallow copy"""
         return type(self)(self.name, self.data.copy())
 
     def __copy__(self):
@@ -707,6 +726,7 @@ cdef class ThriftObject:
         return pickle.loads(pickle.dumps(self))
 
     cpdef _asdict(self):
+        """Create dict version with field names instead of integers"""
         cdef str k
         cdef out = {}
         for k in self.spec:
@@ -728,7 +748,8 @@ cdef class ThriftObject:
         return out
 
     def __dir__(self):
-        return list(self.spec)
+        """Lists attributed"""
+        return list(self.spec) + ["get", "copy", "_as_dict", "_internal", "to_bytes"]
 
     def __repr__(self):
         alt = self._asdict()
@@ -737,6 +758,42 @@ cdef class ThriftObject:
             return yaml.dump(alt)
         except ImportError:
             return str(alt)
+
+    def __eq__(self, other):
+        if isinstance(other, ThriftObject):
+            return self.data == (<ThriftObject>other).data
+        if isinstance(other, dict):
+            return self.data == other
+        return False
+
+    def check(self):
+        return
+        if from_buffer(self.to_bytes(), self.name) != self:
+            print("Fail", self.name)
+            import pdb
+            pdb.set_trace()
+
+    @staticmethod
+    def from_fields(thrift_name, **kwargs):
+        cdef spec = specs[thrift_name]
+        cdef int i
+        cdef str k
+        cdef dict out = {}
+        for k, i in spec.items():  # ensure field index increases monotonically
+            if k in kwargs:
+                # missing fields are implicitly None
+                v = kwargs[k]
+                if v is None:
+                    continue
+                if isinstance(v, ThriftObject):
+                    out[i] = (<ThriftObject>v).data
+                elif isinstance(v, list) and v and isinstance(v[0], ThriftObject):
+                    out[i] = [(<ThriftObject>it).data for it in v]
+                else:
+                    out[i] = v
+        outt = ThriftObject(thrift_name, out)
+        outt.check()
+        return outt
 
 
 cdef dict specs = {
