@@ -640,7 +640,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         kvm.append(
             parquet_thrift.KeyValue(key='numpy_dtype', value=str(data.dtype)))
     chunk = parquet_thrift.ColumnChunk(file_offset=offset,
-                                       meta_data=cmd)
+                                       meta_data=cmd,
+                                       file_path=None)
     return chunk
 
 
@@ -653,7 +654,7 @@ def make_row_group(f, data, schema, compression=None):
         raise ValueError('Column names must be str or bytes:',
                          {c: type(c) for c in data.columns
                           if not isinstance(c, (bytes, str))})
-    rg = ThriftObject.from_fields("RowGroup", num_rows=rows, total_byte_size=0, columns=[])
+    rg = ThriftObject.from_fields("RowGroup", num_rows=rows, total_byte_size=0, columns=None)
 
     cols = []
     for column in schema:
@@ -731,9 +732,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                        'pandas_version': pd.__version__}
     root = parquet_thrift.SchemaElement(name=b'schema',
                                         num_children=0)
-    meta = parquet_thrift.KeyValue(key=b"pandas")
+    meta = parquet_thrift.KeyValue(key=b"pandas", value=None)
     fmd = ThriftObject.from_fields("FileMetaData", num_rows=len(data),
-                                   schema=[root],
+                                   schema=None,
                                    version=1,
                                    created_by=created_by.encode(),
                                    row_groups=[],
@@ -768,7 +769,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         schema.append(se)
         root.num_children += 1
     fmd.schema = schema
-    meta[2] = json.dumps(pandas_metadata, sort_keys=True).encode()  # .value =
+    meta.value = json.dumps(pandas_metadata, sort_keys=True).encode()  # .value =
     return fmd
 
 
@@ -807,8 +808,6 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
 
         fmd.row_groups = rgs
         foot_size = f.write(fmd.to_bytes())
-        import pdb
-        pdb.set_trace()
         f.write(struct.pack(b"<I", foot_size))
         f.write(MARKER)
 
@@ -1140,7 +1139,7 @@ def write_common_metadata(fn, fmd, open_with=default_open,
 
 def consolidate_categories(fmd):
     key_value = [k for k in fmd.key_value_metadata
-                 if k.key == 'pandas'][0]
+                 if k.key == b'pandas'][0]
     meta = json.loads(key_value.value)
     cats = [c for c in meta['columns']
             if 'num_categories' in (c['metadata'] or [])]

@@ -206,7 +206,7 @@ class ParquetFile(object):
     @property
     def columns(self):
         """ Column names """
-        return [c for c, i in self._schema[0].children.items()
+        return [c for c, i in self._schema[0]["children"].items()
                 if len(getattr(i, 'children', [])) == 0
                 or i.converted_type in [parquet_thrift.ConvertedType.LIST,
                                         parquet_thrift.ConvertedType.MAP]]
@@ -611,7 +611,7 @@ class ParquetFile(object):
 
             dtype = OrderedDict((name, (converted_types.typemap(f, md=md)
                                 if f.num_children in [None, 0] else np.dtype("O")))
-                                for name, f in self.schema.root.children.items()
+                                for name, f in self.schema.root["children"].items()
                                 if getattr(f, 'isflat', False) is False)
             for i, (col, dt) in enumerate(dtype.copy().items()):
                 # int and bool columns produce masked pandas types, no need to
@@ -790,8 +790,8 @@ def filter_out_stats(rg, filters, schema):
                             b, column.meta_data.type, 1, stat=True)
                         if se.converted_type is not None or se.logicalType is not None:
                             vmax = converted_types.convert(vmax, se)
-                        s.converted_max = vmax
-                    vmax = s.converted_max
+                        s["converted_max"] = vmax
+                    vmax = s["converted_max"]
                 min = s.min or s.min_value
                 if min is not None:
                     if not hasattr(s, "converted_min"):
@@ -800,8 +800,8 @@ def filter_out_stats(rg, filters, schema):
                             b, column.meta_data.type, 1, stat=True)
                         if se.converted_type is not None or se.logicalType is not None:
                             vmin = converted_types.convert(vmin, se)
-                        s.converted_min = vmin
-                    vmin = s.converted_min
+                        s["converted_min"] = vmin
+                    vmin = s["converted_min"]
                 if filter_val(op, val, vmin, vmax):
                     return True
     return False
@@ -828,7 +828,7 @@ def statistics(obj):
      'distinct_count': {'x': [None, None], 'y': [None, None]},
      'null_count': {'x': [0, 3], 'y': [0, 0]}}
     """
-    if isinstance(obj, parquet_thrift.ColumnChunk):
+    if isinstance(obj, ThriftObject) and obj.thrift_name == "ColumnChunk":
         md = obj.meta_data
         s = obj.meta_data.statistics
         rv = {}
@@ -858,7 +858,7 @@ def statistics(obj):
             rv['distinct_count'] = s.distinct_count
         return rv
 
-    if isinstance(obj, parquet_thrift.RowGroup):
+    if isinstance(obj, ThriftObject) and obj.thrift_name == "RowGroup":
         return {'.'.join(c.meta_data.path_in_schema): statistics(c)
                 for c in obj.columns}
 

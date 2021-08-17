@@ -636,6 +636,10 @@ def from_buffer(buffer, name=None):
     return o
 
 
+cdef int dict_item_key(tuple x):
+    return x[0] if isinstance(x, int) else 20
+
+
 @cython.freelist(1000)
 @cython.final
 cdef class ThriftObject:
@@ -650,10 +654,6 @@ cdef class ThriftObject:
         self.spec = specs[name]
         self.children = children.get(name, {})
         self.data = indict
-
-    def _internal(self):
-        # useful for debugging
-        return self.name, self.data
 
     def __getattr__(self, str item):
         cdef str ch
@@ -672,6 +672,7 @@ cdef class ThriftObject:
                 raise AttributeError
 
     def __setitem__(self, key, value):
+        # TODO: reorder dict here? caveat emptor.
         self.data[key] = value
 
     def __getitem__(self, item):
@@ -680,20 +681,23 @@ cdef class ThriftObject:
     def __delitem__(self, key):
         self.data.pop(key)
 
-    def get(self, key, default):
+    def get(self, key, default=None):
         return self.data.get(key, default)
 
     def __setattr__(self, str item, value):
         i = self.spec.get(item, item)
+        cdef bint reorder = 0
+        cdef int j
         if i not in self.data:
-            print(self.name, item, value)
+            reorder = 1
         if isinstance(value, ThriftObject):
             self.data[i] = value.data
         elif isinstance(value, list):
             self.data[i] = [(<ThriftObject>v).data for v in value]
         else:
             self.data[i] = value
-        self.check()
+        if reorder:
+            self.data = {j: self.data[j] for j in range(15) if j in self.data}
 
     def __delattr__(self, item):
         i = self.spec.get(item, item)
@@ -711,6 +715,14 @@ cdef class ThriftObject:
 
     def __reduce_ex__(self, _):
         return from_buffer, (self.to_bytes(), self.name)
+
+    @property
+    def thrift_name(self):
+        return self.name
+
+    @property
+    def contents(self):
+        return self.data
 
     from_buffer = from_buffer
 
@@ -749,7 +761,7 @@ cdef class ThriftObject:
 
     def __dir__(self):
         """Lists attributed"""
-        return list(self.spec) + ["get", "copy", "_as_dict", "_internal", "to_bytes"]
+        return list(self.spec)
 
     def __repr__(self):
         alt = self._asdict()
@@ -766,13 +778,6 @@ cdef class ThriftObject:
             return self.data == other
         return False
 
-    def check(self):
-        return
-        if from_buffer(self.to_bytes(), self.name) != self:
-            print("Fail", self.name)
-            import pdb
-            pdb.set_trace()
-
     @staticmethod
     def from_fields(thrift_name, **kwargs):
         cdef spec = specs[thrift_name]
@@ -783,17 +788,13 @@ cdef class ThriftObject:
             if k in kwargs:
                 # missing fields are implicitly None
                 v = kwargs[k]
-                if v is None:
-                    continue
                 if isinstance(v, ThriftObject):
                     out[i] = (<ThriftObject>v).data
                 elif isinstance(v, list) and v and isinstance(v[0], ThriftObject):
                     out[i] = [(<ThriftObject>it).data for it in v]
                 else:
                     out[i] = v
-        outt = ThriftObject(thrift_name, out)
-        outt.check()
-        return outt
+        return ThriftObject(thrift_name, out)
 
 
 cdef dict specs = {

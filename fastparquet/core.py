@@ -269,6 +269,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
              and data_header2.num_nulls == 0
              and max_rep == 0 and assign.dtype.kind != "O")
     # can decompress-into
+    if data_header2.is_compressed is None:
+        data_header2.is_compressed = True
     into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
             and into0)
     if nullable:
@@ -280,7 +282,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             not data_header2.is_compressed or cmd.codec == parquet_thrift.CompressionCodec.UNCOMPRESSED
     ):
         # PLAIN read directly into output (a copy for remote files)
-        infile.readinto(assign[num:num+n_values].view('uint8'))
+        assign[num:num+n_values].view('uint8')[:] = infile.read(size)
         convert(assign[num:num+n_values], se)
     elif into and data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN decompress directly into output
@@ -311,10 +313,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     ]) or (data_header2.encoding == parquet_thrift.Encoding.RLE):
         # DICTIONARY or BOOL direct decode RLE into output (no nulls)
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        raw_bytes = np.empty(size, dtype='uint8')
-        # TODO: small improvement possible by file.readinto and decompress_into if we
-        #  don't first read raw_bytes but seek in the open file
-        infile.readinto(raw_bytes)
+        raw_bytes = np.frombuffer(infile.read(size), dtype='uint8')
         raw_bytes = decompress_data(raw_bytes, uncompressed_page_size, codec)
         pagefile = encoding.NumpyIO(raw_bytes)
         if data_header2.encoding != parquet_thrift.Encoding.RLE:

@@ -171,7 +171,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     raise ValueError('Incompatible schemas')
 
         fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
-        fmd.row_groups = []
+        rgs = []
 
         for pf, fn in zip(pfs, file_list):
             if pf.file_scheme not in ['simple', 'empty']:
@@ -180,7 +180,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
                         chunk.file_path = '/'.join([fn, chunk.file_path])
-                    fmd.row_groups.append(rg)
+                    rgs.append(rg)
 
             else:
                 for rg in pf.row_groups:
@@ -188,8 +188,9 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
                         chunk.file_path = fn
-                    fmd.row_groups.append(rg)
+                    rgs.append(rg)
 
+        fmd.row_groups = rgs
         fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
         return basepath, fmd
 
@@ -208,7 +209,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
 
 
 def _get_fmd(inbytes):
-    from .core import read_thrift
+    from .cencoding import from_buffer
     from .thrift_structures import parquet_thrift
 
     f = io.BytesIO(inbytes)
@@ -216,8 +217,8 @@ def _get_fmd(inbytes):
     head_size = struct.unpack('<i', f.read(4))[0]
     f.seek(-(head_size + 8), 2)
     data = f.read(head_size)
-    f = io.BytesIO(data)
-    return read_thrift(f, parquet_thrift.FileMetaData)
+    return from_buffer(data, "FileMetaData")
+
 
 # simple cache to avoid re compile every time
 seps = {}
