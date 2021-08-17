@@ -4,6 +4,9 @@ import io
 import re
 import struct
 
+from typing import Any, Tuple
+from bisect import bisect_left, bisect_right
+from operator import add, sub
 import numpy as np
 import fsspec
 from fastparquet.util import join_path
@@ -267,7 +270,7 @@ class ParquetFile(object):
         else:
             return self.fn
 
-    def read_row_group_file(self, rg, columns, categories, index=None,
+    def read_row_group_file(self, rg, columns, categories=None, index=None,
                             assign=None, partition_meta=None, row_filter=False,
                             infile=None):
         """ Open file for reading, and process it as a row-group
@@ -597,6 +600,155 @@ class ParquetFile(object):
             return self._categories
         else:
             return {}
+
+    def nth_val(self, on: str, n_rows: int, before: bool=True, val: Any=None,
+                exclude: bool=True) -> Tuple[bool, Any, Any]:
+        """
+        Return 'nth_val', i.e. the value of the nth row preceding or following
+        'val', that can for instance be used later on in 'filters'.
+        For the results to be correct, this function requires:
+         - a sorted column in ascending order,
+         - no duplicate values in the column,
+        If there are no row enough and 'n_rows' cannot be accounted for, even
+        by adjusting 'val' then an exception is raised.
+        Search is made indistinctly of partitions that can be defined in the
+        dataset (search is not restricted to the span of a specific partition).
+
+        Parameters
+        ----------
+        on: str
+            Name of the column in which looking for 'val' and 'nth_val'.
+        n_rows: int
+            Number of rows to account for before or after 'val'.
+        before: bool, True
+            If `True`, returns the nth value preceding 'val', otherwise the nth
+            value following 'val'.
+        val: Any, None
+            A value of the same type as values contained in column 'on'. 'val'
+            does not need to be present in 'on'.
+            If 'val' is `None` and if 'before' is `True`, the nth value from
+            tail is returned.
+            If 'val' is `None` and if 'before' if `False`, the nth value from
+            head is returned.
+        exclude: bool, True
+            If 'val' exists in 'on', and if 'exclude' is `True`, it is excluded
+            from the N rows accounted for.
+
+        Returns
+        ----------
+        valid_call, earlier, later: Tuple[bool, Any, Any]
+            * 'valid_call': `True` if N rows can be successfully accounted for
+               from 'val', i.e. without modifying 'val'.
+            * 'earlier': 'nth_val' if 'before' is `True`, or 'val' if 'before'
+               is `False`. If 'before' is `False` and if 'is_valid' is `False`
+               then, instead of 'val', the latest value to comply with
+               'n_rows' is provided.
+            * 'later': 'nth_val' if 'before' is `False`, or 'val' if 'before'
+               is `True`. If 'before' is `True` and if 'is_valid' is `False`
+               then, instead of 'val', the earliest value to comply with
+               'n_rows' is provided.
+
+        """
+
+        # Check there are enough rows to return a result.
+        total_num_rows = self.count()
+        n_rows_requested = n_rows+1 if exclude else n_rows
+        if n_rows_requested > total_num_rows:
+            raise ValueError(f'{n_rows_requested} rows are necessary to \
+fulfill the search but there are only {total_num_rows} values in the dataset.')
+        # Some handles for shorter calls.
+        max_bounds = self.statistics['max'][on]
+        largest_val = max_bounds[-1]
+        min_bounds = self.statistics['min'][on]
+        smallest_val = min_bounds[0]
+        row_groups = self.row_groups
+        # Settings depending 'before' and 'val'.
+        if before:
+            roll = sub
+            bounds = max_bounds
+            out_of_bound_rg_idx = 0
+            # Explicitly writing 'None', as 'val' can be 0.
+            if val is None:
+                # If 'val' is not provided, 'val' is then the last value.
+                val = largest_val
+                val_rg_idx = len(row_groups)-1
+                val_in_rg = True
+            else:
+                val_rg_idx = bisect_left(bounds, val)
+                # True if 'val' lies in span of values contained in row groups.
+                val_in_rg = (smallest_val <= val <= largest_val)                   
+                side = 'left' if exclude else 'right'
+        else:
+            roll = add
+            bounds = min_bounds
+            out_of_bound_rg_idx = len(row_groups)-1
+            # Explicitly writing 'None', as 'val' can be 0.
+            if val is None:
+                # If 'val' is not provided, 'val' is then the first value.
+                val = smallest_val
+                val_rg_idx = 0
+                val_in_rg = True
+            else:
+                val_rg_idx = bisect_right(bounds, val)-1
+                # True if 'val' lies in span of values contained in the rgs.
+                val_in_rg = (smallest_val <= val <= largest_val)
+                side = 'right' if exclude else 'left'
+        # Initialize number of rows to account for in group into which lies
+        # 'val'.
+        ser = None
+        if val_in_rg:
+            val_rg_num_rows = row_groups[val_rg_idx].num_rows
+            if bounds[val_rg_idx] == val:
+                # Shortcut if 'val' is exactly on the row group bound.
+                num_rows = val_rg_num_rows
+                if exclude:
+                    num_rows -= 1
+            else:
+                # If not, 'num_row' is set to 0. 'val' position is not known,
+                # and it can even be in between max of prev row group and min
+                # of current row group. 
+                ser = self.read_row_group_file(row_groups[val_rg_idx],
+                                               columns=[on])[on]
+                num_rows = ser.searchsorted(val, side=side)
+                if not before:
+                    num_rows = val_rg_num_rows - num_rows
+        else:
+            # If 'val' is not in span of values contained in row groups.
+            num_rows = 0
+
+        # Roll backward/forward, depending 'before' and sum number of rows till
+        # 'n_rows' is hit, or it is not possible to roll further.
+        nth_val_rg_idx = val_rg_idx
+        while (num_rows < n_rows and nth_val_rg_idx != out_of_bound_rg_idx):
+            nth_val_rg_idx = roll(nth_val_rg_idx, 1)
+            num_rows += row_groups[nth_val_rg_idx].num_rows
+
+        if (nth_val_rg_idx == out_of_bound_rg_idx and num_rows < n_rows):
+            # No rows enough for 'n_rows' to be accounted for. Rolling the
+            # other way, starting from the bound (either head or tail
+            # depending 'before').
+            valid_call = False
+            _, earlier, later = self.nth_val(on, n_rows, not before,
+                                             exclude=exclude)
+        else:
+            # Enough rows to get 'nth_val', retrieve it in retained row group.
+            if nth_val_rg_idx != val_rg_idx or ser is None:
+                nth_val_rg = row_groups[nth_val_rg_idx]
+                nth_val_rg_num_rows = nth_val_rg.num_rows
+                ser = self.read_row_group_file(nth_val_rg, columns=[on])[on]
+            else:
+                nth_val_rg_num_rows = val_rg_num_rows
+            nth_val_idx = (num_rows-n_rows if before
+                           else nth_val_rg_num_rows-(num_rows-n_rows)-1)
+            nth_val = ser.iloc[nth_val_idx]            
+            valid_call = True
+            if before:
+                earlier = nth_val
+                later = val
+            else:
+                earlier = val
+                later = nth_val
+        return (valid_call, earlier, later)
 
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
