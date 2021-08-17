@@ -640,11 +640,11 @@ class ParquetFile(object):
             * 'valid_call': `True` if N rows can be successfully accounted for
                from 'val', i.e. without modifying 'val'.
             * 'earlier': 'nth_val' if 'before' is `True`, or 'val' if 'before'
-               is `False`. If 'before' is `False` and if 'is_valid' is `False`
+               is `False`. If 'before' is `False` and if 'valid_call' is `False`
                then, instead of 'val', the latest value to comply with
                'n_rows' is provided.
             * 'later': 'nth_val' if 'before' is `False`, or 'val' if 'before'
-               is `True`. If 'before' is `True` and if 'is_valid' is `False`
+               is `True`. If 'before' is `True` and if 'valid_call' is `False`
                then, instead of 'val', the earliest value to comply with
                'n_rows' is provided.
 
