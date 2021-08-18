@@ -1067,6 +1067,16 @@ def test_head(tempdir):
     assert pf.head(1).val.tolist() == [2]
 
 
+def test_head(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    val = [2, 10, 34, 76]
+    df = pd.DataFrame({'val': val})
+    write(dn, df, row_group_offsets=[0,2], file_scheme='hive')
+
+    pf = ParquetFile(dn)
+    assert pf.head(3).val.tolist() == [2, 10, 34]
+
+
 def test_spark_date_empty_rg():
     # https://github.com/dask/fastparquet/issues/634
     # first file has header size much smaller than others as it contains no row groups

@@ -242,7 +242,13 @@ class ParquetFile(object):
         """
         # TODO: implement with truncated assign and early exit
         #  from reading
-        return self[:1].to_pandas(**kwargs).head(nrows)
+        total_rows = 0
+        for i, rg in enumerate(self.row_groups):
+            total_rows += rg.num_rows
+            print(f'total rows: {total_rows}')
+            if total_rows >= nrows:
+                break
+        return self[:i+1].to_pandas(**kwargs).head(nrows)
 
     def __getitem__(self, item):
         """Select among the row-groups using integer/slicing"""
