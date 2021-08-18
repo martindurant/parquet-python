@@ -471,7 +471,7 @@ class ParquetFile(object):
         cats = {k: v for k, v in self.cats.items() if k in columns}
         df, arrs = _pre_allocate(size, columns, categories, index, cats,
                                  self._dtypes(categories), self.tz)
-        i_no_name = re.compile(r"__index_level_\d+__")
+        i_no_name = re.compile(rb"__index_level_\d+__")
         if self.has_pandas_metadata:
             md = self.pandas_metadata
             if categories:
@@ -542,13 +542,13 @@ class ParquetFile(object):
             return True
         if self.fmd.key_value_metadata is None:
             return False
-        return bool(self.key_value_metadata.get('pandas', False))
+        return bool(self.key_value_metadata.get(b'pandas', False))
 
     @property
     def pandas_metadata(self):
         if self._pdm is None:
             if self.has_pandas_metadata:
-                self._pdm = json_decoder()(self.key_value_metadata['pandas'])
+                self._pdm = json_decoder()(self.key_value_metadata[b'pandas'])
             else:
                 self._pdm = {}
         return self._pdm
