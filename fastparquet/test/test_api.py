@@ -13,7 +13,7 @@ except ImportError:
     from pandas import Timestamp
 import pytest
 
-from fastparquet.test.util import tempdir
+from .util import tempdir
 import fastparquet
 from fastparquet import write, ParquetFile
 from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, filter_not_in
@@ -1065,6 +1065,16 @@ def test_head(tempdir):
 
     pf = ParquetFile(fn)
     assert pf.head(1).val.tolist() == [2]
+
+
+def test_head(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    val = [2, 10, 34, 76]
+    df = pd.DataFrame({'val': val})
+    write(dn, df, row_group_offsets=[0,2], file_scheme='hive')
+
+    pf = ParquetFile(dn)
+    assert pf.head(3).val.tolist() == [2, 10, 34]
 
 
 def test_spark_date_empty_rg():

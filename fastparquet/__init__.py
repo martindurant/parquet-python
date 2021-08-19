@@ -1,5 +1,5 @@
 """parquet - read parquet files."""
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 
 from .writer import write
 from . import core, schema, converted_types, api

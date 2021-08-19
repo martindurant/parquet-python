@@ -10,7 +10,7 @@ import fastparquet
 from fastparquet import writer, core
 from fastparquet.cencoding import NumpyIO
 
-from fastparquet.test.util import TEST_DATA, s3, tempdir
+from .util import TEST_DATA, s3, tempdir
 
 
 def test_header_magic_bytes(tempdir):

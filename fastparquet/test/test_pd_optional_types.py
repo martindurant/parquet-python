@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 import fastparquet as fp
-from fastparquet.test.util import tempdir
+from .util import tempdir
 from fastparquet import write, parquet_thrift
 from fastparquet.parquet_thrift.parquet import ttypes as tt
 import numpy.random as random

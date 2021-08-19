@@ -152,15 +152,14 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     elif dtype.kind == "M":
         if times == 'int64':
             # output will have the same resolution as original data, for resolution <= ms
+            tz = getattr(dtype, "tz", None) is not None
             if "ns" in dtype.str:
                 type = parquet_thrift.Type.INT64
                 converted_type = None
-                logical_type = ThriftObject.from_fields(
-                    "LogicalType",
-                    TIMESTAMP=ThriftObject.from_fields(
-                        "TimestampType",
-                        isAdjustedToUTC=True,
-                        unit=ThriftObject.from_fields("TimeUnit", NANOS={})
+                logical_type = parquet_thrift.LogicalType(
+                    TIMESTAMP=parquet_thrift.TimestampType(
+                        isAdjustedToUTC=tz,
+                        unit=parquet_thrift.TimeUnit(NANOS=parquet_thrift.NanoSeconds())
                     )
                 )
                 width = None
@@ -317,20 +316,20 @@ def convert(data, se):
 
 def infer_object_encoding(data):
     head = data[:10] if isinstance(data, pd.Index) else data.dropna()[:10]
-    if all(isinstance(i, str) for i in head):
+    if all(isinstance(i, str) for i in head if i):
         return "utf8"
-    elif all(isinstance(i, bytes) for i in head):
+    elif all(isinstance(i, bytes) for i in head if i):
         return 'bytes'
-    elif all(isinstance(i, (list, dict)) for i in head):
+    elif all(isinstance(i, (list, dict)) for i in head if i):
         return 'json'
-    elif all(isinstance(i, bool) for i in head):
+    elif all(isinstance(i, bool) for i in head if i):
         return 'bool'
-    elif all(isinstance(i, Decimal) for i in head):
+    elif all(isinstance(i, Decimal) for i in head if i):
         return 'decimal'
-    elif all(isinstance(i, int) for i in head):
+    elif all(isinstance(i, int) for i in head if i):
         return 'int'
     elif all(isinstance(i, float) or isinstance(i, np.floating)
-             for i in head):
+             for i in head if i):
         # You need np.floating here for pandas NaNs in object
         # columns with python floats.
         return 'float'

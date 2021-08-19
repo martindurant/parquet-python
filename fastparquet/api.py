@@ -48,6 +48,12 @@ class ParquetFile(object):
         value. Use this to specify the dataset root directory, if required.
     fs: fsspec-compatible filesystem
         You can use this instead of open_with (otherwise, it will be inferred)
+    pandas_nulls: bool (True)
+        If True, columns that are int or bool in parquet, but have nulls, will become
+        pandas nullale types (Uint, Int, boolean). If False (the only behaviour
+        prior to v0.7.0), both kinds will be cast to float, and nulls will be NaN.
+        Pandas nullable types were introduces in v1.0.0, but were still marked as
+        experimental in v1.3.0.
 
     Attributes
     ----------
@@ -87,10 +93,18 @@ class ParquetFile(object):
     _categories = None
 
     def __init__(self, fn, verify=False, open_with=default_open,
-                 root=False, sep=None, fs=None):
+                 root=False, sep=None, fs=None, pandas_nulls=True):
+        self.pandas_nulls = pandas_nulls
+        if open_with is default_open and fs is None:
+            fs = fsspec.filesystem("file")
+        elif fs is not None:
+            open_with = fs.open
+        else:
+            fs = getattr(open_with, "__self__", None)
         if isinstance(fn, (tuple, list)):
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
-                                               open_with=open_with, root=root)
+                                               open_with=open_with, root=root,
+                                               fs=fs)
             if basepath:
                 self.fn = join_path(basepath, '_metadata')  # effective file
             else:
@@ -106,16 +120,11 @@ class ParquetFile(object):
                                  'with multi-file data')
             open_with = lambda *args, **kwargs: fn
         else:
-            if open_with is default_open and fs is None:
-                fs = fsspec.filesystem("file")
+            if fs is not None:
                 fn = fs._strip_protocol(fn)
-            elif fs is not None:
-                open_with = fs.open
-            else:
-                fs = getattr(open_with, "__self__", None)
-                if not isinstance(fs, fsspec.AbstractFileSystem):
-                    raise ValueError("Opening directories without a _metadata requires"
-                                     "a filesystem compatible with fsspec")
+            if not isinstance(fs, fsspec.AbstractFileSystem):
+                raise ValueError("Opening directories without a _metadata requires"
+                                 "a filesystem compatible with fsspec")
             if fs.isfile(fn):
                 self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:
@@ -156,6 +165,7 @@ class ParquetFile(object):
         if self.fn and self.fn.endswith("_metadata"):
             #  no point attempting to read footer only for pure metadata
             data = f.read()[4:-8]
+            self._head_size = len(data)
         else:
             try:
                 f.seek(0)
@@ -228,18 +238,23 @@ class ParquetFile(object):
     def head(self, nrows, **kwargs):
         """Get the first nrows of data
 
-        This will load the whole of the first valid row-group for the
-        given columns. If it has fewer rows than requested, we will not
-        fetch more data.
+        This will load the whole of the first valid row-group for the given
+        columns.
 
-        kwargs can include things like columns, filters, etc., with
-        the same semantics as to_pandas()
+        kwargs can include things like columns, filters, etc., with the same
+        semantics as to_pandas(). If filters are applied, it may happen that
+        data is so reduced that 'nrows' is not ensured (fewer rows). 
 
         returns: dataframe
         """
         # TODO: implement with truncated assign and early exit
         #  from reading
-        return self[:1].to_pandas(**kwargs).head(nrows)
+        total_rows = 0
+        for i, rg in enumerate(self.row_groups):
+            total_rows += rg.num_rows
+            if total_rows >= nrows:
+                break
+        return self[:i+1].to_pandas(**kwargs).head(nrows)
 
     def __getitem__(self, item):
         """Select among the row-groups using integer/slicing"""
@@ -634,7 +649,10 @@ class ParquetFile(object):
                             num_nulls = True
                             break
                     if num_nulls:
-                        dtype[col] = converted_types.nullable[dt]
+                        if self.pandas_nulls:
+                            dtype[col] = converted_types.nullable[dt]
+                        else:
+                            dtype[col] = np.float_()
                 elif dt == 'S12':
                     dtype[col] = 'M8[ns]'
             self._base_dtype = dtype
@@ -648,7 +666,8 @@ class ParquetFile(object):
         return dtype
 
     def __getstate__(self):
-        return {"fn": self.fn, "open": self.open, "sep": self.sep, "fmd": self.fmd}
+        return {"fn": self.fn, "open": self.open, "sep": self.sep, "fmd": self.fmd,
+                "pandas_nulls": self.pandas_nulls}
 
     def __setstate__(self, state):
         self.__dict__.update(state)

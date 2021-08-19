@@ -526,14 +526,14 @@ cpdef void write_thrift(dict data, NumpyIO output):
     cdef double d
     cdef bytes b
     cdef char * c
-    for j, val in data.items():
-        if not isinstance(j, int):
-            # for dynamic entries
+    # for j, val in data.items():
+    for i in range(15):  # 15 is the max number of fields
+        if i not in data:
             continue
+        val = data.get(i)
         if val is None:
             # not defined - skip (None is default on load)
             continue
-        i = j
         delt = i - prev
         prev = i
         if isinstance(val, int):
@@ -562,6 +562,9 @@ cpdef void write_thrift(dict data, NumpyIO output):
         elif isinstance(val, list):
             output.write_byte((delt << 4) | 9)
             write_list(val, output)
+        elif isinstance(val, ThriftObject):
+            output.write_byte((delt << 4) | 12)
+            write_thrift((<ThriftObject>val).data, output)
         else:
             output.write_byte((delt << 4) | 12)
             write_thrift(val, output)
@@ -571,7 +574,7 @@ cpdef void write_thrift(dict data, NumpyIO output):
 cdef void write_list(list data, NumpyIO output):
     cdef int l = len(data)
     cdef int i
-    cdef dict d
+    # cdef dict d
     cdef ThriftObject dd
     cdef bytes b
     cdef str s
@@ -618,7 +621,10 @@ cdef void write_list(list data, NumpyIO output):
             else:
                 output.write_byte(12 | (l << 4))
             for d in data:
-                write_thrift(d, output)
+                if isinstance(d, ThriftObject):
+                    write_thrift((<ThriftObject>d).data, output)
+                else:
+                    write_thrift(d, output)
     else:
         # Not sure if zero-length list is allowed
         encode_unsigned_varint(0, output)
@@ -686,18 +692,13 @@ cdef class ThriftObject:
 
     def __setattr__(self, str item, value):
         i = self.spec.get(item, item)
-        cdef bint reorder = 0
         cdef int j
-        if i not in self.data:
-            reorder = 1
         if isinstance(value, ThriftObject):
             self.data[i] = value.data
         elif isinstance(value, list):
             self.data[i] = [(<ThriftObject>v).data for v in value]
         else:
             self.data[i] = value
-        if reorder:
-            self.data = {j: self.data[j] for j in range(15) if j in self.data}
 
     def __delattr__(self, item):
         i = self.spec.get(item, item)

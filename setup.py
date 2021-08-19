@@ -46,7 +46,7 @@ install_requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='fastparquet',
-    version='0.7.0',
+    version='0.7.1',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@canaconda.com',
@@ -70,7 +70,8 @@ setup(
     install_requires=install_requires,
     setup_requires=[
         'pytest-runner',
-    ] + [p for p in install_requires if p.startswith('numpy')],
+        'oldest-supported-numpy'
+    ],
     extras_require={
         'lzo': ['python-lzo'],
     },

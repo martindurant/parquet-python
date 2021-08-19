@@ -12,7 +12,7 @@ from pandas.api.types import CategoricalDtype
 import pytest
 
 from fastparquet.util import default_mkdirs
-from fastparquet.test.util import s3, tempdir, sql, TEST_DATA
+from .util import s3, tempdir, sql, TEST_DATA
 from fastparquet import cencoding
 
 
@@ -551,19 +551,22 @@ def test_null_time(tempdir):
     assert sum(data['t'].isnull()) == sum(expected['t'].isnull())
 
 
-def test_auto_null_object(tempdir):
+@pytest.mark.parametrize(
+    "pnull", [True, False]
+)
+def test_auto_null_object(tempdir, pnull):
     tmp = str(tempdir)
     df = pd.DataFrame({'a': [1, 2, 3, 0],
-                       'aa': [1, 2, 3, None],
+                       'aa': pd.Series([1, 2, 3, None], dtype=object),
                        'b': [1., 2., 3., np.nan],
                        'c': pd.to_timedelta([1, 2, 3, np.nan], unit='ms'),
                        'd': ['a', 'b', 'c', None],
                        'f': [True, False, True, True],
-                       'ff': [True, False, None, True]})
+                       'ff': [True, False, None, True]})  # object
     df['e'] = df['d'].astype('category')
     df['bb'] = df['b'].astype('object')
     df['aaa'] = df['a'].astype('object')
-    object_cols = ['d', 'ff', 'bb', 'aaa']
+    object_cols = ['d', 'ff', 'bb', 'aaa', 'aa']
     test_cols = list(set(df) - set(object_cols)) + ['d']
     fn = os.path.join(tmp, "test.parq")
 
@@ -571,16 +574,21 @@ def test_auto_null_object(tempdir):
         write(fn, df, has_nulls=False)
 
     write(fn, df, has_nulls=True)
-    pf = ParquetFile(fn)
+    pf = ParquetFile(fn, pandas_nulls=pnull)
     for col in pf._schema[1:]:
         assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     df2 = pf.to_pandas(categories=['e'])
 
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
                           check_dtype=False)
-    tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    if pnull:
+        tm.assert_frame_equal(df[['aa']].astype('Int64'), df2[['aa']])
+        tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
+    else:
+        tm.assert_frame_equal(df[['aa']].astype('float'), df2[['aa']])
+        tm.assert_frame_equal(df[['ff']].astype("float"), df2[['ff']])
 
     # not giving any value same as has_nulls=True
     write(fn, df)
@@ -976,3 +984,16 @@ def test_cat_order(tempdir):
     out = ParquetFile(fn).to_pandas()
     assert out.cat.cat.ordered
     assert out.cat.cat.categories.tolist() == catdtype.categories.tolist()
+
+
+@pytest.mark.parametrize("tz", [True, False])
+def test_tz_local(tempdir, tz):
+    # #650
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame({'a': [pd.to_datetime("now")]})
+    if tz:
+        df['a'] = df.a.dt.tz_localize("UTC")
+    write(fn, df)
+
+    pf = ParquetFile(fn)
+    assert pf.schema.schema_element(['a']).logicalType.TIMESTAMP.isAdjustedToUTC is tz

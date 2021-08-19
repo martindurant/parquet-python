@@ -149,16 +149,22 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
             # activate new code path here
             f0 = file_list[0]
             pf0 = api.ParquetFile(f0, open_with=open_with)
-            # permits concurrent fetch of footers; needs fsspec >= 2021.6
-            size = int(1.4 * pf0._head_size)
-            pieces = fs.cat(file_list[1:], start=-size)
-            sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
-                     path, piece in pieces.items()}
-            not_bigenough = [path for path, s in sizes.items() if s > size]
-            if not_bigenough:
-                new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
-                pieces.update(new_pieces)
-            legacy = False
+            if pf0.file_scheme not in ['empty', 'simple']:
+                # set of directories, revert
+                pfs = [pf0] + [api.ParquetFile(fn, open_with=open_with) for fn in file_list[1:]]
+            else:
+                # permits concurrent fetch of footers; needs fsspec >= 2021.6
+                size = int(1.4 * pf0._head_size)
+                pieces = fs.cat(file_list[1:], start=-size)
+                sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
+                         path, piece in pieces.items()}
+                not_bigenough = [path for path, s in sizes.items() if s > size]
+                if not_bigenough:
+                    new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
+                    pieces.update(new_pieces)
+                pieces = {k: _get_fmd(v) for k, v in pieces.items()}
+                pieces = [(fn, pieces[fn]) for fn in file_list[1:]]  # recover ordering
+                legacy = False
     else:
         raise ValueError("Merge requires all PaquetFile instances or none")
     basepath, file_list = analyse_paths(file_list, root=root)
@@ -196,15 +202,15 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
 
     for rg in pf0.fmd.row_groups:
         # chunks of first file, which would have file_path=None
-        for chunk in rg.columns:
-            chunk.file_path = f0[len(basepath):].lstrip("/")
+        rg.columns[0].file_path = f0[len(basepath):].lstrip("/")
 
-    for k, v in pieces.items():
-        rgs = _get_fmd(v).row_groups or []
+    for k, v in pieces:
+        # Set file paths on other files
+        rgs = v.row_groups or []
         for rg in rgs:
-            for chunk in rg.columns:
-                chunk.file_path = k[len(basepath):].lstrip("/")
+            rg.columns[0].file_path = k[len(basepath):].lstrip("/")
         pf0.fmd.row_groups.extend(rgs)
+    pf0.fmd.num_rows = sum(rg.num_rows for rg in pf0.fmd.row_groups)
     return basepath, pf0.fmd
 
 

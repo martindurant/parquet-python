@@ -6,7 +6,7 @@ import pytest
 
 from fastparquet import ParquetFile
 from fastparquet import write
-from fastparquet.test.util import tempdir
+from .util import tempdir
 
 
 def _generate_random_dataframe(n_rows=1000):

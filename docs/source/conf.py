@@ -18,12 +18,14 @@ import os
 import sys
 from unittest.mock import MagicMock
 
+
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return MagicMock()
+        return MagicMock()
 
-MOCK_MODULES = ['fastparquet.speedups']
+
+MOCK_MODULES = ['fastparquet.speedups', 'fastparquet.cencoding']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 APP_DIR = os.path.normpath(os.path.join(os.getcwd(), '../..'))
@@ -75,7 +77,7 @@ author = 'Continuum Analytics'
 # built documents.
 #
 # The short X.Y version.
-version = "0.7.0"
+version = "0.7.1"
 # The full version, including alpha/beta/rc tags.
 release = version
 

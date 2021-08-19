@@ -14,7 +14,7 @@ except ImportError:
     from pandas import Timestamp
 
 from fastparquet import write, ParquetFile
-from fastparquet.test.util import tempdir
+from .util import tempdir
 
 
 def frame_symbol_dtTrade_type_strike(days=1 * 252,
