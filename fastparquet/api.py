@@ -654,7 +654,8 @@ class ParquetFile(object):
         return dtype
 
     def __getstate__(self):
-        return {"fn": self.fn, "open": self.open, "sep": self.sep, "fmd": self.fmd}
+        return {"fn": self.fn, "open": self.open, "sep": self.sep, "fmd": self.fmd,
+                "pandas_nulls": self.pandas_nulls}
 
     def __setstate__(self, state):
         self.__dict__.update(state)
