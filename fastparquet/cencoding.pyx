@@ -526,8 +526,7 @@ cpdef void write_thrift(dict data, NumpyIO output):
     cdef double d
     cdef bytes b
     cdef char * c
-    # for j, val in data.items():
-    for i in range(15):  # 15 is the max number of fields
+    for i in range(1, 14):  # 14 is the max number of fields
         if i not in data:
             continue
         val = data.get(i)
@@ -538,7 +537,7 @@ cpdef void write_thrift(dict data, NumpyIO output):
         prev = i
         if isinstance(val, int):
             output.write_byte((delt << 4) | 6)
-            encode_unsigned_varint(long_zigzag(val), output)
+            encode_unsigned_varint(long_zigzag(<int>val), output)
         elif isinstance(val, float):
             output.write_byte((delt << 4) | 7)
             d = val
@@ -546,14 +545,14 @@ cpdef void write_thrift(dict data, NumpyIO output):
             output.loc += 8
         elif isinstance(val, bytes):
             output.write_byte((delt << 4) | 8)
-            l = PyBytes_GET_SIZE(val)
+            l = PyBytes_GET_SIZE(<bytes>val)
             encode_unsigned_varint(l, output)
             c = val
             memcpy(<void*>output.get_pointer(), <void*>c, l)
             output.loc += l
         elif isinstance(val, str):
             output.write_byte((delt << 4) | 8)
-            b = val.encode()
+            b = (<str>val).encode()
             l = PyBytes_GET_SIZE(b)
             encode_unsigned_varint(l, output)
             c = b
@@ -561,13 +560,13 @@ cpdef void write_thrift(dict data, NumpyIO output):
             output.loc += l
         elif isinstance(val, list):
             output.write_byte((delt << 4) | 9)
-            write_list(val, output)
+            write_list(<list>val, output)
         elif isinstance(val, ThriftObject):
             output.write_byte((delt << 4) | 12)
             write_thrift((<ThriftObject>val).data, output)
         else:
             output.write_byte((delt << 4) | 12)
-            write_thrift(val, output)
+            write_thrift(<dict>val, output)
     output.write_byte(0)
 
 
@@ -642,10 +641,6 @@ def from_buffer(buffer, name=None):
     return o
 
 
-cdef int dict_item_key(tuple x):
-    return x[0] if isinstance(x, int) else 20
-
-
 @cython.freelist(1000)
 @cython.final
 cdef class ThriftObject:
@@ -678,7 +673,6 @@ cdef class ThriftObject:
                 raise AttributeError
 
     def __setitem__(self, key, value):
-        # TODO: reorder dict here? caveat emptor.
         self.data[key] = value
 
     def __getitem__(self, item):
@@ -691,7 +685,7 @@ cdef class ThriftObject:
         return self.data.get(key, default)
 
     def __setattr__(self, str item, value):
-        i = self.spec.get(item, item)
+        cdef int i = self.spec[item]
         cdef int j
         if isinstance(value, ThriftObject):
             self.data[i] = value.data
@@ -701,7 +695,7 @@ cdef class ThriftObject:
             self.data[i] = value
 
     def __delattr__(self, item):
-        i = self.spec.get(item, item)
+        cdef int i = self.spec[item]
         del self.data[i]
 
     cpdef bytes to_bytes(self):
@@ -771,13 +765,6 @@ cdef class ThriftObject:
             return yaml.dump(alt)
         except ImportError:
             return str(alt)
-
-    def __eq__(self, other):
-        if isinstance(other, ThriftObject):
-            return self.data == (<ThriftObject>other).data
-        if isinstance(other, dict):
-            return self.data == other
-        return False
 
     @staticmethod
     def from_fields(thrift_name, **kwargs):

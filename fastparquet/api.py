@@ -187,10 +187,12 @@ class ParquetFile(object):
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
         for rg in fmd[4]:
-            chunk = rg[1][0]
-            s = chunk.get(1)
-            if s:
-                chunk[1] = s.decode()
+            chunks = rg[1]
+            if chunks:
+                chunk = chunks[0]
+                s = chunk.get(1)
+                if s:
+                    chunk[1] = s.decode()
         self._set_attrs()
 
     def _set_attrs(self):
@@ -486,7 +488,7 @@ class ParquetFile(object):
         cats = {k: v for k, v in self.cats.items() if k in columns}
         df, arrs = _pre_allocate(size, columns, categories, index, cats,
                                  self._dtypes(categories), self.tz)
-        i_no_name = re.compile(rb"__index_level_\d+__")
+        i_no_name = re.compile(r"__index_level_\d+__")
         if self.has_pandas_metadata:
             md = self.pandas_metadata
             if categories:
@@ -579,7 +581,7 @@ class ParquetFile(object):
                 if m['pandas_type'] != 'categorical':
                     continue
                 out = False
-                if "fastparquet" in self.created_by:
+                if b"fastparquet" in self.created_by:
                     # if pandas was categorical, we will have used dict encoding
                     cats[m['name']] = m['metadata']['num_categories']
                     continue
