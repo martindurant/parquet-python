@@ -385,7 +385,7 @@ class ParquetFile(object):
         return out
 
     def to_pandas(self, columns=None, categories=None, filters=[],
-                  index=None, row_filter=False):
+                  index=None, row_filter=False, n_prev_rows: int = None):
         """
         Read data from parquet into a Pandas dataframe.
 
@@ -422,6 +422,9 @@ class ParquetFile(object):
             any row group that may contain valid rows, but can be much more
             memory-efficient, especially if the filter columns are not required
             in the output.
+        n_prev_rows: int, `None`
+            If 'row_filter' is `True`, then loas as many previous rows as
+            requested. No filtering is made on these rows.
 
         Returns
         -------
@@ -443,6 +446,32 @@ class ParquetFile(object):
             df = self.to_pandas(columns=cs, filters=filters, row_filter=False,
                                 index=False)
             sel = self._column_filter(df, filters=filters)
+            if n_prev_rows:
+                # Retrieve index of 1st `True`.
+                idx = sel.argmax()         # 'argmax()' has a short-circuit logic for bool type.
+                if idx < n_prev_rows:
+                    # No previous rows enough in current group, try to fetch
+                    # previous row groups.
+                    prev_rg_rows = 0
+                    prev_rg_idx = filter_row_groups(self, filters, True)[0]-1
+                    if prev_rg_idx >= 0:
+                        # Need to account for previous row group(s).
+                        while prev_rg_idx >= 0 and idx < n_prev_rows:
+                            prev_rg = self.row_groups[prev_rg_idx]
+                            prev_rg_n_rows = prev_rg.num_rows
+                            prev_rg_rows += prev_rg_n_rows
+                            size += prev_rg_n_rows
+                            idx += prev_rg_n_rows
+                            rgs.insert(0, self.row_groups[prev_rg_idx])
+                            prev_rg_idx -= 1
+                        temp = np.zeros(size, dtype=bool)
+                        temp[prev_rg_rows:] = sel
+                        sel = temp
+                    if idx < n_prev_rows:
+                        # Update 'n_prev_rows' to fetch all available previous
+                        # rows.
+                        n_prev_rows = idx
+                sel[idx-n_prev_rows:idx] = True
             size = sel.sum()
             selected = []
             start = 0

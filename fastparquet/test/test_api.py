@@ -1042,6 +1042,30 @@ def test_row_filter(tempdir):
     ]
 
 
+@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
+def test_row_filter_prev_rows(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    row_group_idx = [0,2,5,8,11]
+    val = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2]
+    # rg idx :      0    |        1       |       2       |      3      |  4
+    # values :  0.1  0.2 | 0.3   0.4  0.5 | 0.6  0.7  0.8 | 0.9  1  1.1 | 1.2
+    df = pd.DataFrame({'value' : val})
+    write(dn, df, row_group_offsets=row_group_idx, file_scheme='hive')
+    pf = ParquetFile(dn)
+    df = pf.to_pandas(filters=[['value', '>', 0.9]], row_filter=True,
+                      n_prev_rows=2)
+    assert df.loc[0, 'value'] == 0.8
+    df = pf.to_pandas(filters=[['value', '>', 0.9]], row_filter=True,
+                      n_prev_rows=5)
+    assert df.loc[0, 'value'] == 0.5
+    df = pf.to_pandas(filters=[['value', '>', 0.9]], row_filter=True,
+                      n_prev_rows=8)
+    assert df.loc[0, 'value'] == 0.2
+    df = pf.to_pandas(filters=[['value', '>', 0.9]], row_filter=True,
+                      n_prev_rows=20)       # many more rows than available.
+    assert df.loc[0, 'value'] == 0.1
+
+
 def test_select(tempdir):
     fn = os.path.join(tempdir, 'test.parquet')
     val = [2, 10, 34, 76]
