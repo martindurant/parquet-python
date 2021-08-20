@@ -423,7 +423,7 @@ class ParquetFile(object):
             memory-efficient, especially if the filter columns are not required
             in the output.
         n_prev_rows: int, `None`
-            If 'row_filter' is `True`, then loas as many previous rows as
+            If 'row_filter' is `True`, then load as many previous rows as
             requested. No filtering is made on these rows.
 
         Returns
