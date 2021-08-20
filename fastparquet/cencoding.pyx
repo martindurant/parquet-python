@@ -526,6 +526,11 @@ cpdef void write_thrift(dict data, NumpyIO output):
     cdef double d
     cdef bytes b
     cdef char * c
+    cdef int i32 = "i32" in data
+    cdef list i32s
+    if "i32list" in data:
+        i32 = 2
+        i32s = data['i32list']
     for i in range(1, 14):  # 14 is the max number of fields
         if i not in data:
             continue
@@ -536,7 +541,10 @@ cpdef void write_thrift(dict data, NumpyIO output):
         delt = i - prev
         prev = i
         if isinstance(val, int):
-            output.write_byte((delt << 4) | 6)
+            if i32 == 1 or (i32 == 2 and i in i32s):
+                output.write_byte((delt << 4) | 5)
+            else:
+                output.write_byte((delt << 4) | 6)
             encode_unsigned_varint(long_zigzag(<int>val), output)
         elif isinstance(val, float):
             output.write_byte((delt << 4) | 7)
@@ -573,7 +581,6 @@ cpdef void write_thrift(dict data, NumpyIO output):
 cdef void write_list(list data, NumpyIO output):
     cdef int l = len(data)
     cdef int i
-    # cdef dict d
     cdef ThriftObject dd
     cdef bytes b
     cdef str s
@@ -581,11 +588,11 @@ cdef void write_list(list data, NumpyIO output):
     if l:
         first = data[0]
         if isinstance(first, int):
-            if l > 14:
-                output.write_byte(5 | 0b11110000)
+            if l > 14:  # all lists are i64
+                output.write_byte(6 | 0b11110000)
                 encode_unsigned_varint(l, output)
             else:
-                output.write_byte(5 | (l << 4))
+                output.write_byte(6 | (l << 4))
             for i in data:
                 encode_unsigned_varint(long_zigzag(i), output)
         elif isinstance(first, bytes):
@@ -767,7 +774,7 @@ cdef class ThriftObject:
             return str(alt)
 
     @staticmethod
-    def from_fields(thrift_name, **kwargs):
+    def from_fields(thrift_name,bint i32=0, list i32list=None, **kwargs):
         cdef spec = specs[thrift_name]
         cdef int i
         cdef str k
@@ -782,6 +789,12 @@ cdef class ThriftObject:
                     out[i] = [(<ThriftObject>it).data for it in v]
                 else:
                     out[i] = v
+        if i32:
+            # integer fields are all 32-bit
+            out['i32'] = 1
+        if i32list:
+            # given integer fields are 32-bit
+            out['i32list'] = i32list
         return ThriftObject(thrift_name, out)
 
 

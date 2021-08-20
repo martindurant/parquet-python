@@ -223,7 +223,8 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
         name=data.name, type_length=width,
         converted_type=converted_type, type=type,
         repetition_type=parquet_thrift.FieldRepetitionType.REQUIRED,
-        logicalType=logical_type
+        logicalType=logical_type,
+        i32=True
     )
     return se, type
 
@@ -482,8 +483,10 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
 
     if is_categorical_dtype(data.dtype):
         dph = parquet_thrift.DictionaryPageHeader(
-                num_values=len(data.cat.categories),
-                encoding=parquet_thrift.Encoding.PLAIN)
+            num_values=len(data.cat.categories),
+            encoding=parquet_thrift.Encoding.PLAIN,
+            i32=1
+        )
         bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
         l0 = len(bdata)
         if compression and compression.upper() != "UNCOMPRESSED":
@@ -495,7 +498,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         ph = parquet_thrift.PageHeader(
                 type=parquet_thrift.PageType.DICTIONARY_PAGE,
                 uncompressed_page_size=l0, compressed_page_size=l1,
-                dictionary_page_header=dph, crc=None)
+                dictionary_page_header=dph, crc=None, i32=1)
 
         dict_start = f.tell()
         write_thrift(f, ph)
@@ -542,10 +545,12 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             repetition_data, definition_data, encode[encoding](data, selement), 8 * b'\x00'
         ])
         dph = parquet_thrift.DataPageHeader(
-                num_values=tot_rows,
-                encoding=getattr(parquet_thrift.Encoding, encoding),
-                definition_level_encoding=parquet_thrift.Encoding.RLE,
-                repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED)
+            num_values=tot_rows,
+            encoding=getattr(parquet_thrift.Encoding, encoding),
+            definition_level_encoding=parquet_thrift.Encoding.RLE,
+            repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED,
+            i32=1
+        )
         l0 = len(bdata)
 
         if compression:
@@ -558,7 +563,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE,
                                        uncompressed_page_size=l0,
                                        compressed_page_size=l1,
-                                       data_page_header=dph)
+                                       data_page_header=dph, i32=1)
         write_thrift(f, ph)
         f.write(bdata)
     elif datapage_version == 2:
@@ -584,7 +589,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE_V2,
                                        uncompressed_page_size=lb + len(definition_data),
                                        compressed_page_size=len(bdata) + len(definition_data),
-                                       data_page_header_v2=dph)
+                                       data_page_header_v2=dph, i32=1)
         write_thrift(f, ph)
         # f.write(repetition_data)  # no-op
         f.write(definition_data)
@@ -599,10 +604,10 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
         p = [
             parquet_thrift.PageEncodingStats(
                 page_type=parquet_thrift.PageType.DICTIONARY_PAGE,
-                encoding=parquet_thrift.Encoding.PLAIN, count=1),
+                encoding=parquet_thrift.Encoding.PLAIN, count=1, i32=1),
             parquet_thrift.PageEncodingStats(
                 page_type=parquet_thrift.PageType.DATA_PAGE,
-                encoding=parquet_thrift.Encoding.RLE_DICTIONARY, count=1),
+                encoding=parquet_thrift.Encoding.RLE_DICTIONARY, count=1, i32=1),
         ]
         encodings = [parquet_thrift.Encoding.PLAIN,
                      parquet_thrift.Encoding.RLE_DICTIONARY]
@@ -610,7 +615,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
     else:
         p = [parquet_thrift.PageEncodingStats(
              page_type=parquet_thrift.PageType.DATA_PAGE,
-             encoding=parquet_thrift.Encoding.PLAIN, count=1)]
+             encoding=parquet_thrift.Encoding.PLAIN, count=1, i32=1)]
         encodings = [parquet_thrift.Encoding.PLAIN]
 
     if isinstance(compression, dict):
@@ -620,18 +625,20 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
 
     kvm = []
     cmd = ThriftObject.from_fields(
-            "ColumnMetaData",
-            type=selement.type, path_in_schema=[name],
-            encodings=encodings,
-            codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
-                   if algorithm else 0),
-            num_values=tot_rows,
-            statistics=s,
-            data_page_offset=start,
-            encoding_stats=p,
-            key_value_metadata=kvm,
-            total_uncompressed_size=uncompressed_size,
-            total_compressed_size=compressed_size)
+        "ColumnMetaData",
+        type=selement.type, path_in_schema=[name],
+        encodings=encodings,
+        codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
+               if algorithm else 0),
+        num_values=tot_rows,
+        statistics=s,
+        data_page_offset=start,
+        encoding_stats=p,
+        key_value_metadata=kvm,
+        total_uncompressed_size=uncompressed_size,
+        total_compressed_size=compressed_size,
+        i32list=[1, 4]
+    )
     if cats:
         cmd.dictionary_page_offset = dict_start
         kvm.append(
@@ -684,7 +691,8 @@ def make_part_file(f, data, schema, compression=None, fmd=None):
                                               schema=schema,
                                               version=1,
                                               created_by=created_by,
-                                              row_groups=[rg],)
+                                              row_groups=[rg],
+                                              i32list=[1])
             foot_size = write_thrift(f, fmd)
             f.write(struct.pack(b"<I", foot_size))
         else:
@@ -730,14 +738,16 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                                    'version': __version__},
                        'pandas_version': pd.__version__}
     root = parquet_thrift.SchemaElement(name=b'schema',
-                                        num_children=0)
+                                        num_children=0,
+                                        i32=True)
     meta = parquet_thrift.KeyValue(key=b"pandas", value=None)
     fmd = ThriftObject.from_fields("FileMetaData", num_rows=len(data),
                                    schema=None,
                                    version=1,
                                    created_by=created_by.encode(),
                                    row_groups=[],
-                                   key_value_metadata=[meta])
+                                   key_value_metadata=[meta],
+                                   i32list=[1])
 
     object_encoding = object_encoding or {}
     for column in partition_cols:
@@ -766,7 +776,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         if col_has_nulls:
             se.repetition_type = parquet_thrift.FieldRepetitionType.OPTIONAL
         schema.append(se)
-        root.num_children += 1
+        root[5] += 1
     fmd.schema = schema
     meta.value = json.dumps(pandas_metadata, sort_keys=True).encode()  # .value =
     return fmd
