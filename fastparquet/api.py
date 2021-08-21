@@ -452,21 +452,19 @@ class ParquetFile(object):
                 if idx < n_prev_rows:
                     # No previous rows enough in current group, try to fetch
                     # previous row groups.
-                    prev_rg_rows = 0
+                    idx_init = idx
                     prev_rg_idx = filter_row_groups(self, filters, True)[0]-1
                     if prev_rg_idx >= 0:
                         # Need to account for previous row group(s).
                         while prev_rg_idx >= 0 and idx < n_prev_rows:
                             prev_rg = self.row_groups[prev_rg_idx]
-                            prev_rg_n_rows = prev_rg.num_rows
-                            prev_rg_rows += prev_rg_n_rows
-                            size += prev_rg_n_rows
-                            idx += prev_rg_n_rows
+                            idx += prev_rg.num_rows
                             rgs.insert(0, self.row_groups[prev_rg_idx])
                             prev_rg_idx -= 1
-                        temp = np.zeros(size, dtype=bool)
-                        temp[prev_rg_rows:] = sel
-                        sel = temp
+                        prev_rg_rows = idx - idx_init
+                        size += prev_rg_rows
+                        sel = np.concatenate(
+                                     (np.zeros(prev_rg_rows, dtype=bool), sel))
                     if idx < n_prev_rows:
                         # Update 'n_prev_rows' to fetch all available previous
                         # rows.
