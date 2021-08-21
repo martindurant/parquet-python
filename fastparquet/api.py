@@ -453,7 +453,7 @@ class ParquetFile(object):
                     # No previous rows enough in current group, try to fetch
                     # previous row groups.
                     idx_init = idx
-                    prev_rg_idx = filter_row_groups(self, filters, True)[0]-1
+                    prev_rg_idx = self.row_groups.index(rgs[0])-1
                     if prev_rg_idx >= 0:
                         # Need to account for previous row group(s).
                         while prev_rg_idx >= 0 and idx < n_prev_rows:
