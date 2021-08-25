@@ -46,13 +46,17 @@ def lz4_compress(data, **kwargs):
     return cramjam.lz4.compress_block(data, **kwargs)
 
 
+def lz4_decomp(data, size):
+    return cramjam.lz4.decompress_block(np.frombuffer(data, 'uint8'), size)
+
+
 compressions['LZ4'] = lz4_compress
-decompressions['LZ4'] = cramjam.lz4.decompress_block
+decompressions['LZ4'] = lz4_decomp
 
 # LZ4 is actually LZ4 block, aka "raw", see
 # https://github.com/apache/parquet-format/commit/7f06e838cbd1b7dbd722ff2580b9c2525e37fc46
 compressions['LZ4_RAW'] = lz4_compress
-decompressions['LZ4_RAW'] = cramjam.lz4.decompress_block
+decompressions['LZ4_RAW'] = lz4_decomp
 compressions['ZSTD'] = cramjam.zstd.compress
 decompressions['ZSTD'] = cramjam.zstd.decompress
 decom_into = {

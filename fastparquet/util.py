@@ -206,12 +206,14 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
         # chunks of first file, which would have file_path=None
         rg.columns[0].file_path = f0[len(basepath):].lstrip("/")
 
+    rgs0 = pf0.fmd.row_groups
     for k, v in pieces:
         # Set file paths on other files
         rgs = v.row_groups or []
         for rg in rgs:
             rg.columns[0].file_path = k[len(basepath):].lstrip("/")
-        pf0.fmd.row_groups.extend(rgs)
+        rgs0.extend(rgs)
+    pf0.fmd.row_groups = rgs0
     pf0.fmd.num_rows = sum(rg.num_rows for rg in pf0.fmd.row_groups)
     return basepath, pf0.fmd
 

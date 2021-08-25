@@ -504,7 +504,7 @@ cdef list read_list(NumpyIO data):
         size = ((byte & 0xf0) >> 4)
     out = []
     typ = byte & 0x0f # 0b00001111
-    if typ == 5:
+    if typ == 5 or typ == 6:
         for _ in range(size):
             out.append(zigzag_long(read_unsigned_var_int(data)))
     elif typ == 8:

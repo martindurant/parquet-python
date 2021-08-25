@@ -9485,7 +9485,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
  *         size = ((byte & 0xf0) >> 4)
  *     out = []             # <<<<<<<<<<<<<<
  *     typ = byte & 0x0f # 0b00001111
- *     if typ == 5:
+ *     if typ == 5 or typ == 6:
  */
   __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 505, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -9496,7 +9496,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
  *         size = ((byte & 0xf0) >> 4)
  *     out = []
  *     typ = byte & 0x0f # 0b00001111             # <<<<<<<<<<<<<<
- *     if typ == 5:
+ *     if typ == 5 or typ == 6:
  *         for _ in range(size):
  */
   __pyx_v_typ = (__pyx_v_byte & 0x0f);
@@ -9504,16 +9504,17 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
   /* "fastparquet/cencoding.pyx":507
  *     out = []
  *     typ = byte & 0x0f # 0b00001111
- *     if typ == 5:             # <<<<<<<<<<<<<<
+ *     if typ == 5 or typ == 6:             # <<<<<<<<<<<<<<
  *         for _ in range(size):
  *             out.append(zigzag_long(read_unsigned_var_int(data)))
  */
   switch (__pyx_v_typ) {
     case 5:
+    case 6:
 
     /* "fastparquet/cencoding.pyx":508
  *     typ = byte & 0x0f # 0b00001111
- *     if typ == 5:
+ *     if typ == 5 or typ == 6:
  *         for _ in range(size):             # <<<<<<<<<<<<<<
  *             out.append(zigzag_long(read_unsigned_var_int(data)))
  *     elif typ == 8:
@@ -9524,7 +9525,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
       __pyx_v__ = __pyx_t_5;
 
       /* "fastparquet/cencoding.pyx":509
- *     if typ == 5:
+ *     if typ == 5 or typ == 6:
  *         for _ in range(size):
  *             out.append(zigzag_long(read_unsigned_var_int(data)))             # <<<<<<<<<<<<<<
  *     elif typ == 8:
@@ -9539,7 +9540,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_read_list(struct __pyx_obj_11f
     /* "fastparquet/cencoding.pyx":507
  *     out = []
  *     typ = byte & 0x0f # 0b00001111
- *     if typ == 5:             # <<<<<<<<<<<<<<
+ *     if typ == 5 or typ == 6:             # <<<<<<<<<<<<<<
  *         for _ in range(size):
  *             out.append(zigzag_long(read_unsigned_var_int(data)))
  */
