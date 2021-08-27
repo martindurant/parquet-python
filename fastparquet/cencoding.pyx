@@ -832,14 +832,14 @@ cdef class ThriftObject:
 def dict_eq(d1, d2):
     """ dicts are equal if none-None keys match """
     for k in set(d1).union(d2):
-        if d1[k] is None:
+        if d1.get(k, None) is None:
             if d2.get(k, None) is None:
                 continue
             return False
-        elif isinstance(d1[k], dict):
+        elif isinstance(d1.get(k, None), dict):
             if not dict_eq(d1[k], d2.get(k, {})):
                 return False
-        elif isinstance(d1[k], list):
+        elif isinstance(d1.get(k, None), list):
             if d2.get(k, None) is None:
                 return False
             if len(d1[k]) != len(d2.get(k, [])):
