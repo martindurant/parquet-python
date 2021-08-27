@@ -994,7 +994,7 @@ def write(filename, data, row_group_offsets=50000000,
             if append == 'overwrite' and partition_on:
                 # Build list of 'path' from existing files
                 # (to have partition values).
-                exist_rgps = ['_'.join(rg.columns[0].file_path.split('/')[:-1])
+                exist_rgps = [b'_'.join(rg.columns[0].file_path.encode().split(b'/')[:-1])
                               for rg in fmd.row_groups]
                 if len(exist_rgps) > len(set(exist_rgps)):
                     # Some groups are in the same folder (partition). This case
@@ -1026,7 +1026,7 @@ part files. This situation is not allowed with use of `append='overwrite'`.")
                     # 'overwrite' mode -> update fmd in place.
                     # Get 'new' combinations of values from columns listed in
                     # 'partition_on',along with corresponding row groups.
-                    new_rgps = {'_'.join(rg.columns[0].file_path.split('/')[:-1]): rg
+                    new_rgps = {b'_'.join(rg.columns[0].file_path.split(b'/')[:-1]): rg
                                 for rg in rgs}
                     for part_val in new_rgps:
                         if part_val in exist_rgps:
@@ -1049,7 +1049,7 @@ part files. This situation is not allowed with use of `append='overwrite'`.")
                     rg = make_part_file(f2, data[start:end], fmd.schema,
                                         compression=compression, fmd=fmd)
                 for chunk in rg.columns:
-                    chunk.file_path = part
+                    chunk.file_path = part.encode()
                 rg_list.append(rg)
             fmd.row_groups = rg_list
 
@@ -1067,6 +1067,8 @@ def find_max_part(row_groups):
     Find the highest integer matching "**part.*.parquet" in referenced paths.
     """
     paths = [c.file_path or "" for rg in row_groups for c in rg.columns]
+    # TODO: the following line should not be necessary
+    paths = [p.decode() if isinstance(p, bytes) else p for p in paths]
     s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
     matches = [s.match(path) for path in paths]
     nums = [int(match.groupdict()['i']) for match in matches if match]
@@ -1112,7 +1114,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
                                 compression=compression, fmd=fmd)
         if rg is not None:
             for chunk in rg.columns:
-                chunk.file_path = relname
+                chunk.file_path = relname.encode()
             rgs.append(rg)
     return rgs
 

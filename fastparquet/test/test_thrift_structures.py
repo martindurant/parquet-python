@@ -23,4 +23,4 @@ def test_serialize():
 def test_copy():
     fmd2 = copy.copy(pf.fmd)
     assert fmd2 is not pf.fmd
-    assert fmd2.row_groups is pf.fmd.row_groups
+    assert fmd2.row_groups == pf.fmd.row_groups
