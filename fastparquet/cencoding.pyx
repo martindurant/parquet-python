@@ -501,6 +501,10 @@ cpdef dict read_thrift(NumpyIO data):
             out[id] = read_list(data)
         elif bit == 12:
             out[id] = read_thrift(data)
+        elif bit == 1:
+            out[id] = True
+        elif bit == 2:
+            out[id] = False
     if hasi32:
         if hasi64:
             out["i32list"] = i32
@@ -555,7 +559,12 @@ cpdef void write_thrift(dict data, NumpyIO output):
             continue
         delt = i - prev
         prev = i
-        if isinstance(val, int):
+        if isinstance(val, bool):
+            if val is True:
+                output.write_byte((delt << 4) | 1)
+            else:
+                output.write_byte((delt << 4) | 2)
+        elif isinstance(val, int):
             if i32 == 1 or (i32 == 2 and i in i32s):
                 output.write_byte((delt << 4) | 5)
             else:
@@ -788,6 +797,13 @@ cdef class ThriftObject:
         except ImportError:
             return str(alt)
 
+    def __eq__(self, other):
+        if isinstance(other, ThriftObject):
+            return dict_eq(self.contents, other.contents)
+        elif isinstance(other, dict):
+            return dict_eq(self.contents, other)
+        return False
+
     @staticmethod
     def from_fields(thrift_name,bint i32=0, list i32list=None, **kwargs):
         cdef spec = specs[thrift_name]
@@ -811,6 +827,29 @@ cdef class ThriftObject:
             # given integer fields are 32-bit
             out['i32list'] = i32list
         return ThriftObject(thrift_name, out)
+
+
+def dict_eq(d1, d2):
+    """ dicts are equal if none-None keys match """
+    for k in set(d1).union(d2):
+        if d1[k] is None:
+            if d2.get(k, None) is None:
+                continue
+            return False
+        elif isinstance(d1[k], dict):
+            if not dict_eq(d1[k], d2.get(k, {})):
+                return False
+        elif isinstance(d1[k], list):
+            if d2.get(k, None) is None:
+                return False
+            if len(d1[k]) != len(d2.get(k, [])):
+                return False
+            if any(a != b for a, b in zip(d1[k], d2.get(k), [])):
+                return False
+        else:
+            if d1[k] != d2.get(k, None):
+                return False
+    return True
 
 
 cdef dict specs = {

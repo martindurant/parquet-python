@@ -969,13 +969,14 @@ def write(filename, data, row_group_offsets=50000000,
                         times=times, index_cols=index_cols,
                         partition_cols=partition_on)
     if custom_metadata is not None:
-        kvm = fmd[8]  # key_value_metadata
+        kvm = fmd.key_value_metadata or []
         kvm.extend(
             [
                 parquet_thrift.KeyValue(key=key, value=value)
                 for key, value in custom_metadata.items()
             ]
         )
+        fmd.key_value_metadata = kvm
 
     if file_scheme == 'simple':
         write_simple(filename, data, fmd, row_group_offsets,
@@ -1157,7 +1158,7 @@ def consolidate_categories(fmd):
             for col in rg.columns:
                 if ".".join(col.meta_data.path_in_schema) == cat['name']:
                     ncats = [k.value for k in (col.meta_data.key_value_metadata or [])
-                             if k.key == 'num_categories']
+                             if k.key == b'num_categories']
                     if ncats and int(ncats[0]) > cat['metadata'][
                             'num_categories']:
                         cat['metadata']['num_categories'] = int(ncats[0])

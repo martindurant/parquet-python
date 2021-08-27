@@ -431,7 +431,7 @@ def test_index(tempdir):
 
     pf = ParquetFile(fn)
     assert set(pf.columns) == {'x', 'y', 'z'}
-    meta = json.loads(pf.key_value_metadata['pandas'])
+    meta = json.loads(pf.key_value_metadata[b'pandas'])
     assert meta['index_columns'] == ['z']
     out = pf.to_pandas()
     assert out.index.name == 'z'
@@ -452,7 +452,6 @@ def test_duplicate_columns(tempdir):
 
 @pytest.mark.parametrize('cmp', [None, 'gzip'])
 def test_cmd_bytesize(tempdir, cmp):
-    from fastparquet import core
     fn = os.path.join(tempdir, 'tmp.parq')
     df = pd.DataFrame({'s': ['a', 'b']}, dtype='category')
     write(fn, df, compression=cmp)
@@ -460,12 +459,12 @@ def test_cmd_bytesize(tempdir, cmp):
     chunk = pf.row_groups[0].columns[0]
     cmd = chunk.meta_data
     csize = cmd.total_compressed_size
-    f = open(fn, 'rb')
+    f = cencoding.NumpyIO(open(fn, 'rb').read())
     f.seek(cmd.dictionary_page_offset)
-    ph = core.read_thrift(f, parquet_thrift.PageHeader)
+    ph = cencoding.from_buffer(f, name="PageHeader")
     c1 = ph.compressed_page_size
     f.seek(c1, 1)
-    ph = core.read_thrift(f, parquet_thrift.PageHeader)
+    ph = cencoding.from_buffer(f, "PageHeader")
     c2 = ph.compressed_page_size
     f.seek(c2, 1)
     assert csize == f.tell() - cmd.dictionary_page_offset
@@ -931,8 +930,8 @@ def test_consolidate_cats(tempdir):
     assert 2 == json.loads(pf.fmd.key_value_metadata[0].value)['columns'][0][
         'metadata']['num_categories']
     start = pf.row_groups[0].columns[0].meta_data.key_value_metadata[0].value
-    assert start == '2'
-    pf.row_groups[0].columns[0].meta_data.key_value_metadata[0].value = '5'
+    assert start == b'2'
+    pf.row_groups[0].columns[0].meta_data[8][0][2] = b'5'  # metadata.key_value_metadata[0].value
     writer.consolidate_categories(pf.fmd)
     assert 5 == json.loads(pf.fmd.key_value_metadata[0].value)['columns'][0][
         'metadata']['num_categories']
@@ -967,7 +966,7 @@ def test_custom_metadata(tempdir):
     fn = os.path.join(tempdir, 'temp.parq')
     write(fn, df, custom_metadata={"hello": "world"})
     pf = ParquetFile(fn)
-    assert pf.key_value_metadata['hello'] == 'world'
+    assert pf.key_value_metadata[b'hello'] == b'world'
 
 
 def test_cat_order(tempdir):
