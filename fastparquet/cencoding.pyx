@@ -831,23 +831,34 @@ cdef class ThriftObject:
 
 def dict_eq(d1, d2):
     """ dicts are equal if none-None keys match """
+    if isinstance(d1, ThriftObject):
+        d1 = d1.contents
+    if isinstance(d2, ThriftObject):
+        d2 = d2.contents
     for k in set(d1).union(d2):
+        if not isinstance(k, int):
+            # dynamic fields are immaterial
+            continue
         if d1.get(k, None) is None:
             if d2.get(k, None) is None:
                 continue
             return False
-        elif isinstance(d1.get(k, None), dict):
-            if not dict_eq(d1[k], d2.get(k, {})):
+        if d2.get(k, None) is None:
+            return False
+        elif isinstance(d1[k], dict):
+            if not dict_eq(d1[k], d2[k]):
                 return False
-        elif isinstance(d1.get(k, None), list):
-            if d2.get(k, None) is None:
+        elif isinstance(d1[k], list):
+            if len(d1[k]) != len(d2[k]):
                 return False
-            if len(d1[k]) != len(d2.get(k, [])):
+            if any(a != b for a, b in zip(d1[k], d2.[k])):
                 return False
-            if any(a != b for a, b in zip(d1[k], d2.get(k), [])):
+        elif isinstance(d1[k], str):
+            s = d2[k]
+            if d1[k] != (s.decode() if isinstance(s, bytes) else s):
                 return False
         else:
-            if d1[k] != d2.get(k, None):
+            if d1.get(k, None) != d2.get(k, None):
                 return False
     return True
 

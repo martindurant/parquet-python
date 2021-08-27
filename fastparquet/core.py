@@ -22,16 +22,19 @@ def _read_page(file_obj, page_header, column_metadata):
     """Read the data page from the given file-object and convert it to raw,
     uncompressed bytes (if necessary)."""
     raw_bytes = file_obj.read(page_header.compressed_page_size)
+    import pdb
+    pdb.set_trace()
     raw_bytes = decompress_data(
         raw_bytes,
         page_header.uncompressed_page_size,
         column_metadata.codec,
     )
 
-    assert len(raw_bytes) == page_header.uncompressed_page_size, \
-        "found {0} raw bytes (expected {1})".format(
-            len(raw_bytes),
-            page_header.uncompressed_page_size)
+    if column_metadata.codec:
+        assert len(raw_bytes) == page_header.uncompressed_page_size, \
+            "found {0} raw bytes (expected {1})".format(
+                len(raw_bytes),
+                page_header.uncompressed_page_size)
     return raw_bytes
 
 

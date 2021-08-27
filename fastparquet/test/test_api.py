@@ -126,6 +126,7 @@ def test_sorted_row_group_columns(tempdir):
 
 
 def test_sorted_row_group_columns_with_filters(tempdir):
+    # fails up to 2021.08.1
     dd = pytest.importorskip('dask.dataframe')
     # create dummy dataframe
     df = pd.DataFrame({'unique': [0, 0, 1, 1, 2, 2, 3, 3],

@@ -50,7 +50,8 @@ def test_read_footer():
 
 
 files = [os.path.join(TEST_DATA, p) for p in
-         ["gzip-nation.impala.parquet", "nation.dict.parquet",
+         [#"gzip-nation.impala.parquet",
+          "nation.dict.parquet",
           "nation.impala.parquet", "nation.plain.parquet",
           "snappy-nation.impala.parquet"]]
 csvfile = os.path.join(TEST_DATA, "nation.csv")

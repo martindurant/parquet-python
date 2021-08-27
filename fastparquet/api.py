@@ -933,7 +933,7 @@ def sorted_partitioned_columns(pf, filters=None):
     """
     s = statistics(pf)
     if filters:
-        rg_idx_list = filter_row_groups(pf, filters, as_idx = True)
+        rg_idx_list = filter_row_groups(pf, filters, as_idx=True)
         for stat in s.keys():
             for col in s[stat].keys():
                 s[stat][col] = [s[stat][col][i] for i in rg_idx_list]

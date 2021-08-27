@@ -12,8 +12,10 @@ pf = ParquetFile(fn)
 
 def test_serialize():
     fmd2 = pickle.loads(pickle.dumps(pf.fmd))
-    schema_tree(fmd2.schema)  # because we added fake fields when loading pf
-    assert fmd2 == pf.fmd
+    # we twiddle for what would have been done during ParquetFile instantiation
+    for sch in fmd2.schema:
+        sch.name = sch.name.decode()
+    assert str(fmd2) == str(pf.fmd)
 
     rg = pf.row_groups[0]
     rg2 = pickle.loads(pickle.dumps(rg))
