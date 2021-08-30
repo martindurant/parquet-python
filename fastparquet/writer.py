@@ -471,6 +471,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
     else:
         definition_data = b""
         num_nulls = 0
+    num_nulls = int(num_nulls)
 
     # No nested field handling (encode those as J/BSON)
     repetition_data = b""
@@ -577,7 +578,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None):
             definition_levels_byte_length=len(definition_data),
             repetition_levels_byte_length=0,  # len(repetition_data),
             is_compressed=is_compressed,
-            statistics=s
+            statistics=s,
+            i32=1
         )
         bdata = encode[encoding](data, selement)
         lb = len(bdata)
@@ -1208,4 +1210,5 @@ def merge(file_list, verify_schema=True, open_with=default_open,
 
 
 def write_thrift(f, obj):
+    # TODO inline this
     return f.write(obj.to_bytes())

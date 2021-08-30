@@ -1,10 +1,6 @@
 import warnings
 import numpy as np
 import pandas as pd
-try:
-    from thrift.protocol.TCompactProtocol import TCompactProtocolAccelerated as TCompactProtocol
-except ImportError:
-    from thrift.protocol.TCompactProtocol import TCompactProtocol
 
 from . import encoding
 from . encoding import read_plain
@@ -22,8 +18,6 @@ def _read_page(file_obj, page_header, column_metadata):
     """Read the data page from the given file-object and convert it to raw,
     uncompressed bytes (if necessary)."""
     raw_bytes = file_obj.read(page_header.compressed_page_size)
-    import pdb
-    pdb.set_trace()
     raw_bytes = decompress_data(
         raw_bytes,
         page_header.uncompressed_page_size,
@@ -290,12 +284,13 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     elif into and data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN decompress directly into output
         decomp = decom_into[rev_map[cmd.codec]]
-        decomp(infile.read(size), assign[num:num+data_header2.num_values].view('uint8'))
+        decomp(np.frombuffer(infile.read(size), dtype="uint8"),
+               assign[num:num+data_header2.num_values].view('uint8'))
         convert(assign[num:num+n_values], se)
     elif data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN, but with nulls or not in-place conversion
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        raw_bytes = decompress_data(infile.read(size),
+        raw_bytes = decompress_data(np.frombuffer(infile.read(size), "uint8"),
                                     uncompressed_page_size, codec)
         values = read_plain(raw_bytes,
                             cmd.type,
@@ -365,7 +360,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     ]:
         # DICTIONARY to be de-referenced, with or without nulls
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        compressed_bytes = infile.read(size)
+        compressed_bytes = np.frombuffer(infile.read(size), "uint8")
         raw_bytes = decompress_data(compressed_bytes, uncompressed_page_size, codec)
         out = np.empty(n_values, dtype='uint8')
         pagefile = encoding.NumpyIO(raw_bytes)
@@ -393,7 +388,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     elif data_header2.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
         assert data_header2.num_nulls == 0, "null delta-int not implemented"
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        raw_bytes = decompress_data(infile.read(size),
+        raw_bytes = decompress_data(np.frombuffer(infile.read(size), "uint8"),
                                     uncompressed_page_size, codec)
         if converts_inplace(se):
             encoding.delta_binary_unpack(
