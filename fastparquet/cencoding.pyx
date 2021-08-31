@@ -729,18 +729,23 @@ cdef class ThriftObject:
         cdef int i = self.spec[item]
         del self.data[i]
 
-    cpdef bytes to_bytes(self):
+    cpdef const uint8_t[:] to_bytes(self):
         """raw serialise of internal state"""
-        # TODO: guess size for row-group (by ncols) and file-meta-data (ncols * nrow-groups)
-        #  constant for all others
-        # TODO: better output as memoryview?
-        cdef uint8_t[::1] ser_buf = np.empty(100000, dtype='uint8')
+        cdef int size = 0
+        if self.name == "RowGroup":
+            size = 100 * len(self[1])  # num-columns
+        elif self.name == "FileMetaData":
+            size = 100 * len(self[4]) * len(self[2])  # n-row-groups * (n-cols + 1)
+        if size < 100000:
+            size = 100000
+        cdef uint8_t[::1] ser_buf = np.empty(size, dtype='uint8')
         cdef NumpyIO o = NumpyIO(ser_buf)
         write_thrift(self.data, o)
-        return bytes(o.so_far())
+        return o.so_far()
 
     def __reduce_ex__(self, _):
-        return from_buffer, (self.to_bytes(), self.name)
+        # TODO: to_bytes returns a memoryview, so could sideband for pickle 5
+        return from_buffer, (bytes(self.to_bytes()), self.name)
 
     @property
     def thrift_name(self):
