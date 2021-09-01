@@ -469,6 +469,20 @@ def test_or_filtering(tempdir):
     assert(or_df.equals(ref_df))
 
 
+def test_row_filter_nulls(tempdir):
+    fn = os.path.join(tempdir, "test.parq")
+    df = pd.DataFrame(
+        {"col": [0, 1, np.nan, np.nan]},
+        index=pd.Index(np.arange(4), name="index")
+    )
+
+    fastparquet.write(fn, df, has_nulls=True)
+
+    filters = [("index", ">=", 1)]
+    out = fastparquet.ParquetFile(fn).to_pandas(row_filter=True, filters=filters)
+    assert len(out) == 3
+
+
 def test_big_definitions(tempdir):
     # https://github.com/dask/fastparquet/issues/604
     values = [

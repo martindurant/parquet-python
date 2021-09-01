@@ -490,10 +490,14 @@ def read_col(column, schema_helper, infile, use_cat=False,
             skip_nulls = False
         defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
                                         skip_nulls, selfmade=selfmade)
+        max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
         if isinstance(row_filter, np.ndarray):
-            defi = defi[row_filter] if defi else defi
-            rep = rep[row_filter] if rep else rep
-            val = val[row_filter]
+            if defi is not None:
+                val = val[row_filter[defi == max_defi]]
+                defi = defi[row_filter]
+            else:
+                val = val[row_filter]
+            rep = rep[row_filter] if rep is not None else rep
         if rep is not None and assign.dtype.kind != 'O':  # pragma: no cover
             # this should never get called
             raise ValueError('Column contains repeated value, must use object '
@@ -506,7 +510,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
                                  ' to use dictionary encoding; column: %s',
                                  cmd.path_in_schema)
 
-        max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
         if rep is not None:
             null = not schema_helper.is_required(cmd.path_in_schema[0])
             null_val = (se.repetition_type !=
