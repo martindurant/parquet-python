@@ -997,3 +997,18 @@ def test_tz_local(tempdir, tz):
 
     pf = ParquetFile(fn)
     assert pf.schema.schema_element(['a']).logicalType.TIMESTAMP.isAdjustedToUTC is tz
+
+
+def test_no_stats(tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame({'a': [0], 'b': [0]})
+    write(fn, df, stats=False)
+
+    pf = ParquetFile(fn)
+    assert pf.row_groups[0].columns[0].meta_data.statistics is None
+    assert pf.row_groups[0].columns[1].meta_data.statistics is None
+
+    write(fn, df, stats=['a'])
+    pf = ParquetFile(fn)
+    assert pf.row_groups[0].columns[0].meta_data.statistics is not None
+    assert pf.row_groups[0].columns[1].meta_data.statistics is None
