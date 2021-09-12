@@ -67,7 +67,7 @@ decompressions = {k.upper(): v for k, v in decompressions.items()}
 
 rev_map = {getattr(parquet_thrift.CompressionCodec, key): key for key in
            dir(parquet_thrift.CompressionCodec) if key in
-           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4', 'ZSTD']}
+           ['UNCOMPRESSED', 'SNAPPY', 'GZIP', 'LZO', 'BROTLI', 'LZ4', 'ZSTD', 'LZ4_RAW']}
 
 
 def compress_data(data, compression='gzip'):
