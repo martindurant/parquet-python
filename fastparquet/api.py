@@ -1,6 +1,5 @@
 """parquet - read parquet files."""
 from collections import OrderedDict
-import io
 import re
 import struct
 
@@ -11,7 +10,7 @@ import pandas as pd
 
 from . import core, schema, converted_types, encoding, dataframe
 from . import parquet_thrift
-from .cencoding import ThriftObject
+from .cencoding import ThriftObject, from_buffer
 from .util import (default_open, ParquetException, val_to_num, ops,
                    ensure_bytes, check_column_names, metadata_from_many,
                    ex_from_sep, json_decoder)
@@ -182,7 +181,7 @@ class ParquetFile(object):
                 raise ParquetException('File parse failed: %s' % self.fn)
 
         try:
-            fmd = ThriftObject.from_buffer(data, "FileMetaData")
+            fmd = from_buffer(data, "FileMetaData")
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd

@@ -64,12 +64,12 @@ def read_def(io_obj, daph, helper, metadata, out=None):
             definition_levels = read_data(
                     io_obj, parquet_thrift.Encoding.RLE,
                     daph.num_values, bit_width, out=out)
-        if (
+        if False and (
                 daph.statistics is not None
                 and getattr(daph.statistics, "null_count", None) is not None
         ):
             num_nulls = daph.statistics.null_count
-        elif (
+        elif False and (
                 daph.num_values == metadata.num_values
                 and metadata.statistics
                 and getattr(metadata.statistics, "null_count", None) is not None
