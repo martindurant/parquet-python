@@ -416,19 +416,23 @@ class ParquetFile(object):
             inferred from the metadata (if this was originally pandas data); if
             the metadata does not exist or index is False, index is simple
             sequential integers.
-        row_filter: bool
+        row_filter: bool or tuple of a list and a ndarray
             Whether filters are applied to whole row-groups (False, default)
             or row-wise (True, experimental). The latter requires two passes of
             any row group that may contain valid rows, but can be much more
             memory-efficient, especially if the filter columns are not required
             in the output.
+            If a tuple, the first element has to be the list of row groups to
+            retrieve, and the second element has to be a ndarray of booleans
+            specifying row per row if it is has to be loaded or not. This
+            data will only be taken into account if 'filters' parameter remains
+            an empty list.
 
         Returns
         -------
         Pandas data-frame
         """
         rgs = filter_row_groups(self, filters) if filters else self.row_groups
-        size = sum(rg.num_rows for rg in rgs)
         index = self._get_index(index)
         if columns is not None:
             columns = columns[:]
@@ -437,12 +441,17 @@ class ParquetFile(object):
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
-        if filters and row_filter:
-            # TODO: special case when filter columns are also in output
-            cs = self._columns_from_filters(filters)
-            df = self.to_pandas(columns=cs, filters=filters, row_filter=False,
-                                index=False)
-            sel = self._column_filter(df, filters=filters)
+        if row_filter:
+            if filters:
+                # Rows are selected exactly according filters.
+                # TODO: special case when filter columns are also in output
+                cs = self._columns_from_filters(filters)
+                df = self.to_pandas(columns=cs, filters=filters, row_filter=False,
+                                    index=False)
+                sel = self._column_filter(df, filters=filters)
+            else:
+                # Row selection specified with custom 'rgs' and 'sel'.
+                rgs, sel = row_filter
             size = sel.sum()
             selected = []
             start = 0
@@ -450,6 +459,7 @@ class ParquetFile(object):
                 selected.append(sel[start:start+rg.num_rows])
                 start += rg.num_rows
         else:
+            size = sum(rg.num_rows for rg in rgs)
             selected = [None] * len(rgs)  # just to fill zip, below
         df, views = self.pre_allocate(size, columns, categories, index)
         start = 0

@@ -1042,6 +1042,22 @@ def test_row_filter(tempdir):
     ]
 
 
+@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
+def test_custom_row_filter(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    row_group_idx = [0,2,5,8,11]
+    val = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2]
+    # rg idx :      0    |        1       |       2       |      3      |  4
+    # values :  0.1  0.2 | 0.3   0.4  0.5 | 0.6  0.7  0.8 | 0.9  1  1.1 | 1.2
+    df = pd.DataFrame({'value' : val})
+    write(dn, df, row_group_offsets=row_group_idx, file_scheme='hive')
+    pf = ParquetFile(dn)
+    rgs = pf[2:].row_groups
+    sel = np.array([False, False, True, True, True, True, True])
+    df = pf.to_pandas(row_filter=(rgs, sel))
+    assert df.loc[0, 'value'] == 0.8
+
+
 def test_select(tempdir):
     fn = os.path.join(tempdir, 'test.parquet')
     val = [2, 10, 34, 76]
