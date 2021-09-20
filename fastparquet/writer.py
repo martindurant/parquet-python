@@ -201,19 +201,10 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     elif dtype.kind == "m":
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
-    elif str(dtype) == 'string':
-        if object_encoding == 'infer':
-            object_encoding = infer_object_encoding(data)
-
-        if object_encoding == 'utf8':
-            type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY,
-                                           parquet_thrift.ConvertedType.UTF8,
-                                           None)
-        elif object_encoding in ['bytes', None]:
-            type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY, None,
-                                           None)
-        else:
-            raise ValueError('Object Encoding (%s) not one of infer|utf8|bytes' % object_encoding)
+    elif "string" in str(dtype):
+        type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY,
+                                       parquet_thrift.ConvertedType.UTF8,
+                                       None)
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
     se = parquet_thrift.SchemaElement(
@@ -313,17 +304,17 @@ def convert(data, se):
 
 def infer_object_encoding(data):
     head = data[:10] if isinstance(data, pd.Index) else data.dropna()[:10]
-    if all(isinstance(i, str) for i in head if i):
+    if all(isinstance(i, str) for i in head if i is not None):
         return "utf8"
-    elif all(isinstance(i, bytes) for i in head if i):
+    elif all(isinstance(i, bytes) for i in head if i is not None):
         return 'bytes'
-    elif all(isinstance(i, (list, dict)) for i in head if i):
+    elif all(isinstance(i, (list, dict)) for i in head if i is not None):
         return 'json'
-    elif all(isinstance(i, bool) for i in head if i):
+    elif all(isinstance(i, bool) for i in head if i is not None):
         return 'bool'
-    elif all(isinstance(i, Decimal) for i in head if i):
+    elif all(isinstance(i, Decimal) for i in head if i is not None):
         return 'decimal'
-    elif all(isinstance(i, int) for i in head if i):
+    elif all(isinstance(i, int) for i in head if i is not None):
         return 'int'
     elif all(isinstance(i, float) or isinstance(i, np.floating)
              for i in head if i):
