@@ -1052,10 +1052,14 @@ def test_custom_row_filter(tempdir):
     df = pd.DataFrame({'value' : val})
     write(dn, df, row_group_offsets=row_group_idx, file_scheme='hive')
     pf = ParquetFile(dn)
-    rgs = pf[2:].row_groups
+    pf2 = pf[2:]
     sel = np.array([False, False, True, True, True, True, True])
-    df = pf.to_pandas(row_filter=(rgs, sel))
+    df = pf2.to_pandas(row_filter=sel)
     assert df.loc[0, 'value'] == 0.8
+    # Checking exception raised in cased of mismatch between length of boolean
+    # array, and total number of rows.
+    with pytest.raises(ValueError, match='^Provided boolean array'):
+        df = pf.to_pandas(row_filter=sel)
 
 
 def test_select(tempdir):

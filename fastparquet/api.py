@@ -416,17 +416,15 @@ class ParquetFile(object):
             inferred from the metadata (if this was originally pandas data); if
             the metadata does not exist or index is False, index is simple
             sequential integers.
-        row_filter: bool or tuple of a list and a ndarray
+        row_filter: bool or boolean ndarray
             Whether filters are applied to whole row-groups (False, default)
             or row-wise (True, experimental). The latter requires two passes of
             any row group that may contain valid rows, but can be much more
             memory-efficient, especially if the filter columns are not required
             in the output.
-            If a tuple, the first element has to be the list of row groups to
-            retrieve, and the second element has to be a ndarray of booleans
-            specifying row per row if it is has to be loaded or not. This
-            data will only be taken into account if 'filters' parameter remains
-            an empty list.
+            If boolean array, it is applied as custom row filter. In this case,
+            'filter' parameter is ignored, and length of the array has to be
+            equal to the total number of rows.
 
         Returns
         -------
@@ -441,17 +439,20 @@ class ParquetFile(object):
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
-        if row_filter:
-            if filters:
-                # Rows are selected exactly according filters.
+        if row_filter is not False:
+            if filters and row_filter is True:
+                # Rows are selected as per filters.
                 # TODO: special case when filter columns are also in output
                 cs = self._columns_from_filters(filters)
                 df = self.to_pandas(columns=cs, filters=filters, row_filter=False,
                                     index=False)
                 sel = self._column_filter(df, filters=filters)
             else:
-                # Row selection specified with custom 'rgs' and 'sel'.
-                rgs, sel = row_filter
+                # Row are selected as per custom 'sel'.
+                if sum(rg.num_rows for rg in rgs) != len(row_filter):
+                    raise ValueError('Provided boolean array for custom row \
+selection does not match number of rows in DataFrame.')
+                sel = row_filter
             size = sel.sum()
             selected = []
             start = 0
