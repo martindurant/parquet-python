@@ -1012,3 +1012,12 @@ def test_no_stats(tempdir):
     pf = ParquetFile(fn)
     assert pf.row_groups[0].columns[0].meta_data.statistics is not None
     assert pf.row_groups[0].columns[1].meta_data.statistics is None
+
+
+def test_Float(tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame({"s": ["a", "b", "c", "d"], "v": [1, 2, 3, pd.NA]})
+    df = df.astype({"s": "string", "v": "Float64"})
+    write(fn, df, stats=False)
+    out = ParquetFile(fn).to_pandas()
+    assert (out.v == df.v).all()
