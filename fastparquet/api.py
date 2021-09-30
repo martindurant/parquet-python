@@ -93,7 +93,7 @@ class ParquetFile(object):
     _categories = None
 
     def __init__(self, fn, verify=False, open_with=default_open, root=False,
-                 fs=None, pandas_nulls=True):
+                 sep=None, fs=None, pandas_nulls=True):
         self.pandas_nulls = pandas_nulls
         if open_with is default_open and fs is None:
             fs = fsspec.filesystem("file")
