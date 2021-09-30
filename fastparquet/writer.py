@@ -982,9 +982,10 @@ part files. This situation is not allowed with use of `append='overwrite'`.")
             else:
                 i_offset = find_max_part(fmd.row_groups)
         else:
+            # New dataset.
             i_offset = 0
+            mkdirs(filename)
 
-        mkdirs(filename)
         for i, start in enumerate(row_group_offsets):
             end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
                    else None)
