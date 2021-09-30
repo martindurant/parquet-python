@@ -19,8 +19,8 @@ from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__
 from .util import (default_open, default_mkdirs, check_column_names,
-                   created_by, get_column_metadata, MARKER, path_string,
-                   write_common_metadata)
+                   consolidate_categories, created_by, get_column_metadata,
+                   MARKER, path_string, write_common_metadata)
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
 from .cencoding import NumpyIO

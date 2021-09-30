@@ -16,7 +16,7 @@ import pandas
 
 from pandas.api.types import is_categorical_dtype
 
-from .thrift_structures import write_thrift
+from .thrift_structures import ParquetException, write_thrift
 
 PANDAS_VERSION = LooseVersion(pandas.__version__)
 MARKER = b'PAR1'

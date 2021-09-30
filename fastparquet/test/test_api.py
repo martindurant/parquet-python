@@ -365,7 +365,7 @@ def test_write_common_metadata(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5]})
     write(tempdir, df, file_scheme='hive', row_group_offsets=[0, 2])
     pf = ParquetFile(tempdir)
-    # Keep a single row group and write it back to disk.
+    # Keep a single row group and write metadata back to disk.
     pf[0]._write_common_metadata()
     pf = ParquetFile(tempdir)
     assert len(pf.row_groups) == 1
