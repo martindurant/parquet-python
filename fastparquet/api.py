@@ -10,11 +10,11 @@ from fastparquet.util import join_path
 import pandas as pd
 
 from .core import read_thrift
-from .thrift_structures import parquet_thrift
+from .thrift_structures import parquet_thrift, ParquetException
 from . import core, schema, converted_types, encoding, dataframe
-from .util import (default_open, ParquetException, val_to_num, ops,
+from .util import (default_open, val_to_num, ops,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, json_decoder)
+                   ex_from_sep, json_decoder, write_common_metadata)
 
 
 class ParquetFile(object):
@@ -330,6 +330,27 @@ class ParquetFile(object):
             df = self[i].to_pandas(filters=filters, **kwargs)
             if not df.empty:
                 yield df
+
+    def _write_common_metadata(self, open_with=default_open,
+                               update_num_rows=True):
+        """
+        Write common metadata to disk.
+        
+        Parameter
+        ---------
+        open_with: function
+            When called with a f(path, mode), returns an open file-like object.
+        update_num_rows: bool, True
+            Update `fmd.num_rows` according the total number of rows in row
+            groups.
+        """
+        fmd = self.fmd
+        if update_num_rows:
+            fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
+        write_common_metadata(self.fn, fmd, open_with, no_row_groups=False)
+        # replace '_metadata' with '_common_metadata'
+        fn = f'{self.fn[:-9]}_common_metadata'
+        write_common_metadata(fn, fmd, open_with)
 
     def _get_index(self, index=None):
         if index is None:

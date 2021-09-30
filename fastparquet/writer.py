@@ -18,15 +18,14 @@ from .thrift_structures import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__
-from .util import (default_open, default_mkdirs,
-                   check_column_names, metadata_from_many, created_by,
-                   get_column_metadata, path_string)
+from .util import (default_open, default_mkdirs, check_column_names,
+                   created_by, get_column_metadata, MARKER, path_string,
+                   write_common_metadata)
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
 from .cencoding import NumpyIO
 from decimal import Decimal
 
-MARKER = b'PAR1'
 NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
 nat = np.datetime64('NaT').view('int64')
 
@@ -1095,52 +1094,6 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     return rgs
 
 
-def write_common_metadata(fn, fmd, open_with=default_open,
-                          no_row_groups=True):
-    """
-    For hive-style parquet, write schema in special shared file
-
-    Parameters
-    ----------
-    fn: str
-        Filename to write to
-    fmd: thrift FileMetaData
-        Information to write
-    open_with: func
-        To use to create writable file as f(path, mode)
-    no_row_groups: bool (True)
-        Strip out row groups from metadata before writing - used for "common
-        metadata" files, containing only the schema.
-    """
-    consolidate_categories(fmd)
-    with open_with(fn, 'wb') as f:
-        f.write(MARKER)
-        if no_row_groups:
-            fmd = copy(fmd)
-            fmd.row_groups = []
-        foot_size = write_thrift(f, fmd)
-        f.write(struct.pack(b"<i", foot_size))
-        f.write(MARKER)
-
-
-def consolidate_categories(fmd):
-    key_value = [k for k in fmd.key_value_metadata
-                 if k.key == 'pandas'][0]
-    meta = json.loads(key_value.value)
-    cats = [c for c in meta['columns']
-            if 'num_categories' in (c['metadata'] or [])]
-    for cat in cats:
-        for rg in fmd.row_groups:
-            for col in rg.columns:
-                if ".".join(col.meta_data.path_in_schema) == cat['name']:
-                    ncats = [k.value for k in (col.meta_data.key_value_metadata or [])
-                             if k.key == 'num_categories']
-                    if ncats and int(ncats[0]) > cat['metadata'][
-                            'num_categories']:
-                        cat['metadata']['num_categories'] = int(ncats[0])
-    key_value.value = json.dumps(meta, sort_keys=True)
-
-
 def merge(file_list, verify_schema=True, open_with=default_open,
           root=False):
     """
@@ -1170,7 +1123,5 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     ParquetFile instance corresponding to the merged data.
     """
     out = api.ParquetFile(file_list, verify_schema, open_with, root)
-    write_common_metadata(out.fn, out.fmd, open_with, no_row_groups=False)
-    fn = f'{out.fn[:-9]}_common_metadata'
-    write_common_metadata(fn, out.fmd, open_with)
+    out._write_common_metadata(open_with, update_num_rows=False)
     return out

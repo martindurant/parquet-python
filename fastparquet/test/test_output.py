@@ -7,6 +7,7 @@ import pandas.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding
+from fastparquet.util import consolidate_categories
 from pandas.testing import assert_frame_equal
 from pandas.api.types import CategoricalDtype
 import pytest
@@ -933,7 +934,7 @@ def test_consolidate_cats(tempdir):
     start = pf.row_groups[0].columns[0].meta_data.key_value_metadata[0].value
     assert start == '2'
     pf.row_groups[0].columns[0].meta_data.key_value_metadata[0].value = '5'
-    writer.consolidate_categories(pf.fmd)
+    consolidate_categories(pf.fmd)
     assert 5 == json.loads(pf.fmd.key_value_metadata[0].value)['columns'][0][
         'metadata']['num_categories']
 
