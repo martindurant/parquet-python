@@ -92,8 +92,8 @@ class ParquetFile(object):
     _pdm = None
     _categories = None
 
-    def __init__(self, fn, verify=False, open_with=default_open,
-                 root=False, sep=None, fs=None, pandas_nulls=True):
+    def __init__(self, fn, verify=False, open_with=default_open, root=False,
+                 fs=None, pandas_nulls=True):
         self.pandas_nulls = pandas_nulls
         if open_with is default_open and fs is None:
             fs = fsspec.filesystem("file")
@@ -105,10 +105,8 @@ class ParquetFile(object):
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
                                                open_with=open_with, root=root,
                                                fs=fs)
-            if basepath:
-                self.fn = join_path(basepath, '_metadata')  # effective file
-            else:
-                self.fn = '_metadata'
+            self.fn = join_path(basepath, '_metadata') if basepath \
+                      else '_metadata'
             self.fmd = fmd
             self._set_attrs()
         elif hasattr(fn, 'read'):
@@ -149,16 +147,13 @@ class ParquetFile(object):
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
                                                        open_with=open_with, root=root,
                                                        fs=fs)
-                    if basepath:
-                        self.fn = join_path(basepath, '_metadata')  # effective file
-                    else:
-                        self.fn = '_metadata'
+                    self.fn = join_path(basepath, '_metadata') if basepath \
+                              else '_metadata'
                     self.fmd = fmd
                     self._set_attrs()
             else:
                 raise FileNotFoundError
         self.open = open_with
-        self.sep = sep
         self._statistics = None
 
     def _parse_header(self, f, verify=True):
@@ -659,7 +654,7 @@ class ParquetFile(object):
         return dtype
 
     def __getstate__(self):
-        return {"fn": self.fn, "open": self.open, "sep": self.sep, "fmd": self.fmd,
+        return {"fn": self.fn, "open": self.open, "fmd": self.fmd,
                 "pandas_nulls": self.pandas_nulls}
 
     def __setstate__(self, state):

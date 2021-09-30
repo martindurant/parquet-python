@@ -1117,9 +1117,7 @@ def write_common_metadata(fn, fmd, open_with=default_open,
         if no_row_groups:
             fmd = copy(fmd)
             fmd.row_groups = []
-            foot_size = write_thrift(f, fmd)
-        else:
-            foot_size = write_thrift(f, fmd)
+        foot_size = write_thrift(f, fmd)
         f.write(struct.pack(b"<i", foot_size))
         f.write(MARKER)
 
@@ -1170,13 +1168,8 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     -------
     ParquetFile instance corresponding to the merged data.
     """
-    basepath, fmd = metadata_from_many(file_list, verify_schema, open_with,
-                                       root=root)
-
-    out_file = join_path(basepath, '_metadata')
-    write_common_metadata(out_file, fmd, open_with, no_row_groups=False)
-    out = api.ParquetFile(out_file, open_with=open_with)
-
-    out_file = join_path(basepath, '_common_metadata')
-    write_common_metadata(out_file, fmd, open_with)
+    out = api.ParquetFile(file_list, verify_schema, open_with, root)
+    write_common_metadata(out.fn, out.fmd, open_with, no_row_groups=False)
+    fn = f'{out.fn[:-9]}_common_metadata'
+    write_common_metadata(fn, out.fmd, open_with)
     return out
