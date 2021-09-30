@@ -12,7 +12,7 @@ import pandas as pd
 from .core import read_thrift
 from .thrift_structures import parquet_thrift, ParquetException
 from . import core, schema, converted_types, encoding, dataframe
-from .util import (default_open, val_to_num, ops,
+from .util import (default_open, default_remove, val_to_num, ops,
                    ensure_bytes, check_column_names, metadata_from_many,
                    ex_from_sep, json_decoder, write_common_metadata)
 
@@ -219,6 +219,10 @@ class ParquetFile(object):
     def partition_meta(self):
         return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
 
+    @property
+    def basepath(self):
+        return re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
+
     def _read_partitions(self):
         paths = [rg.columns[0].file_path or "" for rg in self.row_groups if rg.columns]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
@@ -259,7 +263,7 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
-            base = re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
+            base = self.basepath
             if base:
                 return join_path(base, rg.columns[0].file_path)
             else:
@@ -331,6 +335,52 @@ class ParquetFile(object):
             if not df.empty:
                 yield df
 
+    def remove_row_groups(self, rgs:list, write_fmd:bool = True,
+                          open_with=default_open, remove_with=default_remove):
+        """
+        Remove list of row groups from disk. `ParquetFile` metadata are
+        updated accordingly.
+
+        Parameter
+        ---------
+        rgs: list of row groups
+            List of row groups to be removed from disk.
+        write_fmd: bool, True
+            Write updated common metadata to disk.
+        open_with: function
+            When called with a f(path, mode), returns an open file-like object.
+        remove_with: (function, function)
+            When called with f(path), first function removes empty dir (or
+            raise an `OSError` if not empty), second function removes a file.
+        """
+        rmfile, rmdir = remove_with
+        basepath = self.basepath
+        paths = []
+        for rg in rgs:
+            # Keep track of intermediate partition folders, in case one get
+            # empty.
+            file = join_path(basepath, rg.columns[0].file_path)
+            paths.append(file)
+            self.row_groups.remove(rg)
+            rmfile(file)
+        if self.info['partition']:
+            while paths:
+                # If there are empty partition directories, remove them.
+                paths = strip_path_tail(paths)
+                buffer_paths = []
+                for path in paths:
+                    if path != basepath:
+                        try:
+                            rmdir(path)
+                            buffer_paths.append(path)
+                        except OSError:
+                            pass
+                paths = buffer_paths
+        self.fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
+        if write_fmd:
+            self._write_common_metadata(open_with, False)
+        return
+
     def _write_common_metadata(self, open_with=default_open,
                                update_num_rows=True):
         """
@@ -346,7 +396,7 @@ class ParquetFile(object):
         """
         fmd = self.fmd
         if update_num_rows:
-            fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
+            fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
         write_common_metadata(self.fn, fmd, open_with, no_row_groups=False)
         # replace '_metadata' with '_common_metadata'
         fn = f'{self.fn[:-9]}_common_metadata'
@@ -713,6 +763,21 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     return df, views
 
 
+def strip_path_tail(paths) -> set:
+    """
+    Return paths, striped from right most name (file or directory).
+
+    Parameters
+    ----------
+    paths (Iterable[str]): paths (file or directories) relative to root.
+
+    Returns
+    -------
+    paths (set): set of paths stripped from right most name.
+    """
+    return set(path.rsplit("/", 1)[0] if "/" in path else "" for path in paths)
+
+
 def paths_to_cats(paths, partition_meta=None):
     """
     Extract categorical fields and labels from hive- or drill-style paths.
@@ -732,7 +797,7 @@ def paths_to_cats(paths, partition_meta=None):
 
     if all(p in [None, ""] for p in paths):
         return "simple", {}
-    paths = set(path.rsplit("/", 1)[0] if "/" in path else "" for path in paths if "/")
+    paths = strip_path_tail(paths)
     parts = [path.split("/") for path in paths if path]
     lparts = [len(part) for part in parts]
     if not lparts or max(lparts) < 1:
