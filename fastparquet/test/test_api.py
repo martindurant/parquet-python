@@ -361,6 +361,18 @@ def test_read_multiple_no_metadata(tempdir):
     pd.testing.assert_frame_equal(out, df, check_dtype=False)
 
 
+def test_write_common_metadata(tempdir):
+    df = pd.DataFrame({'x': [1, 5, 2, 5]})
+    write(tempdir, df, file_scheme='hive', row_group_offsets=[0, 2])
+    pf = ParquetFile(tempdir)
+    # Keep a single row group and write it back to disk.
+    pf[0]._write_common_metadata()
+    pf = ParquetFile(tempdir)
+    assert len(pf.row_groups) == 1
+    out = pf.to_pandas()
+    pd.testing.assert_frame_equal(out, df[:2], check_dtype=False)
+
+
 def test_single_upper_directory(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5], 'y': ['aa'] * 4})
     write(tempdir, df, file_scheme='hive', partition_on='y')
