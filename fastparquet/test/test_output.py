@@ -1021,3 +1021,20 @@ def test_Float(tempdir):
     write(fn, df, stats=False)
     out = ParquetFile(fn).to_pandas()
     assert (out.v == df.v).all()
+
+
+def test_empty_columns(tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame(
+        {
+            "a": [None],
+            "b": ["a"],
+            "c": [b"a"],
+            "d": [b""]
+        }
+    )
+    df = df.assign(aa=df.a.astype("string"), bb=df.b.astype("string"))
+    write(fn, df, stats=False)
+    pf = ParquetFile(fn)
+    out = pf.to_pandas()
+    assert out.iloc[0].to_dict() == {'a': None, 'b': 'a', 'c': b'a', 'd': b'', 'aa': None, 'bb': 'a'}
