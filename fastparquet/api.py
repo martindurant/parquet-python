@@ -356,7 +356,7 @@ class ParquetFile(object):
         remove_with: (function, function, function)
             When called with f(path),
               first function removes a file.
-              second function returns the list of existing file or sub-dir
+              second function returns the list of existing files or sub-dirs
               third function removes an empty dir, 
         """
         rmfile, listdir, rmdir = remove_with

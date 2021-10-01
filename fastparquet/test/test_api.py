@@ -1098,7 +1098,7 @@ def test_spark_date_empty_rg():
     assert out.Date.tolist() == [pd.Timestamp("2020-1-1"), pd.Timestamp("2020-1-2")]
 
 
-def test_remove_rgs_no_partitions(tempdir):
+def test_remove_rgs_no_partition(tempdir):
     dn = os.path.join(tempdir, 'test_parquet')
     df = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7, 0.6],
                        'pressure': [1e5, 1.1e5, 0.95e5, 0.98e5, 1e5],
