@@ -58,7 +58,7 @@ class ParquetFile(object):
     Attributes
     ----------
     fn: path/URL
-        To main '_metadata' file.
+        Of '_metadata' file.
     basepath: path/URL
         Of directory containing files of parquet dataset.
     cats: dict
