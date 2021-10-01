@@ -37,8 +37,8 @@ def path_string(o):
 
 
 default_open = open
-# 1st to remove file, 2nd to remove empty dir.
-default_remove = (os.remove, os.rmdir)
+# 1st to remove file, 2nd to check if folder contains file, 3rd to remove empty dir.
+default_remove = (os.remove, os.listdir,  os.rmdir)
 
 
 def val_from_meta(x, meta):

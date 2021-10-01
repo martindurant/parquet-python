@@ -335,7 +335,7 @@ class ParquetFile(object):
             if not df.empty:
                 yield df
 
-    def remove_row_groups(self, rgs:list, write_fmd:bool = True,
+    def remove_row_groups(self, rgs, write_fmd:bool = True,
                           open_with=default_open, remove_with=default_remove):
         """
         Remove list of row groups from disk. `ParquetFile` metadata are
@@ -343,19 +343,23 @@ class ParquetFile(object):
 
         Parameter
         ---------
-        rgs: list of row groups
+        rgs: row group or list of row groups
             List of row groups to be removed from disk.
         write_fmd: bool, True
             Write updated common metadata to disk.
         open_with: function
             When called with a f(path, mode), returns an open file-like object.
-        remove_with: (function, function)
-            When called with f(path), first function removes empty dir (or
-            raise an `OSError` if not empty), second function removes a file.
+        remove_with: (function, function, function)
+            When called with f(path),
+              first function removes a file.
+              second function returns the list of existing file or sub-dir
+              third function removes an empty dir, 
         """
-        rmfile, rmdir = remove_with
+        rmfile, listdir, rmdir = remove_with
         basepath = self.basepath
         paths = []
+        if not isinstance(rgs, list):
+            rgs = [rgs]
         for rg in rgs:
             # Keep track of intermediate partition folders, in case one get
             # empty.
@@ -363,19 +367,17 @@ class ParquetFile(object):
             paths.append(file)
             self.row_groups.remove(rg)
             rmfile(file)
-        if self.info['partition']:
-            while paths:
+        if self.cats:
+            paths = strip_path_tail(paths)
+            while (len(paths) > 1 or
+                   (len(paths) == 1 and next(iter(paths)) != basepath)):
                 # If there are empty partition directories, remove them.
-                paths = strip_path_tail(paths)
                 buffer_paths = []
                 for path in paths:
-                    if path != basepath:
-                        try:
-                            rmdir(path)
-                            buffer_paths.append(path)
-                        except OSError:
-                            pass
-                paths = buffer_paths
+                    if not listdir(path):
+                        rmdir(path)
+                        buffer_paths.append(path)
+                paths = strip_path_tail(buffer_paths)
         self.fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
         if write_fmd:
             self._write_common_metadata(open_with, False)
@@ -775,7 +777,7 @@ def strip_path_tail(paths) -> set:
     -------
     paths (set): set of paths stripped from right most name.
     """
-    return set(path.rsplit("/", 1)[0] if "/" in path else "" for path in paths)
+    return {path.rsplit("/", 1)[0] if "/" in path else "" for path in paths}
 
 
 def paths_to_cats(paths, partition_meta=None):
