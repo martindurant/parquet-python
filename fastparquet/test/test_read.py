@@ -503,8 +503,7 @@ def test_big_definitions(tempdir):
                  for v in np.random.choice(values, size=500_000, p=p)]
     })
 
-    test_filename = 'test_issue_604.parquet'
-
-    test_df.to_parquet(test_filename, engine='fastparquet')
-    out = pd.read_parquet(test_filename, engine='fastparquet')
+    fn = os.path.join(tempdir, 'test_issue_604.parquet')
+    test_df.to_parquet(fn, engine='fastparquet')
+    out = pd.read_parquet(fn, engine='fastparquet')
     assert (out['test'].isna() == test_df['test'].isna()).all()
