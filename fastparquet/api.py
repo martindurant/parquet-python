@@ -10,11 +10,12 @@ from fastparquet.util import join_path
 import pandas as pd
 
 from .core import read_thrift
-from .thrift_structures import parquet_thrift, ParquetException
+from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
-from .util import (default_open, default_remove, val_to_num, ops,
-                   ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, json_decoder, write_common_metadata)
+from .util import (default_open, default_remove, ParquetException, val_to_num,
+                   ops, ensure_bytes, check_column_names, metadata_from_many,
+                   ex_from_sep, json_decoder)
+from .write import write_common_metadata
 
 
 class ParquetFile(object):

@@ -5,12 +5,7 @@ from thrift.protocol.TCompactProtocol import TCompactProtocolAccelerated as TCom
 from thrift.protocol.TProtocol import TProtocolException
 
 from .parquet_thrift.parquet import ttypes as parquet_thrift
-
-
-class ParquetException(Exception):
-    """Generic Exception related to unexpected data format when
-     reading parquet file."""
-    pass
+from .util import ParquetException
 
 
 def read_thrift(file_obj, ttype):
