@@ -343,7 +343,8 @@ class ParquetFile(object):
                           open_with=default_open, remove_with=default_remove):
         """
         Remove list of row groups from disk. `ParquetFile` metadata are
-        updated accordingly.
+        updated accordingly. This method can not be applied if file scheme is
+        simple.
 
         Parameter
         ---------
@@ -359,6 +360,9 @@ class ParquetFile(object):
               second function returns the list of existing files or sub-dirs
               third function removes an empty dir, 
         """
+        if self.file_scheme == 'simple':
+            raise ValueError("Not possible to remove row groups when file \
+scheme is 'simple'.")
         rmfile, listdir, rmdir = remove_with
         basepath = self.basepath
         paths = []

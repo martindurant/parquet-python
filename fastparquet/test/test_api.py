@@ -1098,18 +1098,19 @@ def test_spark_date_empty_rg():
     assert out.Date.tolist() == [pd.Timestamp("2020-1-1"), pd.Timestamp("2020-1-2")]
 
 
+df_remove_rgs = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7, 0.6],
+                              'pressure': [1e5, 1.1e5, 0.95e5, 0.98e5, 1e5],
+                              'city': ['Paris', 'Paris', 'Milan', 'Milan', 'Marseille'],
+                              'country': ['France', 'France', 'Italy', 'Italy', 'France']},
+                             index = [pd.Timestamp('2020/01/02 01:59:00'),
+                                      pd.Timestamp('2020/01/02 03:59:00'),
+                                      pd.Timestamp('2020/01/02 02:59:00'),
+                                      pd.Timestamp('2020/01/02 02:57:00'),
+                                      pd.Timestamp('2020/01/02 02:58:00')])
+
 def test_remove_rgs_no_partition(tempdir):
     dn = os.path.join(tempdir, 'test_parquet')
-    df = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7, 0.6],
-                       'pressure': [1e5, 1.1e5, 0.95e5, 0.98e5, 1e5],
-                       'city': ['Paris', 'Paris', 'Milan', 'Milan', 'Marseille'],
-                       'country': ['France', 'France', 'Italy', 'Italy', 'France']},
-                      index = [pd.Timestamp('2020/01/02 01:59:00'),
-                               pd.Timestamp('2020/01/02 03:59:00'),
-                               pd.Timestamp('2020/01/02 02:59:00'),
-                               pd.Timestamp('2020/01/02 02:57:00'),
-                               pd.Timestamp('2020/01/02 02:58:00')])
-    write(dn, df, file_scheme='hive', row_group_offsets=[0,2,3])
+    write(dn, df_remove_rgs, file_scheme='hive', row_group_offsets=[0,2,3])
     pf = ParquetFile(dn)
     assert len(pf.row_groups) == 3 # check number of row groups
     rgs = [pf.row_groups[1], pf.row_groups[2]]     # removing Milan & Marseille
@@ -1129,16 +1130,7 @@ def test_remove_rgs_no_partition(tempdir):
 
 def test_remove_rgs_with_partitions(tempdir):
     dn = os.path.join(tempdir, 'test_parquet')
-    df = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7, 0.6],
-                       'pressure': [1e5, 1.1e5, 0.95e5, 0.98e5, 1e5],
-                       'city': ['Paris', 'Paris', 'Milan', 'Milan', 'Marseille'],
-                       'country': ['France', 'France', 'Italy', 'Italy', 'France']},
-                      index = [pd.Timestamp('2020/01/02 01:59:00'),
-                               pd.Timestamp('2020/01/02 03:59:00'),
-                               pd.Timestamp('2020/01/02 02:59:00'),
-                               pd.Timestamp('2020/01/02 02:57:00'),
-                               pd.Timestamp('2020/01/02 02:58:00')])
-    write(dn, df, file_scheme='hive', partition_on=['country', 'city'])
+    write(dn, df_remove_rgs, file_scheme='hive', partition_on=['country', 'city'])
     pf = ParquetFile(dn)
     assert len(pf.row_groups) == 3 # check number of row groups
     rg = pf.row_groups[2]          # remove data from Milan (3rd row group)
@@ -1162,16 +1154,7 @@ def test_remove_rgs_with_partitions(tempdir):
 
 def test_remove_rgs_partitions_and_fsspec(tempdir):
     dn = os.path.join(tempdir, 'test_parquet')
-    df = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7, 0.6],
-                       'pressure': [1e5, 1.1e5, 0.95e5, 0.98e5, 1e5],
-                       'city': ['Paris', 'Paris', 'Milan', 'Milan', 'Marseille'],
-                       'country': ['France', 'France', 'Italy', 'Italy', 'France']},
-                      index = [pd.Timestamp('2020/01/02 01:59:00'),
-                               pd.Timestamp('2020/01/02 03:59:00'),
-                               pd.Timestamp('2020/01/02 02:59:00'),
-                               pd.Timestamp('2020/01/02 02:57:00'),
-                               pd.Timestamp('2020/01/02 02:58:00')])
-    write(dn, df, file_scheme='hive', partition_on=['country', 'city'])
+    write(dn, df_remove_rgs, file_scheme='hive', partition_on=['country', 'city'])
     pf = ParquetFile(dn)
     assert len(pf.row_groups) == 3 # check number of row groups
     # Local filesystem using fsspec.
@@ -1195,3 +1178,11 @@ def test_remove_rgs_partitions_and_fsspec(tempdir):
     df_ref['country'] = df_ref['country'].astype('category') 
     df_ref['city'] = df_ref['city'].astype('category') 
     assert pf.to_pandas().equals(df_ref) 
+
+
+def test_remove_rgs_not_hive(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    write(fn, df_remove_rgs, row_group_offsets=[0,2,4])
+    pf = ParquetFile(fn)
+    with pytest.raises(ValueError, match="^Not possible to remove row groups"):
+        pf.remove_row_groups(pf.row_groups[0])
