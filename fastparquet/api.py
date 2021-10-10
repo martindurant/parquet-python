@@ -1,6 +1,7 @@
 """parquet - read parquet files."""
 from collections import OrderedDict
 import io
+import json
 import re
 import struct
 
@@ -12,10 +13,12 @@ import pandas as pd
 from .core import read_thrift
 from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
-from .util import (default_open, default_remove, ParquetException, val_to_num,
-                   ops, ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, json_decoder)
-from .write import write_common_metadata
+from .util import (default_open, default_mkdirs, default_remove,
+                   ParquetException, val_to_num, ops, ensure_bytes,
+                   check_column_names, metadata_from_many, ex_from_sep,
+                   json_decoder)
+from .write import (row_idx_to_cols, write_common_metadata, write_multi,
+                    write_simple)
 
 
 class ParquetFile(object):
@@ -392,6 +395,79 @@ scheme is 'simple'.")
             self._write_common_metadata(open_with, False)
         return
 
+
+    def append_as_row_groups(self, data, row_group_offsets, compression,
+                             open_with=default_open, mkdirs=default_mkdirs,
+                             append=True, stats=True, write_fmd:bool = True):
+        """
+        Append data as new row groups to disk. `ParquetFile` metadata are
+        updated accordingly optionally.
+
+        Parameter
+        ---------
+        data: pandas dataframe
+            Data to append.
+        row_group_offsets: list of int 
+            List of int defining the start of data chunks in provided data.
+        compression: str, dict
+            compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or
+            a ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
+            column compression types.
+        open_with: function
+            When called with a f(path, mode), returns an open file-like object.
+        mkdirs: function
+            When called with a path/URL, creates any necessary dictionaries to
+            make that location writable, e.g., ``os.makedirs``. This is not
+            necessary if using the simple file scheme.
+        append: bool (False) or 'overwrite'
+            If False, construct data-set from scratch;
+            If True, add new row-group(s) to existing data-set. In the latter case,
+            the data-set must exist, and the schema must match the input data;
+            If 'overwrite', existing partitions will be replaced in-place, where
+            new data has any rows within a given partition. To enable this,
+            in addition to append to a data-set with partitions, and 'hive'
+            scheme, row_group_offset has to be set to `[0]` (meaning writing a
+            single row group per partition).
+        stats: True|False|list(str)
+            Whether to calculate and write summary statistics.
+            If True (default), do it for every column;
+            If False, never do;
+            If a list of str, do it only for those specified columns.
+        write_fmd: bool, True
+            Write updated common metadata to disk.
+        """
+        if self._get_index():
+            # Adjust index of pandas dataframe.
+            data = row_idx_to_cols(data)
+# /!\ TODO: test case / check fmd are modified in-place so that if they are not recorded
+# they can be recorded at a later time.
+        if (self.file_scheme == 'simple'
+            or (self.file_scheme == 'empty' and self.fn[-9:] != '_metadata')):
+            # Case 'simple'.
+            if sorted(self.columns) != sorted(data.columns):
+                raise ValueError('File schema is not compatible with '
+                                 'existing file schema.')
+            if append == 'overwrite':
+                raise ValueError("`append=overwrite` is not possible with \
+simple file scheme.")
+            write_simple(self.fn, data, self.fmd, row_group_offsets,
+                         compression, open_with, append, stats)
+        else:
+            # Case 'hive' or 'drill'.
+            partition_on = list(self.cats)
+            if append == 'overwrite':
+                if row_group_offsets != [0]:
+                    raise ValueError("When allowing overwrite of partitions, \
+writing several row groups per partition is not. Please, force writing of a \
+single row group per partition by setting `row_group_offsets=[0].")
+                if not partition_on:
+                    raise ValueError("No partitioning column has been set in \
+existing data-set. Allowing overwrite of partitions is not possible.")
+            write_multi(self.basepath, data, self.fmd, row_group_offsets,
+                        compression, self.file_scheme, open_with, mkdirs,
+                        partition_on, append, stats, write_fmd)
+        return
+
     def _write_common_metadata(self, open_with=default_open,
                                update_num_rows=True):
         """
@@ -405,6 +481,9 @@ scheme is 'simple'.")
             Update `fmd.num_rows` according the total number of rows in row
             groups.
         """
+        if self.file_scheme == 'simple':
+            raise ValueError("Not possible to write common metadata when file \
+scheme is 'simple'.")
         fmd = self.fmd
         if update_num_rows:
             fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
@@ -1236,3 +1315,4 @@ def filter_not_in(values, vmin=None, vmax=None):
         return True
     else:
         return False
+
