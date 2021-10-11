@@ -377,13 +377,9 @@ def test_write_common_metadata_exception(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     df = pd.DataFrame({'x': [1, 5, 2, 5]})
     write(fn, df, file_scheme='simple', row_group_offsets=[0, 2])
-    pf = ParquetFile(tempdir)
-    # Keep a single row group and write metadata back to disk.
-    pf[0]._write_common_metadata()
-    pf = ParquetFile(tempdir)
-    assert len(pf.row_groups) == 1
-    out = pf.to_pandas()
-    pd.testing.assert_frame_equal(out, df[:2], check_dtype=False)
+    pf = ParquetFile(fn)
+    with pytest.raises(ValueError, match="Not possible to write"):
+        pf._write_common_metadata()
 
 
 def test_single_upper_directory(tempdir):
@@ -1222,38 +1218,47 @@ def test_remove_rgs_not_hive(tempdir):
 
 
 def test_append_rgs_simple(tempdir):
-    fn = os.path.join(tempdir, 'test.parquet')
-    write(fn, df_remove_rgs[:2], file_scheme='simple')
+    fn = os.path.join(tempdir, 'test.parq')
+    write(fn, df_remove_rgs[:2], file_scheme='simple')   
     pf = ParquetFile(fn)
-
-rgs_simple multi-index
-rgs_hive
-rgs hive_partitions
-
-
+    pf.append_as_row_groups(df_remove_rgs[2:])
+    pf2 = ParquetFile(fn)
+    assert pf.fmd == pf2.fmd   # metadata are updated in-place.
+    assert pf.to_pandas().equals(df_remove_rgs)
 
 
+def test_append_rgs_simple_no_index(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    df = df_remove_rgs.reset_index(drop=True)
+    write(fn, df[:2], file_scheme='simple')   
+    pf = ParquetFile(fn)
+    pf.append_as_row_groups(df[2:])
+    pf2 = ParquetFile(fn)
+    assert pf.fmd == pf2.fmd   # metadata are updated in-place.
+    assert pf.to_pandas().equals(df)
 
 
-    assert len(pf.row_groups) == 3 # check number of row groups
-    # Local filesystem using fsspec.
-    from fsspec.implementations.local import LocalFileSystem
-    fs = LocalFileSystem()
-    remove_with = (fs.rm_file, fs.listdir, fs.rmdir)
-    rg = pf.row_groups[2]          # remove data from Milan (3rd row group)
-    pf.remove_row_groups(rg, open_with=fs.open, remove_with=remove_with)
-    assert len(pf.row_groups) == 2 # check row group list updated
-    assert not os.path.isdir(os.path.join(dn,'country=Italy')) # check empty directory removed    
+def test_append_rgs_hive(tempdir):
+    dn = os.path.join(tempdir, 'test_parq')
+    write(dn, df_remove_rgs[:3], file_scheme='hive', row_group_offsets=[0,2])   
     pf = ParquetFile(dn)
-    assert len(pf.row_groups) == 2 # check data on disk updated
-    df_ref = pd.DataFrame({'humidity': [0.6, 0.3, 0.8],
-                           'pressure': [1e5, 1e5, 1.1e5],
-                           'country': ['France', 'France', 'France'],
-                           'city': ['Marseille', 'Paris', 'Paris']},
-                          index = [pd.Timestamp('2020/01/02 02:58:00'),
-                                   pd.Timestamp('2020/01/02 01:59:00'),
-                                   pd.Timestamp('2020/01/02 03:59:00')])
-    df_ref.index.name = 'index'
-    df_ref['country'] = df_ref['country'].astype('category') 
-    df_ref['city'] = df_ref['city'].astype('category') 
-    assert pf.to_pandas().equals(df_ref)
+    pf.append_as_row_groups(df_remove_rgs[3:], [0, 1])
+    assert len(pf.row_groups) == 4
+    pf2 = ParquetFile(dn)
+    assert pf.fmd == pf2.fmd   # metadata are updated in-place.
+    assert pf.to_pandas().equals(df_remove_rgs)
+
+
+def test_append_rgs_hive_partitions(tempdir):
+    dn = os.path.join(tempdir, 'test_parq')
+    write(dn, df_remove_rgs[:3], file_scheme='hive', row_group_offsets=[0,2],
+          partition_on=['country'])   
+    pf = ParquetFile(dn)
+    pf.append_as_row_groups(df_remove_rgs[3:], [0, 1])
+    assert len(pf.row_groups) == 4
+    pf2 = ParquetFile(dn)
+    assert pf.fmd == pf2.fmd   # metadata are updated in-place.
+    df = df_remove_rgs.sort_index()
+    df['country'] = df['country'].astype('category')
+    assert pf.to_pandas().sort_index().equals(df)
+

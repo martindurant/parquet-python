@@ -596,18 +596,13 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     return rgs
 
 
-# TODO: remove all default values indicated: not required anylonger
-# TODO: remove 'has_nulls' parameter
 def write_simple(fn, data, fmd, row_group_offsets, compression,
-                 open_with=default_open, append=False,
-                 stats=True):
+                 open_with=default_open, append=False, stats=True):
     """
     Write to one single parquet file (for file_scheme='simple').
     """
-    if append:
-        mode = 'rb+'
-    else:
-        mode = 'wb'
+    mode = 'rb+' if append else 'wb'
+
     with open_with(fn, mode) as f:
         if append:
             f.seek(-8, 2)
@@ -642,59 +637,24 @@ def find_max_part(row_groups):
         return 0
 
 
-def part_name_offset(fmd, append) -> int:
-    """
-    Return offset to apply for generating number of part file names.
-    """
-    # TODO: replace following with simple direct row.
-#    i_offset = find_max_part(fmd.row_groups)
-    # TODO: re-activate check on 'partition_on' by checking with 'self.cat'.
-    # (and then re-activate failing test case checking the error message)
-    if append == 'overwrite':
-#    if append == 'overwrite' and partition_on:
-        # Build list of 'path' from existing files
-        # (to have partition values).
-        # TODO: check with 'find_max_part' and max returned int = 0
-        exist_rgps = ['_'.join(rg.columns[0].file_path.split('/')[:-1])
-                      for rg in fmd.row_groups]
-        if len(exist_rgps) > len(set(exist_rgps)):
-            # Some groups are in the same folder (partition). This case
-            # is not handled.
-            raise ValueError("Some partition folders contain several \
-part files. This situation is not allowed with use of `append='overwrite'`.")
-        i_offset = 0
-    else:
-        i_offset = find_max_part(fmd.row_groups)
-    return i_offset
-
-
 def write_multi(fn, data, fmd, row_group_offsets, compression, file_scheme,
                 open_with=default_open, mkdirs=default_mkdirs, partition_on=[],
                 append=False, stats=True, write_fmd=True):
     """
     Write to multi parquet files (for file_scheme='hive', 'drill' or 'flat').
     """
-    if append:  # can be True or 'overwrite'
-#        pf = api.ParquetFile(fn, open_with=open_with)
-#        if pf.file_scheme not in ['hive', 'empty', 'flat']:
-#            raise ValueError('Requested file scheme is %s, but '
-#                             'existing file scheme is not.' % file_scheme)
-        # TODO? In case of append, force 'partition_on' to 'pf.cats' instead of
-        # checking it?
-#        if tuple(partition_on) != tuple(pf.cats):
-#            raise ValueError('When appending, partitioning columns must'
-#                             ' match existing data')
-#        fmd = pf.fmd
-        i_offset = part_name_offset(fmd, append)
-        if append == 'overwrite':
-            # Build list of 'path' from existing files
-            # (to have partition values).
-            exist_rgps = ['_'.join(rg.columns[0].file_path.split('/')[:-1])
-                          for rg in fmd.row_groups]
-    else:
+    if not append:
         # New dataset.
         i_offset = 0
         mkdirs(fn)
+    elif append is True:
+        i_offset = find_max_part(fmd.row_groups)
+    else:
+        # 'overwrite'.
+        i_offset = 0
+        exist_rgps = [rg.columns[0].file_path.rsplit('/',1)[0]
+                      for rg in fmd.row_groups]
+
     for i, start in enumerate(row_group_offsets):
         end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
                else None)
@@ -711,8 +671,8 @@ def write_multi(fn, data, fmd, row_group_offsets, compression, file_scheme,
                 # 'overwrite' mode -> update fmd in place.
                 # Get 'new' combinations of values from columns listed in
                 # 'partition_on',along with corresponding row groups.
-                new_rgps = {'_'.join(rg.columns[0].file_path.split('/')[:-1]): rg \
-                          for rg in rgs}
+                new_rgps = {rg.columns[0].file_path.rsplit('/',1)[0]: rg \
+                            for rg in rgs}
                 for part_val in new_rgps:
                     if part_val in exist_rgps:
                         # Replace existing row group metadata with new ones.
@@ -723,9 +683,10 @@ def write_multi(fn, data, fmd, row_group_offsets, compression, file_scheme,
                         # preserving order, if the existing list is sorted
                         # in the 1st place.
                         row_group_index = bisect(exist_rgps, part_val)
-                        fmd.row_groups.insert(row_group_index, new_rgps[part_val])
-                        # Keep 'exist_rgps' list representative for next 'replace'
-                        # or 'insert' cases.
+                        fmd.row_groups.insert(row_group_index,
+                                              new_rgps[part_val])
+                        # Keep 'exist_paths' list representative for next
+                        # 'replace' or 'insert' cases.
                         exist_rgps.insert(row_group_index, part_val)
 
         else:
@@ -743,26 +704,3 @@ def write_multi(fn, data, fmd, row_group_offsets, compression, file_scheme,
                               no_row_groups=False)
         write_common_metadata(join_path(fn, '_common_metadata'), fmd,
                               open_with)
-
-
-def row_idx_to_cols(data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Translate row index to columns of the DataFrame.
-
-    Parameters
-    ----------
-    data: pd.DataFrame
-
-    Returns
-    -------
-    data: pd.DataFrame
-    """
-    if isinstance(data.index, pd.MultiIndex):
-        for name, cats, codes in zip(data.index.names, data.index.levels,
-                                     data.index.codes):
-            data = data.assign(**{name: pd.Categorical.from_codes(codes,
-                                                                  cats)})
-        data.reset_index(drop=True)
-    else:
-        data = data.reset_index()
-    return data

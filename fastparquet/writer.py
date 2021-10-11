@@ -11,7 +11,7 @@ from .util import (check_column_names, created_by, default_open,
                    default_mkdirs, get_column_metadata)
 from .write import (consolidate_categories, DATAPAGE_VERSION, make_definitions,
                     make_part_file, make_row_group, MARKER,
-                    partition_on_columns, row_idx_to_cols, typemap,
+                    partition_on_columns, typemap,
                     write_common_metadata, write_multi, write_simple)
 from . import cencoding
 from .cencoding import NumpyIO
@@ -430,7 +430,7 @@ def write(filename, data, row_group_offsets=50000000,
         if (write_index or write_index is None
                 and not isinstance(data.index, pd.RangeIndex)):
             cols = set(data)
-            data = row_idx_to_cols(data)
+            data = api.row_idx_to_cols(data)
             index_cols = [c for c in data if c not in cols]
         elif write_index is None and isinstance(data.index, pd.RangeIndex):
             # write_index=None, range to metadata
@@ -495,5 +495,5 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     ParquetFile instance corresponding to the merged data.
     """
     out = api.ParquetFile(file_list, verify_schema, open_with, root)
-    out._write_common_metadata(open_with, update_num_rows=False)
+    out._write_common_metadata(open_with)
     return out

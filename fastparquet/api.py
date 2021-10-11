@@ -17,8 +17,7 @@ from .util import (default_open, default_mkdirs, default_remove,
                    ParquetException, val_to_num, ops, ensure_bytes,
                    check_column_names, metadata_from_many, ex_from_sep,
                    json_decoder)
-from .write import (row_idx_to_cols, write_common_metadata, write_multi,
-                    write_simple)
+from .write import (write_common_metadata, write_multi, write_simple)
 
 
 class ParquetFile(object):
@@ -257,7 +256,7 @@ class ParquetFile(object):
         return self[:i+1].to_pandas(**kwargs).head(nrows)
 
     def __getitem__(self, item):
-        """Select among the row-groups using integer/slicing"""
+        """Select among the row-groups using integer/slicing."""
         import copy
         new_rgs = self.row_groups[item]
         if not isinstance(new_rgs, list):
@@ -282,7 +281,7 @@ class ParquetFile(object):
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None, partition_meta=None, row_filter=False,
                             infile=None):
-        """ Open file for reading, and process it as a row-group
+        """ Open file for reading, and process it as a row-group.
 
         assign is None if this method is called directly (not from to_pandas),
         in which case we return the resultant dataframe
@@ -392,13 +391,13 @@ scheme is 'simple'.")
                 paths = strip_path_tail(buffer_paths)
         self.fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
         if write_fmd:
-            self._write_common_metadata(open_with, False)
+            self._write_common_metadata(open_with)
         return
 
-
-    def append_as_row_groups(self, data, row_group_offsets, compression,
-                             open_with=default_open, mkdirs=default_mkdirs,
-                             append=True, stats=True, write_fmd:bool = True):
+    def append_as_row_groups(self, data, row_group_offsets=[0],
+                             compression=None, open_with=default_open,
+                             mkdirs=default_mkdirs, append=True, stats=True,
+                             write_fmd:bool = True):
         """
         Append data as new row groups to disk. `ParquetFile` metadata are
         updated accordingly optionally.
@@ -407,12 +406,14 @@ scheme is 'simple'.")
         ---------
         data: pandas dataframe
             Data to append.
-        row_group_offsets: list of int 
+        row_group_offsets: list of int, [0]
             List of int defining the start of data chunks in provided data.
-        compression: str, dict
+            By default, write data as a single row group.
+        compression: str, dict, None
             compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or
             a ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
             column compression types.
+            By default, do not compress.
         open_with: function
             When called with a f(path, mode), returns an open file-like object.
         mkdirs: function
@@ -439,8 +440,6 @@ scheme is 'simple'.")
         if self._get_index():
             # Adjust index of pandas dataframe.
             data = row_idx_to_cols(data)
-# /!\ TODO: test case / check fmd are modified in-place so that if they are not recorded
-# they can be recorded at a later time.
         if (self.file_scheme == 'simple'
             or (self.file_scheme == 'empty' and self.fn[-9:] != '_metadata')):
             # Case 'simple'.
@@ -448,8 +447,8 @@ scheme is 'simple'.")
                 raise ValueError('File schema is not compatible with '
                                  'existing file schema.')
             if append == 'overwrite':
-                raise ValueError("`append=overwrite` is not possible with \
-simple file scheme.")
+                raise ValueError("Not possible to overwrite with simple file \
+scheme.")
             write_simple(self.fn, data, self.fmd, row_group_offsets,
                          compression, open_with, append, stats)
         else:
@@ -463,13 +462,18 @@ single row group per partition by setting `row_group_offsets=[0].")
                 if not partition_on:
                     raise ValueError("No partitioning column has been set in \
 existing data-set. Allowing overwrite of partitions is not possible.")
+                exist_rgps = [rg.columns[0].file_path
+                              for rg in self.row_groups]
+                if len(exist_rgps) > len(strip_path_tail(exist_rgps)):
+                    # Some groups are in the same folder (partition).
+                    raise ValueError("Some partition folders contain several \
+part files. This situation is not allowed with use of `append='overwrite'`.")
             write_multi(self.basepath, data, self.fmd, row_group_offsets,
                         compression, self.file_scheme, open_with, mkdirs,
                         partition_on, append, stats, write_fmd)
         return
 
-    def _write_common_metadata(self, open_with=default_open,
-                               update_num_rows=True):
+    def _write_common_metadata(self, open_with=default_open):
         """
         Write common metadata to disk.
         
@@ -477,16 +481,11 @@ existing data-set. Allowing overwrite of partitions is not possible.")
         ---------
         open_with: function
             When called with a f(path, mode), returns an open file-like object.
-        update_num_rows: bool, True
-            Update `fmd.num_rows` according the total number of rows in row
-            groups.
         """
         if self.file_scheme == 'simple':
             raise ValueError("Not possible to write common metadata when file \
 scheme is 'simple'.")
         fmd = self.fmd
-        if update_num_rows:
-            fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
         write_common_metadata(self.fn, fmd, open_with, no_row_groups=False)
         # replace '_metadata' with '_common_metadata'
         fn = f'{self.fn[:-9]}_common_metadata'
@@ -862,6 +861,30 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
                                 index_types=index_types, cats=cats, timezones=tz)
     return df, views
+
+
+def row_idx_to_cols(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Shift row index to columns of the DataFrame, compatible for storing to
+    parquet.
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+
+    Returns
+    -------
+    data: pd.DataFrame
+    """
+    if isinstance(data.index, pd.MultiIndex):
+        for name, cats, codes in zip(data.index.names, data.index.levels,
+                                     data.index.codes):
+            data = data.assign(**{name: pd.Categorical.from_codes(codes,
+                                                                  cats)})
+        data.reset_index(drop=True)
+    else:
+        data = data.reset_index()
+    return data
 
 
 def strip_path_tail(paths) -> set:
