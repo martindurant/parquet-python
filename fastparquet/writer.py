@@ -9,8 +9,8 @@ from .thrift_structures import parquet_thrift, write_thrift
 from . import encoding, api, __version__
 from .util import (check_column_names, created_by, default_open,
                    default_mkdirs, get_column_metadata)
-from .write import (consolidate_categories, DATAPAGE_VERSION, make_definitions,
-                    make_part_file, make_row_group, MARKER,
+from .write import (consolidate_categories, DATAPAGE_VERSION, find_max_part,
+                    make_definitions, make_part_file, make_row_group, MARKER,
                     partition_on_columns, typemap,
                     write_common_metadata, write_multi, write_simple)
 from . import cencoding
