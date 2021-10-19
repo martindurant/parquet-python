@@ -5,7 +5,7 @@ import numpy as np
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    __version__ as pdver, DatetimeIndex, Int64Index
+    __version__ as pdver, DatetimeIndex
 )
 from pandas.core.arrays.masked import BaseMaskedDtype
 from pandas.api.types import is_categorical_dtype
