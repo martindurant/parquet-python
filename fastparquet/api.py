@@ -144,6 +144,7 @@ class ParquetFile(object):
                     else:
                         allfiles = [f for f in fs.find(fn) if
                                     f.endswith(".parquet") or f.endswith(".parq")]
+                        root = root or fn
                     if not allfiles:
                         raise ValueError("No files in dir")
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
