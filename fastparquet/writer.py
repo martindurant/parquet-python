@@ -1126,5 +1126,5 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     ParquetFile instance corresponding to the merged data.
     """
     out = api.ParquetFile(file_list, verify_schema, open_with, root)
-    out._write_common_metadata(open_with, update_num_rows=False)
+    out._write_common_metadata(open_with)
     return out

@@ -390,11 +390,10 @@ scheme is 'simple'.")
                 paths = strip_path_tail(buffer_paths)
         self.fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
         if write_fmd:
-            self._write_common_metadata(open_with, False)
+            self._write_common_metadata(open_with)
         return
 
-    def _write_common_metadata(self, open_with=default_open,
-                               update_num_rows=True):
+    def _write_common_metadata(self, open_with=default_open):
         """
         Write common metadata to disk.
         
@@ -402,13 +401,11 @@ scheme is 'simple'.")
         ---------
         open_with: function
             When called with a f(path, mode), returns an open file-like object.
-        update_num_rows: bool, True
-            Update `fmd.num_rows` according the total number of rows in row
-            groups.
         """
+        if self.file_scheme == 'simple':
+            raise ValueError("Not possible to write common metadata when file \
+scheme is 'simple'.")
         fmd = self.fmd
-        if update_num_rows:
-            fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
         write_common_metadata(self.fn, fmd, open_with, no_row_groups=False)
         # replace '_metadata' with '_common_metadata'
         fn = f'{self.fn[:-9]}_common_metadata'

@@ -373,6 +373,15 @@ def test_write_common_metadata(tempdir):
     pd.testing.assert_frame_equal(out, df[:2], check_dtype=False)
 
 
+def test_write_common_metadata_exception(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    df = pd.DataFrame({'x': [1, 5, 2, 5]})
+    write(fn, df, file_scheme='simple', row_group_offsets=[0, 2])
+    pf = ParquetFile(fn)
+    with pytest.raises(ValueError, match="Not possible to write"):
+        pf._write_common_metadata()
+
+
 def test_single_upper_directory(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5], 'y': ['aa'] * 4})
     write(tempdir, df, file_scheme='hive', partition_on='y')
