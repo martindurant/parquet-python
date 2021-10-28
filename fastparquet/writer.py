@@ -51,6 +51,9 @@ typemap = {  # primitive type, converted type, bit width
     'float32': (parquet_thrift.Type.FLOAT, None, 32),
     'float64': (parquet_thrift.Type.DOUBLE, None, 64),
     'float16': (parquet_thrift.Type.FLOAT, None, 16),
+    'Float32': (parquet_thrift.Type.FLOAT, None, 32),
+    'Float64': (parquet_thrift.Type.DOUBLE, None, 64),
+    'Float16': (parquet_thrift.Type.FLOAT, None, 16),
 }
 
 revmap = {parquet_thrift.Type.INT32: np.int32,
@@ -438,7 +441,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         # make_definitions returns `data` with all nulls dropped
         # the null-stripped `data` can be converted from Optional Types to
         # their numpy counterparts
-        if isinstance(data.dtype, BaseMaskedDtype):
+        if isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
             data = data.astype(pdoptional_to_numpy_typemap[data.dtype])
         if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
             try:

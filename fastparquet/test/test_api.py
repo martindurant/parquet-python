@@ -922,8 +922,7 @@ def test_multi_cat(tempdir):
 
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert (df1.index.values == df.index.values).all()
-    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
+    assert df1.equals(df)
 
 
 def test_multi_cat_single(tempdir):
@@ -937,8 +936,7 @@ def test_multi_cat_single(tempdir):
     write(fn, df)
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert (df1.index.values == df.index.values).all()
-    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
+    assert df1.equals(df)
 
 
 def test_multi_cat_split(tempdir):

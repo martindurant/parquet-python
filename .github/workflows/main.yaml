@@ -136,9 +136,9 @@ jobs:
       - name: Run Tests
         shell: bash -l {0}
         run: |
-          pytest --verbose pandas/pandas/tests/io/test_parquet.py
+          pytest -W error::FutureWarning --verbose pandas/pandas/tests/io/test_parquet.py
           # Test parquet with different filesystems
-          pytest --verbose pandas/pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py -k "parquet" 
+          pytest -W error::FutureWarning --verbose pandas/pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py -k "parquet" 
 
   win:
     name: win

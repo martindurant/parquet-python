@@ -283,6 +283,17 @@ def test_v2():
     assert out.to_dict() == expected
 
 
+def test_single_partition(tempdir):
+    tmp = str(tempdir)
+    df = pd.DataFrame({'a': [0]})
+    os.mkdir(os.path.join(tmp, "col=val"))
+    fn = os.path.join(tmp, "col=val", "data.parquet")
+    df.to_parquet(fn, engine="fastparquet")
+
+    out = fastparquet.ParquetFile(tmp).to_pandas()
+    assert out["col"].tolist() == ["val"]
+
+
 def test_timestamp96():
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, 'mr_times.parq'))
     out = pf.to_pandas()
