@@ -1,4 +1,4 @@
-from copy import copy
+import copy
 import io
 import struct
 import numpy as np
@@ -178,22 +178,22 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                 if pf._schema != pfs[0]._schema:
                     raise ValueError('Incompatible schemas')
 
-        fmd = copy(pfs[0].fmd)  # we inherit "created by" field
+        fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
         fmd.row_groups = []
 
         for pf, fn in zip(pfs, file_list):
             if pf.file_scheme not in ['simple', 'empty']:
                 for rg in pf.row_groups:
-                    rg = copy(rg)
-                    rg.columns = [copy(c) for c in rg.columns]
+                    rg = copy.copy(rg)
+                    rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
                         chunk.file_path = '/'.join([fn, chunk.file_path])
                     fmd.row_groups.append(rg)
 
             else:
                 for rg in pf.row_groups:
-                    rg = copy(rg)
-                    rg.columns = [copy(c) for c in rg.columns]
+                    rg = copy.copy(rg)
+                    rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
                         chunk.file_path = fn
                     fmd.row_groups.append(rg)
