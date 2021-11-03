@@ -410,6 +410,10 @@ def json_decoder():
     return _json_decoder[0]
 
 
+def _strip_path_tail(paths) -> set:
+    return {path.rsplit("/", 1)[0] if "/" in path else "" for path in paths}
+
+
 ops = {
     "==": operator.eq,
     "=": operator.eq,
