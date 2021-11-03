@@ -7,7 +7,7 @@ import pandas.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift
 from fastparquet import writer, encoding
-from fastparquet.write import consolidate_categories
+from fastparquet.writer import consolidate_categories
 from pandas.testing import assert_frame_equal
 from pandas.api.types import CategoricalDtype
 import pytest
