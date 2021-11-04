@@ -4,13 +4,14 @@ import struct
 import numpy as np
 import os
 import os.path
+import shutil
 import operator
 import pandas as pd
 import re
 import numbers
 from collections import defaultdict
 from distutils.version import LooseVersion
-from functools import lru_cache
+from functools import lru_cache, partial
 import pandas
 
 from pandas.api.types import is_categorical_dtype
@@ -39,8 +40,11 @@ def path_string(o):
 
 
 default_open = open
-# 1st to remove file, 2nd to check if folder contains file, 3rd to remove empty dir.
-default_remove = (os.remove, os.listdir,  os.rmdir)
+
+
+def default_remove(paths, recursive=True):
+    for path in paths:
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def val_from_meta(x, meta):

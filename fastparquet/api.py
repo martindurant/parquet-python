@@ -1,6 +1,7 @@
 """parquet - read parquet files."""
 from collections import OrderedDict
 import io
+from functools import partial
 import re
 import struct
 
@@ -156,6 +157,7 @@ class ParquetFile(object):
                               else '_metadata'
                     self.fmd = fmd
                     self._set_attrs()
+                self.fs = fs
             else:
                 raise FileNotFoundError
         self.open = open_with
@@ -341,7 +343,7 @@ class ParquetFile(object):
                 yield df
 
     def remove_row_groups(self, rgs, write_fmd:bool = True,
-                          open_with=default_open, remove_with=default_remove):
+                          open_with=default_open, remove_with=None):
         """
         Remove list of row groups from disk. `ParquetFile` metadata are
         updated accordingly. This method can not be applied if file scheme is
@@ -355,16 +357,19 @@ class ParquetFile(object):
             Write updated common metadata to disk.
         open_with: function
             When called with a f(path, mode), returns an open file-like object.
-        remove_with: (function, function, function)
-            When called with f(path),
-              first function removes a file.
-              second function returns the list of existing files or sub-dirs
-              third function removes an empty dir, 
+        remove_with: function
+            When called with f(path) removes the file or directory given
+            (and any contained files). Not required if this ParquetFile has
+            a .fs file system attribute
         """
         if self.file_scheme == 'simple':
             raise ValueError("Not possible to remove row groups when file \
 scheme is 'simple'.")
-        rmfile, listdir, rmdir = remove_with
+        if remove_with is None:
+            if hasattr(self, 'fs'):
+                remove_with = self.fs.rm
+            else:
+                remove_with = default_remove
         basepath = self.basepath
         paths = []
         if not isinstance(rgs, list):
@@ -375,22 +380,15 @@ scheme is 'simple'.")
             file = join_path(basepath, rg.columns[0].file_path)
             paths.append(file)
             self.row_groups.remove(rg)
-            rmfile(file)
-        if self.cats:
-            paths = _strip_path_tail(paths)
-            while (len(paths) > 1 or
-                   (len(paths) == 1 and next(iter(paths)) != basepath)):
-                # If there are empty partition directories, remove them.
-                buffer_paths = []
-                for path in paths:
-                    if not listdir(path):
-                        rmdir(path)
-                        buffer_paths.append(path)
-                paths = _strip_path_tail(buffer_paths)
-        self.fmd.num_rows = sum(rg.num_rows for rg in self.row_groups)
+            try:
+                remove_with(paths, recursive=True)
+            except IOError:
+                pass
+            self.fmd.num_rows -= rg.num_rows
+        self._set_attrs()
+
         if write_fmd:
             self._write_common_metadata(open_with)
-        return
 
     def _write_common_metadata(self, open_with=default_open):
         """

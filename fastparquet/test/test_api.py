@@ -1135,22 +1135,23 @@ df_remove_rgs = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7, 0.6],
                                       pd.Timestamp('2020/01/02 02:57:00'),
                                       pd.Timestamp('2020/01/02 02:58:00')])
 
+
 def test_remove_rgs_no_partition(tempdir):
     dn = os.path.join(tempdir, 'test_parquet')
     write(dn, df_remove_rgs, file_scheme='hive', row_group_offsets=[0,2,3])
     pf = ParquetFile(dn)
-    assert len(pf.row_groups) == 3 # check number of row groups
+    assert len(pf.row_groups) == 3  # check number of row groups
     rgs = [pf.row_groups[1], pf.row_groups[2]]     # removing Milan & Marseille
     pf.remove_row_groups(rgs)
-    assert len(pf.row_groups) == 1 # check row group list updated
+    assert len(pf.row_groups) == 1  # check row group list updated
     pf = ParquetFile(dn)
-    assert len(pf.row_groups) == 1 # check data on disk updated
+    assert len(pf.row_groups) == 1  # check data on disk updated
     df_ref = pd.DataFrame({'humidity': [0.3, 0.8],
                            'pressure': [1e5, 1.1e5],
                            'city': ['Paris', 'Paris'],
                            'country': ['France', 'France']},
-                          index = [pd.Timestamp('2020/01/02 01:59:00'),
-                                   pd.Timestamp('2020/01/02 03:59:00')])
+                          index=[pd.Timestamp('2020/01/02 01:59:00'),
+                                 pd.Timestamp('2020/01/02 03:59:00')])
     df_ref.index.name = 'index'
     assert pf.to_pandas().equals(df_ref)
 
@@ -1163,7 +1164,6 @@ def test_remove_rgs_with_partitions(tempdir):
     rg = pf.row_groups[2]          # remove data from Milan (3rd row group)
     pf.remove_row_groups(rg)
     assert len(pf.row_groups) == 2 # check row group list updated
-    assert not os.path.isdir(os.path.join(dn,'country=Italy')) # check empty directory removed    
     pf = ParquetFile(dn)
     assert len(pf.row_groups) == 2 # check data on disk updated
     df_ref = pd.DataFrame({'humidity': [0.6, 0.3, 0.8],
@@ -1180,27 +1180,24 @@ def test_remove_rgs_with_partitions(tempdir):
 
 
 def test_remove_rgs_partitions_and_fsspec(tempdir):
+    from fsspec.implementations.local import LocalFileSystem
     dn = os.path.join(tempdir, 'test_parquet')
     write(dn, df_remove_rgs, file_scheme='hive', partition_on=['country', 'city'])
     pf = ParquetFile(dn)
     assert len(pf.row_groups) == 3 # check number of row groups
-    # Local filesystem using fsspec.
-    from fsspec.implementations.local import LocalFileSystem
     fs = LocalFileSystem()
-    remove_with = (fs.rm_file, fs.listdir, fs.rmdir)
     rg = pf.row_groups[2]          # remove data from Milan (3rd row group)
-    pf.remove_row_groups(rg, open_with=fs.open, remove_with=remove_with)
-    assert len(pf.row_groups) == 2 # check row group list updated
-    assert not os.path.isdir(os.path.join(dn,'country=Italy')) # check empty directory removed    
+    pf.remove_row_groups(rg, open_with=fs.open, remove_with=fs.rm)
+    assert len(pf.row_groups) == 2  # check row group list updated
     pf = ParquetFile(dn)
     assert len(pf.row_groups) == 2 # check data on disk updated
     df_ref = pd.DataFrame({'humidity': [0.6, 0.3, 0.8],
                            'pressure': [1e5, 1e5, 1.1e5],
                            'country': ['France', 'France', 'France'],
                            'city': ['Marseille', 'Paris', 'Paris']},
-                          index = [pd.Timestamp('2020/01/02 02:58:00'),
-                                   pd.Timestamp('2020/01/02 01:59:00'),
-                                   pd.Timestamp('2020/01/02 03:59:00')])
+                          index=[pd.Timestamp('2020/01/02 02:58:00'),
+                                 pd.Timestamp('2020/01/02 01:59:00'),
+                                 pd.Timestamp('2020/01/02 03:59:00')])
     df_ref.index.name = 'index'
     df_ref['country'] = df_ref['country'].astype('category') 
     df_ref['city'] = df_ref['city'].astype('category') 
