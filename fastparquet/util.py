@@ -42,9 +42,12 @@ def path_string(o):
 default_open = open
 
 
-def default_remove(paths, recursive=True):
+def default_remove(paths):
     for path in paths:
-        shutil.rmtree(path, ignore_errors=True)
+        try:
+            os.unlink(path)
+        except IOError:
+            pass
 
 
 def val_from_meta(x, meta):

@@ -381,7 +381,7 @@ scheme is 'simple'.")
             paths.append(file)
             self.row_groups.remove(rg)
             try:
-                remove_with(paths, recursive=True)
+                remove_with(paths)
             except IOError:
                 pass
             self.fmd.num_rows -= rg.num_rows
