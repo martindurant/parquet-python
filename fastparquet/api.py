@@ -1,5 +1,5 @@
 """parquet - read parquet files."""
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import io
 from functools import partial
 import re
@@ -370,21 +370,26 @@ scheme is 'simple'.")
                 remove_with = self.fs.rm
             else:
                 remove_with = default_remove
-        basepath = self.basepath
-        paths = []
         if not isinstance(rgs, list):
             rgs = [rgs]
+        rgs_to_remove = row_groups_map(rgs)
+        if "fastparquet" not in self.created_by or self.file_scheme=='flat':
+            # Check if some files contain row groups both to be removed and to
+            # be kept.
+            all_rgs = row_groups_map(self.row_groups)
+            for file in rgs_to_remove:
+                if len(rgs_to_remove[file]) < len(all_rgs[file]):
+                    raise ValueError(f'File {file} contains row groups both \
+to be kept and to be removed. Removing row groups partially from a file is not\
+possible.')
         for rg in rgs:
-            # Keep track of intermediate partition folders, in case one get
-            # empty.
-            file = join_path(basepath, rg.columns[0].file_path)
-            paths.append(file)
             self.row_groups.remove(rg)
-            try:
-                remove_with(paths)
-            except IOError:
-                pass
             self.fmd.num_rows -= rg.num_rows
+        try:
+            remove_with([join_path(self.basepath, file)
+                         for file in rgs_to_remove])
+        except IOError:
+            pass
         self._set_attrs()
 
         if write_fmd:
@@ -1217,3 +1222,24 @@ def filter_not_in(values, vmin=None, vmax=None):
         return True
     else:
         return False
+
+
+def row_groups_map(rgs: list) -> dict:
+    """
+    Returns row group lists sorted by parquet files.
+
+    Parameters
+    ----------
+    rgs: list
+        List of row groups.
+
+    Returns
+    -------
+    dict
+        Per parquet file, list of row group stored in said file.
+    """
+    files_rgs = defaultdict(lambda: [])
+    for rg in rgs:
+        file = rg.columns[0].file_path
+        files_rgs[file].append(rg)
+    return files_rgs
