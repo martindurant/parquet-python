@@ -293,7 +293,8 @@ class ParquetFile(object):
             if row_filter and isinstance(row_filter, list):
                 cs = self._columns_from_filters(row_filter)
                 df = self.read_row_group_file(
-                    rg, cs, index=False, infile=infile, row_filter=False)
+                    rg, cs, categories, index=False,
+                    infile=infile, row_filter=False)
                 row_filter = self._column_filter(df, filters=row_filter)
                 size = row_filter.sum()
                 if size == rg.num_rows:
