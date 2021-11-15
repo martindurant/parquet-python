@@ -1038,3 +1038,14 @@ def test_empty_columns(tempdir):
     pf = ParquetFile(fn)
     out = pf.to_pandas()
     assert out.iloc[0].to_dict() == {'a': None, 'b': 'a', 'c': b'a', 'd': b'', 'aa': None, 'bb': 'a'}
+
+
+def test_empty_Float(tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame({
+        "a": [None, None],
+    }).astype({"a": "Float64"})
+
+    df.to_parquet(fn, engine="fastparquet")
+    out = pd.read_parquet(fn)
+    assert out.equals(df)

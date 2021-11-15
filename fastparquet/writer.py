@@ -523,8 +523,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
                         max = encode['PLAIN'](pd.Series([max], name=data.name), selement)[4:]
                         min = encode['PLAIN'](pd.Series([min], name=data.name), selement)[4:]
                 else:
-                    max = encode['PLAIN'](pd.Series([max], name=data.name), selement)
-                    min = encode['PLAIN'](pd.Series([min], name=data.name), selement)
+                    max = encode['PLAIN'](pd.Series([max], name=data.name, dtype=data.dtype), selement)
+                    min = encode['PLAIN'](pd.Series([min], name=data.name, dtype=data.dtype), selement)
     except (TypeError, ValueError):
         pass
     s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls) if stats else None
