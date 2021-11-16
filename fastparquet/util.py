@@ -11,7 +11,7 @@ import re
 import numbers
 from collections import defaultdict
 from distutils.version import LooseVersion
-from functools import lru_cache, partial
+from functools import lru_cache
 import pandas
 
 from pandas.api.types import is_categorical_dtype
