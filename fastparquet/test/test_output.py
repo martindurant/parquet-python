@@ -1048,4 +1048,4 @@ def test_empty_Float(tempdir):
 
     df.to_parquet(fn, engine="fastparquet")
     out = pd.read_parquet(fn)
-    assert out.equals(df)
+    assert pd.isna(out.a).all()
