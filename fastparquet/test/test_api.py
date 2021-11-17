@@ -973,7 +973,7 @@ def test_multi(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     N = 200
     df = pd.DataFrame(
-        {'a': rng.randint(10, size=N),
+        {'a': rng.integers(10, size=N),
          'b': rng.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
     df = df.set_index(['a', 'b'])
