@@ -355,7 +355,7 @@ class ParquetFile(object):
         write_fmd: bool, True
             Write updated common metadata to disk.
         open_with: function
-            When called with a f(path, mode), returns an open file-like object.
+            When called with f(path, mode), returns an open file-like object.
         remove_with: function
             When called with f(path) removes the file or directory given
             (and any contained files). Not required if this ParquetFile has
@@ -385,8 +385,8 @@ possible.')
             self.row_groups.remove(rg)
             self.fmd.num_rows -= rg.num_rows
         try:
-            remove_with([join_path(self.basepath, file)
-                         for file in rgs_to_remove])
+            basepath = self.basepath
+            remove_with([f'{basepath}/{file}' for file in rgs_to_remove])
         except IOError:
             pass
         self._set_attrs()
