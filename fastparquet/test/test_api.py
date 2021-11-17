@@ -969,7 +969,7 @@ def test_multi_cat_split(tempdir):
 
 
 def test_multi(tempdir):
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(4)
     fn = os.path.join(tempdir, 'test.parq')
     N = 200
     df = pd.DataFrame(
