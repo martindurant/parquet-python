@@ -969,11 +969,12 @@ def test_multi_cat_split(tempdir):
 
 
 def test_multi(tempdir):
+    rng = np.random.default_rng()
     fn = os.path.join(tempdir, 'test.parq')
     N = 200
     df = pd.DataFrame(
-        {'a': np.random.randint(10, size=N),
-         'b': np.random.choice(['a', 'b', 'c'], size=N),
+        {'a': rng.randint(10, size=N),
+         'b': rng.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
     df = df.set_index(['a', 'b'])
     write(fn, df)

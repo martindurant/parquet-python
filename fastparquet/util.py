@@ -4,7 +4,6 @@ import struct
 import numpy as np
 import os
 import os.path
-import shutil
 import operator
 import pandas as pd
 import re
