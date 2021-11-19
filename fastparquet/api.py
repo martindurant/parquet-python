@@ -1,5 +1,5 @@
 """parquet - read parquet files."""
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import io
 import re
 import struct
@@ -12,9 +12,9 @@ import pandas as pd
 from .core import read_thrift
 from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
-from .util import (default_open, ParquetException, val_to_num, ops,
+from .util import (default_open, default_remove, ParquetException, val_to_num, ops,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, json_decoder)
+                   ex_from_sep, json_decoder, _strip_path_tail)
 
 
 class ParquetFile(object):
@@ -57,6 +57,10 @@ class ParquetFile(object):
 
     Attributes
     ----------
+    fn: path/URL
+        Of '_metadata' file.
+    basepath: path/URL
+        Of directory containing files of parquet dataset.
     cats: dict
         Columns derived from hive/drill directory information, with known
         values for each column.
@@ -152,6 +156,7 @@ class ParquetFile(object):
                               else '_metadata'
                     self.fmd = fmd
                     self._set_attrs()
+                self.fs = fs
             else:
                 raise FileNotFoundError
         self.open = open_with
@@ -220,6 +225,10 @@ class ParquetFile(object):
     def partition_meta(self):
         return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
 
+    @property
+    def basepath(self):
+        return re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
+
     def _read_partitions(self):
         paths = [rg.columns[0].file_path or "" for rg in self.row_groups if rg.columns]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
@@ -260,7 +269,7 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
-            base = re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
+            base = self.basepath
             if base:
                 return join_path(base, rg.columns[0].file_path)
             else:
@@ -332,6 +341,78 @@ class ParquetFile(object):
             df = self[i].to_pandas(filters=filters, **kwargs)
             if not df.empty:
                 yield df
+
+    def remove_row_groups(self, rgs, write_fmd:bool = True,
+                          open_with=default_open, remove_with=None):
+        """
+        Remove list of row groups from disk. `ParquetFile` metadata are
+        updated accordingly. This method can not be applied if file scheme is
+        simple.
+
+        Parameter
+        ---------
+        rgs: row group or list of row groups
+            List of row groups to be removed from disk.
+        write_fmd: bool, True
+            Write updated common metadata to disk.
+        open_with: function
+            When called with f(path, mode), returns an open file-like object.
+        remove_with: function
+            When called with f(path) removes the file or directory given
+            (and any contained files). Not required if this ParquetFile has
+            a .fs file system attribute
+        """
+        if self.file_scheme == 'simple':
+            raise ValueError("Not possible to remove row groups when file \
+scheme is 'simple'.")
+        if remove_with is None:
+            if hasattr(self, 'fs'):
+                remove_with = self.fs.rm
+            else:
+                remove_with = default_remove
+        if not isinstance(rgs, list):
+            rgs = [rgs]
+        rgs_to_remove = row_groups_map(rgs)
+        if "fastparquet" not in self.created_by or self.file_scheme=='flat':
+            # Check if some files contain row groups both to be removed and to
+            # be kept.
+            all_rgs = row_groups_map(self.row_groups)
+            for file in rgs_to_remove:
+                if len(rgs_to_remove[file]) < len(all_rgs[file]):
+                    raise ValueError(f'File {file} contains row groups both \
+to be kept and to be removed. Removing row groups partially from a file is not\
+possible.')
+        for rg in rgs:
+            self.row_groups.remove(rg)
+            self.fmd.num_rows -= rg.num_rows
+        try:
+            basepath = self.basepath
+            remove_with([f'{basepath}/{file}' for file in rgs_to_remove])
+        except IOError:
+            pass
+        self._set_attrs()
+
+        if write_fmd:
+            self._write_common_metadata(open_with)
+
+    def _write_common_metadata(self, open_with=default_open):
+        """
+        Write common metadata to disk.
+        
+        Parameter
+        ---------
+        open_with: function
+            When called with a f(path, mode), returns an open file-like object.
+        """
+        from .writer import write_common_metadata
+        if self.file_scheme == 'simple':
+            raise ValueError("Not possible to write common metadata when file \
+scheme is 'simple'.")
+        fmd = self.fmd
+        write_common_metadata(self.fn, fmd, open_with, no_row_groups=False)
+        # replace '_metadata' with '_common_metadata'
+        fn = f'{self.fn[:-9]}_common_metadata'
+        write_common_metadata(fn, fmd, open_with)
 
     def _get_index(self, index=None):
         if index is None:
@@ -724,7 +805,7 @@ def paths_to_cats(paths, partition_meta=None):
 
     if all(p in [None, ""] for p in paths):
         return "simple", {}
-    paths = set(path.rsplit("/", 1)[0] if "/" in path else "" for path in paths if "/")
+    paths = _strip_path_tail(paths)
     parts = [path.split("/") for path in paths if path]
     lparts = [len(part) for part in parts]
     if not lparts or max(lparts) < 1:
@@ -1141,3 +1222,24 @@ def filter_not_in(values, vmin=None, vmax=None):
         return True
     else:
         return False
+
+
+def row_groups_map(rgs: list) -> dict:
+    """
+    Returns row group lists sorted by parquet files.
+
+    Parameters
+    ----------
+    rgs: list
+        List of row groups.
+
+    Returns
+    -------
+    dict
+        Per parquet file, list of row group stored in said file.
+    """
+    files_rgs = defaultdict(lambda: [])
+    for rg in rgs:
+        file = rg.columns[0].file_path
+        files_rgs[file].append(rg)
+    return files_rgs

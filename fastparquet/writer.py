@@ -18,9 +18,8 @@ from .thrift_structures import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__
-from .util import (default_open, default_mkdirs,
-                   check_column_names, metadata_from_many, created_by,
-                   get_column_metadata, path_string)
+from .util import (default_open, default_mkdirs, check_column_names,
+                   created_by, get_column_metadata, path_string)
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
 from .cencoding import NumpyIO
@@ -1173,7 +1172,5 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     ParquetFile instance corresponding to the merged data.
     """
     out = api.ParquetFile(file_list, verify_schema, open_with, root)
-    write_common_metadata(out.fn, out.fmd, open_with, no_row_groups=False)
-    fn = f'{out.fn[:-9]}_common_metadata'
-    write_common_metadata(fn, out.fmd, open_with)
+    out._write_common_metadata(open_with)
     return out

@@ -41,6 +41,14 @@ def path_string(o):
 default_open = open
 
 
+def default_remove(paths):
+    for path in paths:
+        try:
+            os.unlink(path)
+        except IOError:
+            pass
+
+
 def val_from_meta(x, meta):
     try:
         if meta['pandas_type'] == 'categorical':
@@ -406,6 +414,10 @@ def json_decoder():
             except (ImportError, AttributeError):
                 pass
     return _json_decoder[0]
+
+
+def _strip_path_tail(paths) -> set:
+    return {path.rsplit("/", 1)[0] if "/" in path else "" for path in paths}
 
 
 ops = {
