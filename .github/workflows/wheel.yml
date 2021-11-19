@@ -64,15 +64,16 @@ jobs:
           name: wheels
 
   build_wheels_macos:
-    name: Build wheels on macos-10.15
-    runs-on: macos-10.15
+    if: startsWith(github.ref, 'refs/tags/0.')
+    name: Build wheels on macos
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.2.2
         env:
-          CIBW_ARCHS_MACOS: x86_64 universal2
+          CIBW_ARCHS_MACOS: x86_64 arm64 universal2
           CIBW_TEST_SKIP: "*"
           CIBW_SKIP: "pp*"
 
