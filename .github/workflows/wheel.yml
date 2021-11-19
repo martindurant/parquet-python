@@ -62,3 +62,20 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
           name: wheels
+
+  build_wheels_macos:
+    name: Build wheels on macos-10.15
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.2.2
+        env:
+          CIBW_ARCHS_MACOS: x86_64 universal2
+          CIBW_TEST_SKIP: "*"
+          CIBW_SKIP: "pp*"
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./wheelhouse/*.whl
