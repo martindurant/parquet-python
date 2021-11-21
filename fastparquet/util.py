@@ -120,6 +120,58 @@ def check_column_names(columns, *args):
                                  "" % (missing, arg, columns))
 
 
+def reset_row_idx(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Shift row index to columns of the DataFrame, compatible for storing to
+    parquet.
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+    Returns
+    -------
+    data: pd.DataFrame
+    """
+    if isinstance(data.index, pd.MultiIndex):
+        for name, cats, codes in zip(data.index.names, data.index.levels,
+                                     data.index.codes):
+            data = data.assign(**{name: pd.Categorical.from_codes(codes,
+                                                                  cats)})
+        data.reset_index(drop=True)
+    else:
+        data = data.reset_index()
+    return data
+
+
+def to_rg_offsets(row_group_offset: int, n_rows: int):
+    """
+    Express 'row_group_offset' as a list of row indexes.
+    
+    Parameters
+    ----------
+    row_group_offset: int
+        Row-groups will be approximately this many rows, rounded down to make
+        row groups about the same size
+    n_rows: int
+        Total number of rows in dataset.
+
+    Returns
+    -------
+    row_group_offsets: List[int]
+       List of row indexes marking the start of each row group.
+    """
+    # TODO
+    # Could be extended so that instead of a target number of rows per
+    # row group, it accepts a target size (MB or GB) per row group.
+    if not row_group_offset:     # if row group is 0.
+        row_group_offsets = [0]
+    else:
+        nparts = max((n_rows - 1) // row_group_offset + 1, 1)
+        chunksize = max(min((n_rows - 1) // nparts + 1, n_rows), 1)
+        row_group_offsets = list(range(0, n_rows, chunksize))
+    return row_group_offsets
+
+
 def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                        root=False, fs=None):
     """
