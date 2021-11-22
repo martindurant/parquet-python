@@ -1023,17 +1023,6 @@ def test_Float(tempdir):
     assert (out.v == df.v).all()
 
 
-def test_empty_Float(tempdir):
-    fn = os.path.join(tempdir, 'temp.parq')
-    df = pd.DataFrame({
-        "a": [None, None],
-    }).astype({"a": "Float64"})
-
-    df.to_parquet(fn, engine="fastparquet")
-    out = pd.read_parquet(fn)
-    assert pd.isna(out.a).all()
-
-
 def test_empty_columns(tempdir):
     fn = os.path.join(tempdir, 'temp.parq')
     df = pd.DataFrame(
