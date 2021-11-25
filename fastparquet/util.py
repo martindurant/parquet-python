@@ -324,7 +324,9 @@ def get_column_metadata(column, name):
     else:
         extra_metadata = None
 
-    if not isinstance(name, str):
+    if isinstance(name, tuple):
+        name = str(name)
+    elif not isinstance(name, str):
         raise TypeError(
             'Column name must be a string. Got column {} of type {}'.format(
                 name, type(name).__name__
@@ -429,3 +431,12 @@ ops = {
     "<": operator.lt,
     "<=": operator.le
 }
+
+
+def norm_col_name(name):
+    if isinstance(name, tuple):
+        name = tuple(filter(bool, name))
+        if len(name) == 1:
+            return name[0]
+        return str(name)
+    return name

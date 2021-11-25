@@ -1,4 +1,5 @@
 """parquet - read parquet files."""
+import ast
 from collections import OrderedDict, defaultdict
 import io
 import re
@@ -416,8 +417,10 @@ scheme is 'simple'.")
 
     def _get_index(self, index=None):
         if index is None:
-            index = [i for i in self.pandas_metadata.get('index_columns', [])
-                     if isinstance(i, str)]
+            index = [i if isinstance(i, str) else i["name"]
+                     for i in self.pandas_metadata.get('index_columns', [])
+                     if isinstance(i, str) or i.get("kind") != "range"
+                     ]
         if isinstance(index, str):
             index = [index]
         return index
@@ -575,16 +578,10 @@ selection does not match number of rows in DataFrame.')
                 for c in md['columns']:
                     if c['name'] in categories and c['name'] in df and c['metadata']:
                         df[c['name']].dtype._ordered = c['metadata']['ordered']
-            if md.get('column_indexes', False):
-                names = [(c['name'] if isinstance(c, dict) else c)
-                         for c in md['column_indexes']]
-                names = [None if n is None or i_no_name.match(n) else n
-                         for n in names]
-                df.columns.names = names
             if md.get('index_columns', False) and not (index or index is False):
                 if len(md['index_columns']) == 1:
                     ic = md['index_columns'][0]
-                    if isinstance(ic, dict) and ic['kind'] == 'range':
+                    if isinstance(ic, dict) and ic.get('kind') == 'range':
                         from pandas import RangeIndex
                         df.index = RangeIndex(
                             start=ic['start'],
@@ -596,6 +593,18 @@ selection does not match number of rows in DataFrame.')
                 names = [None if n is None or i_no_name.match(n) else n
                          for n in names]
                 df.index.names = names
+            if md.get('column_indexes', False):
+                names = [(c['name'] if isinstance(c, dict) else c)
+                         for c in md['column_indexes']]
+                names = [None if n is None or i_no_name.match(n) else n
+                         for n in names]
+                if len(names) > 1:
+                    df.columns = pd.MultiIndex.from_tuples(
+                        [ast.literal_eval(c) for c in df.columns if c not in df.index.names],
+                        names=names
+                    )
+                else:
+                    df.columns.names = names
         return df, arrs
 
     def count(self, filters=None, row_filter=False):

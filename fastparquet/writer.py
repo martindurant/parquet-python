@@ -1,4 +1,6 @@
+import ast
 from copy import copy
+import itertools
 import json
 import os
 import re
@@ -19,7 +21,7 @@ from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__
 from .util import (default_open, default_mkdirs, check_column_names,
-                   created_by, get_column_metadata, path_string)
+                   created_by, get_column_metadata, path_string, norm_col_name)
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
 from .cencoding import NumpyIO
@@ -210,7 +212,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
     se = parquet_thrift.SchemaElement(
-        name=data.name, type_length=width,
+        name=norm_col_name(data.name), type_length=width,
         converted_type=converted_type, type=type,
         repetition_type=parquet_thrift.FieldRepetitionType.REQUIRED,
         logicalType=logical_type
@@ -610,7 +612,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         algorithm = compression
 
     cmd = parquet_thrift.ColumnMetaData(
-            type=selement.type, path_in_schema=[name],
+            type=selement.type, path_in_schema=[norm_col_name(name)],
             encodings=encodings,
             codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
                    if algorithm else 0),
@@ -637,10 +639,17 @@ def make_row_group(f, data, schema, compression=None, stats=True):
     rows = len(data)
     if rows == 0:
         return
-    if any(not isinstance(c, (bytes, str)) for c in data):
-        raise ValueError('Column names must be str or bytes:',
-                         {c: type(c) for c in data.columns
-                          if not isinstance(c, (bytes, str))})
+    if isinstance(data.columns, pd.MultiIndex):
+        if any(not isinstance(c, (bytes, str)) for c in itertools.chain(*data.columns.values)):
+            raise ValueError('Column names must be multi-index, str or bytes:',
+                             {c: type(c) for c in data.columns
+                              if not isinstance(c, (bytes, str))})
+
+    else:
+        if any(not isinstance(c, (bytes, str)) for c in data):
+            raise ValueError('Column names must be multi-index, str or bytes:',
+                             {c: type(c) for c in data.columns
+                              if not isinstance(c, (bytes, str))})
     rg = parquet_thrift.RowGroup(num_rows=rows, total_byte_size=0, columns=[])
 
     for column in schema:
@@ -652,7 +661,15 @@ def make_row_group(f, data, schema, compression=None, stats=True):
             else:
                 comp = compression
             st = stats if isinstance(stats, bool) else column.name in stats
-            chunk = write_column(f, data[column.name], column,
+            if isinstance(data.columns, pd.MultiIndex):
+                try:
+                    name = ast.literal_eval(column.name)
+                except ValueError:
+                    name = column.name
+                coldata = data[name]
+            else:
+                coldata = data[column.name]
+            chunk = write_column(f, coldata, column,
                                  compression=comp, stats=st)
             rg.columns.append(chunk)
     rg.total_byte_size = sum([c.meta_data.total_uncompressed_size for c in
@@ -697,6 +714,24 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
     if not data.columns.is_unique:
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
+    if isinstance(data.columns, pd.MultiIndex):
+        name = data.index.name or "index"
+        index_cols = [{'field_name': name,
+                       'metadata': None,
+                       'name': name,
+                       'numpy_type': 'object',
+                       'pandas_type': 'mixed-integer'}]
+        ci = [
+            get_column_metadata(ser, n)
+            for ser, n
+            in zip(data.columns.levels, data.columns.names)
+        ]
+    else:
+        ci = [{'name': data.columns.name,
+               'field_name': data.columns.name,
+               'pandas_type': 'mixed-integer',
+               'numpy_type': 'object',
+               'metadata': None}]
     if not isinstance(index_cols, list):
         start = index_cols.start
         stop = index_cols.stop
@@ -710,14 +745,10 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
     pandas_metadata = {'index_columns': index_cols,
                        'partition_columns': [],
                        'columns': [],
-                       'column_indexes': [{'name': data.columns.name,
-                                           'field_name': data.columns.name,
-                                           'pandas_type': 'mixed-integer',
-                                           'numpy_type': 'object',
-                                           'metadata': None}],
+                       'column_indexes': ci,
                        'creator': {'library': 'fastparquet',
                                    'version': __version__},
-                       'pandas_version': pd.__version__,}
+                       'pandas_version': pd.__version__}
     root = parquet_thrift.SchemaElement(name='schema',
                                         num_children=0)
 
