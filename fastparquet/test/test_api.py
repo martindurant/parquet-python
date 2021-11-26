@@ -954,10 +954,11 @@ def test_multi_cat_split(tempdir):
     # like test above, but across multiple row-groups; we test that the
     # categories are consistent
     fn = os.path.join(tempdir, 'test.parq')
+    rr = np.random.default_rng(1)
     N = 200
     df = pd.DataFrame(
-        {'a': np.random.randint(10, size=N),
-         'b': np.random.choice(['a', 'b', 'c'], size=N),
+        {'a': rr.integers(10, size=N),
+         'b': rr.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
     df = df.set_index(['a', 'b'])
     write(fn, df, row_group_offsets=25)
@@ -1254,4 +1255,3 @@ def test_remove_rgs_simple_merge(tempdir):
     assert len(pf.row_groups) == 2  # check row group list updated (4 initially)    
     df_ref = pd.DataFrame({'a':range(4), 'b':['lo']*2+['hi']*2})
     assert pf.to_pandas().equals(df_ref) 
-    
