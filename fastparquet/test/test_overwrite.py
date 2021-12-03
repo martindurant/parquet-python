@@ -45,6 +45,7 @@ def test_write_with_rgp_by_date_as_index(tempdir):
     assert expected.equals(recorded)
 
 def test_exception_1(tempdir):
+
     df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
                         'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
                         'location': ['Paris', 'Paris', 'Milan', 'Paris'],
@@ -52,6 +53,7 @@ def test_exception_1(tempdir):
     # Several existing parts in folder exception.
     write(tempdir, df1, row_group_offsets = 1, file_scheme='hive',
           write_index=False, partition_on=['location', 'exterior'])
+
     with pytest.raises(ValueError, match="^Some partition folders"):
         write(tempdir, df1, row_group_offsets = 0, file_scheme='hive',
               write_index=False, partition_on=['location', 'exterior'],
@@ -68,6 +70,7 @@ def test_exception_1(tempdir):
 
 
 def test_exception_2(tempdir):
+
     df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
                         'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
                         'location': ['Paris', 'Paris', 'Milan', 'Paris'],

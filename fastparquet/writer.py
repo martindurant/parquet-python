@@ -1002,14 +1002,14 @@ def write(filename, data, row_group_offsets=None,
         where ``"type"`` specifies the compression type to use, and ``"args"``
         specifies a ``dict`` that will be turned into keyword arguments for
         the compressor.
-        If the dictionary contains a "_default" entry, this will be used for
-        any columns not explicitly specified in the dictionary.
+        If the dictionary contains a "_default" entry, this will be used for any
+        columns not explicitly specified in the dictionary.
     file_scheme: 'simple'|'hive'|'drill'
-        If simple: all goes in a single file;
+        If simple: all goes in a single file
         If hive or drill: each row group is in a separate file, and a separate
         file (called "_metadata") contains the metadata.
     open_with: function
-        When called with a f(path, mode), returns an open file-like object.
+        When called with a f(path, mode), returns an open file-like object
     mkdirs: function
         When called with a path/URL, creates any necessary dictionaries to
         make that location writable, e.g., ``os.makedirs``. This is not
@@ -1059,8 +1059,8 @@ def write(filename, data, row_group_offsets=None,
         be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
         where bytes is assumed if not specified (i.e., no conversion). The
         special value 'infer' will cause the type to be guessed from the first
-        ten non-null values. The decimal.Decimal type is a valid choice, but
-        will result in float encoding with possible loss of accuracy.
+        ten non-null values. The decimal.Decimal type is a valid choice, but will
+        result in float encoding with possible loss of accuracy.
         Ignored if appending to an existing parquet data-set.
     times: 'int64' (default), or 'int96':
         In "int64" mode, datetimes are written as 8-byte integers, us
