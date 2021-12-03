@@ -18,7 +18,7 @@ from .util import tempdir
 import fastparquet
 from fastparquet import write, ParquetFile
 from fastparquet.api import (statistics, sorted_partitioned_columns, filter_in,
-                             filter_not_in, map_row_groups)
+                             filter_not_in, row_groups_map)
 from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
@@ -1228,7 +1228,7 @@ def test_remove_rgs_partitioned_pyarrow_multi(tempdir):
     with pytest.raises(ValueError, match="^File b=hi/a97cc141d16f4014a59e5b234dddf07c.parquet"):
         pf.remove_row_groups(pf.row_groups[0])
     # Removing all row groups of a same file is ok.
-    files_rgs = map_row_groups(pf.row_groups) # sort row groups per file
+    files_rgs = row_groups_map(pf.row_groups) # sort row groups per file
     file = list(files_rgs)[0]
     pf.remove_row_groups(files_rgs[file])
     assert len(pf.row_groups) == 2  # check row group list updated (4 initially)
@@ -1248,7 +1248,7 @@ def test_remove_rgs_simple_merge(tempdir):
     with pytest.raises(ValueError, match="^File fn1.parquet"):
         pf.remove_row_groups(pf.row_groups[0])
     # Removing all row groups of a same file is ok.
-    files_rgs = map_row_groups(pf.row_groups) # sort row groups per file
+    files_rgs = row_groups_map(pf.row_groups) # sort row groups per file
     file = list(files_rgs)[0]
     pf.remove_row_groups(files_rgs[file])
     assert len(pf.row_groups) == 2  # check row group list updated (4 initially)    

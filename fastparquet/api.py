@@ -343,7 +343,7 @@ class ParquetFile(object):
             if not df.empty:
                 yield df
 
-    def remove_row_groups(self, rgs, write_fmd:bool=True,
+    def remove_row_groups(self, rgs, write_fmd:bool = True,
                           open_with=default_open, remove_with=None):
         """
         Remove list of row groups from disk. `ParquetFile` metadata are
@@ -373,11 +373,11 @@ scheme is 'simple'.")
                 remove_with = default_remove
         if not isinstance(rgs, list):
             rgs = [rgs]
-        rgs_to_remove = map_row_groups(rgs)
+        rgs_to_remove = row_groups_map(rgs)
         if "fastparquet" not in self.created_by or self.file_scheme=='flat':
             # Check if some files contain row groups both to be removed and to
             # be kept.
-            all_rgs = map_row_groups(self.row_groups)
+            all_rgs = row_groups_map(self.row_groups)
             for file in rgs_to_remove:
                 if len(rgs_to_remove[file]) < len(all_rgs[file]):
                     raise ValueError(f'File {file} contains row groups both \
@@ -400,8 +400,7 @@ possible.')
                              open_with=default_open, mkdirs=None, append=True,
                              stats=True):
         """
-        Append data as new row groups to disk. Updated `ParquetFile` metadata
-        are written on disk accordingly (optional).
+        Append data as new row groups to disk.
 
         Parameter
         ---------
@@ -478,7 +477,6 @@ row groups. This situation is not allowed with use of `append='overwrite'`.")
                         open_with=open_with, mkdirs=mkdirs,
                         partition_on=partition_on, append=append, stats=stats)
         self._set_attrs()
-        return
 
     def _write_common_metadata(self, open_with=default_open):
         """
@@ -1309,7 +1307,7 @@ def filter_not_in(values, vmin=None, vmax=None):
         return False
 
 
-def map_row_groups(rgs: list) -> dict:
+def row_groups_map(rgs: list) -> dict:
     """
     Returns row group lists sorted by parquet files.
 
