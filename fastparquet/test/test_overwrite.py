@@ -10,6 +10,7 @@ from .util import tempdir
 
 
 def test_write_with_rgp_by_date_as_index(tempdir):
+
     # Step 1 - Writing of a 1st df, with `row_group_offsets=0`,
     # `file_scheme=hive` and `partition_on=['location', 'color`].
     df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9],
@@ -18,6 +19,7 @@ def test_write_with_rgp_by_date_as_index(tempdir):
                         'color': ['red', 'black', 'blue']})
     write(tempdir, df1, row_group_offsets=0, file_scheme='hive',
           partition_on=['location', 'color'])
+
     # Step 2 - Overwriting with a 2nd df having overlapping data, in
     # 'overwrite' mode:
     # `row_group_offsets=0`, `file_scheme=hive`,
@@ -29,6 +31,7 @@ def test_write_with_rgp_by_date_as_index(tempdir):
 
     write(tempdir, df2, row_group_offsets=0, file_scheme='hive', append='overwrite',
           partition_on=['location', 'color'])
+
     expected = pd.DataFrame({'humidity': [0.9, 0.5, 0.3, 0.4, 0.8, 1.1, 0.3],
                              'pressure': [9.5e4, 9e4, 1e5, 1.1e5, 1.1e5, 9.5e4, 1e5],
                              'location': ['Milan', 'Milan', 'Paris', 'Paris', 'Paris', 'Paris', 'Paris'],

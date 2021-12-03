@@ -764,9 +764,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
 
 
 def write_simple(fn, data, fmd, row_group_offsets, compression,
-                 open_with, append=False, stats=True):
+                 open_with, has_nulls, append=False, stats=True):
     """
-    Write to one single file (for file_scheme='simple').
+    Write to one single file (for file_scheme='simple')
 
     Parameters
     ----------
@@ -1056,8 +1056,7 @@ def write(filename, data, row_group_offsets=None,
 
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
-        be encoded to bytes.
-        Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
+        be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
         where bytes is assumed if not specified (i.e., no conversion). The
         special value 'infer' will cause the type to be guessed from the first
         ten non-null values. The decimal.Decimal type is a valid choice, but
@@ -1070,7 +1069,7 @@ def write(filename, data, row_group_offsets=None,
         'int96' mode is included only for compatibility.
         Ignored if appending to an existing parquet data-set.
     custom_metadata: dict
-        Key-value metadata to write.
+        Key-value metadata to write
         Ignored if appending to an existing parquet data-set.
     stats: True|False|list(str)
         Whether to calculate and write summary statistics.
@@ -1140,7 +1139,8 @@ def write(filename, data, row_group_offsets=None,
         if file_scheme == 'simple':
             # Case 'simple'
             write_simple(filename, data, fmd, row_group_offsets,
-                         compression, open_with, append=False, stats=stats)
+                         compression, open_with, None, append=False,
+                         stats=stats)
         else:
             # Case 'hive', 'drill'
             write_multi(filename, data, fmd, row_group_offsets, compression,
