@@ -50,6 +50,7 @@ def test_exception_1(tempdir):
                         'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
                         'location': ['Paris', 'Paris', 'Milan', 'Paris'],
                         'exterior': ['yes', 'no', 'yes', 'yes']})
+
     # Several existing parts in folder exception.
     write(tempdir, df1, row_group_offsets = 1, file_scheme='hive',
           write_index=False, partition_on=['location', 'exterior'])

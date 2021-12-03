@@ -122,8 +122,8 @@ def check_column_names(columns, *args):
 
 def reset_row_idx(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Shift row index to columns of the DataFrame, compatible for storing to
-    parquet.
+    Reset row index as a column of the DataFrame.
+    Multi-index are stored in columns, one per index level.
 
     Parameters
     ----------

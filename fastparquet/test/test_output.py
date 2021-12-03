@@ -636,7 +636,8 @@ def test_auto_null_object(tempdir, pnull):
 def test_many_categories(tempdir, n):
     tmp = str(tempdir)
     cats = np.arange(n)
-    codes = np.random.randint(0, n, size=1000000)
+    rng = np.random.default_rng(4)
+    codes = rng.integers(0, n, size=1000000)
     df = pd.DataFrame({'x': pd.Categorical.from_codes(codes, cats), 'y': 1})
     fn = os.path.join(tmp, "test.parq")
 
