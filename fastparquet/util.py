@@ -41,6 +41,14 @@ def path_string(o):
 default_open = open
 
 
+def default_remove(paths):
+    for path in paths:
+        try:
+            os.unlink(path)
+        except IOError:
+            pass
+
+
 def val_from_meta(x, meta):
     try:
         if meta['pandas_type'] == 'categorical':
@@ -321,7 +329,9 @@ def get_column_metadata(column, name):
     else:
         extra_metadata = None
 
-    if not isinstance(name, str):
+    if isinstance(name, tuple):
+        name = str(name)
+    elif not isinstance(name, str):
         raise TypeError(
             'Column name must be a string. Got column {} of type {}'.format(
                 name, type(name).__name__
@@ -413,6 +423,10 @@ def json_decoder():
     return _json_decoder[0]
 
 
+def _strip_path_tail(paths) -> set:
+    return {path.rsplit("/", 1)[0] if "/" in path else "" for path in paths}
+
+
 ops = {
     "==": operator.eq,
     "=": operator.eq,
@@ -422,3 +436,12 @@ ops = {
     "<": operator.lt,
     "<=": operator.le
 }
+
+
+def norm_col_name(name):
+    if isinstance(name, tuple):
+        name = tuple(filter(bool, name))
+        if len(name) == 1:
+            return name[0]
+        return str(name)
+    return name

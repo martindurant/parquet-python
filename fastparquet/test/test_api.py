@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
 import os
+from shutil import copytree
 import subprocess
 import sys
 from distutils.version import LooseVersion
@@ -16,7 +17,8 @@ import pytest
 from .util import tempdir
 import fastparquet
 from fastparquet import write, ParquetFile
-from fastparquet.api import statistics, sorted_partitioned_columns, filter_in, filter_not_in
+from fastparquet.api import (statistics, sorted_partitioned_columns, filter_in,
+                             filter_not_in, row_groups_map)
 from fastparquet.util import join_path
 
 TEST_DATA = "test-data"
@@ -360,6 +362,27 @@ def test_read_multiple_no_metadata(tempdir):
     assert len(pf.row_groups) == 2
     out = pf.to_pandas()
     pd.testing.assert_frame_equal(out, df, check_dtype=False)
+
+
+def test_write_common_metadata(tempdir):
+    df = pd.DataFrame({'x': [1, 5, 2, 5]})
+    write(tempdir, df, file_scheme='hive', row_group_offsets=[0, 2])
+    pf = ParquetFile(tempdir)
+    # Keep a single row group and write metadata back to disk.
+    pf[0]._write_common_metadata()
+    pf = ParquetFile(tempdir)
+    assert len(pf.row_groups) == 1
+    out = pf.to_pandas()
+    pd.testing.assert_frame_equal(out, df[:2], check_dtype=False)
+
+
+def test_write_common_metadata_exception(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    df = pd.DataFrame({'x': [1, 5, 2, 5]})
+    write(fn, df, file_scheme='simple', row_group_offsets=[0, 2])
+    pf = ParquetFile(fn)
+    with pytest.raises(ValueError, match="Not possible to write"):
+        pf._write_common_metadata()
 
 
 def test_single_upper_directory(tempdir):
@@ -911,8 +934,7 @@ def test_multi_cat(tempdir):
 
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert (df1.index.values == df.index.values).all()
-    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
+    assert df1.equals(df)
 
 
 def test_multi_cat_single(tempdir):
@@ -926,18 +948,18 @@ def test_multi_cat_single(tempdir):
     write(fn, df)
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert (df1.index.values == df.index.values).all()
-    assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
+    assert df1.equals(df)
 
 
 def test_multi_cat_split(tempdir):
     # like test above, but across multiple row-groups; we test that the
     # categories are consistent
     fn = os.path.join(tempdir, 'test.parq')
+    rr = np.random.default_rng(1)
     N = 200
     df = pd.DataFrame(
-        {'a': np.random.randint(10, size=N),
-         'b': np.random.choice(['a', 'b', 'c'], size=N),
+        {'a': rr.integers(10, size=N),
+         'b': rr.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
     df = df.set_index(['a', 'b'])
     write(fn, df, row_group_offsets=25)
@@ -949,11 +971,12 @@ def test_multi_cat_split(tempdir):
 
 
 def test_multi(tempdir):
+    rng = np.random.default_rng(4)
     fn = os.path.join(tempdir, 'test.parq')
     N = 200
     df = pd.DataFrame(
-        {'a': np.random.randint(10, size=N),
-         'b': np.random.choice(['a', 'b', 'c'], size=N),
+        {'a': rng.integers(10, size=N),
+         'b': rng.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
     df = df.set_index(['a', 'b'])
     write(fn, df)
@@ -1043,6 +1066,26 @@ def test_row_filter(tempdir):
     ]
 
 
+@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
+def test_custom_row_filter(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    row_group_idx = [0,2,5,8,11]
+    val = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2]
+    # rg idx :      0    |        1       |       2       |      3      |  4
+    # values :  0.1  0.2 | 0.3   0.4  0.5 | 0.6  0.7  0.8 | 0.9  1  1.1 | 1.2
+    df = pd.DataFrame({'value' : val})
+    write(dn, df, row_group_offsets=row_group_idx, file_scheme='hive')
+    pf = ParquetFile(dn)
+    pf2 = pf[2:]
+    sel = np.array([False, False, True, True, True, True, True])
+    df = pf2.to_pandas(row_filter=sel)
+    assert df.loc[0, 'value'] == 0.8
+    # Checking exception raised in cased of mismatch between length of boolean
+    # array, and total number of rows.
+    with pytest.raises(ValueError, match='^Provided boolean array'):
+        df = pf.to_pandas(row_filter=sel)
+
+
 def test_select(tempdir):
     fn = os.path.join(tempdir, 'test.parquet')
     val = [2, 10, 34, 76]
@@ -1085,3 +1128,131 @@ def test_spark_date_empty_rg():
     pf = ParquetFile(fn)
     out = pf.to_pandas(columns=['Date'])
     assert out.Date.tolist() == [pd.Timestamp("2020-1-1"), pd.Timestamp("2020-1-2")]
+
+
+df_remove_rgs = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7, 0.6],
+                              'pressure': [1e5, 1.1e5, 0.95e5, 0.98e5, 1e5],
+                              'city': ['Paris', 'Paris', 'Milan', 'Milan', 'Marseille'],
+                              'country': ['France', 'France', 'Italy', 'Italy', 'France']},
+                             index = [pd.Timestamp('2020/01/02 01:59:00'),
+                                      pd.Timestamp('2020/01/02 03:59:00'),
+                                      pd.Timestamp('2020/01/02 02:59:00'),
+                                      pd.Timestamp('2020/01/02 02:57:00'),
+                                      pd.Timestamp('2020/01/02 02:58:00')])
+
+
+def test_remove_rgs_no_partition(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    write(dn, df_remove_rgs, file_scheme='hive', row_group_offsets=[0,2,3])
+    pf = ParquetFile(dn)
+    assert len(pf.row_groups) == 3  # check number of row groups
+    rgs = [pf.row_groups[1], pf.row_groups[2]]     # removing Milan & Marseille
+    pf.remove_row_groups(rgs)
+    assert len(pf.row_groups) == 1  # check row group list updated
+    pf = ParquetFile(dn)
+    assert len(pf.row_groups) == 1  # check data on disk updated
+    df_ref = pd.DataFrame({'humidity': [0.3, 0.8],
+                           'pressure': [1e5, 1.1e5],
+                           'city': ['Paris', 'Paris'],
+                           'country': ['France', 'France']},
+                          index=[pd.Timestamp('2020/01/02 01:59:00'),
+                                 pd.Timestamp('2020/01/02 03:59:00')])
+    df_ref.index.name = 'index'
+    assert pf.to_pandas().equals(df_ref)
+
+
+def test_remove_rgs_with_partitions(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    write(dn, df_remove_rgs, file_scheme='hive', partition_on=['country', 'city'])
+    pf = ParquetFile(dn)
+    assert len(pf.row_groups) == 3 # check number of row groups
+    rg = pf.row_groups[2]          # remove data from Milan (3rd row group)
+    pf.remove_row_groups(rg)
+    assert len(pf.row_groups) == 2 # check row group list updated
+    pf = ParquetFile(dn)
+    assert len(pf.row_groups) == 2 # check data on disk updated
+    df_ref = pd.DataFrame({'humidity': [0.6, 0.3, 0.8],
+                           'pressure': [1e5, 1e5, 1.1e5],
+                           'country': ['France', 'France', 'France'],
+                           'city': ['Marseille', 'Paris', 'Paris']},
+                          index = [pd.Timestamp('2020/01/02 02:58:00'),
+                                   pd.Timestamp('2020/01/02 01:59:00'),
+                                   pd.Timestamp('2020/01/02 03:59:00')])
+    df_ref.index.name = 'index'
+    df_ref['country'] = df_ref['country'].astype('category') 
+    df_ref['city'] = df_ref['city'].astype('category') 
+    assert pf.to_pandas().equals(df_ref)
+
+
+def test_remove_rgs_partitions_and_fsspec(tempdir):
+    from fsspec.implementations.local import LocalFileSystem
+    dn = os.path.join(tempdir, 'test_parquet')
+    write(dn, df_remove_rgs, file_scheme='hive', partition_on=['country', 'city'])
+    pf = ParquetFile(dn)
+    assert len(pf.row_groups) == 3 # check number of row groups
+    fs = LocalFileSystem()
+    rg = pf.row_groups[2]          # remove data from Milan (3rd row group)
+    pf.remove_row_groups(rg, open_with=fs.open, remove_with=fs.rm)
+    assert len(pf.row_groups) == 2  # check row group list updated
+    pf = ParquetFile(dn)
+    assert len(pf.row_groups) == 2 # check data on disk updated
+    df_ref = pd.DataFrame({'humidity': [0.6, 0.3, 0.8],
+                           'pressure': [1e5, 1e5, 1.1e5],
+                           'country': ['France', 'France', 'France'],
+                           'city': ['Marseille', 'Paris', 'Paris']},
+                          index=[pd.Timestamp('2020/01/02 02:58:00'),
+                                 pd.Timestamp('2020/01/02 01:59:00'),
+                                 pd.Timestamp('2020/01/02 03:59:00')])
+    df_ref.index.name = 'index'
+    df_ref['country'] = df_ref['country'].astype('category') 
+    df_ref['city'] = df_ref['city'].astype('category') 
+    assert pf.to_pandas().equals(df_ref) 
+
+
+def test_remove_rgs_not_hive(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    write(fn, df_remove_rgs, row_group_offsets=[0,2,4])
+    pf = ParquetFile(fn)
+    with pytest.raises(ValueError, match="^Not possible to remove row groups"):
+        pf.remove_row_groups(pf.row_groups[0])
+
+
+def test_remove_rgs_partitioned_pyarrow_multi(tempdir):
+    # Initial data generated by:
+    # df = pd.DataFrame({'a':range(8), 'b':['lo']*4+['hi']*4})
+    # df.to_parquet(file+'.parquet', engine='pyarrow', row_group_size=2, partition_cols=['b'])
+    orig = os.path.join(TEST_DATA, 'multi_rgs_pyarrow')
+    dest = os.path.join(tempdir, 'multi_rgs_pyarrow')
+    # Making a copy of input data in case input data gets corrupted.
+    copytree(orig, dest)
+    pf = ParquetFile(dest) # each file contains 2 row groups (written with pandas/pyarrow)
+    # Trying to remove a single row group raises an error.
+    with pytest.raises(ValueError, match="^File b=hi/a97cc141d16f4014a59e5b234dddf07c.parquet"):
+        pf.remove_row_groups(pf.row_groups[0])
+    # Removing all row groups of a same file is ok.
+    files_rgs = row_groups_map(pf.row_groups) # sort row groups per file
+    file = list(files_rgs)[0]
+    pf.remove_row_groups(files_rgs[file])
+    assert len(pf.row_groups) == 2  # check row group list updated (4 initially)
+    df_ref = pd.DataFrame({'a':range(4), 'b':['lo']*4})
+    df_ref['b'] = df_ref['b'].astype('category')
+    assert pf.to_pandas().equals(df_ref) 
+
+
+def test_remove_rgs_simple_merge(tempdir):
+    df = pd.DataFrame({'a':range(4), 'b':['lo']*2+['hi']*2})
+    fn = os.path.join(tempdir, 'fn1.parquet')
+    write(fn, df, row_group_offsets=2)
+    fn = os.path.join(tempdir, 'fn2.parquet')
+    write(fn, df, row_group_offsets=2)
+    pf = ParquetFile(tempdir) # pf.scheme is now 'flat'.
+    # Trying to remove a single row group raises an error.
+    with pytest.raises(ValueError, match="^File fn1.parquet"):
+        pf.remove_row_groups(pf.row_groups[0])
+    # Removing all row groups of a same file is ok.
+    files_rgs = row_groups_map(pf.row_groups) # sort row groups per file
+    file = list(files_rgs)[0]
+    pf.remove_row_groups(files_rgs[file])
+    assert len(pf.row_groups) == 2  # check row group list updated (4 initially)    
+    df_ref = pd.DataFrame({'a':range(4), 'b':['lo']*2+['hi']*2})
+    assert pf.to_pandas().equals(df_ref) 

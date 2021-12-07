@@ -5,7 +5,7 @@ import numpy as np
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    __version__ as pdver, DatetimeIndex, Int64Index
+    __version__ as pdver, DatetimeIndex
 )
 from pandas.core.arrays.masked import BaseMaskedDtype
 from pandas.api.types import is_categorical_dtype
@@ -178,7 +178,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         shape[-1] = size
 
         if isinstance(bvalues, Categorical):
-            categories = bvalues.categories
             code = np.zeros(shape=shape, dtype=bvalues.codes.dtype)
 
             values = Categorical(values=code, dtype=bvalues.dtype,
@@ -203,8 +202,6 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                         mask=np.zeros(size, dtype=np.bool_)
                     )
                 else:
-                    import pdb
-                    pdb.set_trace()
                     raise NotImplementedError
             else:
                 values = np.empty(shape=shape, dtype=bvalues.dtype)

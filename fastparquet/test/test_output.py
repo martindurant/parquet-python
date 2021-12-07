@@ -996,3 +996,44 @@ def test_tz_local(tempdir, tz):
 
     pf = ParquetFile(fn)
     assert pf.schema.schema_element(['a']).logicalType.TIMESTAMP.isAdjustedToUTC is tz
+
+
+def test_no_stats(tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame({'a': [0], 'b': [0]})
+    write(fn, df, stats=False)
+
+    pf = ParquetFile(fn)
+    assert pf.row_groups[0].columns[0].meta_data.statistics is None
+    assert pf.row_groups[0].columns[1].meta_data.statistics is None
+
+    write(fn, df, stats=['a'])
+    pf = ParquetFile(fn)
+    assert pf.row_groups[0].columns[0].meta_data.statistics is not None
+    assert pf.row_groups[0].columns[1].meta_data.statistics is None
+
+
+def test_Float(tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame({"s": ["a", "b", "c", "d"], "v": [1, 2, 3, pd.NA]})
+    df = df.astype({"s": "string", "v": "Float64"})
+    write(fn, df, stats=False)
+    out = ParquetFile(fn).to_pandas()
+    assert (out.v == df.v).all()
+
+
+def test_empty_columns(tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    df = pd.DataFrame(
+        {
+            "a": [None],
+            "b": ["a"],
+            "c": [b"a"],
+            "d": [b""]
+        }
+    )
+    df = df.assign(aa=df.a.astype("string"), bb=df.b.astype("string"))
+    write(fn, df, stats=False)
+    pf = ParquetFile(fn)
+    out = pf.to_pandas()
+    assert out.iloc[0].to_dict() == {'a': None, 'b': 'a', 'c': b'a', 'd': b'', 'aa': None, 'bb': 'a'}

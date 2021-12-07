@@ -291,6 +291,17 @@ def test_v2():
     assert out.to_dict() == expected
 
 
+def test_single_partition(tempdir):
+    tmp = str(tempdir)
+    df = pd.DataFrame({'a': [0]})
+    os.mkdir(os.path.join(tmp, "col=val"))
+    fn = os.path.join(tmp, "col=val", "data.parquet")
+    df.to_parquet(fn, engine="fastparquet")
+
+    out = fastparquet.ParquetFile(tmp).to_pandas()
+    assert out["col"].tolist() == ["val"]
+
+
 def test_timestamp96():
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, 'mr_times.parq'))
     out = pf.to_pandas()
@@ -477,6 +488,21 @@ def test_or_filtering(tempdir):
     assert(or_df.equals(ref_df))
 
 
+@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
+def test_row_filter_nulls(tempdir):
+    fn = os.path.join(tempdir, "test.parq")
+    df = pd.DataFrame(
+        {"col": [0, 1, np.nan, np.nan]},
+        index=pd.Index(np.arange(4), name="index")
+    )
+
+    fastparquet.write(fn, df, has_nulls=True)
+
+    filters = [("index", ">=", 1)]
+    out = fastparquet.ParquetFile(fn).to_pandas(row_filter=True, filters=filters)
+    assert len(out) == 3
+
+
 def test_big_definitions(tempdir):
     # https://github.com/dask/fastparquet/issues/604
     values = [
@@ -496,8 +522,18 @@ def test_big_definitions(tempdir):
                  for v in np.random.choice(values, size=500_000, p=p)]
     })
 
-    test_filename = 'test_issue_604.parquet'
-
-    test_df.to_parquet(test_filename, engine='fastparquet')
-    out = pd.read_parquet(test_filename, engine='fastparquet')
+    fn = os.path.join(tempdir, 'test_issue_604.parquet')
+    test_df.to_parquet(fn, engine='fastparquet')
+    out = pd.read_parquet(fn, engine='fastparquet')
     assert (out['test'].isna() == test_df['test'].isna()).all()
+
+
+def test_column_multiindex_roundtrip(tempdir):
+    fn = os.path.join(tempdir, "test.parq")
+    data_arr = np.array([[1, 2, 3, 4], [10, 20, 30, 40], [100, 200, 300, 400]])
+    tups = zip(*[['Estimates']*data_arr.shape[0]],['a', 'b', 'c'])
+    df = pd.DataFrame(data_arr.T, index=['r1','r2','r3','r4'],
+                      columns=pd.MultiIndex.from_tuples(tups, names=['l1', 'l2']))
+    df.to_parquet(fn, engine='fastparquet')
+    out = pd.read_parquet(fn, engine='fastparquet')
+    assert df.equals(out)

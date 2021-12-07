@@ -46,7 +46,7 @@ install_requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='fastparquet',
-    version='0.7.1',
+    version='0.7.2',
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@canaconda.com',
