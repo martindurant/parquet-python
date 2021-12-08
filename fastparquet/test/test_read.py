@@ -518,3 +518,14 @@ def test_big_definitions(tempdir):
     test_df.to_parquet(fn, engine='fastparquet')
     out = pd.read_parquet(fn, engine='fastparquet')
     assert (out['test'].isna() == test_df['test'].isna()).all()
+
+
+def test_column_multiindex_roundtrip(tempdir):
+    fn = os.path.join(tempdir, "test.parq")
+    data_arr = np.array([[1, 2, 3, 4], [10, 20, 30, 40], [100, 200, 300, 400]])
+    tups = zip(*[['Estimates']*data_arr.shape[0]],['a', 'b', 'c'])
+    df = pd.DataFrame(data_arr.T, index=['r1','r2','r3','r4'],
+                      columns=pd.MultiIndex.from_tuples(tups, names=['l1', 'l2']))
+    df.to_parquet(fn, engine='fastparquet')
+    out = pd.read_parquet(fn, engine='fastparquet')
+    assert df.equals(out)

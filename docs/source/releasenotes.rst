@@ -6,6 +6,15 @@ planned in 2021. As of 0.7.0, only one larger item remains to be completed.
 
 .. _Future Plans: https://github.com/dask/fastparquet/issues/586
 
+0.7.2
+-----
+
+#. Ability to remove row-groups in-place for multifile datasets
+#. Accept pandas nullable Float type
+#. allow empty strings and fix min/max when there is no data
+#. make writing statistics optional
+#. row selection in to_pandas()
+
 0.7.1
 -----
 

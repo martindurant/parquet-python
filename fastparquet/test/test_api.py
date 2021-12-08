@@ -954,10 +954,11 @@ def test_multi_cat_split(tempdir):
     # like test above, but across multiple row-groups; we test that the
     # categories are consistent
     fn = os.path.join(tempdir, 'test.parq')
+    rr = np.random.default_rng(1)
     N = 200
     df = pd.DataFrame(
-        {'a': np.random.randint(10, size=N),
-         'b': np.random.choice(['a', 'b', 'c'], size=N),
+        {'a': rr.integers(10, size=N),
+         'b': rr.choice(['a', 'b', 'c'], size=N),
          'c': np.arange(200)})
     df = df.set_index(['a', 'b'])
     write(fn, df, row_group_offsets=25)
