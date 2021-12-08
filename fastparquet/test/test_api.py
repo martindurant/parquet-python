@@ -1256,44 +1256,44 @@ def test_remove_rgs_simple_merge(tempdir):
     assert pf.to_pandas().equals(df_ref) 
 
 
-def test_append_rgs_simple(tempdir):
+def test_write_rgs_simple(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     write(fn, df_remove_rgs[:2], file_scheme='simple')
     pf = ParquetFile(fn)
-    pf.append_as_row_groups(df_remove_rgs[2:])
+    pf.write_row_groups(df_remove_rgs[2:])
     pf2 = ParquetFile(fn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.
     assert pf.to_pandas().equals(df_remove_rgs)
 
 
-def test_append_rgs_simple_no_index(tempdir):
+def test_write_rgs_simple_no_index(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     df = df_remove_rgs.reset_index(drop=True)
     write(fn, df[:2], file_scheme='simple')
     pf = ParquetFile(fn)
-    pf.append_as_row_groups(df[2:])
+    pf.write_row_groups(df[2:])
     pf2 = ParquetFile(fn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.
     assert pf.to_pandas().equals(df)
 
 
-def test_append_rgs_hive(tempdir):
+def test_write_rgs_hive(tempdir):
     dn = os.path.join(tempdir, 'test_parq')
     write(dn, df_remove_rgs[:3], file_scheme='hive', row_group_offsets=[0,2])
     pf = ParquetFile(dn)
-    pf.append_as_row_groups(df_remove_rgs[3:], [0, 1])
+    pf.write_row_groups(df_remove_rgs[3:], [0, 1])
     assert len(pf.row_groups) == 4
     pf2 = ParquetFile(dn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.
     assert pf.to_pandas().equals(df_remove_rgs)
 
 
-def test_append_rgs_hive_partitions(tempdir):
+def test_write_rgs_hive_partitions(tempdir):
     dn = os.path.join(tempdir, 'test_parq')
     write(dn, df_remove_rgs[:3], file_scheme='hive', row_group_offsets=[0,2],
           partition_on=['country'])
     pf = ParquetFile(dn)
-    pf.append_as_row_groups(df_remove_rgs[3:], [0, 1])
+    pf.write_row_groups(df_remove_rgs[3:], [0, 1])
     assert len(pf.row_groups) == 4
     pf2 = ParquetFile(dn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.

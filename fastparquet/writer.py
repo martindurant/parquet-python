@@ -764,7 +764,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
 
 
 def write_simple(fn, data, fmd, row_group_offsets, compression,
-                 open_with, has_nulls, append=False, stats=True):
+                 open_with, has_nulls=None, append=False, stats=True):
     """
     Write to one single file (for file_scheme='simple')
 
@@ -797,6 +797,13 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         if False, never do; and if a list of str, do it only for those
         specified columns.
     """
+    # TODO
+    # PendingDeprecationWarning added 2021/12/08.
+    # Remove it and 'has_nulls' parameter at some point.
+    if has_nulls is not None:
+        raise PendingDeprecationWarning("'has_nulls' is an unused parameter in\
+'writer.write_simple()'. It should not be used and will be removed in future \
+fastparquet version.")
     if row_group_offsets is None:
         row_group_offsets = ROW_GROUP_OFFSET
     if isinstance(row_group_offsets, int):
@@ -1100,9 +1107,9 @@ def write(filename, data, row_group_offsets=None,
             if tuple(partition_on) != tuple(pf.cats):
                 raise ValueError('When appending, partitioning columns must'
                                  ' match existing data')
-        pf.append_as_row_groups(data, row_group_offsets, compression,
-                                write_fmd=True, open_with=open_with,
-                                mkdirs=mkdirs, append=append, stats=stats)
+        pf.write_row_groups(data, row_group_offsets, compression,
+                            write_fmd=True, open_with=open_with,
+                            mkdirs=mkdirs, append=append, stats=stats)
     else:
         # Case 'append=False'.
         # Initialize common metadata.

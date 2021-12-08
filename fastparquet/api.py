@@ -99,6 +99,13 @@ class ParquetFile(object):
 
     def __init__(self, fn, verify=False, open_with=default_open, root=False,
                  sep=None, fs=None, pandas_nulls=True):
+        # TODO
+        # PendingDeprecationWarning added 2021/12/08.
+        # Remove it and 'sep' parameter at some point.
+        if sep is not None:
+            raise PendingDeprecationWarning("'has_nulls' is an unused \
+parameter in 'api.ParquetFile.__init__()'. It should not be used and will be \
+removed in future fastparquet version.")
         self.pandas_nulls = pandas_nulls
         if open_with is default_open and fs is None:
             fs = fsspec.filesystem("file")
@@ -396,10 +403,10 @@ possible.')
         if write_fmd:
             self._write_common_metadata(open_with)
 
-    def append_as_row_groups(self, data, row_group_offsets=None,
-                             compression=None, write_fmd:bool=True,
-                             open_with=default_open, mkdirs=None, append=True,
-                             stats=True):
+    def write_row_groups(self, data, row_group_offsets=None,
+                         compression=None, write_fmd:bool=True,
+                         open_with=default_open, mkdirs=None, append=True,
+                         stats=True):
         """
         Append data as new row groups to disk.
 
@@ -455,7 +462,7 @@ possible.')
                 raise ValueError("Not possible to overwrite with simple file \
 scheme.")
             write_simple(self.fn, data, self.fmd, row_group_offsets,
-                         compression, open_with, append, stats)
+                         compression, open_with, None, append, stats)
         else:
             # Case 'hive' or 'drill'.
             partition_on = list(self.cats)
