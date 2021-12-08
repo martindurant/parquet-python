@@ -127,7 +127,7 @@ def test_sorted_row_group_columns(tempdir):
     assert result == expected
 
 
-@pytest.mark.xfail("needs dask fix")
+@pytest.mark.xfail(reason="needs dask fix")
 def test_sorted_row_group_columns_with_filters(tempdir):
     # fails up to 2021.08.1
     dd = pytest.importorskip('dask.dataframe')
