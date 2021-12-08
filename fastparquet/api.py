@@ -392,8 +392,6 @@ scheme is 'simple'.")
 to be kept and to be removed. Removing row groups partially from a file is not\
 possible.')
         rg_new = self.row_groups
-        import pdb
-        pdb.set_trace()
         for rg in rgs:
             rg_new.remove(rg)
             self.fmd.num_rows -= rg.num_rows
@@ -1042,11 +1040,13 @@ def sorted_partitioned_columns(pf, filters=None):
     columns = pf.columns
     out = dict()
     for c in columns:
+        import pdb
+        pdb.set_trace()
         min, max = s['min'][c], s['max'][c]
         if any(x is None for x in min + max):
             continue
         try:
-            if (sorted(min) == min and
+            if (min and sorted(min) == min and
                     sorted(max) == max and
                     all(mx < mn for mx, mn in zip(max[:-1], min[1:]))):
                 out[c] = {'min': min, 'max': max}

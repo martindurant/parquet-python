@@ -632,6 +632,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         algorithm = compression
 
     kvm = []
+    if isinstance(name, (list, tuple)):
+        name = str(tuple(name))
     cmd = ThriftObject.from_fields(
         "ColumnMetaData",
         type=selement.type, path_in_schema=[name],
@@ -817,7 +819,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         schema.append(se)
         root[5] += 1
     fmd.schema = schema
-    meta.value = json.dumps(pandas_metadata, sort_keys=True).encode()  # .value =
+    meta.value = json.dumps(pandas_metadata, sort_keys=True).encode()
     return fmd
 
 

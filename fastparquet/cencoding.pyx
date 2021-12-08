@@ -1,14 +1,13 @@
 # https://cython.readthedocs.io/en/latest/src/userguide/
 #   source_files_and_compilation.html#compiler-directives
-# cython: profile=False
-# cython: linetrace=False
+# cython: profile=True
+# cython: linetrace=True
 # cython: binding=False
 # cython: language_level=3
 # cython: initializedcheck=False
 # cython: boundscheck=False
 # cython: wraparound=False
 # cython: overflowcheck=False
-# cython: initializedcheck=False
 # cython: cdivision=True
 # cython: always_allow_keywords=False
 
@@ -505,6 +504,14 @@ cpdef dict read_thrift(NumpyIO data):
             out[id] = True
         elif bit == 2:
             out[id] = False
+        elif bit == 4:
+            # I16
+            out[id] = zigzag_long(read_unsigned_var_int(data))
+        elif bit == 3:
+            # I8
+            out[id] = data.read_byte()
+        else:
+            print("Corrupted thrift data at ", data.tell(), ": ", id, bit)
     if hasi32:
         if hasi64:
             out["i32list"] = i32
