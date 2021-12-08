@@ -1040,8 +1040,6 @@ def sorted_partitioned_columns(pf, filters=None):
     columns = pf.columns
     out = dict()
     for c in columns:
-        import pdb
-        pdb.set_trace()
         min, max = s['min'][c], s['max'][c]
         if any(x is None for x in min + max):
             continue
