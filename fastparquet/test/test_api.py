@@ -1261,7 +1261,9 @@ def test_write_rgs_simple(tempdir):
     fn = os.path.join(tempdir, 'test.parq')
     write(fn, df_remove_rgs[:2], file_scheme='simple')
     pf = ParquetFile(fn)
-    pf.write_row_groups(df_remove_rgs[2:])
+    data_new = df_remove_rgs[2:].reset_index()
+    data_cols = data_new.columns
+    pf.write_row_groups([data_new], data_cols)
     pf2 = ParquetFile(fn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.
     assert pf.to_pandas().equals(df_remove_rgs)
@@ -1272,7 +1274,7 @@ def test_write_rgs_simple_no_index(tempdir):
     df = df_remove_rgs.reset_index(drop=True)
     write(fn, df[:2], file_scheme='simple')
     pf = ParquetFile(fn)
-    pf.write_row_groups(df[2:])
+    pf.write_row_groups([df[2:]], df.columns)
     pf2 = ParquetFile(fn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.
     assert pf.to_pandas().equals(df)
@@ -1282,7 +1284,9 @@ def test_write_rgs_hive(tempdir):
     dn = os.path.join(tempdir, 'test_parq')
     write(dn, df_remove_rgs[:3], file_scheme='hive', row_group_offsets=[0,2])
     pf = ParquetFile(dn)
-    pf.write_row_groups(df_remove_rgs[3:], [0, 1])
+    data_new = df_remove_rgs.reset_index()
+    data_cols = data_new.columns
+    pf.write_row_groups([data_new[3:4],data_new[4:5]], data_cols)
     assert len(pf.row_groups) == 4
     pf2 = ParquetFile(dn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.
@@ -1294,10 +1298,28 @@ def test_write_rgs_hive_partitions(tempdir):
     write(dn, df_remove_rgs[:3], file_scheme='hive', row_group_offsets=[0,2],
           partition_on=['country'])
     pf = ParquetFile(dn)
-    pf.write_row_groups(df_remove_rgs[3:], [0, 1])
+    # Fit 'new data' to write into acceptable format (no row index)
+    data_new = df_remove_rgs.reset_index()
+    data_cols = data_new.columns
+    pf.write_row_groups([data_new[3:4],data_new[4:5]], data_cols)
     assert len(pf.row_groups) == 4
     pf2 = ParquetFile(dn)
     assert pf.fmd == pf2.fmd   # metadata are updated in-place.
     df = df_remove_rgs.sort_index()
     df['country'] = df['country'].astype('category')
     assert pf.to_pandas().sort_index().equals(df)
+
+def test_write_rgs_simple_schema_exception(tempdir):
+    fn = os.path.join(tempdir, 'test.parq')
+    write(fn, df_remove_rgs[:2], file_scheme='simple')
+    pf = ParquetFile(fn)
+    # Dropping a column.
+    data_new = df_remove_rgs[2:].reset_index().drop(columns='humidity')
+    data_cols = data_new.columns
+    with pytest.raises(ValueError, match="^File schema is not"):
+        pf.write_row_groups(data_new, data_cols)
+    # Similar error: missing 'index' column as index is not resetted.
+    data_new = df_remove_rgs[2:]
+    data_cols = data_new.columns
+    with pytest.raises(ValueError, match="^File schema is not"):
+        pf.write_row_groups(data_new, data_cols)

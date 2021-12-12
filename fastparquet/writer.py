@@ -6,7 +6,6 @@ import os
 import re
 import struct
 import warnings
-from bisect import bisect
 
 import numpy as np
 import pandas as pd
@@ -20,9 +19,10 @@ from .thrift_structures import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__
+from .api import partitions
 from .util import (default_open, default_mkdirs, check_column_names,
                    created_by, get_column_metadata, path_string, norm_col_name,
-                   reset_row_idx, to_rg_offsets)
+                   reset_row_idx)
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
 from .cencoding import NumpyIO
@@ -31,7 +31,6 @@ from decimal import Decimal
 MARKER = b'PAR1'
 NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
 nat = np.datetime64('NaT').view('int64')
-ROW_GROUP_OFFSET = 50000000
 
 typemap = {  # primitive type, converted type, bit width
     'boolean': (parquet_thrift.Type.BOOLEAN, None, 1),
@@ -803,8 +802,9 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
     ----------
     fn: string
         Parquet collection to write to, gathered a single file.
-    data: pandas dataframe
+    data: pandas dataframe or iterable of pandas dataframe.
         The table to write. Index of the dataframe is not written.
+        If an iterable, each dataframe is written as a row group.
     fmd: thrift object
         Parquet file metadata.
     row_group_offsets: int or list of ints,
@@ -828,17 +828,9 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         if False, never do; and if a list of str, do it only for those
         specified columns.
     """
-    # TODO
-    # PendingDeprecationWarning added 2021/12/08.
-    # Remove it and 'has_nulls' parameter at some point.
-    if has_nulls is not None:
-        raise PendingDeprecationWarning("'has_nulls' is an unused parameter in\
-'writer.write_simple()'. It should not be used and will be removed in future \
-fastparquet version.")
-    if row_group_offsets is None:
-        row_group_offsets = ROW_GROUP_OFFSET
-    if isinstance(row_group_offsets, int):
-        row_group_offsets = to_rg_offsets(row_group_offsets, len(data))
+    if isinstance(data, pd.DataFrame):
+        # 'data' is a single dataframe (legacy case).
+        data = iter_dataframe(data, row_group_offsets)
     mode = 'rb+' if append else 'wb'
     with open_with(fn, mode) as f:
         if append:
@@ -847,10 +839,8 @@ fastparquet version.")
             f.seek(-(head_size+8), 2)
         else:
             f.write(MARKER)
-        for i, start in enumerate(row_group_offsets):
-            end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
-                   else None)
-            rg = make_row_group(f, data[start:end], fmd.schema,
+        for i, row_group in enumerate(data):
+            rg = make_row_group(f, row_group, fmd.schema,
                                 compression=compression, stats=stats)
             if rg is not None:
                 fmd.row_groups.append(rg)
@@ -860,34 +850,32 @@ fastparquet version.")
         f.write(MARKER)
 
 
-def write_multi(fn, data, fmd, row_group_offsets, compression, file_scheme,
+def write_multi(dn, row_groups, fmd, compression, file_scheme,
                 write_fmd=True, open_with=default_open, mkdirs=None,
                 partition_on=[], append=False, stats=True):
-    """
-    Write to multi parquet files (for file_scheme='hive', 'drill' or 'flat').
+    """Write each data chunk as a distinct parquet file.
     
-    Parameter
-    ---------
-    fn: string
-        Parquet collection to write to, gathered in a directory containing the
-        metadata and data files.
-    data: pandas dataframe
-        The table to write. Index of the dataframe is not written.
+    Write data following `file_scheme='hive'`, `'drill'` or `'flat'`.
+    
+    Parameters
+    ----------
+    dn: string
+        Directory path containing the parquet collection to write to.
+    row_groups: pandas dataframe
+        The table to write. Only columns are written. Index of the dataframe is
+        not.
     fmd: thrift object
         Parquet file metadata. `fmd` is modified inplace.
-    row_group_offsets: int or list of ints,
-        If int, row-groups will be approximately this many rows, rounded down
-        to make row groups about the same size;
-        If a list, the explicit index values to start new row groups;
-        If `None`, set to 50000000.
     compression:
         Compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
         ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
         column compression types.
+        By default, do not compress.
+        Please, review full description of this parameter in `write` docstring.
     file_scheme: 'hive'|'drill'
         If hive or drill: each row group is in a separate file, and a separate
         file (called "_metadata") contains the metadata.
-    write_fmd: bool, True
+    write_fmd: bool, default True
         Write updated common metadata to disk.
     open_with: function
         When called with a f(path, mode), returns an open file-like object.
@@ -899,96 +887,85 @@ def write_multi(fn, data, fmd, row_group_offsets, compression, file_scheme,
     partition_on: list of column names
         Passed to groupby in order to split data within each row-group,
         producing a structured directory tree. Note: as with pandas, null
-        values will be dropped. Ignored if file_scheme is simple.
-        Checked when appending to an existing parquet dataset that requested
-        partition column names match those of existing parquet data-set.
-    append: bool (False) or 'overwrite'
-        If False, construct data-set from scratch; if True, add new row-group(s)
-        to existing data-set. In the latter case, the data-set must exist,
-        and the schema must match the input data.
-
-        If 'overwrite', existing partitions will be replaced in-place, where
-        the given data has any rows within a given partition. To enable this,
-        these other parameters have to be set to specific values, or will
-        raise ValueError:
-
-           *  ``row_group_offsets=0``
-           *  ``file_scheme='hive'``
-           *  ``partition_on`` had to be used when dataset was first written
-
-    stats: True|False|list(str)
+        values will be dropped. Ignored if `file_scheme` is simple.
+    append: bool, default False
+        If False, construct dataset from scratch;
+        If True, add new row-group(s) to existing dataset.The data-set must
+        exist, and the schema must match the input data.
+    stats: True|False|list of str
         Whether to calculate and write summary statistics.
         If True (default), do it for every column;
-        if False, never do; and if a list of str, do it only for those
-        specified columns.
+        If False, never do;
+        If a list of str, do it only for those specified columns.
     """
-    n_rows = len(data)
-    if row_group_offsets is None:
-        row_group_offsets = ROW_GROUP_OFFSET
-    if isinstance(row_group_offsets, int):
-        row_group_offsets = to_rg_offsets(row_group_offsets, n_rows)
     if mkdirs is None:
         mkdirs = default_mkdirs
     if not append:
         # New dataset.
         i_offset = 0
-        mkdirs(fn)
-    elif append is True:
-        i_offset = find_max_part(fmd.row_groups)
+        mkdirs(dn)
     else:
-        # 'overwrite'.
-        i_offset = 0
-        exist_rgps = [rg.columns[0].file_path.rsplit('/',1)[0]
-                      for rg in fmd.row_groups]
-
-    for i, start in enumerate(row_group_offsets):
-        end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
-               else None)
+        i_offset = find_max_part(fmd.row_groups)
+    for i, row_group in enumerate(row_groups):
         part = 'part.%i.parquet' % (i + i_offset)
         if partition_on:
-            rgs = partition_on_columns(data[start:end], partition_on, fn, part,
+            rgs = partition_on_columns(row_group, partition_on, dn, part,
                                        fmd,  compression, open_with, mkdirs,
                                        with_field=file_scheme == 'hive',
                                        stats=stats)
-            if append != 'overwrite':
-                # Append or 'standard' write mode.
-                fmd.row_groups.extend(rgs)
-            else:
-                # 'overwrite' mode -> update fmd in place.
-                # Get 'new' combinations of values from columns listed in
-                # 'partition_on',along with corresponding row groups.
-                new_rgps = {rg.columns[0].file_path.rsplit('/',1)[0]: rg \
-                            for rg in rgs}
-                for part_val in new_rgps:
-                    if part_val in exist_rgps:
-                        # Replace existing row group metadata with new ones.
-                        row_group_index = exist_rgps.index(part_val)
-                        fmd.row_groups[row_group_index] = new_rgps[part_val]
-                    else:
-                        # Insert new rg metadata among existing ones,
-                        # preserving order, if the existing list is sorted
-                        # in the 1st place.
-                        row_group_index = bisect(exist_rgps, part_val)
-                        fmd.row_groups.insert(row_group_index,
-                                              new_rgps[part_val])
-                        # Keep 'exist_paths' list representative for next
-                        # 'replace' or 'insert' cases.
-                        exist_rgps.insert(row_group_index, part_val)
+            fmd.row_groups.extend(rgs)
         else:
-            partname = join_path(fn, part)
+            partname = join_path(dn, part)
             with open_with(partname, 'wb') as f2:
-                rg = make_part_file(f2, data[start:end], fmd.schema,
-                                    compression=compression, fmd=fmd, stats=stats)
+                rg = make_part_file(f2, row_group, fmd.schema,
+                                    compression=compression, fmd=fmd,
+                                    stats=stats)
             for chunk in rg.columns:
                 chunk.file_path = part
             fmd.row_groups.append(rg)
-
     fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
     if write_fmd:
-        write_common_metadata(join_path(fn, '_metadata'), fmd, open_with,
+        write_common_metadata(join_path(dn, '_metadata'), fmd, open_with,
                               no_row_groups=False)
-        write_common_metadata(join_path(fn, '_common_metadata'), fmd,
+        write_common_metadata(join_path(dn, '_common_metadata'), fmd,
                               open_with)
+
+
+def iter_dataframe(data, row_group_offsets=None):
+    """Yield data in chunk.
+    
+    Parameters
+    ----------
+    data : dataframe
+        Pandas dataframe to slice.
+    row_group_offsets: int or list of ints
+        If int, row-groups will be approximately this many rows, rounded down
+        to make row groups about the same size;
+        If a list, the explicit index values to start new row groups;
+        If `None`, set to 50_000_000.
+
+    Yields
+    ------
+    dataframe
+        Chunk of data.
+    """
+    if row_group_offsets is None:
+        row_group_offsets = 50_000_000
+    # TODO
+    # Could be extended to accept target size in memory for a row group (MB or
+    # GB), instead of target number of rows.
+    if isinstance(row_group_offsets, int):
+        n_rows = len(data)
+        if not row_group_offsets:     # if row group is 0.
+            row_group_offsets = [0]
+        else:
+            nparts = max((n_rows - 1) // row_group_offsets + 1, 1)
+            chunksize = max(min((n_rows - 1) // nparts + 1, n_rows), 1)
+            row_group_offsets = list(range(0, n_rows, chunksize))
+    for i, start in enumerate(row_group_offsets):
+        end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
+               else None)
+        yield data[start:end]
 
 
 def write(filename, data, row_group_offsets=None,
@@ -1084,13 +1061,12 @@ def write(filename, data, row_group_offsets=None,
         and the schema must match the input data.
 
         If 'overwrite', existing partitions will be replaced in-place, where
-        the given data has any rows within a given partition. To enable this,
-        these other parameters have to be set to specific values, or will
-        raise ValueError:
+        the given data has any rows within a given partition. To use this,
+        the existing dataset had to be written with these other parameters set
+        to specific values, or will raise ValueError:
 
-           *  ``row_group_offsets=0``
            *  ``file_scheme='hive'``
-           *  ``partition_on`` had to be used when dataset was first written
+           *  ``partition_on`` set to at least one column name.
 
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
@@ -1120,30 +1096,22 @@ def write(filename, data, row_group_offsets=None,
     >>> fastparquet.write('myfile.parquet', df)  # doctest: +SKIP
     """
     if file_scheme not in ('simple', 'hive', 'drill'):
-        raise ValueError(f'File scheme should be simple|hive|drill, not \
-{file_scheme}.')
+        raise ValueError( 'File scheme should be simple|hive|drill, not '
+                         f'{file_scheme}.')
+    if append == 'overwrite':
+        update(dirpath=filename, data=data,
+               row_group_offsets=row_group_offsets, compression=compression,
+               open_with=open_with, mkdirs=mkdirs, remove_with=None,
+               stats=stats)
+        return
+    # Format dataframe (manage row index).
     if append:
-        # Case 'append=True' or 'overwrite'.
         pf = api.ParquetFile(filename, open_with=open_with)
-        if file_scheme == 'simple':
-            # Case 'simple'
-            if pf.file_scheme not in ['simple', 'empty']:
-                raise ValueError('File scheme requested is simple, but '
-                                 f'existing file scheme is {pf.file_scheme}.')
-        else:
-            # Case 'hive', 'drill'
-            if pf.file_scheme not in ['hive', 'empty', 'flat']:
-                raise ValueError(f'Requested file scheme is {file_scheme}, but'
-                                 ' existing file scheme is not.')
-            if tuple(partition_on) != tuple(pf.cats):
-                raise ValueError('When appending, partitioning columns must'
-                                 ' match existing data')
-        pf.write_row_groups(data, row_group_offsets, compression,
-                            write_fmd=True, open_with=open_with,
-                            mkdirs=mkdirs, append=append, stats=stats)
+        if pf._get_index():
+            data = reset_row_idx(data)
+        # Spare columns.
+        columns = data.columns
     else:
-        # Case 'append=False'.
-        # Initialize common metadata.
         # Define 'index_cols' to be recorded in metadata.
         if (write_index or write_index is None
                 and not isinstance(data.index, pd.RangeIndex)):
@@ -1157,6 +1125,7 @@ def write(filename, data, row_group_offsets=None,
         else:
             # write_index=False
             index_cols = []
+        # Initialize common metadata.
         if str(has_nulls) == 'infer':
             has_nulls = None
         check_column_names(data.columns, partition_on, fixed_text,
@@ -1174,14 +1143,36 @@ def write(filename, data, row_group_offsets=None,
                     for key, value in custom_metadata.items()
                 ]
             )
+    # Setup data split into row groups.
+    row_groups = iter_dataframe(data, row_group_offsets)
+    # Write.
+    if append:
         if file_scheme == 'simple':
             # Case 'simple'
-            write_simple(filename, data, fmd, row_group_offsets,
+            if pf.file_scheme not in ['simple', 'empty']:
+                raise ValueError( 'File scheme requested is simple, but '
+                                 f'existing file scheme is {pf.file_scheme}.')
+        else:
+            # Case 'hive', 'drill'
+            if pf.file_scheme not in ['hive', 'empty', 'flat']:
+                raise ValueError(f'Requested file scheme is {file_scheme}, but'
+                                  ' existing file scheme is not.')
+            if tuple(partition_on) != tuple(pf.cats):
+                raise ValueError('When appending, partitioning columns must '
+                                 'match existing data')
+        pf.write_row_groups(row_groups, columns, None, compression,
+                            write_fmd=True, open_with=open_with,
+                            mkdirs=mkdirs, stats=stats)
+    else:
+        # Case 'append=False'.
+        if file_scheme == 'simple':
+            # Case 'simple'
+            write_simple(filename, row_groups, fmd, None,
                          compression, open_with, None, append=False,
                          stats=stats)
         else:
             # Case 'hive', 'drill'
-            write_multi(filename, data, fmd, row_group_offsets, compression,
+            write_multi(filename, row_groups, fmd, compression,
                         file_scheme, write_fmd=True, open_with=open_with,
                         mkdirs=mkdirs, partition_on=partition_on,
                         append=False, stats=stats)
@@ -1210,6 +1201,8 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     Each combination of column values (determined by pandas groupby) will
     be written in structured directories.
     """
+    # Pandas grouby has by default 'sort=True' meaning groups are sorted
+    # between them on key.
     gb = data.groupby(columns)
     remaining = list(data)
     for column in columns:
@@ -1320,3 +1313,110 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     out = api.ParquetFile(file_list, verify_schema, open_with, root)
     out._write_common_metadata(open_with)
     return out
+
+
+def update(dirpath, data, row_group_offsets=None, compression=None,
+           open_with=default_open, mkdirs=None, remove_with=None,
+           stats=True):
+    """Merge new data to existing parquet dataset.
+
+    This function requires existing data on disk, written with 'hive' format.
+
+    This function is a work-in-progress. Several update modes can be envisaged
+    and in the mid term, this function will provide a skeleton for achieving
+    update of an existing dataset with new data.
+
+    With current version, the only *update mode* supported is
+    ``overwrite_partitioned``. With this mode, row-groups on disk that have
+    partition values overlapping with those of new data are removed first
+    before new data is added.
+
+    Parameters
+    ----------
+    dirpath : str
+        Directory path containing a parquet dataset, written with hive format,
+        and with defined partitions.
+    data : pandas dataframe
+        The table to write.
+    row_group_offsets : int or list of int, optional
+        If int, row-groups will be approximately this many rows, rounded down
+        to make row groups about the same size;
+        If a list, the explicit index values to start new row groups;
+        If `None`, set to 50_000_000.
+        Beware that final row-groups size can be reduced significantly further
+        by the partitioning, occuring as a subsequent step.
+    compression : str or dict, optional
+        Compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
+        ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
+        column compression types.
+        By default, do not compress.
+        Please, review full description of this parameter in `write` docstring.
+    open_with : function, optional
+        When called with a f(path, mode), returns an open file-like object.
+    mkdirs : function, optional
+        When called with a path/URL, creates any necessary dictionaries to
+        make that location writable, e.g., ``os.makedirs``.
+    remove_with : function, optional
+        When called with f(path), removes file or directory specified by
+        `path` (and any contained files).
+    stats: True|False|list of str
+        Whether to calculate and write summary statistics.
+        If True (default), do it for every column;
+        If False, never do;
+        And if a list of ``str``, do it only for those specified columns.
+    """
+    pf = api.ParquetFile(dirpath, open_with=open_with)
+    if (pf.file_scheme == 'simple'
+        or (pf.file_scheme == 'empty' and pf.fn[-9:] != '_metadata')):
+        raise ValueError('Not possible to overwrite with simple file '
+                         'scheme.')
+    defined_partitions = list(pf.cats)
+    if not defined_partitions:
+        raise ValueError('No partitioning column has been set in existing '
+                         'dataset. Overwrite of partitions is not possible.')
+    # 1st step (from existing data).
+    # Define 'sort_key' function to be used to sort all row groups once those
+    # of new data will have been added.   
+    # 'partitions_starts' is a `dict` that keeps index of 1st row group for
+    # each partition in existing data.
+    n_rgs = len(pf.row_groups)
+    max_idx = n_rgs-1
+    partitions_starts = {partitions(rg): (max_idx-i)
+                         for i, rg in enumerate(reversed(pf.row_groups))}
+    def sort_key(row_group) -> int:
+        """Return 1st row-group index with same partition.
+        
+        If no partition matching, returns an index larger than the 1st
+        row-group indexes of any existing partitions.
+        """
+        # Taking n_rgs (=len(pf.row_groups)) as index for row-groups without
+        # matching partition among existing ones is overkill but works.
+        return (partitions_starts[rg_partition]
+                if ((rg_partition := partitions(row_group))
+                    in partitions_starts)
+                else n_rgs)
+    # 2nd step (from new and existing data).
+    # Remove row groups from existing data with same partition values as those
+    # in new data.
+    partition_values_in_new = pd.unique(data.loc[:,defined_partitions]
+                                            .astype(str).agg('/'.join, axis=1))
+    rgs_to_remove = filter(lambda rg : (partitions(rg, True)
+                                        in partition_values_in_new),
+                           pf.row_groups)
+    pf.remove_row_groups(rgs_to_remove, write_fmd=False, open_with=open_with,
+                         remove_with=remove_with)
+    # 3rd step (on new data).
+    # Format new data so that it can be written to disk.
+    if pf._get_index():
+        # Reset index of pandas dataframe.
+        data = reset_row_idx(data)
+    # Spare columns.
+    columns = data.columns
+    # Row group generator.
+    row_groups = iter_dataframe(data, row_group_offsets)  
+    # 4th step: write new data, sort row groups and write updated metadata.
+    pf.write_row_groups(row_groups, columns, sort_key, compression,
+                        write_fmd=True, open_with=open_with,
+                        mkdirs=mkdirs, stats=stats)
+    
+    

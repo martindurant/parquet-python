@@ -2,76 +2,135 @@
    test_overwrite.py
    Tests for overwriting parquet files.
 """
+import os
+import pytest
 
 import pandas as pd
-import pytest
+
 from fastparquet import write, ParquetFile
+from fastparquet.writer import update
 from .util import tempdir
 
 
-def test_write_with_rgp_by_date_as_index(tempdir):
-
+def test_single_part_in_partitions(tempdir):
     # Step 1 - Writing of a 1st df, with `row_group_offsets=0`,
     # `file_scheme=hive` and `partition_on=['location', 'color`].
-    df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9],
-                        'pressure': [1e5, 1.1e5, 0.95e5],
-                        'location': ['Paris', 'Paris', 'Milan'],
-                        'color': ['red', 'black', 'blue']})
+    # 'location/color' keys (used in this test for partitioning) are
+    # intentionally in sorted order, as partitioning in fastparquet rely on
+    # pandas groupby with std settings, which result in sorting keys for
+    # grouping. This way, that this setting changes or not, this test case is
+    # not impacted anyway.
+    df1 = pd.DataFrame({'humidity': [0.9, 0.8, 0.93],
+                        'pressure': [0.95e5, 1.1e5, 1e5],
+                        'location': ['Milan', 'Paris', 'Paris'],
+                        'color': ['blue', 'black', 'red']})
     write(tempdir, df1, row_group_offsets=0, file_scheme='hive',
           partition_on=['location', 'color'])
 
-    # Step 2 - Overwriting with a 2nd df having overlapping data, in
-    # 'overwrite' mode:
-    # `row_group_offsets=0`, `file_scheme=hive`,
-    # `partition_on=['location', 'color`] and `append=True`.
-    df2 = pd.DataFrame({'humidity': [0.5, 0.3, 0.4, 0.8, 1.1],
-                        'pressure': [9e4, 1e5, 1.1e5, 1.1e5, 0.95e5],
-                        'location': ['Milan', 'Paris', 'Paris', 'Paris', 'Paris'],
-                        'color': ['red', 'black', 'black', 'green', 'green' ]})
-
-    write(tempdir, df2, row_group_offsets=0, file_scheme='hive', append='overwrite',
-          partition_on=['location', 'color'])
-
-    expected = pd.DataFrame({'humidity': [0.9, 0.5, 0.3, 0.4, 0.8, 1.1, 0.3],
-                             'pressure': [9.5e4, 9e4, 1e5, 1.1e5, 1.1e5, 9.5e4, 1e5],
-                             'location': ['Milan', 'Milan', 'Paris', 'Paris', 'Paris', 'Paris', 'Paris'],
-                             'color': ['blue', 'red', 'black', 'black', 'green', 'green', 'red']})\
-                           .astype({'location': 'category', 'color': 'category'})
+    # Step 2 - Overwriting with a 2nd df having overlapping data.
+    df2 = pd.DataFrame({
+                     'humidity': [0.5, 0.3, 0.4, 0.8, 1.1],
+                     'pressure': [9e4, 1e5, 1.1e5, 1.1e5, 0.95e5],
+                     'location': ['Milan', 'Paris', 'Paris', 'Paris', 'Paris'],
+                     'color': ['red', 'black', 'black', 'green', 'green' ]})
+    update(tempdir, df2, row_group_offsets=0)
     recorded = ParquetFile(tempdir).to_pandas()
+
+    expected = pd.DataFrame({
+   'humidity': [0.9, 0.3, 0.4, 0.93, 0.5, 0.8, 1.1],
+   'pressure': [9.5e4, 1e5, 1.1e5, 1e5, 9e4, 1.1e5, 9.5e4],
+   'location': ['Milan', 'Paris', 'Paris', 'Paris', 'Milan', 'Paris', 'Paris'],
+   'color': ['blue', 'black', 'black', 'red', 'red', 'green', 'green']
+                            })
+    expected = expected.astype({'location': 'category', 'color': 'category'})
     # df1 is 3 rows, df2 is 5 rows. Because of overlapping data with keys
-    # 'location' = 'Paris' & 'color' = 'black' (1 row in df2, 2 rows in df2)
-    # resulting df contains for this combination values of df2 and not that of
-    # df1. Total resulting number of rows is 7.
+    # 'location' = 'Paris' & 'color' = 'black' (1 row in df1, 2 rows in df2)
+    # resulting df contains for this combination:
+    # - values from df2
+    # - and not that of df1.
+    # Total resulting number of rows is 7.
     assert expected.equals(recorded)
 
-def test_exception_1(tempdir):
 
+def test_multiple_parts_in_partitions(tempdir):
+    # Several existing parts in partition 'Paris/yes'.
     df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
                         'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
                         'location': ['Paris', 'Paris', 'Milan', 'Paris'],
                         'exterior': ['yes', 'no', 'yes', 'yes']})
-
-    # Several existing parts in folder exception.
-    write(tempdir, df1, row_group_offsets = 1, file_scheme='hive',
+    write(tempdir, df1, row_group_offsets=1, file_scheme='hive',
           write_index=False, partition_on=['location', 'exterior'])
 
-    with pytest.raises(ValueError, match="^Some partition folders"):
-        write(tempdir, df1, row_group_offsets = 0, file_scheme='hive',
-              write_index=False, partition_on=['location', 'exterior'],
-              append='overwrite')
-    with pytest.raises(ValueError, match="^Some partition folders"):
-        write(tempdir, df1, row_group_offsets=[0], file_scheme='hive',
-              write_index=False, partition_on=['location', 'exterior'],
-              append='overwrite')
-    # If not 0 row group offset, not accepted.
-    with pytest.raises(ValueError, match="^When overwriting"):
-        write(tempdir, df1, row_group_offsets=1, file_scheme='hive',
-              write_index=False, partition_on=['location', 'exterior'],
-              append='overwrite')
+    df2 = pd.DataFrame({'humidity': [0.4, 0.8, 0.9, 0.7],
+                        'pressure': [1.1e5, 1.1e5, 0.95e5, 1e5],
+                        'location': ['Paris', 'Tokyo', 'Milan', 'Paris'],
+                        'exterior': ['yes', 'no', 'no', 'yes']})
+    update(tempdir, df2, row_group_offsets=1)
+
+    expected = pd.DataFrame(
+           {'humidity': [0.4, 0.7, 0.8, 0.9, 0.8, 0.9],
+            'pressure': [1.1e5, 1e5, 1.1e5, 9.5e4, 1.1e5, 9.5e4],
+            'location': ['Paris', 'Paris', 'Paris', 'Milan', 'Tokyo', 'Milan'],
+            'exterior': ['yes', 'yes', 'no', 'yes', 'no', 'no']})\
+                 .astype({'location': 'category', 'exterior': 'category'})
+    recorded = ParquetFile(tempdir).to_pandas()
+    assert expected.equals(recorded)
 
 
-def test_exception_2(tempdir):
+def test_with_actually_no_rg_to_overwrite(tempdir):
+    # Step 1 - Writing of a 1st df, with `row_group_offsets=0`,
+    # `file_scheme=hive` and `partition_on=['location', 'color`].
+    df1 = pd.DataFrame({'humidity': [0.9, 0.8, 0.93],
+                        'pressure': [0.95e5, 1.1e5, 1e5],
+                        'location': ['Milan', 'Paris', 'Paris'],
+                        'color': ['blue', 'black', 'red']})
+    write(tempdir, df1, row_group_offsets=0, file_scheme='hive',
+          partition_on=['location', 'color'])
 
+    # Step 2 - 'Overwriting' with a 2nd df having actually no overlapping data.
+    df2 = pd.DataFrame({
+                     'humidity': [0.5, 0.3],
+                     'pressure': [9e4, 1e5],
+                     'location': ['Milan', 'Paris'],
+                     'color': ['red', 'green']})
+    update(tempdir, df2, row_group_offsets=0)
+
+    expected = pd.DataFrame({
+                     'humidity': [0.9, 0.8, 0.93, 0.5, 0.3],
+                     'pressure': [9.5e4, 1.1e5, 1e5, 9e4, 1e5],
+                     'location': ['Milan', 'Paris', 'Paris', 'Milan', 'Paris'],
+                     'color': ['blue', 'black', 'red', 'red', 'green']})
+    expected = expected.astype({'location': 'category', 'color': 'category'})
+    recorded = ParquetFile(tempdir).to_pandas()
+    assert expected.equals(recorded)
+
+
+def test_multiple_parts_in_partitions_thru_write(tempdir):
+    # Several existing parts in folder 'Paris/yes'.
+    df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
+                        'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
+                        'location': ['Paris', 'Paris', 'Milan', 'Paris'],
+                        'exterior': ['yes', 'no', 'yes', 'yes']})
+    write(tempdir, df1, row_group_offsets=1, file_scheme='hive',
+          write_index=False, partition_on=['location', 'exterior'])
+
+    df2 = pd.DataFrame({'humidity': [0.4, 0.8, 0.9, 0.7],
+                        'pressure': [1.1e5, 1.1e5, 0.95e5, 1e5],
+                        'location': ['Paris', 'Tokyo', 'Milan', 'Paris'],
+                        'exterior': ['yes', 'no', 'no', 'yes']})
+    write(tempdir, df2, row_group_offsets=1, append='overwrite')
+
+    expected = pd.DataFrame(
+           {'humidity': [0.4, 0.7, 0.8, 0.9, 0.8, 0.9],
+            'pressure': [1.1e5, 1e5, 1.1e5, 9.5e4, 1.1e5, 9.5e4],
+            'location': ['Paris', 'Paris', 'Paris', 'Milan', 'Tokyo', 'Milan'],
+            'exterior': ['yes', 'yes', 'no', 'yes', 'no', 'no']})\
+                 .astype({'location': 'category', 'exterior': 'category'})
+    recorded = ParquetFile(tempdir).to_pandas()
+    assert expected.equals(recorded)
+
+
+def test_no_partitioning_exception(tempdir):
     df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
                         'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
                         'location': ['Paris', 'Paris', 'Milan', 'Paris'],
@@ -80,6 +139,17 @@ def test_exception_2(tempdir):
     write(tempdir, df1, row_group_offsets=1, file_scheme='hive',
           write_index=False)
     with pytest.raises(ValueError, match="^No partitioning"):
-        write(tempdir, df1, row_group_offsets=0, file_scheme='hive',
-              write_index=False, append='overwrite')
+        update(tempdir, df1, row_group_offsets=0)
 
+
+def test_simple_scheme_exception(tempdir):
+    df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
+                        'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
+                        'location': ['Paris', 'Paris', 'Milan', 'Paris'],
+                        'exterior': ['yes', 'no', 'yes', 'yes']})
+    # Simple file scheme.
+    fn = os.path.join(tempdir, 'foo.parquet')
+    write(fn, df1, row_group_offsets=1, file_scheme='simple',
+          write_index=False)
+    with pytest.raises(ValueError, match="^Not possible to overwrite"):
+        update(fn, df1, row_group_offsets=0)

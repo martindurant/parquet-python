@@ -15,8 +15,7 @@ from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
 from .util import (default_open, default_remove, ParquetException, val_to_num, ops,
                    ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, json_decoder, _strip_path_tail,
-                   reset_row_idx)
+                   ex_from_sep, json_decoder, _strip_path_tail)
 
 
 class ParquetFile(object):
@@ -100,13 +99,6 @@ class ParquetFile(object):
 
     def __init__(self, fn, verify=False, open_with=default_open, root=False,
                  sep=None, fs=None, pandas_nulls=True):
-        # TODO
-        # PendingDeprecationWarning added 2021/12/08.
-        # Remove it and 'sep' parameter at some point.
-        if sep is not None:
-            raise PendingDeprecationWarning("'has_nulls' is an unused \
-parameter in 'api.ParquetFile.__init__()'. It should not be used and will be \
-removed in future fastparquet version.")
         self.pandas_nulls = pandas_nulls
         if open_with is default_open and fs is None:
             fs = fsspec.filesystem("file")
@@ -371,6 +363,15 @@ removed in future fastparquet version.")
             (and any contained files). Not required if this ParquetFile has
             a .fs file system attribute
         """
+        if not isinstance(rgs, list):
+            if not hasattr(rgs, '__iter__'):
+                # Filter tuple, generator.
+                rgs = [rgs]
+            else:
+                # If generator, switch to list as this list is re-used.
+                rgs = list(rgs)
+        if not rgs:
+            return
         if self.file_scheme == 'simple':
             raise ValueError("Not possible to remove row groups when file \
 scheme is 'simple'.")
@@ -379,8 +380,6 @@ scheme is 'simple'.")
                 remove_with = self.fs.rm
             else:
                 remove_with = default_remove
-        if not isinstance(rgs, list):
-            rgs = [rgs]
         rgs_to_remove = row_groups_map(rgs)
         if "fastparquet" not in self.created_by or self.file_scheme=='flat':
             # Check if some files contain row groups both to be removed and to
@@ -400,32 +399,35 @@ possible.')
         except IOError:
             pass
         self._set_attrs()
-
         if write_fmd:
             self._write_common_metadata(open_with)
 
-    def write_row_groups(self, data, row_group_offsets=None,
+    def write_row_groups(self, row_groups, columns, sort_key=None,
                          compression=None, write_fmd:bool=True,
-                         open_with=default_open, mkdirs=None, append=True,
-                         stats=True):
-        """
-        Append data as new row groups to disk.
+                         open_with=default_open, mkdirs=None, stats=True):
+        """Append iterable of dataframe as new row groups to disk.
 
-        Parameter
-        ---------
-        data: pandas dataframe
-            Data to append.
-        row_group_offsets: int or list of ints
-            If int, row-groups will be approximately this many rows, rounded
-            down to make row groups about the same size;
-            If a list, the explicit index values to start new row groups;
-            If `None`, set to 50000000.
-        compression: str, dict, None
-            compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or
+        Parameters
+        ----------
+        row_groups : iterable of pandas dataframe
+            Data to add to existing parquet dataset. Only columns are written
+            to disk. Row index is not kept.
+        columns : pandas index
+            Column names of the data to be added.
+        sort_key : function, default None.
+            Sorting function used as `key` parameter for `row_groups.sort()`
+            function. This function is called once new row groups have been
+            added to list of existing ones.
+            If not provided, new row groups are only appended to existing ones
+            and the updated list of row groups is not sorted. 
+        compression: str or dict, default None
+            Compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or
             a ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
             column compression types.
             By default, do not compress.
-        write_fmd: bool, True
+            Please, review full description of this parameter in `write`
+            docstring.
+        write_fmd: bool, default True
             Write updated common metadata to disk.
         open_with: function
             When called with a f(path, mode), returns an open file-like object.
@@ -433,58 +435,41 @@ possible.')
             When called with a path/URL, creates any necessary dictionaries to
             make that location writable, e.g., ``os.makedirs``. This is not
             necessary if using the simple file scheme.
-        append: bool (False) or 'overwrite'
-            If False, construct data-set from scratch;
-            If True, add new row-group(s) to existing data-set. In the latter
-            case, the data-set must exist, and the schema must match the input
-            data;
-            If 'overwrite', existing partitions will be replaced in-place, where
-            new data has any rows within an existing partition. To enable this,
-            in addition to append to a data-set with partitions, and 'hive'
-            scheme, row_group_offset has to be set to `[0]` (meaning writing a
-            single row group per partition).
-        stats: True|False|list(str)
+        stats: True|False|list of str
             Whether to calculate and write summary statistics.
             If True (default), do it for every column;
             If False, never do;
             If a list of str, do it only for those specified columns.
         """
         from .writer import write_simple, write_multi
-        if self._get_index():
-            # Adjust index of pandas dataframe.
-            data = reset_row_idx(data)
+        if (cats := self.cats):
+            partition_on = list(cats)
+            self_cols = sorted(self.columns + partition_on)
+        else:
+            partition_on = []
+            self_cols = sorted(self.columns)
+        if self_cols != sorted(columns):
+            # TODO
+            # Proposal to clarify the legacy error message, by stating that
+            # column names of data on disk and column names of new data do not
+            # match, and showing inconsistent column indexes.
+            raise ValueError('File schema is not compatible with existing file'
+                             ' schema.')
         if (self.file_scheme == 'simple'
             or (self.file_scheme == 'empty' and self.fn[-9:] != '_metadata')):
             # Case 'simple'.
-            if sorted(self.columns) != sorted(data.columns):
-                raise ValueError('File schema is not compatible with '
-                                 'existing file schema.')
-            if append == 'overwrite':
-                raise ValueError("Not possible to overwrite with simple file \
-scheme.")
-            write_simple(self.fn, data, self.fmd, row_group_offsets,
-                         compression, open_with, None, append, stats)
+            write_simple(self.fn, row_groups, self.fmd, None, compression,
+                         open_with, None, append=True, stats=stats)
         else:
             # Case 'hive' or 'drill'.
-            partition_on = list(self.cats)
-            if append == 'overwrite':
-                if (row_group_offsets != [0]) and (row_group_offsets != 0):
-                    raise ValueError("When overwriting partitions, writing \
-several row groups per partition is not possible. Please, force writing a \
-single row group per partition by setting `row_group_offsets=[0]`.")
-                if not partition_on:
-                    raise ValueError("No partitioning column has been set in \
-existing data-set. Overwrite of partitions is not possible.")
-                exist_rgps = [rg.columns[0].file_path
-                              for rg in self.row_groups]
-                if len(exist_rgps) > len(_strip_path_tail(exist_rgps)):
-                    # Some row groups are in the same folder (partition).
-                    raise ValueError("Some partition folders contain several \
-row groups. This situation is not allowed with use of `append='overwrite'`.")
-            write_multi(self.basepath, data, self.fmd, row_group_offsets,
-                        compression, self.file_scheme, write_fmd=write_fmd,
+            write_multi(self.basepath, row_groups, self.fmd, compression,
+                        self.file_scheme, write_fmd=False,
                         open_with=open_with, mkdirs=mkdirs,
-                        partition_on=partition_on, append=append, stats=stats)
+                        partition_on=partition_on, append=True, stats=stats)
+            if sort_key:
+                self.fmd.row_groups.sort(key=sort_key)
+            if write_fmd:
+                self._write_common_metadata(open_with)
         self._set_attrs()
 
     def _write_common_metadata(self, open_with=default_open):
@@ -1343,3 +1328,25 @@ def row_groups_map(rgs: list) -> dict:
         file = rg.columns[0].file_path
         files_rgs[file].append(rg)
     return files_rgs
+
+
+def partitions(row_group, only_values=False) -> str:
+    """Returns partition values as string.
+    
+    Each value is split by '/'.
+
+    Parameters
+    ----------
+    row_group : obj
+        Single row-group.
+    only_values: bool, default False
+        If False, only values of partitions are returned;
+        If True, names and values of partitions are returned (faster).
+
+    Returns
+    -------
+    str
+        Paritions values.
+    """
+    return '/'.join(re.split('/|=', row_group.columns[0].file_path)[1::2]) \
+           if only_values else row_group.columns[0].file_path.rsplit('/',1)[0]
