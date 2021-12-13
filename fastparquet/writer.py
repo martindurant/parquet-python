@@ -905,7 +905,8 @@ def write_multi(dn, row_groups, fmd, compression, file_scheme,
         i_offset = 0
         mkdirs(dn)
     else:
-        i_offset = find_max_part(fmd.row_groups)
+        pids = part_ids(fmd.row_groups)
+        i_offset = (max(pids)+1) if pids else 0
     for i, row_group in enumerate(row_groups):
         part = 'part.%i.parquet' % (i + i_offset)
         if partition_on:
@@ -965,7 +966,7 @@ def iter_dataframe(data, row_group_offsets=None):
     for i, start in enumerate(row_group_offsets):
         end = (row_group_offsets[i+1] if i < (len(row_group_offsets) - 1)
                else None)
-        yield data[start:end]
+        yield data.iloc[start:end]
 
 
 def write(filename, data, row_group_offsets=None,
@@ -1178,18 +1179,20 @@ def write(filename, data, row_group_offsets=None,
                         append=False, stats=stats)
 
 
-def find_max_part(row_groups):
+def part_ids(row_groups) -> dict:
+    """Return ids of parquet part files.
+    
+    Find the integer matching "**part.*.parquet" in referenced paths and
+    returns them as keys of a dict. Values of the dict are tuples
+    (row_group_id, part_name).
+    In case of files with multiple row groups, the position (index in row group
+    list) of the 1st group only is kept.
     """
-    Find the highest integer matching "**part.*.parquet" in referenced paths.
-    """
-    paths = [c.file_path or "" for rg in row_groups for c in rg.columns]
     s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
-    matches = [s.match(path) for path in paths]
-    nums = [int(match.groupdict()['i']) for match in matches if match]
-    if nums:
-        return max(nums) + 1
-    else:
-        return 0
+    max_rgidx = len(row_groups)-1
+    return {int(s.match(rg.columns[0].file_path)['i']):
+            (max_rgidx-i, rg.columns[0].file_path)
+            for i, rg in enumerate(reversed(row_groups))}
 
 
 def partition_on_columns(data, columns, root_path, partname, fmd,
@@ -1418,5 +1421,3 @@ def update(dirpath, data, row_group_offsets=None, compression=None,
     pf.write_row_groups(row_groups, columns, sort_key, compression,
                         write_fmd=True, open_with=open_with,
                         mkdirs=mkdirs, stats=stats)
-    
-    

@@ -49,6 +49,9 @@ def default_remove(paths):
             pass
 
 
+default_rename = os.rename
+    
+
 def val_from_meta(x, meta):
     try:
         if meta['pandas_type'] == 'categorical':
