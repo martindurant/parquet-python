@@ -153,3 +153,40 @@ def test_simple_scheme_exception(tempdir):
           write_index=False)
     with pytest.raises(ValueError, match="^Not possible to overwrite"):
         update(fn, df1, row_group_offsets=0)
+
+
+def test_multiple_parts_in_partitions_with_renaming(tempdir):
+    # Several existing parts in partition 'Paris/yes'.
+    df1 = pd.DataFrame({'humidity': [0.3, 0.8, 0.9, 0.7],
+                        'pressure': [1e5, 1.1e5, 0.95e5, 1e5],
+                        'location': ['Paris', 'Paris', 'Milan', 'Paris'],
+                        'exterior': ['yes', 'no', 'yes', 'yes']})
+    write(tempdir, df1, row_group_offsets=1, file_scheme='hive',
+          write_index=False, partition_on=['location', 'exterior'])
+
+    df2 = pd.DataFrame({'humidity': [0.4, 0.8, 0.9, 0.7],
+                        'pressure': [1.1e5, 1.1e5, 0.95e5, 1e5],
+                        'location': ['Paris', 'Tokyo', 'Milan', 'Paris'],
+                        'exterior': ['yes', 'no', 'no', 'yes']})
+    # 'update' without file shuffling.
+    update(tempdir, df2, row_group_offsets=1, sort_pnames=False)
+    recorded = ParquetFile(tempdir)
+    pnames_rec = [rg.columns[0].file_path for rg in recorded.row_groups]
+    pnames_ref = ['location=Paris/exterior=yes/part.3.parquet',
+                  'location=Paris/exterior=yes/part.6.parquet',
+                  'location=Paris/exterior=no/part.1.parquet',
+                  'location=Milan/exterior=yes/part.2.parquet',
+                  'location=Tokyo/exterior=no/part.4.parquet',
+                  'location=Milan/exterior=no/part.5.parquet']
+    assert pnames_rec == pnames_ref
+    # update' again with file shuffling.
+    update(tempdir, df2, row_group_offsets=1, sort_pnames=True)
+    recorded = ParquetFile(tempdir)
+    pnames_rec = [rg.columns[0].file_path for rg in recorded.row_groups]
+    pnames_ref = ['location=Paris/exterior=yes/part.0.parquet',
+                  'location=Paris/exterior=yes/part.1.parquet',
+                  'location=Paris/exterior=no/part.2.parquet',
+                  'location=Milan/exterior=yes/part.3.parquet',
+                  'location=Tokyo/exterior=no/part.4.parquet',
+                  'location=Milan/exterior=no/part.5.parquet']
+    assert pnames_rec == pnames_ref

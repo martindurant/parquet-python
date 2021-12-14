@@ -793,8 +793,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
     return fmd
 
 
-def write_simple(fn, data, fmd, row_group_offsets, compression,
-                 open_with, has_nulls=None, append=False, stats=True):
+def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
+                 open_with=default_open, has_nulls=None, append=False,
+                 stats=True):
     """
     Write to one single file (for file_scheme='simple')
 
@@ -804,14 +805,14 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         Parquet collection to write to, gathered a single file.
     data: pandas dataframe or iterable of pandas dataframe.
         The table to write. Index of the dataframe is not written.
-        If an iterable, each dataframe is written as a row group.
+        If an iterable of dataframe, each one is written as a row group.
     fmd: thrift object
         Parquet file metadata.
     row_group_offsets: int or list of ints,
         If int, row-groups will be approximately this many rows, rounded down
         to make row groups about the same size;
         If a list, the explicit index values to start new row groups;
-        If `None`, set to 50000000.
+        If `None`, set to 50_000_000.
     compression:
         Compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
         ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
@@ -829,7 +830,6 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         specified columns.
     """
     if isinstance(data, pd.DataFrame):
-        # 'data' is a single dataframe (legacy case).
         data = iter_dataframe(data, row_group_offsets)
     mode = 'rb+' if append else 'wb'
     with open_with(fn, mode) as f:
@@ -850,10 +850,10 @@ def write_simple(fn, data, fmd, row_group_offsets, compression,
         f.write(MARKER)
 
 
-def write_multi(dn, row_groups, fmd, compression, file_scheme,
-                write_fmd=True, open_with=default_open, mkdirs=None,
-                partition_on=[], append=False, stats=True):
-    """Write each data chunk as a distinct parquet file.
+def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
+                file_scheme='hive', write_fmd=True, open_with=default_open,
+                mkdirs=None, partition_on=[], append=False, stats=True):
+    """Write to separate parquet files.
     
     Write data following `file_scheme='hive'`, `'drill'` or `'flat'`.
     
@@ -861,18 +861,23 @@ def write_multi(dn, row_groups, fmd, compression, file_scheme,
     ----------
     dn: string
         Directory path containing the parquet collection to write to.
-    row_groups: pandas dataframe
-        The table to write. Only columns are written. Index of the dataframe is
-        not.
+    data: pandas dataframe or iterable of pandas dataframe.
+        The table to write. Index of the dataframe is not written.
+        If an iterable of dataframe, each one is written as a row group.
     fmd: thrift object
         Parquet file metadata. `fmd` is modified inplace.
+    row_group_offsets: int or list of ints,
+        If int, row-groups will be approximately this many rows, rounded down
+        to make row groups about the same size;
+        If a list, the explicit index values to start new row groups;
+        If `None`, set to 50_000_000.
     compression:
         Compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
         ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
         column compression types.
         By default, do not compress.
         Please, review full description of this parameter in `write` docstring.
-    file_scheme: 'hive'|'drill'
+    file_scheme: 'hive'|'drill', default 'hive'
         If hive or drill: each row group is in a separate file, and a separate
         file (called "_metadata") contains the metadata.
     write_fmd: bool, default True
@@ -907,7 +912,9 @@ def write_multi(dn, row_groups, fmd, compression, file_scheme,
     else:
         pids = part_ids(fmd.row_groups)
         i_offset = (max(pids)+1) if pids else 0
-    for i, row_group in enumerate(row_groups):
+    if isinstance(data, pd.DataFrame):
+        data = iter_dataframe(data, row_group_offsets)
+    for i, row_group in enumerate(data):
         part = 'part.%i.parquet' % (i + i_offset)
         if partition_on:
             rgs = partition_on_columns(row_group, partition_on, dn, part,
@@ -975,7 +982,7 @@ def write(filename, data, row_group_offsets=None,
           partition_on=[], fixed_text=None, append=False,
           object_encoding='infer', times='int64',
           custom_metadata=None, stats=True):
-    """ Write Pandas DataFrame to filename as Parquet Format.
+    """Write pandas dataframe to filename with parquet format.
 
     Parameters
     ----------
@@ -984,11 +991,14 @@ def write(filename, data, row_group_offsets=None,
         is simple) or a directory containing the metadata and data-files.
     data: pandas dataframe
         The table to write.
-    row_group_offsets: int or list of ints
+    row_group_offsets: int or list of int
         If int, row-groups will be approximately this many rows, rounded down
         to make row groups about the same size;
         If a list, the explicit index values to start new row groups;
-        If `None`, set to 50000000.
+        If `None`, set to 50_000_000.
+        In case of partitioning the data, final row-groups size can be reduced
+        significantly further by the partitioning, occuring as a subsequent
+        step.
     compression: str, dict
         compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
         ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
@@ -1071,7 +1081,8 @@ def write(filename, data, row_group_offsets=None,
 
     object_encoding: str or {col: type}
         For object columns, this gives the data type, so that the values can
-        be encoded to bytes. Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
+        be encoded to bytes.
+        Possible values are bytes|utf8|json|bson|bool|int|int32|decimal,
         where bytes is assumed if not specified (i.e., no conversion). The
         special value 'infer' will cause the type to be guessed from the first
         ten non-null values. The decimal.Decimal type is a valid choice, but will
@@ -1110,8 +1121,23 @@ def write(filename, data, row_group_offsets=None,
         pf = api.ParquetFile(filename, open_with=open_with)
         if pf._get_index():
             data = reset_row_idx(data)
-        # Spare columns.
-        columns = data.columns
+        if file_scheme == 'simple':
+            # Case 'simple'
+            if pf.file_scheme not in ['simple', 'empty']:
+                raise ValueError( 'File scheme requested is simple, but '
+                                 f'existing file scheme is {pf.file_scheme}.')
+        else:
+            # Case 'hive', 'drill'
+            if pf.file_scheme not in ['hive', 'empty', 'flat']:
+                raise ValueError(f'Requested file scheme is {file_scheme}, but'
+                                  ' existing file scheme is not.')
+            if tuple(partition_on) != tuple(pf.cats):
+                raise ValueError('When appending, partitioning columns must '
+                                 'match existing data')
+        pf.write_row_groups(data, row_group_offsets, sort_key=None,
+                            sort_pnames=False, compression=compression,
+                            write_fmd=True, open_with=open_with,
+                            mkdirs=mkdirs, rename=None, stats=stats)
     else:
         # Define 'index_cols' to be recorded in metadata.
         if (write_index or write_index is None
@@ -1144,37 +1170,18 @@ def write(filename, data, row_group_offsets=None,
                     for key, value in custom_metadata.items()
                 ]
             )
-    # Setup data split into row groups.
-    row_groups = iter_dataframe(data, row_group_offsets)
-    # Write.
-    if append:
         if file_scheme == 'simple':
             # Case 'simple'
-            if pf.file_scheme not in ['simple', 'empty']:
-                raise ValueError( 'File scheme requested is simple, but '
-                                 f'existing file scheme is {pf.file_scheme}.')
+            write_simple(filename, data, fmd,
+                         row_group_offsets=row_group_offsets,
+                         compression=compression, open_with=open_with,
+                         has_nulls=None, append=False, stats=stats)
         else:
             # Case 'hive', 'drill'
-            if pf.file_scheme not in ['hive', 'empty', 'flat']:
-                raise ValueError(f'Requested file scheme is {file_scheme}, but'
-                                  ' existing file scheme is not.')
-            if tuple(partition_on) != tuple(pf.cats):
-                raise ValueError('When appending, partitioning columns must '
-                                 'match existing data')
-        pf.write_row_groups(row_groups, columns, None, compression,
-                            write_fmd=True, open_with=open_with,
-                            mkdirs=mkdirs, stats=stats)
-    else:
-        # Case 'append=False'.
-        if file_scheme == 'simple':
-            # Case 'simple'
-            write_simple(filename, row_groups, fmd, None,
-                         compression, open_with, None, append=False,
-                         stats=stats)
-        else:
-            # Case 'hive', 'drill'
-            write_multi(filename, row_groups, fmd, compression,
-                        file_scheme, write_fmd=True, open_with=open_with,
+            write_multi(filename, data, fmd,
+                        row_group_offsets=row_group_offsets,
+                        compression=compression, file_scheme=file_scheme,
+                        write_fmd=True, open_with=open_with,
                         mkdirs=mkdirs, partition_on=partition_on,
                         append=False, stats=stats)
 
@@ -1318,9 +1325,9 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     return out
 
 
-def update(dirpath, data, row_group_offsets=None, compression=None,
-           open_with=default_open, mkdirs=None, remove_with=None,
-           stats=True):
+def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
+           compression=None, open_with=default_open, mkdirs=None, rename=None,
+           remove_with=None, stats=True):
     """Merge new data to existing parquet dataset.
 
     This function requires existing data on disk, written with 'hive' format.
@@ -1346,8 +1353,12 @@ def update(dirpath, data, row_group_offsets=None, compression=None,
         to make row groups about the same size;
         If a list, the explicit index values to start new row groups;
         If `None`, set to 50_000_000.
-        Beware that final row-groups size can be reduced significantly further
-        by the partitioning, occuring as a subsequent step.
+        In case of partitioning the data, final row-groups size can be reduced
+        significantly further by the partitioning, occuring as a subsequent
+        step.
+    sort_pnames: bool, default True
+        Align name of part files with position of the 1st row group they
+        contain.
     compression : str or dict, optional
         Compression to apply to each column, e.g. ``GZIP`` or ``SNAPPY`` or a
         ``dict`` like ``{"col1": "SNAPPY", "col2": None}`` to specify per
@@ -1359,6 +1370,9 @@ def update(dirpath, data, row_group_offsets=None, compression=None,
     mkdirs : function, optional
         When called with a path/URL, creates any necessary dictionaries to
         make that location writable, e.g., ``os.makedirs``.
+    rename : function
+        When called with a f(path1,path2), changes file path `path1` into
+        `path2`. Only used if `sort_pnames` is `True`.
     remove_with : function, optional
         When called with f(path), removes file or directory specified by
         `path` (and any contained files).
@@ -1413,11 +1427,9 @@ def update(dirpath, data, row_group_offsets=None, compression=None,
     if pf._get_index():
         # Reset index of pandas dataframe.
         data = reset_row_idx(data)
-    # Spare columns.
-    columns = data.columns
-    # Row group generator.
-    row_groups = iter_dataframe(data, row_group_offsets)  
     # 4th step: write new data, sort row groups and write updated metadata.
-    pf.write_row_groups(row_groups, columns, sort_key, compression,
-                        write_fmd=True, open_with=open_with,
-                        mkdirs=mkdirs, stats=stats)
+    pf.write_row_groups(data, row_group_offsets=row_group_offsets,
+                        sort_key=sort_key, sort_pnames=sort_pnames,
+                        compression=compression, write_fmd=True,
+                        open_with=open_with, mkdirs=mkdirs, rename=rename,
+                        stats=stats)

@@ -403,27 +403,31 @@ possible.')
         if write_fmd:
             self._write_common_metadata(open_with)
 
-    def write_row_groups(self, row_groups, columns, sort_key=None,
-                         sort_pnames:bool=False, compression=None,
+    def write_row_groups(self, data, row_group_offsets=None, sort_key=None,
+                         sort_pnames:bool=True, compression=None,
                          write_fmd:bool=True, open_with=default_open,
                          mkdirs=None, rename=None, stats=True):
-        """Append iterable of dataframe as new row groups to disk.
+        """Write data as new row groups to disk, with optional sorting.
 
         Parameters
         ----------
-        row_groups : iterable of pandas dataframe
+        data : pandas dataframe or iterable of pandas dataframe
             Data to add to existing parquet dataset. Only columns are written
             to disk. Row index is not kept.
-        columns : pandas index
-            Column names of the data to be added.
+            If a dataframe, columns are checked against parquet file schema.
+        row_group_offsets: int or list of int
+            If int, row-groups will be approximately this many rows, rounded down
+            to make row groups about the same size;
+            If a list, the explicit index values to start new row groups;
+            If `None`, set to 50_000_000.
         sort_key : function, default None
             Sorting function used as `key` parameter for `row_groups.sort()`
             function. This function is called once new row groups have been
             added to list of existing ones.
             If not provided, new row groups are only appended to existing ones
             and the updated list of row groups is not sorted.
-        sort_pnames : bool, default False
-            Align name of part files to position of the 1st row group they
+        sort_pnames : bool, default True
+            Align name of part files with position of the 1st row group they
             contain. Only used if `file_scheme` of parquet file is set to
             `hive` or `drill`.
         compression : str or dict, default None
@@ -451,29 +455,29 @@ possible.')
             If a list of str, do it only for those specified columns.
         """
         from .writer import write_simple, write_multi
-        if (cats := self.cats):
-            partition_on = list(cats)
+        partition_on = list(self.cats)
+        if isinstance(data, pd.DataFrame):
             self_cols = sorted(self.columns + partition_on)
-        else:
-            partition_on = []
-            self_cols = sorted(self.columns)
-        if self_cols != sorted(columns):
-            # TODO
-            # Proposal to clarify the legacy error message, by stating that
-            # column names of data on disk and column names of new data do not
-            # match, and showing inconsistent column indexes.
-            raise ValueError('File schema is not compatible with existing file'
-                             ' schema.')
+            if self_cols != sorted(data.columns):
+                # TODO
+                # Proposal to clarify the legacy error message, by stating that
+                # column names of data on disk and column names of new data do
+                # not match, and showing inconsistent column indexes.
+                raise ValueError('File schema is not compatible with existing '
+                                 'file schema.')
         if (self.file_scheme == 'simple'
             or (self.file_scheme == 'empty' and self.fn[-9:] != '_metadata')):
             # Case 'simple'.
-            write_simple(self.fn, row_groups, self.fmd, None, compression,
-                         open_with, None, append=True, stats=stats)
+            write_simple(self.fn, data, self.fmd,
+                         row_group_offsets=row_group_offsets,
+                         compression=compression, open_with=open_with,
+                         has_nulls=None, append=True, stats=stats)
         else:
             # Case 'hive' or 'drill'.
-            write_multi(self.basepath, row_groups, self.fmd, compression,
-                        self.file_scheme, write_fmd=False,
-                        open_with=open_with, mkdirs=mkdirs,
+            write_multi(self.basepath, data, self.fmd,
+                        row_group_offsets=row_group_offsets,
+                        compression=compression, file_scheme=self.file_scheme,
+                        write_fmd=False, open_with=open_with, mkdirs=mkdirs,
                         partition_on=partition_on, append=True, stats=stats)
             if sort_key:
                 self.fmd.row_groups.sort(key=sort_key)
