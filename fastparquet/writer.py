@@ -910,8 +910,7 @@ def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
         i_offset = 0
         mkdirs(dn)
     else:
-        pids = part_ids(fmd.row_groups)
-        i_offset = (max(pids)+1) if pids else 0
+        i_offset = find_max_part(fmd.row_groups)
     if isinstance(data, pd.DataFrame):
         data = iter_dataframe(data, row_group_offsets)
     for i, row_group in enumerate(data):
@@ -1190,9 +1189,9 @@ def find_max_part(row_groups):
     """
     Find the highest integer matching "**part.*.parquet" in referenced paths.
     """
-    part_ids = part_ids(row_groups)
-    if part_ids:
-        return max(part_ids) + 1
+    pids = part_ids(row_groups)
+    if pids:
+        return max(pids) + 1
     else:
         return 0
 
