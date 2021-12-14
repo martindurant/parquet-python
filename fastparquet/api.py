@@ -1426,3 +1426,19 @@ def partitions(row_group, only_values=False) -> str:
                 else f_path.rsplit('/',1)[0])
     else:
         return
+
+
+def part_ids(row_groups) -> dict:
+    """Return ids of parquet part files.
+    
+    Find the integer matching "**part.*.parquet" in referenced paths and
+    returns them as keys of a dict. Values of the dict are tuples
+    (row_group_id, part_name).
+    In case of files with multiple row groups, the position (index in row group
+    list) of the 1st group only is kept.
+    """
+    s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
+    max_rgidx = len(row_groups)-1
+    return {int(s.match(rg.columns[0].file_path)['i']):
+            (max_rgidx-i, rg.columns[0].file_path)
+            for i, rg in enumerate(reversed(row_groups))}

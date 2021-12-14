@@ -19,7 +19,7 @@ from .thrift_structures import parquet_thrift
 from .compression import compress_data
 from .converted_types import tobson
 from . import encoding, api, __version__
-from .api import partitions
+from .api import partitions, part_ids
 from .util import (default_open, default_mkdirs, check_column_names,
                    created_by, get_column_metadata, path_string, norm_col_name,
                    reset_row_idx)
@@ -1186,20 +1186,15 @@ def write(filename, data, row_group_offsets=None,
                         append=False, stats=stats)
 
 
-def part_ids(row_groups) -> dict:
-    """Return ids of parquet part files.
-    
-    Find the integer matching "**part.*.parquet" in referenced paths and
-    returns them as keys of a dict. Values of the dict are tuples
-    (row_group_id, part_name).
-    In case of files with multiple row groups, the position (index in row group
-    list) of the 1st group only is kept.
+def find_max_part(row_groups):
     """
-    s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
-    max_rgidx = len(row_groups)-1
-    return {int(s.match(rg.columns[0].file_path)['i']):
-            (max_rgidx-i, rg.columns[0].file_path)
-            for i, rg in enumerate(reversed(row_groups))}
+    Find the highest integer matching "**part.*.parquet" in referenced paths.
+    """
+    part_ids = part_ids(row_groups)
+    if part_ids:
+        return max(part_ids) + 1
+    else:
+        return 0
 
 
 def partition_on_columns(data, columns, root_path, partname, fmd,
