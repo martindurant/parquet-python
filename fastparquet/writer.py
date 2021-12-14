@@ -1402,10 +1402,9 @@ def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
         """
         # Taking n_rgs (=len(pf.row_groups)) as index for row-groups without
         # matching partition among existing ones is overkill but works.
+        rg_partition = partitions(row_group)
         return (partitions_starts[rg_partition]
-                if ((rg_partition := partitions(row_group))
-                    in partitions_starts)
-                else n_rgs)
+                if (rg_partition in partitions_starts) else n_rgs)
     # 2nd step (from new and existing data).
     # Remove row groups from existing data with same partition values as those
     # in new data.
