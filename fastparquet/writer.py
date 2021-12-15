@@ -1107,7 +1107,7 @@ part files. This situation is not allowed with use of `append='overwrite'`.")
                               open_with)
     else:
         raise ValueError('File scheme should be simple|hive, not', file_scheme)
-
+    return fmd
 
 def find_max_part(row_groups):
     """
