@@ -188,13 +188,14 @@ class ParquetFile(object):
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
-        for rg in fmd[4]:
-            chunks = rg[1]
-            if chunks:
-                chunk = chunks[0]
-                s = chunk.get(1)
-                if s:
-                    chunk[1] = s.decode()
+#R
+#        for rg in fmd[4]:
+#            chunks = rg[1]
+#            if chunks:
+#                chunk = chunks[0]
+#                s = chunk.get(1)
+#                if s:
+#                    chunk[1] = s.decode()
         self._set_attrs()
 
     def _set_attrs(self):
@@ -279,11 +280,12 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
+            fpath = rg.columns[0].file_path.decode()
             base = self.basepath
             if base:
-                return join_path(base, rg.columns[0].file_path)
+                return join_path(base, fpath)
             else:
-                return rg.columns[0].file_path
+                return fpath
         else:
             return self.fn
 
@@ -491,7 +493,9 @@ possible.')
                         write_fmd=False, open_with=open_with, mkdirs=mkdirs,
                         partition_on=partition_on, append=True, stats=stats)
             if sort_key:
-                self.fmd.row_groups.sort(key=sort_key)
+                # Not using 'sort()' because 'row_groups' is a ThriftObject,
+                # not a list.
+                self.fmd.row_groups = sorted(self.fmd.row_groups, key=sort_key)
             if sort_pnames:
                 self._sort_part_names(False, open_with, rename)
             if write_fmd:
@@ -1275,7 +1279,7 @@ def filter_out_cats(rg, filters, partition_meta={}):
     if len(filters) == 0 or rg.columns[0].file_path is None:
         return False
     s = ex_from_sep('/')
-    partitions = s.findall(rg.columns[0].file_path)
+    partitions = s.findall(rg.columns[0].file_path.decode())
     pairs = [(p[0], p[1]) for p in partitions]
     for cat, v in pairs:
 
@@ -1406,7 +1410,7 @@ def row_groups_map(rgs: list) -> dict:
     """
     files_rgs = defaultdict(lambda: [])
     for rg in rgs:
-        file = rg.columns[0].file_path
+        file = rg.columns[0].file_path.decode()
         files_rgs[file].append(rg)
     return files_rgs
 
@@ -1431,14 +1435,10 @@ def partitions(row_group, only_values=False) -> str:
         Paritions values.
     """
     f_path = (row_group if isinstance(row_group, str)
-              else row_group.columns[0].file_path.decode()
-              if isinstance(row_group.columns[0].file_path, bytes)
-              else row_group.columns[0].file_path)
+              else row_group.columns[0].file_path.decode())
     if '/' in f_path:
         return ('/'.join(re.split('/|=', f_path)[1::2]) if only_values
                 else f_path.rsplit('/',1)[0])
-    else:
-        return
 
 
 def part_ids(row_groups) -> dict:
@@ -1450,9 +1450,7 @@ def part_ids(row_groups) -> dict:
     In case of files with multiple row groups, the position (index in row group
     list) of the 1st group only is kept.
     """
-    paths = [rg.columns[0].file_path for rg in row_groups]
-    # TODO: the following line should not be necessary
-    paths = [p.decode() if isinstance(p, bytes) else p for p in paths]
+    paths = [rg.columns[0].file_path.decode() for rg in row_groups]
     s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
     max_rgidx = len(row_groups)-1
     return {int(s.match(fpath)['i']): (max_rgidx-i, fpath)

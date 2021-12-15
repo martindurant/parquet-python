@@ -612,12 +612,12 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
         if cat not in assign:
             # do no need to have partition columns in output
             continue
+        fpath = rg.columns[0].file_path.decode()
         if scheme == 'hive':
-            s = ex_from_sep('/')
-            partitions = [s.split("=") for s in rg.columns[0].file_path.split("/")]
+            partitions = [s.split("=") for s in fpath.split("/")]
         else:
             partitions = [('dir%i' % i, v) for (i, v) in enumerate(
-                rg.columns[0].file_path.split('/')[:-1])]
+                fpath.split('/')[:-1])]
         key, val = [p for p in partitions if p[0] == cat][0]
         val = val_to_num(val, meta=partition_meta.get(key))
         assign[cat][:] = cats[cat].index(val)

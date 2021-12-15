@@ -171,7 +171,7 @@ def test_multiple_parts_in_partitions_with_renaming(tempdir):
     # 'update' without file shuffling.
     update(tempdir, df2, row_group_offsets=1, sort_pnames=False)
     recorded = ParquetFile(tempdir)
-    pnames_rec = [rg.columns[0].file_path for rg in recorded.row_groups]
+    pnames_rec = [rg.columns[0].file_path.decode() for rg in recorded.row_groups]
     pnames_ref = ['location=Paris/exterior=yes/part.3.parquet',
                   'location=Paris/exterior=yes/part.6.parquet',
                   'location=Paris/exterior=no/part.1.parquet',
@@ -182,7 +182,7 @@ def test_multiple_parts_in_partitions_with_renaming(tempdir):
     # update' again with file shuffling.
     update(tempdir, df2, row_group_offsets=1, sort_pnames=True)
     recorded = ParquetFile(tempdir)
-    pnames_rec = [rg.columns[0].file_path for rg in recorded.row_groups]
+    pnames_rec = [rg.columns[0].file_path.decode() for rg in recorded.row_groups]
     pnames_ref = ['location=Paris/exterior=yes/part.0.parquet',
                   'location=Paris/exterior=yes/part.1.parquet',
                   'location=Paris/exterior=no/part.2.parquet',
