@@ -188,14 +188,6 @@ class ParquetFile(object):
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
-#R
-#        for rg in fmd[4]:
-#            chunks = rg[1]
-#            if chunks:
-#                chunk = chunks[0]
-#                s = chunk.get(1)
-#                if s:
-#                    chunk[1] = s.decode()
         self._set_attrs()
 
     def _set_attrs(self):
