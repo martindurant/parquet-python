@@ -50,7 +50,8 @@ def test_read_footer():
 
 
 files = [os.path.join(TEST_DATA, p) for p in
-         ["gzip-nation.impala.parquet", "nation.dict.parquet",
+         ["gzip-nation.impala.parquet",
+          "nation.dict.parquet",
           "nation.impala.parquet", "nation.plain.parquet",
           "snappy-nation.impala.parquet"]]
 csvfile = os.path.join(TEST_DATA, "nation.csv")
@@ -71,6 +72,13 @@ def test_file_csv(parquet_file):
     """Test the various file times
     """
     p = fastparquet.ParquetFile(parquet_file)
+    if "nation.dict.parquet" in parquet_file:
+        # bug in file, chunk size does not include dict page
+        # and gives data_page_offset where actually the dict page is
+        p.row_groups[0].columns[1].meta_data.total_compressed_size = 337
+        p.row_groups[0].columns[1].meta_data.total_uncompressed_size = 337
+        p.row_groups[0].columns[3].meta_data.total_compressed_size += 1972
+        p.row_groups[0].columns[3].meta_data.total_uncompressed_size += 1972
     data = p.to_pandas()
     if 'comment_col' in data.columns:
         mapping = {'comment_col': "n_comment", 'name': 'n_name',

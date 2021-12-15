@@ -212,7 +212,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     raise ValueError('Incompatible schemas')
 
         fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
-        fmd.row_groups = []
+        rgs = []
 
         for pf, fn in zip(pfs, file_list):
             if pf.file_scheme not in ['simple', 'empty']:
@@ -220,8 +220,10 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     rg = copy.copy(rg)
                     rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
-                        chunk.file_path = '/'.join([fn, chunk.file_path])
-                    fmd.row_groups.append(rg)
+                        chunk.file_path = '/'.join(
+                            [fn, chunk.file_path if isinstance(chunk.file_path, str) else chunk.file_path.decode()]
+                        )
+                    rgs.append(rg)
 
             else:
                 for rg in pf.row_groups:
@@ -229,8 +231,9 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
                         chunk.file_path = fn
-                    fmd.row_groups.append(rg)
+                    rgs.append(rg)
 
+        fmd.row_groups = rgs
         fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
         return basepath, fmd
 
@@ -238,18 +241,20 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
         # chunks of first file, which would have file_path=None
         rg.columns[0].file_path = f0[len(basepath):].lstrip("/")
 
+    rgs0 = pf0.fmd.row_groups
     for k, v in pieces:
         # Set file paths on other files
         rgs = v.row_groups or []
         for rg in rgs:
             rg.columns[0].file_path = k[len(basepath):].lstrip("/")
-        pf0.fmd.row_groups.extend(rgs)
+        rgs0.extend(rgs)
+    pf0.fmd.row_groups = rgs0
     pf0.fmd.num_rows = sum(rg.num_rows for rg in pf0.fmd.row_groups)
     return basepath, pf0.fmd
 
 
 def _get_fmd(inbytes):
-    from .core import read_thrift
+    from .cencoding import from_buffer
     from .thrift_structures import parquet_thrift
 
     f = io.BytesIO(inbytes)
@@ -257,8 +262,8 @@ def _get_fmd(inbytes):
     head_size = struct.unpack('<i', f.read(4))[0]
     f.seek(-(head_size + 8), 2)
     data = f.read(head_size)
-    f = io.BytesIO(data)
-    return read_thrift(f, parquet_thrift.FileMetaData)
+    return from_buffer(data, "FileMetaData")
+
 
 # simple cache to avoid re compile every time
 seps = {}
@@ -446,6 +451,8 @@ def json_decoder():
 
 
 def _strip_path_tail(paths) -> set:
+    # TODO: the following line should not be necessary
+    paths = [p.decode() if isinstance(p, bytes) else p for p in paths]
     return {path.rsplit("/", 1)[0] if "/" in path else "" for path in paths}
 
 

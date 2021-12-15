@@ -1,7 +1,6 @@
 """parquet - read parquet files."""
 import ast
 from collections import OrderedDict, defaultdict
-import io
 import re
 import struct
 
@@ -10,9 +9,9 @@ import fsspec
 from fastparquet.util import join_path
 import pandas as pd
 
-from .core import read_thrift
-from .thrift_structures import parquet_thrift
 from . import core, schema, converted_types, encoding, dataframe
+from . import parquet_thrift
+from .cencoding import ThriftObject, from_buffer
 from .util import (default_open, default_remove, default_rename,
                    ParquetException, val_to_num, ops, ensure_bytes,
                    check_column_names, metadata_from_many, ex_from_sep,
@@ -175,7 +174,7 @@ class ParquetFile(object):
                 if verify:
                     assert f.read(4) == b'PAR1'
                 f.seek(-8, 2)
-                head_size = struct.unpack('<i', f.read(4))[0]
+                head_size = struct.unpack('<I', f.read(4))[0]
                 if verify:
                     assert f.read() == b'PAR1'
                 self._head_size = head_size
@@ -184,12 +183,18 @@ class ParquetFile(object):
             except (AssertionError, struct.error):
                 raise ParquetException('File parse failed: %s' % self.fn)
 
-        f = io.BytesIO(data)
         try:
-            fmd = read_thrift(f, parquet_thrift.FileMetaData)
+            fmd = from_buffer(data, "FileMetaData")
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
         self.fmd = fmd
+        for rg in fmd[4]:
+            chunks = rg[1]
+            if chunks:
+                chunk = chunks[0]
+                s = chunk.get(1)
+                if s:
+                    chunk[1] = s.decode()
         self._set_attrs()
 
     def _set_attrs(self):
@@ -201,7 +206,10 @@ class ParquetFile(object):
                                    for k in fmd.key_value_metadata or []}
         self.created_by = fmd.created_by
         self.schema = schema.SchemaHelper(self._schema)
-        self.selfmade = self.created_by.split(' ', 1)[0] == "fastparquet-python" if self.created_by is not None else False
+        self.selfmade = (
+            self.created_by.split(b' ', 1)[0] == b"fastparquet-python"
+            if self.created_by is not None else False
+        )
         self._read_partitions()
         self._dtypes()
 
@@ -212,7 +220,7 @@ class ParquetFile(object):
     @property
     def columns(self):
         """ Column names """
-        return [c for c, i in self._schema[0].children.items()
+        return [c for c, i in self._schema[0]["children"].items()
                 if len(getattr(i, 'children', [])) == 0
                 or i.converted_type in [parquet_thrift.ConvertedType.LIST,
                                         parquet_thrift.ConvertedType.MAP]]
@@ -232,7 +240,7 @@ class ParquetFile(object):
         return re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
 
     def _read_partitions(self):
-        paths = [rg.columns[0].file_path or "" for rg in self.row_groups if rg.columns]
+        paths = [rg[1][0].get(1, "") for rg in self.row_groups if rg[1]]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def head(self, nrows, **kwargs):
@@ -382,7 +390,7 @@ scheme is 'simple'.")
             else:
                 remove_with = default_remove
         rgs_to_remove = row_groups_map(rgs)
-        if "fastparquet" not in self.created_by or self.file_scheme=='flat':
+        if b"fastparquet" not in self.created_by or self.file_scheme == 'flat':
             # Check if some files contain row groups both to be removed and to
             # be kept.
             all_rgs = row_groups_map(self.row_groups)
@@ -391,9 +399,12 @@ scheme is 'simple'.")
                     raise ValueError(f'File {file} contains row groups both \
 to be kept and to be removed. Removing row groups partially from a file is not\
 possible.')
+        rg_new = self.row_groups
         for rg in rgs:
-            self.row_groups.remove(rg)
+            rg_new.remove(rg)
             self.fmd.num_rows -= rg.num_rows
+        self.fmd.row_groups = rg_new
+        self.row_groups = rg_new
         try:
             basepath = self.basepath
             remove_with([f'{basepath}/{file}' for file in rgs_to_remove])
@@ -538,7 +549,7 @@ possible.')
                 dst = join_path(basepath, dst_part)
                 rename(src, dst)
                 for col in self.fmd.row_groups[rgid].columns:
-                    col.file_path = dst_part
+                    col.file_path = dst_part.encode()
             if write_fmd:
                 self._write_common_metadata(open_with)
 
@@ -794,13 +805,13 @@ selection does not match number of rows in DataFrame.')
             return True
         if self.fmd.key_value_metadata is None:
             return False
-        return bool(self.key_value_metadata.get('pandas', False))
+        return bool(self.key_value_metadata.get(b'pandas', False))
 
     @property
     def pandas_metadata(self):
         if self._pdm is None:
             if self.has_pandas_metadata:
-                self._pdm = json_decoder()(self.key_value_metadata['pandas'])
+                self._pdm = json_decoder()(self.key_value_metadata[b'pandas'])
             else:
                 self._pdm = {}
         return self._pdm
@@ -816,7 +827,7 @@ selection does not match number of rows in DataFrame.')
                 if m['pandas_type'] != 'categorical':
                     continue
                 out = False
-                if "fastparquet" in self.created_by:
+                if b"fastparquet" in self.created_by:
                     # if pandas was categorical, we will have used dict encoding
                     cats[m['name']] = m['metadata']['num_categories']
                     continue
@@ -863,7 +874,7 @@ selection does not match number of rows in DataFrame.')
 
             dtype = OrderedDict((name, (converted_types.typemap(f, md=md)
                                 if f.num_children in [None, 0] else np.dtype("O")))
-                                for name, f in self.schema.root.children.items()
+                                for name, f in self.schema.root["children"].items()
                                 if getattr(f, 'isflat', False) is False)
             for i, (col, dt) in enumerate(dtype.copy().items()):
                 # int and bool columns produce masked pandas types, no need to
@@ -876,13 +887,13 @@ selection does not match number of rows in DataFrame.')
                     # uint/int/bool columns that may have nulls become nullable
                     num_nulls = 0
                     for rg in self.row_groups:
-                        if rg.num_rows == 0:
+                        if rg[3] == 0:
                             continue
-                        st = rg.columns[i].meta_data.statistics
+                        st = rg[1][i][3].get(12)
                         if st is None:
                             num_nulls = True
                             break
-                        if st.null_count:
+                        if st[3]:
                             num_nulls = True
                             break
                     if num_nulls:
@@ -1046,8 +1057,8 @@ def filter_out_stats(rg, filters, schema):
                             b, column.meta_data.type, 1, stat=True)
                         if se.converted_type is not None or se.logicalType is not None:
                             vmax = converted_types.convert(vmax, se)
-                        s.converted_max = vmax
-                    vmax = s.converted_max
+                        s["converted_max"] = vmax
+                    vmax = s["converted_max"]
                 min = s.min or s.min_value
                 if min is not None:
                     if not hasattr(s, "converted_min"):
@@ -1056,8 +1067,8 @@ def filter_out_stats(rg, filters, schema):
                             b, column.meta_data.type, 1, stat=True)
                         if se.converted_type is not None or se.logicalType is not None:
                             vmin = converted_types.convert(vmin, se)
-                        s.converted_min = vmin
-                    vmin = s.converted_min
+                        s["converted_min"] = vmin
+                    vmin = s["converted_min"]
                 if filter_val(op, val, vmin, vmax):
                     return True
     return False
@@ -1084,7 +1095,7 @@ def statistics(obj):
      'distinct_count': {'x': [None, None], 'y': [None, None]},
      'null_count': {'x': [0, 3], 'y': [0, 0]}}
     """
-    if isinstance(obj, parquet_thrift.ColumnChunk):
+    if isinstance(obj, ThriftObject) and obj.thrift_name == "ColumnChunk":
         md = obj.meta_data
         s = obj.meta_data.statistics
         rv = {}
@@ -1114,7 +1125,7 @@ def statistics(obj):
             rv['distinct_count'] = s.distinct_count
         return rv
 
-    if isinstance(obj, parquet_thrift.RowGroup):
+    if isinstance(obj, ThriftObject) and obj.thrift_name == "RowGroup":
         return {'.'.join(c.meta_data.path_in_schema): statistics(c)
                 for c in obj.columns}
 
@@ -1168,7 +1179,7 @@ def sorted_partitioned_columns(pf, filters=None):
     """
     s = statistics(pf)
     if filters:
-        rg_idx_list = filter_row_groups(pf, filters, as_idx = True)
+        rg_idx_list = filter_row_groups(pf, filters, as_idx=True)
         for stat in s.keys():
             for col in s[stat].keys():
                 s[stat][col] = [s[stat][col][i] for i in rg_idx_list]
@@ -1179,7 +1190,7 @@ def sorted_partitioned_columns(pf, filters=None):
         if any(x is None for x in min + max):
             continue
         try:
-            if (sorted(min) == min and
+            if (min and sorted(min) == min and
                     sorted(max) == max and
                     all(mx < mn for mx, mn in zip(max[:-1], min[1:]))):
                 out[c] = {'min': min, 'max': max}
@@ -1420,7 +1431,9 @@ def partitions(row_group, only_values=False) -> str:
         Paritions values.
     """
     f_path = (row_group if isinstance(row_group, str)
-              else row_group.columns[0].file_path) 
+              else row_group.columns[0].file_path.decode()
+              if isinstance(row_group.columns[0].file_path, bytes)
+              else row_group.columns[0].file_path)
     if '/' in f_path:
         return ('/'.join(re.split('/|=', f_path)[1::2]) if only_values
                 else f_path.rsplit('/',1)[0])
@@ -1437,8 +1450,10 @@ def part_ids(row_groups) -> dict:
     In case of files with multiple row groups, the position (index in row group
     list) of the 1st group only is kept.
     """
+    paths = [rg.columns[0].file_path for rg in row_groups]
+    # TODO: the following line should not be necessary
+    paths = [p.decode() if isinstance(p, bytes) else p for p in paths]
     s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
     max_rgidx = len(row_groups)-1
-    return {int(s.match(rg.columns[0].file_path)['i']):
-            (max_rgidx-i, rg.columns[0].file_path)
-            for i, rg in enumerate(reversed(row_groups))}
+    return {int(s.match(fpath)['i']): (max_rgidx-i, fpath)
+            for i, fpath in enumerate(reversed(paths))}

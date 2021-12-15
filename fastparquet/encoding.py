@@ -2,7 +2,7 @@
 import numpy as np
 from .cencoding import read_bitpacked1, NumpyIO
 from .speedups import unpack_byte_array
-from .thrift_structures import parquet_thrift
+from . import parquet_thrift
 
 
 def read_plain_boolean(raw_bytes, count, out=None):

@@ -1,16 +1,16 @@
 """Utils for working with the parquet thrift models."""
 from collections import OrderedDict
 
-from .thrift_structures import parquet_thrift
+from . import parquet_thrift
 
 
 def schema_tree(schema, i=0):
     root = schema[i]
-    root.children = OrderedDict()
-    while len(root.children) < root.num_children:
+    root["children"] = OrderedDict()
+    while len(root["children"]) < root.num_children:
         i += 1
         s = schema[i]
-        root.children[s.name] = s
+        root["children"][s.name] = s
         if s.num_children not in [None, 0]:
             i = schema_tree(schema, i)
     if root.num_children:
@@ -20,16 +20,16 @@ def schema_tree(schema, i=0):
 
 
 def schema_to_text(root, indent=[]):
-    l = len(indent)
     text = "".join(indent) + '- ' + root.name + ": "
     parts = []
     if root.type is not None:
         parts.append(parquet_thrift.Type._VALUES_TO_NAMES[root.type])
     if root.logicalType is not None:
-        for key in list(root.logicalType.__dict__):
+        for key in dir(root.logicalType):
             if getattr(root.logicalType, key) is not None:
                 if key == "TIMESTAMP":
-                    unit = [k for k, v in root.logicalType.TIMESTAMP.unit.__dict__.items() if v][0]
+                    unit = [k for k in dir(root.logicalType.TIMESTAMP.unit) if getattr(
+                        root.logicalType.TIMESTAMP.unit, k) is not None][0]
                     parts.append(f"TIMESTAMP[{unit}]")
                 else:
                     # extra parameters possible here
@@ -46,8 +46,8 @@ def schema_to_text(root, indent=[]):
     indent.append('|')
     if hasattr(root, 'children'):
         indent[-1] = '| '
-        for i, child in enumerate(root.children.values()):
-            if i == len(root.children) - 1:
+        for i, child in enumerate(root["children"].values()):
+            if i == len(root["children"]) - 1:
                 indent[-1] = '  '
             text += '\n' + schema_to_text(child, indent)
     indent.pop()
@@ -59,18 +59,18 @@ def flatten(schema, root, name_parts=[]):
         return
     if schema is not root:
         name_parts = name_parts + [schema.name]
-    # root.children.pop('.'.join(name_parts), None)
-    for name, item in schema.children.copy().items():
+    # root["children"].pop('.'.join(name_parts), None)
+    for name, item in schema["children"].copy().items():
         if schema.repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
             continue
         if len(getattr(item, 'children', [])) == 0:
-            root.children['.'.join(name_parts + [name])] = item
+            root["children"]['.'.join(name_parts + [name])] = item
         elif item.converted_type in [parquet_thrift.ConvertedType.LIST,
                                      parquet_thrift.ConvertedType.MAP]:
-            root.children['.'.join(name_parts + [name])] = item
+            root["children"]['.'.join(name_parts + [name])] = item
         else:
             flatten(item, root, name_parts)
-            item.isflat = True
+            item["isflat"] = True
 
 
 class SchemaHelper(object):
@@ -79,6 +79,11 @@ class SchemaHelper(object):
     def __init__(self, schema_elements):
         """Initialize with the specified schema_elements."""
         self.schema_elements = schema_elements
+        for se in schema_elements:
+            try:
+                se.name = se.name.decode()
+            except AttributeError:
+                pass  # already a str
         self.root = schema_elements[0]
         self.schema_elements_by_name = dict(
             [(se.name, se) for se in schema_elements])
@@ -111,7 +116,7 @@ class SchemaHelper(object):
         if isinstance(name, str):
             name = name.split('.')
         for part in name:
-            root = root.children[part]
+            root = root["children"][part]
         return root
 
     def is_required(self, name):
@@ -159,14 +164,14 @@ def _is_list_like(helper, column):
     ct = se.converted_type
     if ct != parquet_thrift.ConvertedType.LIST:
         return False
-    if len(se.children) > 1:
+    if len(se["children"]) > 1:
         return False
-    se2 = list(se.children.values())[0]
-    if len(se2.children) > 1:
+    se2 = list(se["children"].values())[0]
+    if len(se2["children"]) > 1:
         return False
     if se2.repetition_type != parquet_thrift.FieldRepetitionType.REPEATED:
         return False
-    se3 = list(se2.children.values())[0]
+    se3 = list(se2["children"].values())[0]
     if se3.repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
         return False
     return True
@@ -180,19 +185,19 @@ def _is_map_like(helper, column):
     ct = se.converted_type
     if ct != parquet_thrift.ConvertedType.MAP:
         return False
-    if len(se.children) > 1:
+    if len(se["children"]) > 1:
         return False
-    se2 = list(se.children.values())[0]
-    if len(se2.children) != 2:
+    se2 = list(se["children"].values())[0]
+    if len(se2["children"]) != 2:
         return False
     if se2.repetition_type != parquet_thrift.FieldRepetitionType.REPEATED:
         return False
-    if set(se2.children) != {'key', 'value'}:
+    if set(se2["children"]) != {'key', 'value'}:
         return False
-    se3 = se2.children['key']
+    se3 = se2["children"]['key']
     if se3.repetition_type != parquet_thrift.FieldRepetitionType.REQUIRED:
         return False
-    se3 = se2.children['value']
+    se3 = se2["children"]['value']
     if se3.repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
         return False
     return True

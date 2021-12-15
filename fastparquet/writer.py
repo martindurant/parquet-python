@@ -3,7 +3,6 @@ from copy import copy
 import itertools
 import json
 import os
-import re
 import struct
 import warnings
 
@@ -12,20 +11,19 @@ import pandas as pd
 from pandas.core.arrays.masked import BaseMaskedDtype
 
 from fastparquet.util import join_path
-from .thrift_structures import write_thrift
 
 from pandas.api.types import is_categorical_dtype
-from .thrift_structures import parquet_thrift
+from . import parquet_thrift
+from .api import ParquetFile, partitions, part_ids
 from .compression import compress_data
 from .converted_types import tobson
-from . import encoding, api, __version__
-from .api import partitions, part_ids
 from .util import (default_open, default_mkdirs, check_column_names,
-                   created_by, get_column_metadata, path_string, norm_col_name,
-                   reset_row_idx)
+                   metadata_from_many, created_by, get_column_metadata,
+                   norm_col_name, path_string, reset_row_idx)
+from . import encoding, __version__
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
-from .cencoding import NumpyIO
+from .cencoding import NumpyIO, ThriftObject
 from decimal import Decimal
 
 MARKER = b'PAR1'
@@ -174,10 +172,12 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
                     parquet_thrift.Type.INT64,
                     parquet_thrift.ConvertedType.TIMESTAMP_MICROS, None
                 )
-                logical_type = parquet_thrift.LogicalType(
-                    TIMESTAMP=parquet_thrift.TimestampType(
-                        isAdjustedToUTC=tz,
-                        unit=parquet_thrift.TimeUnit(MICROS=parquet_thrift.MicroSeconds())
+                logical_type = ThriftObject.from_fields(
+                    "LogicalType",
+                    TIMESTAMP=ThriftObject.from_fields(
+                        "TimestampType",
+                        isAdjustedToUTC=True,
+                        unit=ThriftObject.from_fields("TimeUnit", MICROS={})
                     )
                 )
 
@@ -186,10 +186,12 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
                     parquet_thrift.Type.INT64,
                     parquet_thrift.ConvertedType.TIMESTAMP_MILLIS, None
                 )
-                logical_type = parquet_thrift.LogicalType(
-                    TIMESTAMP=parquet_thrift.TimestampType(
-                        isAdjustedToUTC=tz,
-                        unit=parquet_thrift.TimeUnit(MILLIS=parquet_thrift.MilliSeconds())
+                logical_type = ThriftObject.from_fields(
+                    "LogicalType",
+                    TIMESTAMP=ThriftObject.from_fields(
+                        "TimestampType",
+                        isAdjustedToUTC=True,
+                        unit=ThriftObject.from_fields("TimeUnit", MILLIS={})
                     )
                 )
         elif times == 'int96':
@@ -216,7 +218,8 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
         name=norm_col_name(data.name), type_length=width,
         converted_type=converted_type, type=type,
         repetition_type=parquet_thrift.FieldRepetitionType.REQUIRED,
-        logicalType=logical_type
+        logicalType=logical_type,
+        i32=True
     )
     return se, type
 
@@ -347,7 +350,7 @@ def encode_plain(data, se):
         return out.tobytes()
 
 
-def encode_dict(data, se):
+def encode_dict(data, _):
     """ The data part of dictionary encoding is always int8/16, with RLE/bitpack
     """
     width = data.values.dtype.itemsize * 8
@@ -380,7 +383,7 @@ def make_definitions(data, no_nulls, datapage_version=1):
         temp.write_byte(1)
         if datapage_version == 1:
             # TODO: adding bytes causes copy
-            block = struct.pack('<i', temp.tell()) + temp.so_far()
+            block = struct.pack('<I', temp.tell()) + temp.so_far()
         else:
             block = bytes(temp.so_far())
         out = data
@@ -393,7 +396,7 @@ def make_definitions(data, no_nulls, datapage_version=1):
 
         # TODO: adding bytes causes copy
         if datapage_version == 1:
-            block = struct.pack('<i', len(head) + len(out)) + head + out
+            block = struct.pack('<I', len(head) + len(out)) + head + out
         else:
             # no need to write length, it's in the header
             # head.write(out)?
@@ -422,8 +425,15 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         type to use, which must be one of the keys in ``compression.compress``,
         and may optionally have key ``"args`` which should be a dictionary of
         options to pass to the underlying compression engine.
+<<<<<<< HEAD
+    datapage_version: None or int
+        Uses data-page version 1. If 2, uses v2. If None (default), given by values
+        of global DATAPAGE_VERSION (set by environment variable FASTPARQUET_DATAPAGE_V2
+        at import time).
+=======
     stats: bool
         Whether to calculate and write summary statistics
+>>>>>>> main
 
     Returns
     -------
@@ -462,6 +472,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     else:
         definition_data = b""
         num_nulls = 0
+    num_nulls = int(num_nulls)
 
     # No nested field handling (encode those as J/BSON)
     repetition_data = b""
@@ -474,8 +485,10 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
 
     if is_categorical_dtype(data.dtype):
         dph = parquet_thrift.DictionaryPageHeader(
-                num_values=len(data.cat.categories),
-                encoding=parquet_thrift.Encoding.PLAIN)
+            num_values=len(data.cat.categories),
+            encoding=parquet_thrift.Encoding.PLAIN,
+            i32=1
+        )
         bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
         l0 = len(bdata)
         if compression and compression.upper() != "UNCOMPRESSED":
@@ -487,7 +500,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         ph = parquet_thrift.PageHeader(
                 type=parquet_thrift.PageType.DICTIONARY_PAGE,
                 uncompressed_page_size=l0, compressed_page_size=l1,
-                dictionary_page_header=dph, crc=None)
+                dictionary_page_header=dph, crc=None, i32=1)
 
         dict_start = f.tell()
         write_thrift(f, ph)
@@ -536,10 +549,12 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
             repetition_data, definition_data, encode[encoding](data, selement), 8 * b'\x00'
         ])
         dph = parquet_thrift.DataPageHeader(
-                num_values=tot_rows,
-                encoding=getattr(parquet_thrift.Encoding, encoding),
-                definition_level_encoding=parquet_thrift.Encoding.RLE,
-                repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED)
+            num_values=tot_rows,
+            encoding=getattr(parquet_thrift.Encoding, encoding),
+            definition_level_encoding=parquet_thrift.Encoding.RLE,
+            repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED,
+            i32=1
+        )
         l0 = len(bdata)
 
         if compression:
@@ -552,7 +567,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE,
                                        uncompressed_page_size=l0,
                                        compressed_page_size=l1,
-                                       data_page_header=dph, crc=None)
+                                       data_page_header=dph, i32=1)
         write_thrift(f, ph)
         f.write(bdata)
     elif datapage_version == 2:
@@ -566,7 +581,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
             definition_levels_byte_length=len(definition_data),
             repetition_levels_byte_length=0,  # len(repetition_data),
             is_compressed=is_compressed,
-            statistics=s
+            statistics=s,
+            i32=1
         )
         bdata = encode[encoding](data, selement)
         lb = len(bdata)
@@ -578,7 +594,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE_V2,
                                        uncompressed_page_size=lb + len(definition_data),
                                        compressed_page_size=len(bdata) + len(definition_data),
-                                       data_page_header_v2=dph, crc=None)
+                                       data_page_header_v2=dph, i32=1)
         write_thrift(f, ph)
         # f.write(repetition_data)  # no-op
         f.write(definition_data)
@@ -593,10 +609,10 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         p = [
             parquet_thrift.PageEncodingStats(
                 page_type=parquet_thrift.PageType.DICTIONARY_PAGE,
-                encoding=parquet_thrift.Encoding.PLAIN, count=1),
+                encoding=parquet_thrift.Encoding.PLAIN, count=1, i32=1),
             parquet_thrift.PageEncodingStats(
                 page_type=parquet_thrift.PageType.DATA_PAGE,
-                encoding=parquet_thrift.Encoding.RLE_DICTIONARY, count=1),
+                encoding=parquet_thrift.Encoding.RLE_DICTIONARY, count=1, i32=1),
         ]
         encodings = [parquet_thrift.Encoding.PLAIN,
                      parquet_thrift.Encoding.RLE_DICTIONARY]
@@ -604,7 +620,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     else:
         p = [parquet_thrift.PageEncodingStats(
              page_type=parquet_thrift.PageType.DATA_PAGE,
-             encoding=parquet_thrift.Encoding.PLAIN, count=1)]
+             encoding=parquet_thrift.Encoding.PLAIN, count=1, i32=1)]
         encodings = [parquet_thrift.Encoding.PLAIN]
 
     if isinstance(compression, dict):
@@ -612,26 +628,33 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     else:
         algorithm = compression
 
-    cmd = parquet_thrift.ColumnMetaData(
-            type=selement.type, path_in_schema=[norm_col_name(name)],
-            encodings=encodings,
-            codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
-                   if algorithm else 0),
-            num_values=tot_rows,
-            statistics=s,
-            data_page_offset=start,
-            encoding_stats=p,
-            key_value_metadata=[],
-            total_uncompressed_size=uncompressed_size,
-            total_compressed_size=compressed_size)
+    kvm = []
+    if isinstance(name, (list, tuple)):
+        name = str(tuple(name))
+    cmd = ThriftObject.from_fields(
+        "ColumnMetaData",
+        type=selement.type, path_in_schema=[name],
+        encodings=encodings,
+        codec=(getattr(parquet_thrift.CompressionCodec, algorithm.upper())
+               if algorithm else 0),
+        num_values=tot_rows,
+        statistics=s,
+        data_page_offset=start,
+        encoding_stats=p,
+        key_value_metadata=kvm,
+        total_uncompressed_size=uncompressed_size,
+        total_compressed_size=compressed_size,
+        i32list=[1, 4]
+    )
     if cats:
         cmd.dictionary_page_offset = dict_start
-        cmd.key_value_metadata.append(
+        kvm.append(
             parquet_thrift.KeyValue(key='num_categories', value=str(ncats)))
-        cmd.key_value_metadata.append(
+        kvm.append(
             parquet_thrift.KeyValue(key='numpy_dtype', value=str(data.dtype)))
     chunk = parquet_thrift.ColumnChunk(file_offset=offset,
-                                       meta_data=cmd)
+                                       meta_data=cmd,
+                                       file_path=None)
     return chunk
 
 
@@ -651,8 +674,8 @@ def make_row_group(f, data, schema, compression=None, stats=True):
             raise ValueError('Column names must be multi-index, str or bytes:',
                              {c: type(c) for c in data.columns
                               if not isinstance(c, (bytes, str))})
-    rg = parquet_thrift.RowGroup(num_rows=rows, total_byte_size=0, columns=[])
 
+    cols = []
     for column in schema:
         if column.type is not None:
             if isinstance(compression, dict):
@@ -672,9 +695,10 @@ def make_row_group(f, data, schema, compression=None, stats=True):
                 coldata = data[column.name]
             chunk = write_column(f, coldata, column,
                                  compression=comp, stats=st)
-            rg.columns.append(chunk)
-    rg.total_byte_size = sum([c.meta_data.total_uncompressed_size for c in
-                              rg.columns])
+            cols.append(chunk)
+    rg = ThriftObject.from_fields(
+        "RowGroup", num_rows=rows, columns=cols,
+        total_byte_size=sum([c.meta_data.total_uncompressed_size for c in cols]))
     return rg
 
 
@@ -691,15 +715,16 @@ def make_part_file(f, data, schema, compression=None, fmd=None,
                                               schema=schema,
                                               version=1,
                                               created_by=created_by,
-                                              row_groups=[rg],)
+                                              row_groups=[rg],
+                                              i32list=[1])
             foot_size = write_thrift(f, fmd)
-            f.write(struct.pack(b"<i", foot_size))
+            f.write(struct.pack(b"<I", foot_size))
         else:
             fmd = copy(fmd)
             fmd.row_groups = [rg]
             fmd.num_rows = rg.num_rows
             foot_size = write_thrift(f, fmd)
-            f.write(struct.pack(b"<i", foot_size))
+            f.write(struct.pack(b"<I", foot_size))
         f.write(MARKER)
     return rg
 
@@ -750,21 +775,22 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                        'creator': {'library': 'fastparquet',
                                    'version': __version__},
                        'pandas_version': pd.__version__}
-    root = parquet_thrift.SchemaElement(name='schema',
-                                        num_children=0)
-
-    meta = parquet_thrift.KeyValue()
-    meta.key = 'pandas'
-    fmd = parquet_thrift.FileMetaData(num_rows=len(data),
-                                      schema=[root],
-                                      version=1,
-                                      created_by=created_by,
-                                      row_groups=[],
-                                      key_value_metadata=[meta])
+    root = parquet_thrift.SchemaElement(name=b'schema',
+                                        num_children=0,
+                                        i32=True)
+    meta = parquet_thrift.KeyValue(key=b"pandas", value=None)
+    fmd = ThriftObject.from_fields("FileMetaData", num_rows=len(data),
+                                   schema=None,
+                                   version=1,
+                                   created_by=created_by.encode(),
+                                   row_groups=[],
+                                   key_value_metadata=[meta],
+                                   i32list=[1])
 
     object_encoding = object_encoding or {}
     for column in partition_cols:
         pandas_metadata['partition_columns'].append(get_column_metadata(data[column], column))
+    schema = [root]
     for column in data.columns:
         if column in ignore_columns:
             continue
@@ -787,9 +813,10 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
             col_has_nulls = column in has_nulls
         if col_has_nulls:
             se.repetition_type = parquet_thrift.FieldRepetitionType.OPTIONAL
-        fmd.schema.append(se)
-        root.num_children += 1
-    meta.value = json.dumps(pandas_metadata, sort_keys=True)
+        schema.append(se)
+        root[5] += 1
+    fmd.schema = schema
+    meta.value = json.dumps(pandas_metadata, sort_keys=True).encode()
     return fmd
 
 
@@ -835,18 +862,20 @@ def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
     with open_with(fn, mode) as f:
         if append:
             f.seek(-8, 2)
-            head_size = struct.unpack('<i', f.read(4))[0]
+            head_size = struct.unpack('<I', f.read(4))[0]
             f.seek(-(head_size+8), 2)
         else:
             f.write(MARKER)
+        rgs = fmd.row_groups
         for i, row_group in enumerate(data):
             rg = make_row_group(f, row_group, fmd.schema,
                                 compression=compression, stats=stats)
             if rg is not None:
-                fmd.row_groups.append(rg)
+                rgs.append(rg)
 
-        foot_size = write_thrift(f, fmd)
-        f.write(struct.pack(b"<i", foot_size))
+        fmd.row_groups = rgs
+        foot_size = f.write(fmd.to_bytes())
+        f.write(struct.pack(b"<I", foot_size))
         f.write(MARKER)
 
 
@@ -913,6 +942,7 @@ def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
         i_offset = find_max_part(fmd.row_groups)
     if isinstance(data, pd.DataFrame):
         data = iter_dataframe(data, row_group_offsets)
+    rg_list = fmd.row_groups
     for i, row_group in enumerate(data):
         part = 'part.%i.parquet' % (i + i_offset)
         if partition_on:
@@ -920,7 +950,7 @@ def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
                                        fmd,  compression, open_with, mkdirs,
                                        with_field=file_scheme == 'hive',
                                        stats=stats)
-            fmd.row_groups.extend(rgs)
+            rg_list.extend(rgs)
         else:
             partname = join_path(dn, part)
             with open_with(partname, 'wb') as f2:
@@ -928,8 +958,9 @@ def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
                                     compression=compression, fmd=fmd,
                                     stats=stats)
             for chunk in rg.columns:
-                chunk.file_path = part
-            fmd.row_groups.append(rg)
+                chunk.file_path = part.encode()
+            rg_list.append(rg)
+        fmd.row_groups = rg_list
     fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
     if write_fmd:
         write_common_metadata(join_path(dn, '_metadata'), fmd, open_with,
@@ -1115,10 +1146,10 @@ def write(filename, data, row_group_offsets=None,
                open_with=open_with, mkdirs=mkdirs, remove_with=None,
                stats=stats)
         return
-    # Format dataframe (manage row index).
     if append:
-        pf = api.ParquetFile(filename, open_with=open_with)
+        pf = ParquetFile(filename, open_with=open_with)
         if pf._get_index():
+            # Format dataframe (manage row index).
             data = reset_row_idx(data)
         if file_scheme == 'simple':
             # Case 'simple'
@@ -1138,9 +1169,10 @@ def write(filename, data, row_group_offsets=None,
                             write_fmd=True, open_with=open_with,
                             mkdirs=mkdirs, rename=None, stats=stats)
     else:
+        # Case 'append=False'.
         # Define 'index_cols' to be recorded in metadata.
         if (write_index or write_index is None
-                and not isinstance(data.index, pd.RangeIndex)):
+            and not isinstance(data.index, pd.RangeIndex)):
             # Keep name(s) of index to metadata.
             cols = set(data)
             data = reset_row_idx(data)
@@ -1163,12 +1195,15 @@ def write(filename, data, row_group_offsets=None,
                             times=times, index_cols=index_cols,
                             partition_cols=partition_on)
         if custom_metadata is not None:
-            fmd.key_value_metadata.extend(
+            kvm = fmd.key_value_metadata or []
+            kvm.extend(
                 [
                     parquet_thrift.KeyValue(key=key, value=value)
                     for key, value in custom_metadata.items()
                 ]
             )
+            fmd.key_value_metadata = kvm
+
         if file_scheme == 'simple':
             # Case 'simple'
             write_simple(filename, data, fmd,
@@ -1235,7 +1270,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
                                 compression=compression, fmd=fmd, stats=stats)
         if rg is not None:
             for chunk in rg.columns:
-                chunk.file_path = relname
+                chunk.file_path = relname.encode()
             rgs.append(rg)
     return rgs
 
@@ -1263,14 +1298,16 @@ def write_common_metadata(fn, fmd, open_with=default_open,
         if no_row_groups:
             fmd = copy(fmd)
             fmd.row_groups = []
-        foot_size = write_thrift(f, fmd)
-        f.write(struct.pack(b"<i", foot_size))
+            foot_size = write_thrift(f, fmd)
+        else:
+            foot_size = write_thrift(f, fmd)
+        f.write(struct.pack(b"<I", foot_size))
         f.write(MARKER)
 
 
 def consolidate_categories(fmd):
     key_value = [k for k in fmd.key_value_metadata
-                 if k.key == 'pandas'][0]
+                 if k.key == b'pandas'][0]
     meta = json.loads(key_value.value)
     cats = [c for c in meta['columns']
             if 'num_categories' in (c['metadata'] or [])]
@@ -1279,11 +1316,11 @@ def consolidate_categories(fmd):
             for col in rg.columns:
                 if ".".join(col.meta_data.path_in_schema) == cat['name']:
                     ncats = [k.value for k in (col.meta_data.key_value_metadata or [])
-                             if k.key == 'num_categories']
+                             if k.key == b'num_categories']
                     if ncats and int(ncats[0]) > cat['metadata'][
                             'num_categories']:
                         cat['metadata']['num_categories'] = int(ncats[0])
-    key_value.value = json.dumps(meta, sort_keys=True)
+    key_value[2] = json.dumps(meta, sort_keys=True)
 
 
 def merge(file_list, verify_schema=True, open_with=default_open,
@@ -1314,7 +1351,7 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     -------
     ParquetFile instance corresponding to the merged data.
     """
-    out = api.ParquetFile(file_list, verify_schema, open_with, root)
+    out = ParquetFile(file_list, verify_schema, open_with, root)
     out._write_common_metadata(open_with)
     return out
 
@@ -1376,7 +1413,7 @@ def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
         If False, never do;
         And if a list of ``str``, do it only for those specified columns.
     """
-    pf = api.ParquetFile(dirpath, open_with=open_with)
+    pf = ParquetFile(dirpath, open_with=open_with)
     if (pf.file_scheme == 'simple'
         or (pf.file_scheme == 'empty' and pf.fn[-9:] != '_metadata')):
         raise ValueError('Not possible to overwrite with simple file '
@@ -1426,3 +1463,8 @@ def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
                         compression=compression, write_fmd=True,
                         open_with=open_with, mkdirs=mkdirs, rename=rename,
                         stats=stats)
+
+
+def write_thrift(f, obj):
+    # TODO inline this
+    return f.write(obj.to_bytes())

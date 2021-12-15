@@ -1,7 +1,7 @@
 
 import cramjam
 import numpy as np
-from .thrift_structures import parquet_thrift
+from . import parquet_thrift
 
 # TODO: use stream/direct-to-buffer conversions instead of memcopy
 
@@ -46,13 +46,17 @@ def lz4_compress(data, **kwargs):
     return cramjam.lz4.compress_block(data, **kwargs)
 
 
+def lz4_decomp(data, size):
+    return cramjam.lz4.decompress_block(np.frombuffer(data, 'uint8'), size)
+
+
 compressions['LZ4'] = lz4_compress
-decompressions['LZ4'] = cramjam.lz4.decompress_block
+decompressions['LZ4'] = lz4_decomp
 
 # LZ4 is actually LZ4 block, aka "raw", see
 # https://github.com/apache/parquet-format/commit/7f06e838cbd1b7dbd722ff2580b9c2525e37fc46
 compressions['LZ4_RAW'] = lz4_compress
-decompressions['LZ4_RAW'] = cramjam.lz4.decompress_block
+decompressions['LZ4_RAW'] = lz4_decomp
 compressions['ZSTD'] = cramjam.zstd.compress
 decompressions['ZSTD'] = cramjam.zstd.decompress
 decom_into = {
@@ -105,6 +109,6 @@ def decompress_data(data, uncompressed_size, algorithm='gzip'):
     if algorithm.upper() in decom_into:
         # ensures writable buffer from cramjam
         x = np.empty(uncompressed_size, dtype='uint8')
-        decom_into[algorithm.upper()](data, x)
+        decom_into[algorithm.upper()](np.frombuffer(data, dtype=np.uint8), x)
         return x
     return decompressions[algorithm.upper()](data, uncompressed_size)

@@ -1,10 +1,6 @@
 import warnings
 import numpy as np
 import pandas as pd
-try:
-    from thrift.protocol.TCompactProtocol import TCompactProtocolAccelerated as TCompactProtocol
-except ImportError:
-    from thrift.protocol.TCompactProtocol import TCompactProtocol
 
 from . import encoding
 from . encoding import read_plain
@@ -13,7 +9,8 @@ from .compression import decompress_data, rev_map, decom_into
 from .converted_types import convert, simple, converts_inplace
 from .schema import _is_list_like, _is_map_like
 from .speedups import unpack_byte_array
-from .thrift_structures import parquet_thrift, read_thrift
+from . import parquet_thrift
+from .cencoding import ThriftObject, read_thrift
 from .util import val_to_num, ex_from_sep
 
 
@@ -27,10 +24,11 @@ def _read_page(file_obj, page_header, column_metadata):
         column_metadata.codec,
     )
 
-    assert len(raw_bytes) == page_header.uncompressed_page_size, \
-        "found {0} raw bytes (expected {1})".format(
-            len(raw_bytes),
-            page_header.uncompressed_page_size)
+    if column_metadata.codec:
+        assert len(raw_bytes) == page_header.uncompressed_page_size, \
+            "found {0} raw bytes (expected {1})".format(
+                len(raw_bytes),
+                page_header.uncompressed_page_size)
     return raw_bytes
 
 
@@ -66,12 +64,12 @@ def read_def(io_obj, daph, helper, metadata, out=None):
             definition_levels = read_data(
                     io_obj, parquet_thrift.Encoding.RLE,
                     daph.num_values, bit_width, out=out)
-        if (
+        if False and (
                 daph.statistics is not None
                 and getattr(daph.statistics, "null_count", None) is not None
         ):
             num_nulls = daph.statistics.null_count
-        elif (
+        elif False and (
                 daph.num_values == metadata.num_values
                 and metadata.statistics
                 and getattr(metadata.statistics, "null_count", None) is not None
@@ -268,6 +266,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
              and data_header2.num_nulls == 0
              and max_rep == 0 and assign.dtype.kind != "O")
     # can decompress-into
+    if data_header2.is_compressed is None:
+        data_header2.is_compressed = True
     into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
             and into0)
     if nullable:
@@ -279,17 +279,18 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             not data_header2.is_compressed or cmd.codec == parquet_thrift.CompressionCodec.UNCOMPRESSED
     ):
         # PLAIN read directly into output (a copy for remote files)
-        infile.readinto(assign[num:num+n_values].view('uint8'))
+        assign[num:num+n_values].view('uint8')[:] = infile.read(size)
         convert(assign[num:num+n_values], se)
     elif into and data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN decompress directly into output
         decomp = decom_into[rev_map[cmd.codec]]
-        decomp(infile.read(size), assign[num:num+data_header2.num_values].view('uint8'))
+        decomp(np.frombuffer(infile.read(size), dtype="uint8"),
+               assign[num:num+data_header2.num_values].view('uint8'))
         convert(assign[num:num+n_values], se)
     elif data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN, but with nulls or not in-place conversion
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        raw_bytes = decompress_data(infile.read(size),
+        raw_bytes = decompress_data(np.frombuffer(infile.read(size), "uint8"),
                                     uncompressed_page_size, codec)
         values = read_plain(raw_bytes,
                             cmd.type,
@@ -310,10 +311,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     ]) or (data_header2.encoding == parquet_thrift.Encoding.RLE):
         # DICTIONARY or BOOL direct decode RLE into output (no nulls)
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        raw_bytes = np.empty(size, dtype='uint8')
-        # TODO: small improvement possible by file.readinto and decompress_into if we
-        #  don't first read raw_bytes but seek in the open file
-        infile.readinto(raw_bytes)
+        raw_bytes = np.frombuffer(infile.read(size), dtype='uint8')
         raw_bytes = decompress_data(raw_bytes, uncompressed_page_size, codec)
         pagefile = encoding.NumpyIO(raw_bytes)
         if data_header2.encoding != parquet_thrift.Encoding.RLE:
@@ -362,7 +360,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     ]:
         # DICTIONARY to be de-referenced, with or without nulls
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        compressed_bytes = infile.read(size)
+        compressed_bytes = np.frombuffer(infile.read(size), "uint8")
         raw_bytes = decompress_data(compressed_bytes, uncompressed_page_size, codec)
         out = np.empty(n_values, dtype='uint8')
         pagefile = encoding.NumpyIO(raw_bytes)
@@ -390,7 +388,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     elif data_header2.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
         assert data_header2.num_nulls == 0, "null delta-int not implemented"
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        raw_bytes = decompress_data(infile.read(size),
+        raw_bytes = decompress_data(np.frombuffer(infile.read(size), "uint8"),
                                     uncompressed_page_size, codec)
         if converts_inplace(se):
             encoding.delta_binary_unpack(
@@ -439,6 +437,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
                cmd.data_page_offset))
 
     infile.seek(off)
+    column_binary = infile.read(cmd.total_compressed_size)
+    infile = encoding.NumpyIO(column_binary)
     rows = row_filter.sum() if isinstance(row_filter, np.ndarray) else cmd.num_values
 
     if use_cat:
@@ -460,7 +460,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
 
     while num < rows:
         off = infile.tell()
-        ph = read_thrift(infile, parquet_thrift.PageHeader)
+        ph = ThriftObject.from_buffer(infile, "PageHeader")
         if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
             dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
             dic2 = convert(dic2, se)
@@ -568,6 +568,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     maps = {}
 
     for column in rg.columns:
+
         if (_is_list_like(schema_helper, column) or
                 _is_map_like(schema_helper, column)):
             name = ".".join(column.meta_data.path_in_schema[:-2])
