@@ -233,7 +233,8 @@ class ParquetFile(object):
         return re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
 
     def _read_partitions(self):
-        paths = [rg[1][0].get(1, "") for rg in self.row_groups if rg[1]]
+        paths = [rg[1][0][1].decode() if 1 in rg[1][0] and rg[1][0][1]
+                 else "" for rg in self.row_groups if rg[1]]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def head(self, nrows, **kwargs):
@@ -272,7 +273,10 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
-            fpath = rg.columns[0].file_path.decode()
+            fpath = rg.columns[0].file_path
+            if isinstance(fpath, bytes):
+                # Forced to keep for dask.
+                fpath = rg.columns[0].file_path.decode()
             base = self.basepath
             if base:
                 return join_path(base, fpath)

@@ -451,8 +451,6 @@ def json_decoder():
 
 
 def _strip_path_tail(paths) -> set:
-    # TODO: the following line should not be necessary
-    paths = [p.decode() if isinstance(p, bytes) else p for p in paths]
     return {path.rsplit("/", 1)[0] if "/" in path else "" for path in paths}
 
 
