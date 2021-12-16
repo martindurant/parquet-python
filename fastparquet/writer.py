@@ -958,7 +958,7 @@ def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
                                     compression=compression, fmd=fmd,
                                     stats=stats)
             for chunk in rg.columns:
-                chunk.file_path = part.encode()
+                chunk.file_path = part
             rg_list.append(rg)
         fmd.row_groups = rg_list
     fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
@@ -1270,7 +1270,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
                                 compression=compression, fmd=fmd, stats=stats)
         if rg is not None:
             for chunk in rg.columns:
-                chunk.file_path = relname.encode()
+                chunk.file_path = relname
             rgs.append(rg)
     return rgs
 

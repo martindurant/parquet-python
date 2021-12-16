@@ -187,6 +187,13 @@ class ParquetFile(object):
             fmd = from_buffer(data, "FileMetaData")
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
+        for rg in fmd.row_groups:
+            chunks = rg.columns
+            if chunks:
+                for chunk in chunks:
+                    s = chunk.file_path
+                    if s:
+                        chunk.file_path = s.decode()
         self.fmd = fmd
         self._set_attrs()
 
@@ -233,11 +240,10 @@ class ParquetFile(object):
         return re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
 
     def _read_partitions(self):
-        # Forced to check if str or bytes for dask.
-        paths = ["" if not (1 in rg[1][0] and rg[1][0][1])
-                 else (rg[1][0][1].decode() if isinstance(rg[1][0][1], bytes)
-                       else rg[1][0][1])
-                 for rg in self.row_groups if rg[1]]
+        paths = [rg.columns[0].file_path
+                 if (hasattr(rg.columns[0], 'file_path') and
+                     rg.columns[0].file_path)
+                 else "" for rg in self.row_groups if rg.columns]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def head(self, nrows, **kwargs):
@@ -277,9 +283,6 @@ class ParquetFile(object):
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
             fpath = rg.columns[0].file_path
-            if isinstance(fpath, bytes):
-                # Forced to check if str or bytes for dask.
-                fpath = rg.columns[0].file_path.decode()
             base = self.basepath
             if base:
                 return join_path(base, fpath)
@@ -552,7 +555,7 @@ possible.')
                 dst = join_path(basepath, dst_part)
                 rename(src, dst)
                 for col in self.fmd.row_groups[rgid].columns:
-                    col.file_path = dst_part.encode()
+                    col.file_path = dst_part
             if write_fmd:
                 self._write_common_metadata(open_with)
 
@@ -1278,7 +1281,7 @@ def filter_out_cats(rg, filters, partition_meta={}):
     if len(filters) == 0 or rg.columns[0].file_path is None:
         return False
     s = ex_from_sep('/')
-    partitions = s.findall(rg.columns[0].file_path.decode())
+    partitions = s.findall(rg.columns[0].file_path)
     pairs = [(p[0], p[1]) for p in partitions]
     for cat, v in pairs:
 
@@ -1409,7 +1412,7 @@ def row_groups_map(rgs: list) -> dict:
     """
     files_rgs = defaultdict(lambda: [])
     for rg in rgs:
-        file = rg.columns[0].file_path.decode()
+        file = rg.columns[0].file_path
         files_rgs[file].append(rg)
     return files_rgs
 
@@ -1434,7 +1437,7 @@ def partitions(row_group, only_values=False) -> str:
         Paritions values.
     """
     f_path = (row_group if isinstance(row_group, str)
-              else row_group.columns[0].file_path.decode())
+              else row_group.columns[0].file_path)
     if '/' in f_path:
         return ('/'.join(re.split('/|=', f_path)[1::2]) if only_values
                 else f_path.rsplit('/',1)[0])
@@ -1449,8 +1452,8 @@ def part_ids(row_groups) -> dict:
     In case of files with multiple row groups, the position (index in row group
     list) of the 1st group only is kept.
     """
-    paths = [rg.columns[0].file_path.decode() for rg in row_groups]
     s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
     max_rgidx = len(row_groups)-1
-    return {int(s.match(fpath)['i']): (max_rgidx-i, fpath)
-            for i, fpath in enumerate(reversed(paths))}
+    return {int(s.match(rg.columns[0].file_path)['i']):
+            (max_rgidx-i, rg.columns[0].file_path)
+            for i, rg in enumerate(reversed(row_groups))}

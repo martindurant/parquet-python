@@ -220,9 +220,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     rg = copy.copy(rg)
                     rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
-                        chunk.file_path = '/'.join(
-                            [fn, chunk.file_path if isinstance(chunk.file_path, str) else chunk.file_path.decode()]
-                        ).encode()
+                        chunk.file_path = '/'.join([fn, chunk.file_path])
                     rgs.append(rg)
 
             else:
@@ -230,7 +228,7 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     rg = copy.copy(rg)
                     rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
-                        chunk.file_path = fn.encode()
+                        chunk.file_path = fn
                     rgs.append(rg)
 
         fmd.row_groups = rgs
@@ -239,14 +237,14 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
 
     for rg in pf0.fmd.row_groups:
         # chunks of first file, which would have file_path=None
-        rg.columns[0].file_path = f0[len(basepath):].lstrip("/").encode()
+        rg.columns[0].file_path = f0[len(basepath):].lstrip("/")
 
     rgs0 = pf0.fmd.row_groups
     for k, v in pieces:
         # Set file paths on other files
         rgs = v.row_groups or []
         for rg in rgs:
-            rg.columns[0].file_path = k[len(basepath):].lstrip("/").encode()
+            rg.columns[0].file_path = k[len(basepath):].lstrip("/")
         rgs0.extend(rgs)
     pf0.fmd.row_groups = rgs0
     pf0.fmd.num_rows = sum(rg.num_rows for rg in pf0.fmd.row_groups)

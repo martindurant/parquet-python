@@ -613,9 +613,6 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
             # do no need to have partition columns in output
             continue
         fpath = rg.columns[0].file_path
-        if isinstance(fpath, bytes):
-            # Forced to check if str or bytes for dask.
-            fpath = fpath.decode()
         if scheme == 'hive':
             partitions = [s.split("=") for s in fpath.split("/")]
         else:
