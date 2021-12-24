@@ -104,7 +104,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64',
     is_index: bool, optional
         Set `True` if column storing a row index, `False` otherwise. Required
         if column name is a tuple (when dataframe managed has a column
-        mutli-index). In this case, with this flag set `True`, name of columns
+        multi-index). In this case, with this flag set `True`, name of columns
         used to store a row index are reset from tuple to simple string.
 
     Returns
