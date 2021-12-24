@@ -438,10 +438,10 @@ ops = {
 }
 
 
-def norm_col_name(name):
+def norm_col_name(name, is_index:bool=None):
     if isinstance(name, tuple):
-        name = tuple(filter(bool, name))
-        if len(name) == 1:
+        if is_index:
             return name[0]
-        return str(name)
+        else:
+            return str(name)
     return name
