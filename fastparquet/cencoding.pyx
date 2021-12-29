@@ -863,6 +863,8 @@ def dict_eq(d1, d2):
         elif isinstance(d1[k], list):
             if len(d1[k]) != len(d2[k]):
                 return False
+            # Recursive call as described in
+            # https://github.com/dask/fastparquet/pull/723#issuecomment-995147362
             if any(not dict_eq(a,b) if isinstance(a, dict) else (a != b)
                    for a, b in zip(d1[k], d2[k])):
                 return False

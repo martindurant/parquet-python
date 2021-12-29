@@ -18,6 +18,10 @@ from .util import (default_open, default_remove, default_rename,
                    json_decoder, _strip_path_tail)
 
 
+# Find in names of partition files the integer matching "**part.*.parquet",
+# as 'i'.
+PART_ID = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
+
 class ParquetFile(object):
     """The metadata of a parquet file or collection
 
@@ -187,13 +191,17 @@ class ParquetFile(object):
             fmd = from_buffer(data, "FileMetaData")
         except Exception:
             raise ParquetException('Metadata parse failed: %s' % self.fn)
-        for rg in fmd.row_groups:
-            chunks = rg.columns
+        # for rg in fmd.row_groups:
+        for rg in fmd[4]:
+            # chunks = rg.columns
+            chunks = rg[1]    
             if chunks:
                 for chunk in chunks:
-                    s = chunk.file_path
+                    # s = chunk.file_path
+                    s = chunk.get(1)
                     if s:
-                        chunk.file_path = s.decode()
+                        # chunk.file_path = s.decode()
+                        chunk[1] = s.decode()
         self.fmd = fmd
         self._set_attrs()
 
@@ -240,10 +248,8 @@ class ParquetFile(object):
         return re.sub(r'_metadata(/)?$', '', self.fn).rstrip('/')
 
     def _read_partitions(self):
-        paths = [rg.columns[0].file_path
-                 if (hasattr(rg.columns[0], 'file_path') and
-                     rg.columns[0].file_path)
-                 else "" for rg in self.row_groups if rg.columns]
+        # paths = [rg.columns[0].file_path] ... if rg.columns]
+        paths = [rg[1][0].get(1, "") for rg in self.row_groups if rg[1]]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
     def head(self, nrows, **kwargs):
@@ -282,12 +288,11 @@ class ParquetFile(object):
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
-            fpath = rg.columns[0].file_path
             base = self.basepath
             if base:
-                return join_path(base, fpath)
+                return join_path(base, rg.columns[0].file_path)
             else:
-                return fpath
+                return rg.columns[0].file_path
         else:
             return self.fn
 
@@ -377,11 +382,11 @@ class ParquetFile(object):
             a .fs file system attribute
         """
         if not isinstance(rgs, list):
-            if not hasattr(rgs, '__iter__'):
-                # Filter tuple, generator.
+            if isinstance(rgs, ThriftObject):
                 rgs = [rgs]
             else:
-                # If generator, switch to list as this list is re-used.
+                # Use `list()` here, not `[]`, as the latter does not transform
+                # generator into list but encapsulates generator in a list.
                 rgs = list(rgs)
         if not rgs:
             return
@@ -474,12 +479,12 @@ possible.')
         if isinstance(data, pd.DataFrame):
             self_cols = sorted(self.columns + partition_on)
             if self_cols != sorted(data.columns):
-                # TODO
-                # Proposal to clarify the legacy error message, by stating that
-                # column names of data on disk and column names of new data do
-                # not match, and showing inconsistent column indexes.
-                raise ValueError('File schema is not compatible with existing '
-                                 'file schema.')
+                diff_cols = set(data.columns) ^ set(self_cols)
+                raise ValueError(
+                    f'Column names of new data are {sorted(data.columns)}. '
+                    f'But column names in existing file are {self_cols}. '
+                    f'{diff_cols} are columns being either only in existing '
+                     'file or only in new data. This is not possible.')
         if (self.file_scheme == 'simple'
             or (self.file_scheme == 'empty' and self.fn[-9:] != '_metadata')):
             # Case 'simple'.
@@ -1447,13 +1452,13 @@ def part_ids(row_groups) -> dict:
     """Return ids of parquet part files.
     
     Find the integer matching "**part.*.parquet" in referenced paths and
-    returns them as keys of a dict. Values of the dict are tuples
-    (row_group_id, part_name).
+    returns them as keys of a dict.
+    Values of the dict are tuples `(row_group_id, part_name)`.
     In case of files with multiple row groups, the position (index in row group
     list) of the 1st group only is kept.
     """
-    s = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
     max_rgidx = len(row_groups)-1
-    return {int(s.match(rg.columns[0].file_path)['i']):
-            (max_rgidx-i, rg.columns[0].file_path)
-            for i, rg in enumerate(reversed(row_groups))}
+    paths = [rg.columns[0].file_path for rg in row_groups]
+    matches = [(PART_ID.match(path), path) for path in paths]
+    return {int(pid_path[0]['i']): (max_rgidx-i, pid_path[1])
+            for i, pid_path in enumerate(reversed(matches))}

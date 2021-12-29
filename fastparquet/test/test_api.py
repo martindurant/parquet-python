@@ -1315,11 +1315,11 @@ def test_write_rgs_simple_schema_exception(tempdir):
     pf = ParquetFile(fn)
     # Dropping a column.
     data_new = df_remove_rgs[2:].reset_index().drop(columns='humidity')
-    with pytest.raises(ValueError, match="^File schema is not"):
+    with pytest.raises(ValueError, match="^Column names"):
         pf.write_row_groups(data_new)
     # Similar error: missing 'index' column as index is not resetted.
     data_new = df_remove_rgs[2:]
-    with pytest.raises(ValueError, match="^File schema is not"):
+    with pytest.raises(ValueError, match="^Column names"):
         pf.write_row_groups(data_new)
 
 

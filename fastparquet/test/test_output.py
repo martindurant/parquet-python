@@ -635,6 +635,8 @@ def test_auto_null_object(tempdir, pnull):
 def test_many_categories(tempdir, n):
     tmp = str(tempdir)
     cats = np.arange(n)
+    # Use of a seed as discussed in
+    # https://github.com/dask/fastparquet/pull/701#issuecomment-971927547
     rng = np.random.default_rng(4)
     codes = rng.integers(0, n, size=1000000)
     df = pd.DataFrame({'x': pd.Categorical.from_codes(codes, cats), 'y': 1})
@@ -833,9 +835,8 @@ def test_append_fail_incompatible(tempdir):
                        'b': ['a', 'a', 'b', 'b']})
     df2 = pd.DataFrame({'a': [1, 2, 3, 0]})
     write(fn, df1, file_scheme='simple')
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match="^Column names"):
         write(fn, df2, file_scheme='simple', append=True)
-    assert 'schema is not compatible' in str(e.value)
     pd.testing.assert_frame_equal(ParquetFile(fn).to_pandas(), df1)
 
 
