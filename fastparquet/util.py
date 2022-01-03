@@ -47,9 +47,6 @@ def default_remove(paths):
             os.unlink(path)
         except IOError:
             pass
-
-
-default_rename = os.rename
     
 
 def val_from_meta(x, meta):
@@ -220,7 +217,9 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                     rg = copy.copy(rg)
                     rg.columns = [copy.copy(c) for c in rg.columns]
                     for chunk in rg.columns:
-                        chunk.file_path = '/'.join([fn, chunk.file_path])
+                        chunk.file_path = '/'.join(
+                            [fn, chunk.file_path if isinstance(chunk.file_path, str) else chunk.file_path.decode()]
+                        )
                     rgs.append(rg)
 
             else:

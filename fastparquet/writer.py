@@ -27,6 +27,7 @@ from .cencoding import NumpyIO, ThriftObject
 from decimal import Decimal
 
 MARKER = b'PAR1'
+ROW_GROUP_SIZE = 50_000_000
 NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
 nat = np.datetime64('NaT').view('int64')
 
@@ -997,7 +998,7 @@ def iter_dataframe(data, row_group_offsets=None):
         Chunk of data.
     """
     if row_group_offsets is None:
-        row_group_offsets = 50_000_000
+        row_group_offsets = ROW_GROUP_SIZE
     # TODO
     # Could be extended to accept target size in memory for a row group (MB or
     # GB), instead of target number of rows.
@@ -1176,7 +1177,7 @@ def write(filename, data, row_group_offsets=None,
         pf.write_row_groups(data, row_group_offsets, sort_key=None,
                             sort_pnames=False, compression=compression,
                             write_fmd=True, open_with=open_with,
-                            mkdirs=mkdirs, rename=None, stats=stats)
+                            mkdirs=mkdirs, stats=stats)
     else:
         # Case 'append=False'.
         # Define 'index_cols' to be recorded in metadata.
@@ -1366,7 +1367,7 @@ def merge(file_list, verify_schema=True, open_with=default_open,
 
 
 def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
-           compression=None, open_with=default_open, mkdirs=None, rename=None,
+           compression=None, open_with=default_open, mkdirs=None,
            remove_with=None, stats=True):
     """Merge new data to existing parquet dataset.
 
@@ -1410,9 +1411,6 @@ def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
     mkdirs : function, optional
         When called with a path/URL, creates any necessary dictionaries to
         make that location writable, e.g., ``os.makedirs``.
-    rename : function
-        When called with a f(path1,path2), changes file path `path1` into
-        `path2`. Only used if `sort_pnames` is `True`.
     remove_with : function, optional
         When called with f(path), removes file or directory specified by
         `path` (and any contained files).
@@ -1470,8 +1468,7 @@ def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
     pf.write_row_groups(data, row_group_offsets=row_group_offsets,
                         sort_key=sort_key, sort_pnames=sort_pnames,
                         compression=compression, write_fmd=True,
-                        open_with=open_with, mkdirs=mkdirs, rename=rename,
-                        stats=stats)
+                        open_with=open_with, mkdirs=mkdirs, stats=stats)
 
 
 def write_thrift(f, obj):

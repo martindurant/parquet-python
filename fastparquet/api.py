@@ -12,10 +12,9 @@ import pandas as pd
 from . import core, schema, converted_types, encoding, dataframe
 from . import parquet_thrift
 from .cencoding import ThriftObject, from_buffer
-from .util import (default_open, default_remove, default_rename,
-                   ParquetException, val_to_num, ops, ensure_bytes,
-                   check_column_names, metadata_from_many, ex_from_sep,
-                   json_decoder, _strip_path_tail)
+from .util import (default_open, default_remove, ParquetException, val_to_num,
+                   ops, ensure_bytes, check_column_names, metadata_from_many,
+                   ex_from_sep, json_decoder, _strip_path_tail)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
@@ -196,12 +195,12 @@ class ParquetFile(object):
             # chunks = rg.columns
             chunks = rg[1]    
             if chunks:
-                for chunk in chunks:
-                    # s = chunk.file_path
-                    s = chunk.get(1)
-                    if s:
-                        # chunk.file_path = s.decode()
-                        chunk[1] = s.decode()
+                chunk = chunks[0]
+                # s = chunk.file_path
+                s = chunk.get(1)
+                if s:
+                    # chunk.file_path = s.decode()
+                    chunk[1] = s.decode()
         self.fmd = fmd
         self._set_attrs()
 
@@ -382,11 +381,12 @@ class ParquetFile(object):
             a .fs file system attribute
         """
         if not isinstance(rgs, list):
-            if isinstance(rgs, ThriftObject):
+            if isinstance(rgs, ThriftObject) or isinstance(rgs, dict):
+                # Case 'rgs' is a single row group ('ThriftObject' or 'dict'). 
                 rgs = [rgs]
             else:
                 # Use `list()` here, not `[]`, as the latter does not transform
-                # generator into list but encapsulates generator in a list.
+                # generator or tuple into list but encapsulates them in a list.
                 rgs = list(rgs)
         if not rgs:
             return
@@ -426,7 +426,7 @@ possible.')
     def write_row_groups(self, data, row_group_offsets=None, sort_key=None,
                          sort_pnames:bool=True, compression=None,
                          write_fmd:bool=True, open_with=default_open,
-                         mkdirs=None, rename=None, stats=True):
+                         mkdirs=None, stats=True):
         """Write data as new row groups to disk, with optional sorting.
 
         Parameters
@@ -465,9 +465,6 @@ possible.')
             When called with a path/URL, creates any necessary dictionaries to
             make that location writable, e.g., ``os.makedirs``. This is not
             necessary if using the simple file scheme.
-        rename : function
-            When called with a f(path1,path2), changes file path `path1` into
-            `path2`. Only used if `sort_pnames` is `True`.
         stats : True|False|list of str
             Whether to calculate and write summary statistics.
             If True (default), do it for every column;
@@ -504,13 +501,12 @@ possible.')
                 # not a list.
                 self.fmd.row_groups = sorted(self.fmd.row_groups, key=sort_key)
             if sort_pnames:
-                self._sort_part_names(False, open_with, rename)
+                self._sort_part_names(False, open_with)
             if write_fmd:
                 self._write_common_metadata(open_with)
         self._set_attrs()
 
-    def _sort_part_names(self, write_fmd:bool=True, open_with=default_open,
-                         rename=None):
+    def _sort_part_names(self, write_fmd:bool=True, open_with=default_open):
         """Align parquet files id to that of the first row group they contain.
 
         This method only manages files which name follows pattern
@@ -525,16 +521,8 @@ possible.')
         open_with : function
             When called with a f(path, mode), returns an open file-like object.
             Only needed if `write_fmd` is `True`.
-        rename : function
-            When called with a f(path1,path2), changes file path `path1` into
-            `path2`.
         """
         from .writer import part_ids
-        if rename is None:
-            if hasattr(self, 'fs'):
-                rename = self.fs.rename
-            else:
-                rename = default_rename
         pids = part_ids(self.fmd.row_groups)
         if pids:
             # Keep only items for which row group position does not match part
@@ -549,7 +537,7 @@ possible.')
                 src = f'{basepath}/{fname}'
                 parts = partitions(fname)
                 dst = join_path(basepath, parts, f'part.{rgid}.parquet.tmp')
-                rename(src, dst)
+                self.fs.rename(src, dst)
             # Give definitive names in a 2nd pass.
             for pid in pids:
                 item = pids[pid]
@@ -558,7 +546,7 @@ possible.')
                 src = join_path(basepath, parts, f'part.{rgid}.parquet.tmp')
                 dst_part = join_path(parts, f'part.{rgid}.parquet')
                 dst = join_path(basepath, dst_part)
-                rename(src, dst)
+                self.fs.rename(src, dst)
                 for col in self.fmd.row_groups[rgid].columns:
                     col.file_path = dst_part
             if write_fmd:
