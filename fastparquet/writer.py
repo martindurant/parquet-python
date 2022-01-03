@@ -75,7 +75,8 @@ pdoptional_to_numpy_typemap = {
 }
 
 
-def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
+def find_type(data, fixed_text=None, object_encoding=None, times='int64',
+              is_index:bool=None):
     """ Get appropriate typecodes for column dtype
 
     Data conversion do not happen here, see convert().
@@ -97,6 +98,11 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
         if 'infer', type is guessed from 10 first non-null values.
     times: 'int64'|'int96'
         Normal integers or 12-byte encoding for timestamps.
+    is_index: bool, optional
+        Set `True` if column storing a row index, `False` otherwise. Required
+        if column name is a tuple (when dataframe managed has a column
+        multi-index). In this case, with this flag set `True`, name of columns
+        used to store a row index are reset from tuple to simple string.
 
     Returns
     -------
@@ -215,7 +221,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64'):
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
     se = parquet_thrift.SchemaElement(
-        name=norm_col_name(data.name), type_length=width,
+        name=norm_col_name(data.name, is_index), type_length=width,
         converted_type=converted_type, type=type,
         repetition_type=parquet_thrift.FieldRepetitionType.REQUIRED,
         logicalType=logical_type,
@@ -425,15 +431,12 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         type to use, which must be one of the keys in ``compression.compress``,
         and may optionally have key ``"args`` which should be a dictionary of
         options to pass to the underlying compression engine.
-<<<<<<< HEAD
     datapage_version: None or int
         Uses data-page version 1. If 2, uses v2. If None (default), given by values
         of global DATAPAGE_VERSION (set by environment variable FASTPARQUET_DATAPAGE_V2
         at import time).
-=======
     stats: bool
         Whether to calculate and write summary statistics
->>>>>>> main
 
     Returns
     -------
@@ -740,13 +743,17 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
     if not data.columns.is_unique:
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
+    index_cols_orig = None
     if isinstance(data.columns, pd.MultiIndex):
-        name = data.index.name or "index"
-        index_cols = [{'field_name': name,
-                       'metadata': None,
-                       'name': name,
-                       'numpy_type': 'object',
-                       'pandas_type': 'mixed-integer'}]
+        if isinstance(index_cols, list) and index_cols != []:
+            index_cols_orig = copy(index_cols)
+            # TODO: for loop required to manage row multi-index.
+            name = index_cols[0][0]
+            index_cols = [{'field_name': name,
+                           'metadata': None,
+                           'name': name,
+                           'numpy_type': 'object',
+                           'pandas_type': 'mixed-integer'}]
         ci = [
             get_column_metadata(ser, n)
             for ser, n
@@ -799,13 +806,15 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         oencoding = (object_encoding if isinstance(object_encoding, str)
                      else object_encoding.get(column, None))
         fixed = None if fixed_text is None else fixed_text.get(column, None)
+        is_index = (column in index_cols_orig) if index_cols_orig else None
         if is_categorical_dtype(data[column].dtype):
-            se, type = find_type(data[column].cat.categories,
-                                 fixed_text=fixed, object_encoding=oencoding)
+            se, type = find_type(data[column].cat.categories, fixed_text=fixed,
+                                 object_encoding=oencoding, is_index=is_index)
             se.name = column
         else:
             se, type = find_type(data[column], fixed_text=fixed,
-                                 object_encoding=oencoding, times=times)
+                                 object_encoding=oencoding, times=times,
+                                 is_index=is_index)
         col_has_nulls = has_nulls
         if has_nulls is None:
             se.repetition_type = data[column].dtype == "O"

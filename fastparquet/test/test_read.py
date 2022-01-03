@@ -537,3 +537,16 @@ def test_column_multiindex_roundtrip(tempdir):
     df.to_parquet(fn, engine='fastparquet')
     out = pd.read_parquet(fn, engine='fastparquet')
     assert df.equals(out)
+
+
+def test_sparse_column_multiindex_no_row_index(tempdir):
+    ts = [pd.Timestamp('2021/01/01 08:00:00'),
+          pd.Timestamp('2021/01/05 10:00:00')]
+    val = [10, 34]
+    df = pd.DataFrame({'val': val, 'ts': ts})
+    tuples = [(col, point) for col, point in zip(df.columns, ['0', ''])]
+    cmidx = pd.MultiIndex.from_tuples(tuples, names=('component', 'point'))
+    df.columns = cmidx
+    writer.write(tempdir, df, file_scheme='hive')
+    out = fastparquet.ParquetFile(tempdir).to_pandas()
+    assert df.equals(out)
