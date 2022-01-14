@@ -772,8 +772,9 @@ cdef class ThriftObject:
         return self.copy()
 
     def __deepcopy__(self, memodict={}):
-        import pickle
-        return pickle.loads(pickle.dumps(self))
+        import copy
+        d = copy.deepcopy(self.data)
+        return ThriftObject(self.name, d)
 
     cpdef _asdict(self):
         """Create dict version with field names instead of integers"""

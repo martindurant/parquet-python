@@ -919,19 +919,14 @@ selection does not match number of rows in DataFrame.')
     def __setstate__(self, state):
         self.__dict__.update(state)
         # Decode 'file_path'.
-        fmd = self.fmd
-        # for rg in fmd.row_groups:
-        for rg in fmd[4]:
-            # chunks = rg.columns
-            chunks = rg[1]    
-            if chunks:
-                chunk = chunks[0]
-                # s = chunk.file_path
-                s = chunk.get(1)
-                if s:
-                    # chunk.file_path = s.decode()
-                    chunk[1] = s.decode()
-        self.fmd = fmd
+        rgs = self.fmd[4]
+        if rgs[0][1] and rgs[0][1][0] and rgs[0][1][0].get(1):
+            # for rg in fmd.row_groups:
+            for rg in rgs:
+                # chunk = rg.columns[0]
+                chunk = rg[1][0]
+                # chunk.file_path = chunk.file_path.decode()
+                chunk[1] = chunk.get(1).decode()
         self._set_attrs()
 
     def __str__(self):
