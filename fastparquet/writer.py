@@ -1156,6 +1156,8 @@ def write(filename, data, row_group_offsets=None,
                open_with=open_with, mkdirs=mkdirs, remove_with=None,
                stats=stats)
         return
+    if isinstance(partition_on, str):
+        partition_on = [partition_on]
     if append:
         pf = ParquetFile(filename, open_with=open_with)
         if pf._get_index():

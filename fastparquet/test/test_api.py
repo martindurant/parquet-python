@@ -402,6 +402,12 @@ def test_single_upper_directory(tempdir):
     out = pf.to_pandas()
     assert (out.y == 'aa').all()
 
+def test_string_partition_name(tempdir):
+    df = pd.DataFrame({'x': [1, 5, 2, 5], 'yy': ['aa'] * 4})
+    write(tempdir, df, file_scheme='hive', partition_on='yy')
+    pf = ParquetFile(tempdir)
+    out = pf.to_pandas()
+    assert (out.yy == 'aa').all()
 
 def test_numerical_partition_name(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5], 'y1': ['aa', 'aa', 'bb', 'aa']})
