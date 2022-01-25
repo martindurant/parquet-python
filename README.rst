@@ -29,7 +29,7 @@ Required:
 
 - numpy
 - pandas
-- cython (if building from pyx files)
+- cython >= 0.29.23 (if building from pyx files)
 - cramjam
 - fsspec
 
