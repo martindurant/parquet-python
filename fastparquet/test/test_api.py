@@ -402,6 +402,12 @@ def test_single_upper_directory(tempdir):
     out = pf.to_pandas()
     assert (out.y == 'aa').all()
 
+def test_string_partition_name(tempdir):
+    df = pd.DataFrame({'x': [1, 5, 2, 5], 'yy': ['aa'] * 4})
+    write(tempdir, df, file_scheme='hive', partition_on='yy')
+    pf = ParquetFile(tempdir)
+    out = pf.to_pandas()
+    assert (out.yy == 'aa').all()
 
 def test_numerical_partition_name(tempdir):
     df = pd.DataFrame({'x': [1, 5, 2, 5], 'y1': ['aa', 'aa', 'bb', 'aa']})
@@ -1381,3 +1387,14 @@ def test_file_renaming_with_partitions(tempdir):
     expected_df['city'] = expected_df['city'].astype('category')
     expected_df = expected_df.reindex(columns=pf.to_pandas().columns)
     assert pf.to_pandas().equals(expected_df)
+
+
+def test_slicing_makes_copy(tempdir):
+    df = pd.DataFrame({'a':range(10)})
+    write(tempdir, df, row_group_offsets=2, file_scheme='hive')
+    pf_rec1 = ParquetFile(tempdir)
+    pf_sliced = pf_rec1[:2]
+    assert len(pf_sliced.row_groups) == 2
+    pf_rec2 = ParquetFile(tempdir)
+    assert pf_rec1.fmd.row_groups == pf_rec2.fmd.row_groups
+    assert pf_rec1.file_scheme == pf_rec2.file_scheme

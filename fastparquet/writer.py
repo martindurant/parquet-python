@@ -207,11 +207,12 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64',
         else:
             raise ValueError(
                     "Parameter times must be [int64|int96], not %s" % times)
-        if hasattr(dtype, 'tz') and str(dtype.tz) != 'UTC':
-            warnings.warn(
-                'Coercing datetimes to UTC before writing the parquet file, the timezone is stored in the metadata. '
-                'Reading back with fastparquet/pyarrow will restore the timezone properly.'
-            )
+        # warning removed as irrelevant for most users
+        # if hasattr(dtype, 'tz') and str(dtype.tz) != 'UTC':
+        #     warnings.warn(
+        #         'Coercing datetimes to UTC before writing the parquet file, the timezone is stored in the metadata. '
+        #         'Reading back with fastparquet/pyarrow will restore the timezone properly.'
+        #     )
     elif dtype.kind == "m":
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
@@ -1093,10 +1094,10 @@ def write(filename, data, row_group_offsets=None,
         Whether or not to write the index to a separate column.  By default we
         write the index *if* it is not 0, 1, ..., n.
         Ignored if appending to an existing parquet data-set.
-    partition_on: list of column names
-        Passed to groupby in order to split data within each row-group,
-        producing a structured directory tree. Note: as with pandas, null
-        values will be dropped. Ignored if file_scheme is simple.
+    partition_on: string or list of string
+        Column names passed to groupby in order to split data within each
+        row-group, producing a structured directory tree. Note: as with pandas,
+        null values will be dropped. Ignored if file_scheme is simple.
         Checked when appending to an existing parquet dataset that requested
         partition column names match those of existing parquet data-set.
     fixed_text: {column: int length} or None
@@ -1156,6 +1157,8 @@ def write(filename, data, row_group_offsets=None,
                   open_with=open_with, mkdirs=mkdirs, remove_with=None,
                   stats=stats)
         return
+    if isinstance(partition_on, str):
+        partition_on = [partition_on]
     if append:
         pf = ParquetFile(filename, open_with=open_with)
         if pf._get_index():

@@ -57,6 +57,8 @@ files = [os.path.join(TEST_DATA, p) for p in
 csvfile = os.path.join(TEST_DATA, "nation.csv")
 cols = ["n_nationkey", "n_name", "n_regionkey", "n_comment"]
 expected = pd.read_csv(csvfile, delimiter="|", index_col=0, names=cols)
+if tuple(pd.__version__.split(".")) > ("1", "4"):
+    expected.index = expected.index.astype("Int32")
 
 
 def test_read_s3(s3):

@@ -278,7 +278,7 @@ class ParquetFile(object):
         new_rgs = self.row_groups[item]
         if not isinstance(new_rgs, list):
             new_rgs = [new_rgs]
-        new_pf = copy.copy(self)
+        new_pf = copy.deepcopy(self)
         new_pf.fmd.row_groups = new_rgs
         new_pf._set_attrs()
         # would otherwise be "simple" when selecting one rg
@@ -925,6 +925,18 @@ selection does not match number of rows in DataFrame.')
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+        # Decode 'file_path'.
+        rgs = self.fmd[4]
+        # 4th condition should not be necessary, depends on 'deepcopy' version.
+        # https://github.com/dask/fastparquet/pull/731#issuecomment-1013507287
+        if (rgs[0][1] and rgs[0][1][0] and rgs[0][1][0].get(1)
+            and isinstance(rgs[0][1][0].get(1), bytes)):
+            # for rg in fmd.row_groups:
+            for rg in rgs:
+                # chunk = rg.columns[0]
+                chunk = rg[1][0]
+                # chunk.file_path = chunk.file_path.decode()
+                chunk[1] = chunk.get(1).decode()
         self._set_attrs()
 
     def __str__(self):

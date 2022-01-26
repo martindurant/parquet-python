@@ -61,10 +61,13 @@ def s3():
 @pytest.fixture(scope="module")
 def sql():
     pyspark = pytest.importorskip("pyspark")
-    sc = pyspark.SparkContext.getOrCreate()
-    sql = pyspark.SQLContext(sc)
+    conf = pyspark.SparkConf()
+    conf.set("spark.driver.bindAddress", "127.0.0.1")
+    sql = pyspark.sql.SparkSession.builder.appName(
+        "Word Count").master("local[*]").config(
+        "spark.driver.bindAddress", "127.0.0.1").getOrCreate()
     yield sql
-    sc.stop()
+    sql.stop()
 
 
 @pytest.fixture()
