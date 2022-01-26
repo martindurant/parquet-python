@@ -207,11 +207,12 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64',
         else:
             raise ValueError(
                     "Parameter times must be [int64|int96], not %s" % times)
-        if hasattr(dtype, 'tz') and str(dtype.tz) != 'UTC':
-            warnings.warn(
-                'Coercing datetimes to UTC before writing the parquet file, the timezone is stored in the metadata. '
-                'Reading back with fastparquet/pyarrow will restore the timezone properly.'
-            )
+        # warning removed as irrelevant for most users
+        # if hasattr(dtype, 'tz') and str(dtype.tz) != 'UTC':
+        #     warnings.warn(
+        #         'Coercing datetimes to UTC before writing the parquet file, the timezone is stored in the metadata. '
+        #         'Reading back with fastparquet/pyarrow will restore the timezone properly.'
+        #     )
     elif dtype.kind == "m":
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
