@@ -339,8 +339,10 @@ def get_column_metadata(column, name):
             stz = str(dtype.tz)
             if "UTC" in stz and ":" in stz:
                 extra_metadata = {'timezone': stz.strip("UTC")}
+            elif len(str(stz)) == 3:  # like "UTC", "CET", ...
+                extra_metadata = {'timezone': str(stz)}
             elif "pytz" not in stz:
-                pd.Series([pd.to_datetime('now')]).dt.tz_localize(stz)
+                pd.Series([pd.to_datetime('now', utc=True)]).dt.tz_localize(stz)
                 extra_metadata = {'timezone': str(dtype.tz)}
             elif "Offset" in stz:
                 import pytz
