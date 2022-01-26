@@ -7,7 +7,6 @@ import pytest
 
 import fastparquet
 from fastparquet import write
-from fastparquet.compression import compressions
 from .util import sql, s3, tempdir, TEST_DATA
 
 
@@ -110,10 +109,10 @@ def test_writer_to_spark(tempdir, scheme, row_groups, comp, sql):
 @pytest.mark.parametrize("version", ["v1"])  # "v2" doesn't do anything!
 @pytest.mark.skipif(os.name == 'nt', reason="don't spark on windows")
 def test_read_from_spark(tempdir, sql, int96, legacy, version):
-    sql.setConf("spark.sql.parquet.int96AsTimestamp", int96)
-    sql.setConf("spark.sql.parquet.writeLegacyFormat", legacy)
-    sql.setConf("spark.hadoop.parquet.writer.version", version)
-    sql.setConf('spark.hadoop.parquet.enable.summary-metadata', 'true')
+    sql.conf.set("spark.sql.parquet.int96AsTimestamp", int96)
+    sql.conf.set("spark.sql.parquet.writeLegacyFormat", legacy)
+    sql.conf.set("spark.hadoop.parquet.writer.version", version)
+    sql.conf.set('spark.hadoop.parquet.enable.summary-metadata', 'true')
     data = pd.DataFrame({
         'i32': np.random.randint(-2**17, 2**17, size=1001,
                                  dtype=np.int32),

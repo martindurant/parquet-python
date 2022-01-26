@@ -207,11 +207,12 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64',
         else:
             raise ValueError(
                     "Parameter times must be [int64|int96], not %s" % times)
-        if hasattr(dtype, 'tz') and str(dtype.tz) != 'UTC':
-            warnings.warn(
-                'Coercing datetimes to UTC before writing the parquet file, the timezone is stored in the metadata. '
-                'Reading back with fastparquet/pyarrow will restore the timezone properly.'
-            )
+        # warning removed as irrelevant for most users
+        # if hasattr(dtype, 'tz') and str(dtype.tz) != 'UTC':
+        #     warnings.warn(
+        #         'Coercing datetimes to UTC before writing the parquet file, the timezone is stored in the metadata. '
+        #         'Reading back with fastparquet/pyarrow will restore the timezone properly.'
+        #     )
     elif dtype.kind == "m":
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
@@ -1093,10 +1094,10 @@ def write(filename, data, row_group_offsets=None,
         Whether or not to write the index to a separate column.  By default we
         write the index *if* it is not 0, 1, ..., n.
         Ignored if appending to an existing parquet data-set.
-    partition_on: list of column names
-        Passed to groupby in order to split data within each row-group,
-        producing a structured directory tree. Note: as with pandas, null
-        values will be dropped. Ignored if file_scheme is simple.
+    partition_on: string or list of string
+        Column names passed to groupby in order to split data within each
+        row-group, producing a structured directory tree. Note: as with pandas,
+        null values will be dropped. Ignored if file_scheme is simple.
         Checked when appending to an existing parquet dataset that requested
         partition column names match those of existing parquet data-set.
     fixed_text: {column: int length} or None
@@ -1151,11 +1152,13 @@ def write(filename, data, row_group_offsets=None,
         raise ValueError( 'File scheme should be simple|hive|drill, not '
                          f'{file_scheme}.')
     if append == 'overwrite':
-        update(dirpath=filename, data=data,
-               row_group_offsets=row_group_offsets, compression=compression,
-               open_with=open_with, mkdirs=mkdirs, remove_with=None,
-               stats=stats)
+        overwrite(dirpath=filename, data=data,
+                  row_group_offsets=row_group_offsets, compression=compression,
+                  open_with=open_with, mkdirs=mkdirs, remove_with=None,
+                  stats=stats)
         return
+    if isinstance(partition_on, str):
+        partition_on = [partition_on]
     if append:
         pf = ParquetFile(filename, open_with=open_with)
         if pf._get_index():
@@ -1366,9 +1369,9 @@ def merge(file_list, verify_schema=True, open_with=default_open,
     return out
 
 
-def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
-           compression=None, open_with=default_open, mkdirs=None,
-           remove_with=None, stats=True):
+def overwrite(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
+              compression=None, open_with=default_open, mkdirs=None,
+              remove_with=None, stats=True):
     """Merge new data to existing parquet dataset.
 
     This function requires existing data on disk, written with 'hive' format.
@@ -1450,26 +1453,27 @@ def update(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
         return (partitions_starts[rg_partition]
                 if (rg_partition in partitions_starts) else n_rgs)
     # 2nd step (from new and existing data).
-    # Remove row groups from existing data with same partition values as those
-    # in new data.
+    # Identify row groups from existing data with same partition values as
+    # those in new data.
     partition_values_in_new = pd.unique(data.loc[:,defined_partitions]
                                             .astype(str).agg('/'.join, axis=1))
     rgs_to_remove = filter(lambda rg : (partitions(rg, True)
                                         in partition_values_in_new),
                            pf.row_groups)
-    pf.remove_row_groups(rgs_to_remove, write_fmd=False, open_with=open_with,
-                         remove_with=remove_with)
     # 3rd step (on new data).
     # Format new data so that it can be written to disk.
     if pf._get_index():
         # Reset index of pandas dataframe.
         data = reset_row_idx(data)
-    # 4th step: write new data, sort row groups and write updated metadata.
+    # 4th step: write new data, remove previously existing row groups,
+    # sort row groups and write updated metadata.
     pf.write_row_groups(data, row_group_offsets=row_group_offsets,
-                        sort_key=sort_key, sort_pnames=sort_pnames,
-                        compression=compression, write_fmd=True,
-                        open_with=open_with, mkdirs=mkdirs, stats=stats)
-
+                        sort_key=sort_key, compression=compression,
+                        write_fmd=False, open_with=open_with, mkdirs=mkdirs,
+                        stats=stats)
+    pf.remove_row_groups(rgs_to_remove, sort_pnames=sort_pnames,
+                         write_fmd=True, open_with=open_with,
+                         remove_with=remove_with)
 
 def write_thrift(f, obj):
     # TODO inline this

@@ -360,8 +360,9 @@ class ParquetFile(object):
             if not df.empty:
                 yield df
 
-    def remove_row_groups(self, rgs, write_fmd:bool = True,
-                          open_with=default_open, remove_with=None):
+    def remove_row_groups(self, rgs, sort_pnames:bool=False,
+                          write_fmd:bool=True, open_with=default_open,
+                          remove_with=None):
         """
         Remove list of row groups from disk. `ParquetFile` metadata are
         updated accordingly. This method can not be applied if file scheme is
@@ -371,6 +372,10 @@ class ParquetFile(object):
         ---------
         rgs: row group or list of row groups
             List of row groups to be removed from disk.
+        sort_pnames : bool, default False
+            Align name of part files with position of the 1st row group they
+            contain. Only used if `file_scheme` of parquet file is set to
+            `hive` or `drill`.
         write_fmd: bool, True
             Write updated common metadata to disk.
         open_with: function
@@ -388,43 +393,45 @@ class ParquetFile(object):
                 # Use `list()` here, not `[]`, as the latter does not transform
                 # generator or tuple into list but encapsulates them in a list.
                 rgs = list(rgs)
-        if not rgs:
-            return
-        if self.file_scheme == 'simple':
-            raise ValueError("Not possible to remove row groups when file \
-scheme is 'simple'.")
-        if remove_with is None:
-            if hasattr(self, 'fs'):
-                remove_with = self.fs.rm
-            else:
-                remove_with = default_remove
-        rgs_to_remove = row_groups_map(rgs)
-        if b"fastparquet" not in self.created_by or self.file_scheme == 'flat':
-            # Check if some files contain row groups both to be removed and to
-            # be kept.
-            all_rgs = row_groups_map(self.row_groups)
-            for file in rgs_to_remove:
-                if len(rgs_to_remove[file]) < len(all_rgs[file]):
-                    raise ValueError(f'File {file} contains row groups both \
-to be kept and to be removed. Removing row groups partially from a file is not\
-possible.')
-        rg_new = self.row_groups
-        for rg in rgs:
-            rg_new.remove(rg)
-            self.fmd.num_rows -= rg.num_rows
-        self.fmd.row_groups = rg_new
-        self.row_groups = rg_new
-        try:
-            basepath = self.basepath
-            remove_with([f'{basepath}/{file}' for file in rgs_to_remove])
-        except IOError:
-            pass
-        self._set_attrs()
+        if rgs:
+            if self.file_scheme == 'simple':
+                raise ValueError("Not possible to remove row groups when file "
+                                 "scheme is 'simple'.")
+            if remove_with is None:
+                if hasattr(self, 'fs'):
+                    remove_with = self.fs.rm
+                else:
+                    remove_with = default_remove
+            rgs_to_remove = row_groups_map(rgs)
+            if (b"fastparquet" not in self.created_by
+                or self.file_scheme == 'flat'):
+                # Check if some files contain row groups both to be removed and
+                # to be kept.
+                all_rgs = row_groups_map(self.row_groups)
+                for file in rgs_to_remove:
+                    if len(rgs_to_remove[file]) < len(all_rgs[file]):
+                        raise ValueError(
+                            f"File {file} contains row groups both to be kept "
+                            "and to be removed. Removing row groups partially "
+                            "from a file is not possible.")
+            rg_new = self.row_groups
+            for rg in rgs:
+                rg_new.remove(rg)
+                self.fmd.num_rows -= rg.num_rows
+            self.fmd.row_groups = rg_new
+            try:
+                basepath = self.basepath
+                remove_with([f'{basepath}/{file}' for file in rgs_to_remove])
+            except IOError:
+                pass
+            self._set_attrs()
+        if sort_pnames:
+            self._sort_part_names(False, open_with)
         if write_fmd:
             self._write_common_metadata(open_with)
 
     def write_row_groups(self, data, row_group_offsets=None, sort_key=None,
-                         sort_pnames:bool=True, compression=None,
+                         sort_pnames:bool=False, compression=None,
                          write_fmd:bool=True, open_with=default_open,
                          mkdirs=None, stats=True):
         """Write data as new row groups to disk, with optional sorting.
@@ -446,7 +453,7 @@ possible.')
             added to list of existing ones.
             If not provided, new row groups are only appended to existing ones
             and the updated list of row groups is not sorted.
-        sort_pnames : bool, default True
+        sort_pnames : bool, default False
             Align name of part files with position of the 1st row group they
             contain. Only used if `file_scheme` of parquet file is set to
             `hive` or `drill`.

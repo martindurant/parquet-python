@@ -185,11 +185,7 @@ def test_roundtrip_complex(tempdir, scheme,):
 def test_datetime_roundtrip(tempdir, df, capsys):
     fname = os.path.join(tempdir, 'test.parquet')
     w = False
-    if 'x' in df and 'Europe/' in str(df.x.dtype.tz):
-        with pytest.warns(UserWarning) as w:
-            write(fname, df)
-    else:
-        write(fname, df)
+    write(fname, df)
     r = ParquetFile(fname)
 
     if w:
