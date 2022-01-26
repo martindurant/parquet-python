@@ -1093,10 +1093,10 @@ def write(filename, data, row_group_offsets=None,
         Whether or not to write the index to a separate column.  By default we
         write the index *if* it is not 0, 1, ..., n.
         Ignored if appending to an existing parquet data-set.
-    partition_on: list of column names
-        Passed to groupby in order to split data within each row-group,
-        producing a structured directory tree. Note: as with pandas, null
-        values will be dropped. Ignored if file_scheme is simple.
+    partition_on: string or list of string
+        Column names passed to groupby in order to split data within each
+        row-group, producing a structured directory tree. Note: as with pandas,
+        null values will be dropped. Ignored if file_scheme is simple.
         Checked when appending to an existing parquet dataset that requested
         partition column names match those of existing parquet data-set.
     fixed_text: {column: int length} or None
