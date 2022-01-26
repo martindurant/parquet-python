@@ -6,6 +6,14 @@ planned in 2021. As of 0.7.0, only one larger item remains to be completed.
 
 .. _Future Plans: https://github.com/dask/fastparquet/issues/586
 
+0.8.0
+-----
+
+#. our own cythonic thrift implementation (drop thrift dependency)
+#. more in-place dataset editing ad reordering
+#. python 3.10 support
+#. fixes for multi-index and pandas types
+
 0.7.2
 -----
 
