@@ -1,22 +1,22 @@
-import copy
-import io
-import struct
-import numpy as np
-import os
-import os.path
-import operator
-import pandas as pd
-import re
-import numbers
 from collections import defaultdict
+import copy
 from distutils.version import LooseVersion
 from functools import lru_cache
-import pandas
+import io
+import struct
+import os
+import operator
+import re
+import numbers
 
+import numpy as np
+import pandas as pd
 from pandas.api.types import is_categorical_dtype
 
-PANDAS_VERSION = LooseVersion(pandas.__version__)
-created_by = "fastparquet-python version 1.0.0 (build 111)"
+from fastparquet import __version__
+
+PANDAS_VERSION = LooseVersion(pd.__version__)
+created_by = f"fastparquet-python version {__version__}"
 
 
 class ParquetException(Exception):
@@ -252,7 +252,6 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
 
 def _get_fmd(inbytes):
     from .cencoding import from_buffer
-    from .thrift_structures import parquet_thrift
 
     f = io.BytesIO(inbytes)
     f.seek(-8, 2)
@@ -347,7 +346,6 @@ def get_column_metadata(column, name):
                 pd.Series([pd.to_datetime('now', utc=True)]).dt.tz_localize(stz)
                 extra_metadata = {'timezone': stz}
             elif "Offset" in stz:
-                import pytz
                 extra_metadata = {'timezone': f"{dtype.tz._minutes // 60:+03}:00"}
             else:
                 raise KeyError
