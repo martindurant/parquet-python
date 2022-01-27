@@ -214,8 +214,8 @@ class ParquetFile(object):
         self.created_by = fmd.created_by
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = (
-            self.created_by.split(b' ', 1)[0] == b"fastparquet-python"
-            if self.created_by is not None else False
+            b"fastparquet" in self.created_by if self.created_by is not None
+            else False
         )
         self._read_partitions()
         self._dtypes()
