@@ -16,7 +16,8 @@ from pandas.api.types import is_categorical_dtype
 from fastparquet import __version__
 
 PANDAS_VERSION = LooseVersion(pd.__version__)
-created_by = f"fastparquet-python version {__version__}"
+created_by = (f"fastparquet-python version {__version__.rsplit('.',1)[0]} "
+              f"(build {__version__.rsplit('.',1)[1]})")
 
 
 class ParquetException(Exception):
