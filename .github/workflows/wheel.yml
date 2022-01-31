@@ -12,14 +12,10 @@ jobs:
       matrix:
         os: [ubuntu-20.04, windows-2019]
         architecture: ['x64']
-        linux_archs: ["auto"]
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: windows-2019
             skip: "*2*win* *win32 pp*"
-          - os: ubuntu-20.04
-            linux_archs: aarch64
-            skip: "pp*"
           - os: ubuntu-20.04
             linux_archs: auto
             skip: "pp*"
@@ -70,8 +66,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest]
-        architecture: ["x86_64",  "universal2",  "arm64"]
-        linux_archs: ["auto"]
+        architecture: ["universal2",  "arm64"]
 
     name: Python ${{ matrix.os }}
     env:
