@@ -14,12 +14,13 @@ from . import parquet_thrift
 from .cencoding import ThriftObject, from_buffer
 from .util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, check_column_names, metadata_from_many,
-                   ex_from_sep, json_decoder, _strip_path_tail)
+                   ex_from_sep, json_decoder, _strip_path_tail, get_fs)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
 # as 'i'.
 PART_ID = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
+
 
 class ParquetFile(object):
     """The metadata of a parquet file or collection
@@ -109,12 +110,17 @@ class ParquetFile(object):
             open_with = fs.open
         else:
             fs = getattr(open_with, "__self__", None)
+        if fs is None:
+            fs, fn, open_with, mkdirs = get_fs(fn, open_with, None)
+
         if isinstance(fn, (tuple, list)):
+            if root and fs is not None:
+                root = fs._strip_protocol(root)
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
                                                open_with=open_with, root=root,
                                                fs=fs)
-            self.fn = join_path(basepath, '_metadata') if basepath \
-                      else '_metadata'
+            self.fn = join_path(
+                basepath, '_metadata') if basepath else '_metadata'
             self.fmd = fmd
             self._set_attrs()
         elif hasattr(fn, 'read'):
@@ -125,12 +131,7 @@ class ParquetFile(object):
                 raise ValueError('Cannot use file-like input '
                                  'with multi-file data')
             open_with = lambda *args, **kwargs: fn
-        else:
-            if fs is not None:
-                fn = fs._strip_protocol(fn)
-            if not isinstance(fs, fsspec.AbstractFileSystem):
-                raise ValueError("Opening directories without a _metadata requires"
-                                 "a filesystem compatible with fsspec")
+        elif isinstance(fs, fsspec.AbstractFileSystem):
             if fs.isfile(fn):
                 self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:
@@ -153,6 +154,8 @@ class ParquetFile(object):
                         root = root or fn
                     if not allfiles:
                         raise ValueError("No files in dir")
+                    if root:
+                        root = fs._strip_protocol(root)
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
                                                        open_with=open_with, root=root,
                                                        fs=fs)
@@ -161,8 +164,24 @@ class ParquetFile(object):
                     self.fmd = fmd
                     self._set_attrs()
                 self.fs = fs
-            else:
-                raise FileNotFoundError
+        else:
+            done = False
+            try:
+                self.fn = fn
+                f = open_with(fn)
+                self._parse_header(f, verify)
+                done = True
+            except IOError:
+                pass
+            if not done:
+                # allow this to error with FileNotFound or whatever
+                try:
+                    self.fn = join_path(fn, "_metadata")
+                    f = open_with(self.fn)
+                    self._parse_header(f, verify)
+                except IOError as e:
+                    raise ValueError("Opening directories without a _metadata requires"
+                                     "a filesystem compatible with fsspec") from e
         self.open = open_with
         self._statistics = None
 

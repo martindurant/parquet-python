@@ -6,6 +6,7 @@ import subprocess
 import sys
 from distutils.version import LooseVersion
 
+import fsspec
 import numpy as np
 import pandas as pd
 try:
@@ -1390,7 +1391,7 @@ def test_file_renaming_with_partitions(tempdir):
 
 
 def test_slicing_makes_copy(tempdir):
-    df = pd.DataFrame({'a':range(10)})
+    df = pd.DataFrame({'a': range(10)})
     write(tempdir, df, row_group_offsets=2, file_scheme='hive')
     pf_rec1 = ParquetFile(tempdir)
     pf_sliced = pf_rec1[:2]
@@ -1398,3 +1399,23 @@ def test_slicing_makes_copy(tempdir):
     pf_rec2 = ParquetFile(tempdir)
     assert pf_rec1.fmd.row_groups == pf_rec2.fmd.row_groups
     assert pf_rec1.file_scheme == pf_rec2.file_scheme
+
+
+def test_fsspec_append():
+    df = pd.DataFrame({'a': [0, 1], 'b': [1, 0]})
+    df.to_parquet("memory://out.parq", engine="fastparquet", partition_on=["a"])
+    df.to_parquet("memory://out.parq", engine="fastparquet", partition_on=["a"], append=True)
+    out = pd.read_parquet("memory://out.parq", engine="fastparquet")
+    expected = pd.concat([df, df]).reset_index(drop=True)
+    assert out.to_dict() == expected.to_dict()
+
+
+def test_not_quite_fsspec():
+    df = pd.DataFrame({'a': [0, 1], 'b': [1, 0]})
+    m = fsspec.filesystem("memory")
+    df.to_parquet("memory://out2.parq", engine="fastparquet", partition_on=["a"])
+    myopen = lambda fn, mode="rb": m.open(fn, mode)
+    out = ParquetFile("memory://out2.parq", open_with=myopen)
+    assert out.to_pandas().to_dict() == {'a': {0: 0, 1: 1}, 'b': {0: 1, 1: 0}}
+    out = ParquetFile("memory://out2.parq/_metadata", open_with=myopen)
+    assert out.to_pandas().to_dict() == {'a': {0: 0, 1: 1}, 'b': {0: 1, 1: 0}}

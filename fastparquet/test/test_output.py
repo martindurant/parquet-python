@@ -987,7 +987,7 @@ def test_cat_order(tempdir):
 def test_tz_local(tempdir, tz):
     # #650
     fn = os.path.join(tempdir, 'temp.parq')
-    df = pd.DataFrame({'a': [pd.to_datetime("now")]})
+    df = pd.DataFrame({'a': [pd.to_datetime("now", utc=False)]})
     if tz:
         df['a'] = df.a.dt.tz_localize("UTC")
     write(fn, df)

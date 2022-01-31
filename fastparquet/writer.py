@@ -19,7 +19,7 @@ from .compression import compress_data
 from .converted_types import tobson
 from .util import (default_open, default_mkdirs, check_column_names,
                    metadata_from_many, created_by, get_column_metadata,
-                   norm_col_name, path_string, reset_row_idx)
+                   norm_col_name, path_string, reset_row_idx, get_fs)
 from . import encoding, __version__
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
@@ -1151,6 +1151,8 @@ def write(filename, data, row_group_offsets=None,
     if file_scheme not in ('simple', 'hive', 'drill'):
         raise ValueError( 'File scheme should be simple|hive|drill, not '
                          f'{file_scheme}.')
+    fs, filename, open_with, mkdirs = get_fs(filename, open_with, mkdirs)
+
     if append == 'overwrite':
         overwrite(dirpath=filename, data=data,
                   row_group_offsets=row_group_offsets, compression=compression,

@@ -11,6 +11,8 @@ import numbers
 
 import numpy as np
 import pandas as pd
+
+import fsspec
 from pandas.api.types import is_categorical_dtype
 
 from fastparquet import __version__
@@ -471,3 +473,15 @@ def norm_col_name(name, is_index:bool=None):
         else:
             return str(name)
     return name
+
+
+def get_fs(fn, open_with, mkdirs):
+    fs = None
+    if "FastParquetImpl.write.<locals>.<lambda>" in str(open_with):
+        import inspect
+        so = inspect.getclosurevars(open_with).nonlocals["storage_options"] or {}
+        fs, fn = fsspec.core.url_to_fs(fn, **so)
+        open_with = fs.open
+        mkdirs = mkdirs or (lambda d: fs.mkdirs(d, exist_ok=True))
+    return fs, fn, open_with, mkdirs
+
