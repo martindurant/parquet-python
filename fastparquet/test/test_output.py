@@ -1017,7 +1017,7 @@ def test_Float(tempdir):
     df = df.astype({"s": "string", "v": "Float64"})
     write(fn, df, stats=False)
     out = ParquetFile(fn).to_pandas()
-    assert (ou0t.v == df.v).all()
+    assert (out.v == df.v).all()
 
 
 def test_empty_columns(tempdir):
