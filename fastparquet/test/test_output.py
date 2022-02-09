@@ -1017,7 +1017,7 @@ def test_Float(tempdir):
     df = df.astype({"s": "string", "v": "Float64"})
     write(fn, df, stats=False)
     out = ParquetFile(fn).to_pandas()
-    assert (out.v == df.v).all()
+    assert (ou0t.v == df.v).all()
 
 
 def test_empty_columns(tempdir):
@@ -1035,3 +1035,19 @@ def test_empty_columns(tempdir):
     pf = ParquetFile(fn)
     out = pf.to_pandas()
     assert out.iloc[0].to_dict() == {'a': None, 'b': 'a', 'c': b'a', 'd': b'', 'aa': None, 'bb': 'a'}
+
+
+def test_no_string(tmpdir):
+    fn = os.path.join(tmpdir, 'temp.parq')
+    df = pd.DataFrame({"A": ["2", "3", "4"]})
+
+    # cast to Pandas nullable StringDtype
+    df["A"] = df["A"].astype(pd.StringDtype())
+
+    # set *all* values to NA
+    df["A"].iloc[0] = pd.NA
+    df["A"].iloc[1] = pd.NA
+    df["A"].iloc[2] = pd.NA
+    df.to_parquet(fn, engine="fastparquet")
+    df2 = pd.read_parquet(fn)
+    assert pd.isna(df2.A).all()

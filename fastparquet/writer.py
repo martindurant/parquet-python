@@ -514,13 +514,16 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
             if stats:
                 # TODO: this max/min works, but is slow
                 max, min = np.array(data[data.notnull()]).max(), np.array(data[data.notnull()]).min()
-                if selement.type == parquet_thrift.Type.BYTE_ARRAY:
-                    if selement.converted_type is not None:
-                        max = encode['PLAIN'](pd.Series([max]), selement)[4:]
-                        min = encode['PLAIN'](pd.Series([min]), selement)[4:]
+                if pd.isna(max):
+                    stats = False
                 else:
-                    max = encode['PLAIN'](pd.Series([max]), selement)
-                    min = encode['PLAIN'](pd.Series([min]), selement)
+                    if selement.type == parquet_thrift.Type.BYTE_ARRAY:
+                        if selement.converted_type is not None:
+                            max = encode['PLAIN'](pd.Series([max]), selement)[4:]
+                            min = encode['PLAIN'](pd.Series([min]), selement)[4:]
+                    else:
+                        max = encode['PLAIN'](pd.Series([max]), selement)
+                        min = encode['PLAIN'](pd.Series([min]), selement)
         except (TypeError, ValueError):
             pass
         ncats = len(data.cat.categories)
@@ -537,14 +540,17 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
             # for categorical, we already did this above
             if stats:
                 max, min = data[data.notnull()].values.max(), data[data.notnull()].values.min()
-                if selement.type == parquet_thrift.Type.BYTE_ARRAY:
-                    if selement.converted_type is not None:
-                        # max = max.encode("utf8") ?
-                        max = encode['PLAIN'](pd.Series([max], name=data.name), selement)[4:]
-                        min = encode['PLAIN'](pd.Series([min], name=data.name), selement)[4:]
+                if pd.isna(max):
+                    stats = False
                 else:
-                    max = encode['PLAIN'](pd.Series([max], name=data.name, dtype=data.dtype), selement)
-                    min = encode['PLAIN'](pd.Series([min], name=data.name, dtype=data.dtype), selement)
+                    if selement.type == parquet_thrift.Type.BYTE_ARRAY:
+                        if selement.converted_type is not None:
+                            # max = max.encode("utf8") ?
+                            max = encode['PLAIN'](pd.Series([max], name=data.name), selement)[4:]
+                            min = encode['PLAIN'](pd.Series([min], name=data.name), selement)[4:]
+                    else:
+                        max = encode['PLAIN'](pd.Series([max], name=data.name, dtype=data.dtype), selement)
+                        min = encode['PLAIN'](pd.Series([min], name=data.name, dtype=data.dtype), selement)
     except (TypeError, ValueError):
         pass
     s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls) if stats else None
