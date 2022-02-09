@@ -41,13 +41,10 @@ def test_empty():
 
 
 def test_empty_tz_utc():
-    warnings.simplefilter("error", DeprecationWarning)
-
-    with pytest.warns(None) as e:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         empty([DatetimeTZDtype(unit="ns", tz="UTC")], 10, cols=['a'],
               timezones={'a': 'UTC'})
-
-    assert len(e) == 0, e
 
 
 # non regression test for https://github.com/dask/fastparquet/issues/532
