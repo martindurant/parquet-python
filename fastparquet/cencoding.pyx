@@ -1,13 +1,13 @@
 # https://cython.readthedocs.io/en/latest/src/userguide/
 #   source_files_and_compilation.html#compiler-directives
-# cython: profile=True
-# cython: linetrace=True
+# cython: profile=False
+# cython: linetrace=False
 # cython: binding=False
 # cython: language_level=3
 # cython: initializedcheck=False
 # cython: boundscheck=False
 # cython: wraparound=False
-# cython: overflowcheck=False
+# cython: overflowcheck=True
 # cython: cdivision=True
 # cython: always_allow_keywords=False
 
@@ -244,7 +244,7 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
                 return
 
 
-cpdef void encode_unsigned_varint(int32_t x, NumpyIO o):  # pragma: no cover
+cpdef void encode_unsigned_varint(uint64_t x, NumpyIO o):  # pragma: no cover
     while x > 127:
         o.write_byte((x & 0x7F) | 0x80)
         x >>= 7
@@ -740,11 +740,11 @@ cdef class ThriftObject:
         """raw serialise of internal state"""
         cdef int size = 0
         if self.name == "RowGroup":
-            size = 100 * len(self[1])  # num-columns
+            size = 1000 * len(self[1])  # num-columns
         elif self.name == "FileMetaData":
-            size = 100 * len(self[4]) * len(self[2])  # n-row-groups * (n-cols + 1)
-        if size < 100000:
-            size = 100000
+            size = 1000 * len(self[4]) * len(self[2])  # n-row-groups * (n-cols + 1)
+        if size < 500000:
+            size = 500000
         cdef uint8_t[::1] ser_buf = np.empty(size, dtype='uint8')
         cdef NumpyIO o = NumpyIO(ser_buf)
         write_thrift(self.data, o)
