@@ -578,6 +578,52 @@ class ParquetFile(object):
             if write_fmd:
                 self._write_common_metadata(open_with)
 
+    def update_custom_metadata(self, custom_metadata:dict,
+                               write_fmd:bool=True, open_with=default_open):
+        """Update custom metadata stored in common metadata.
+
+        Update strategy depend if key found in `custom_metadata` is also
+        found in custom metadata that already exist in common metadata, as well
+        as its value.
+        
+          - If not found in existing, it is added.
+          - If found in existing, it is updated.
+          - If its value is `None`, it is not added, and if found in existing,
+            it is removed from existing.
+
+        Parameters
+        ----------
+        custom_metadata : dict
+            Key-value metadata to update in common metadata.
+        write_fmd : bool, default True
+            Write updated common metadata to disk.
+        open_with : function
+            When called with a f(path, mode), returns an open file-like object.
+            Only needed if `write_fmd` is `True`.
+        """
+        kvm = self.fmd.key_value_metadata or []
+        # Spare list of keys.
+        kvm_keys = [item.key for item in kvm] if kvm else []
+        for key, value in custom_metadata.items():
+            key_b = key.encode()
+            if key_b in kvm_keys:
+                idx = kvm_keys.index(key_b)
+                if value is None:
+                    # Remove item.
+                    del kvm[idx]
+                    # Update 'kvm_keys' as well, for keeping indexing
+                    # up-to-date.
+                    del kvm_keys[idx]
+                else:
+                    # Replace item.
+                    kvm[idx] = parquet_thrift.KeyValue(key=key_b, value=value.encode())
+            elif value is not None:
+                kvm.append(parquet_thrift.KeyValue(key=key_b, value=value.encode()))
+        self.fmd.key_value_metadata = kvm
+        self.key_value_metadata = {k.key: k.value for k in kvm or []}
+        if write_fmd:
+            self._write_common_metadata(open_with)
+
     def _write_common_metadata(self, open_with=default_open):
         """
         Write common metadata to disk.

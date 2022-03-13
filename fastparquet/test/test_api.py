@@ -1419,3 +1419,33 @@ def test_not_quite_fsspec():
     assert out.to_pandas().to_dict() == {'a': {0: 0, 1: 1}, 'b': {0: 1, 1: 0}}
     out = ParquetFile("memory://out2.parq/_metadata", open_with=myopen)
     assert out.to_pandas().to_dict() == {'a': {0: 0, 1: 1}, 'b': {0: 1, 1: 0}}
+
+def test_update_kvm(tempdir):
+    df = pd.DataFrame({'a': [0, 1], 'b': [1, 0]})
+    custom_metadata = {'a':'test_a', 'b': 'test_b'}
+    write(tempdir, df, file_scheme='hive', custom_metadata=custom_metadata)
+    # Test existing custom metadata.
+    custom_metadata_b_ref = {key.encode(): value.encode()
+                             for key, value in custom_metadata.items()}
+    pf = ParquetFile(tempdir)
+    custom_metadata_b_rec = {key: value
+                             for key, value in pf.key_value_metadata.items()
+                             if key != b'pandas'}
+    assert custom_metadata_b_rec == custom_metadata_b_ref
+    # Test custom metadata update.
+    custom_metadata = {'a': None, 'b': 'test_b2', 'c': 'test_c', 'd': None}
+    pf.update_custom_metadata(custom_metadata, write_fmd=True)
+    custom_metadata_b_ref = {key.encode(): value.encode()
+                             for key, value in custom_metadata.items()
+                             if key not in ['a', 'd']}
+    custom_metadata_b_upd = {key: value
+                             for key, value in pf.key_value_metadata.items()
+                             if key != b'pandas'}
+    assert custom_metadata_b_upd == custom_metadata_b_ref
+    # Check values recorded are also ok.
+    pf2 = ParquetFile(tempdir)
+    custom_metadata_b_rec = {key: value
+                             for key, value in pf2.key_value_metadata.items()
+                             if key != b'pandas'}
+    assert custom_metadata_b_rec == custom_metadata_b_ref
+    
