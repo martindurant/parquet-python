@@ -964,7 +964,7 @@ def test_custom_metadata(tempdir):
     fn = os.path.join(tempdir, 'temp.parq')
     write(fn, df, custom_metadata={"hello": "world"})
     pf = ParquetFile(fn)
-    assert pf.key_value_metadata[b'hello'] == b'world'
+    assert pf.key_value_metadata['hello'] == 'world'
 
 
 def test_cat_order(tempdir):

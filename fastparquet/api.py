@@ -228,8 +228,6 @@ class ParquetFile(object):
         self.version = fmd.version
         self._schema = fmd.schema
         self.row_groups = fmd.row_groups or []
-        self.key_value_metadata = {k.key: k.value
-                                   for k in fmd.key_value_metadata or []}
         self.created_by = fmd.created_by
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = (
@@ -242,6 +240,11 @@ class ParquetFile(object):
     @property
     def helper(self):
         return self.schema
+
+    @property
+    def key_value_metadata(self):
+        return {k.key.decode(): k.value.decode()
+                for k in self.fmd.key_value_metadata or []}
 
     @property
     def columns(self):
@@ -620,7 +623,6 @@ class ParquetFile(object):
             elif value is not None:
                 kvm.append(parquet_thrift.KeyValue(key=key_b, value=value.encode()))
         self.fmd.key_value_metadata = kvm
-        self.key_value_metadata = {k.key: k.value for k in kvm or []}
         if write_fmd:
             self._write_common_metadata(open_with)
 
