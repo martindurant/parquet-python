@@ -427,7 +427,7 @@ def test_index(tempdir):
 
     pf = ParquetFile(fn)
     assert set(pf.columns) == {'x', 'y', 'z'}
-    meta = json.loads(pf.key_value_metadata[b'pandas'])
+    meta = json.loads(pf.key_value_metadata['pandas'])
     assert meta['index_columns'] == ['z']
     out = pf.to_pandas()
     assert out.index.name == 'z'

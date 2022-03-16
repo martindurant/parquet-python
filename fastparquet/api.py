@@ -1,6 +1,7 @@
 """parquet - read parquet files."""
 import ast
 from collections import OrderedDict, defaultdict
+from functools import cached_property
 import re
 import struct
 
@@ -241,8 +242,9 @@ class ParquetFile(object):
     def helper(self):
         return self.schema
 
-    @property
+    @cached_property
     def key_value_metadata(self):
+#        print(self.fmd.key_value_metadata)
         return {k.key.decode(): k.value.decode()
                 for k in self.fmd.key_value_metadata or []}
 
@@ -622,7 +624,17 @@ class ParquetFile(object):
                     kvm[idx] = parquet_thrift.KeyValue(key=key_b, value=value.encode())
             elif value is not None:
                 kvm.append(parquet_thrift.KeyValue(key=key_b, value=value.encode()))
+#        print('\nkvm')
+#        print(kvm)
+#        print('\self.fmd.key_value_metadata')
+#        print(self.fmd.key_value_metadata)
         self.fmd.key_value_metadata = kvm
+        if hasattr(self, "key_value_metadata"):
+            # Reset cached 'key_value_metadata', so that it gets updated at
+            # next call.
+            del self.key_value_metadata
+#        print('\self.fmd.key_value_metadata')
+#        print(self.fmd.key_value_metadata)
         if write_fmd:
             self._write_common_metadata(open_with)
 
@@ -878,15 +890,16 @@ selection does not match number of rows in DataFrame.')
             return True
         if self.fmd.key_value_metadata is None:
             return False
-        return bool(self.key_value_metadata.get(b'pandas', False))
+        return bool(self.key_value_metadata.get('pandas', False))
 
     @property
     def pandas_metadata(self):
         if self._pdm is None:
             if self.has_pandas_metadata:
-                self._pdm = json_decoder()(self.key_value_metadata[b'pandas'])
+                self._pdm = json_decoder()(self.key_value_metadata['pandas'])
             else:
                 self._pdm = {}
+        print(self._pdm)
         return self._pdm
 
     @property

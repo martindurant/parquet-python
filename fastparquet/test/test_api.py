@@ -1430,7 +1430,7 @@ def test_update_kvm(tempdir):
     pf = ParquetFile(tempdir)
     custom_metadata_rec = {key: value
                            for key, value in pf.key_value_metadata.items()
-                           if key != b'pandas'}
+                           if key != 'pandas'}
     assert custom_metadata_rec == custom_metadata_ref
     # Test custom metadata update.
     custom_metadata = {'a': None, 'b': 'test_b2', 'c': 'test_c', 'd': None}
