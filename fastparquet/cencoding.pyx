@@ -620,10 +620,10 @@ cdef void write_list(list data, NumpyIO output):
         first = data[0]
         if isinstance(first, int):
             if l > 14:  # all lists are i64
-                output.write_byte(6 | 0b11110000)
+                output.write_byte(5 | 0b11110000)
                 encode_unsigned_varint(l, output)
             else:
-                output.write_byte(6 | (l << 4))
+                output.write_byte(5 | (l << 4))
             for i in data:
                 encode_unsigned_varint(long_zigzag(i), output)
         elif isinstance(first, bytes):

@@ -11988,7 +11988,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  *         first = data[0]
  *         if isinstance(first, int):             # <<<<<<<<<<<<<<
  *             if l > 14:  # all lists are i64
- *                 output.write_byte(6 | 0b11110000)
+ *                 output.write_byte(5 | 0b11110000)
  */
     __pyx_t_2 = PyInt_Check(__pyx_v_first); 
     __pyx_t_4 = (__pyx_t_2 != 0);
@@ -11998,7 +11998,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  *         first = data[0]
  *         if isinstance(first, int):
  *             if l > 14:  # all lists are i64             # <<<<<<<<<<<<<<
- *                 output.write_byte(6 | 0b11110000)
+ *                 output.write_byte(5 | 0b11110000)
  *                 encode_unsigned_varint(l, output)
  */
       __pyx_t_4 = ((__pyx_v_l > 14) != 0);
@@ -12007,18 +12007,18 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
         /* "fastparquet/cencoding.pyx":623
  *         if isinstance(first, int):
  *             if l > 14:  # all lists are i64
- *                 output.write_byte(6 | 0b11110000)             # <<<<<<<<<<<<<<
+ *                 output.write_byte(5 | 0b11110000)             # <<<<<<<<<<<<<<
  *                 encode_unsigned_varint(l, output)
  *             else:
  */
-        __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, 0xF6, 0);
+        __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, 0xF5, 0);
 
         /* "fastparquet/cencoding.pyx":624
  *             if l > 14:  # all lists are i64
- *                 output.write_byte(6 | 0b11110000)
+ *                 output.write_byte(5 | 0b11110000)
  *                 encode_unsigned_varint(l, output)             # <<<<<<<<<<<<<<
  *             else:
- *                 output.write_byte(6 | (l << 4))
+ *                 output.write_byte(5 | (l << 4))
  */
         __pyx_f_11fastparquet_9cencoding_encode_unsigned_varint(__pyx_v_l, __pyx_v_output, 0);
 
@@ -12026,7 +12026,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  *         first = data[0]
  *         if isinstance(first, int):
  *             if l > 14:  # all lists are i64             # <<<<<<<<<<<<<<
- *                 output.write_byte(6 | 0b11110000)
+ *                 output.write_byte(5 | 0b11110000)
  *                 encode_unsigned_varint(l, output)
  */
         goto __pyx_L5;
@@ -12035,7 +12035,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
       /* "fastparquet/cencoding.pyx":626
  *                 encode_unsigned_varint(l, output)
  *             else:
- *                 output.write_byte(6 | (l << 4))             # <<<<<<<<<<<<<<
+ *                 output.write_byte(5 | (l << 4))             # <<<<<<<<<<<<<<
  *             for i in data:
  *                 encode_unsigned_varint(long_zigzag(i), output)
  */
@@ -12046,13 +12046,13 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
           PyErr_SetString(PyExc_OverflowError, "value too large");
           __PYX_ERR(0, 626, __pyx_L1_error)
         }
-        __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, (6 | __pyx_t_6), 0);
+        __pyx_f_11fastparquet_9cencoding_7NumpyIO_write_byte(__pyx_v_output, (5 | __pyx_t_6), 0);
       }
       __pyx_L5:;
 
       /* "fastparquet/cencoding.pyx":627
  *             else:
- *                 output.write_byte(6 | (l << 4))
+ *                 output.write_byte(5 | (l << 4))
  *             for i in data:             # <<<<<<<<<<<<<<
  *                 encode_unsigned_varint(long_zigzag(i), output)
  *         elif isinstance(first, bytes):
@@ -12075,7 +12075,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
         __pyx_v_i = __pyx_t_5;
 
         /* "fastparquet/cencoding.pyx":628
- *                 output.write_byte(6 | (l << 4))
+ *                 output.write_byte(5 | (l << 4))
  *             for i in data:
  *                 encode_unsigned_varint(long_zigzag(i), output)             # <<<<<<<<<<<<<<
  *         elif isinstance(first, bytes):
@@ -12085,7 +12085,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
 
         /* "fastparquet/cencoding.pyx":627
  *             else:
- *                 output.write_byte(6 | (l << 4))
+ *                 output.write_byte(5 | (l << 4))
  *             for i in data:             # <<<<<<<<<<<<<<
  *                 encode_unsigned_varint(long_zigzag(i), output)
  *         elif isinstance(first, bytes):
@@ -12098,7 +12098,7 @@ static void __pyx_f_11fastparquet_9cencoding_write_list(PyObject *__pyx_v_data, 
  *         first = data[0]
  *         if isinstance(first, int):             # <<<<<<<<<<<<<<
  *             if l > 14:  # all lists are i64
- *                 output.write_byte(6 | 0b11110000)
+ *                 output.write_byte(5 | 0b11110000)
  */
       goto __pyx_L4;
     }
