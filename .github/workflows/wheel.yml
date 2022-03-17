@@ -5,7 +5,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    if: startsWith(github.ref, 'refs/tags/0.') || startsWith(${{github.event.commits[0].message}}, 'wheels')
+    if: startsWith(github.ref, 'refs/tags/0.')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
