@@ -244,7 +244,6 @@ class ParquetFile(object):
 
     @cached_property
     def key_value_metadata(self):
-#        print(self.fmd.key_value_metadata)
         return {k.key.decode(): k.value.decode()
                 for k in self.fmd.key_value_metadata or []}
 
@@ -624,17 +623,11 @@ class ParquetFile(object):
                     kvm[idx] = parquet_thrift.KeyValue(key=key_b, value=value.encode())
             elif value is not None:
                 kvm.append(parquet_thrift.KeyValue(key=key_b, value=value.encode()))
-#        print('\nkvm')
-#        print(kvm)
-#        print('\self.fmd.key_value_metadata')
-#        print(self.fmd.key_value_metadata)
         self.fmd.key_value_metadata = kvm
         if hasattr(self, "key_value_metadata"):
             # Reset cached 'key_value_metadata', so that it gets updated at
             # next call.
             del self.key_value_metadata
-#        print('\self.fmd.key_value_metadata')
-#        print(self.fmd.key_value_metadata)
         if write_fmd:
             self._write_common_metadata(open_with)
 
@@ -899,7 +892,6 @@ selection does not match number of rows in DataFrame.')
                 self._pdm = json_decoder()(self.key_value_metadata['pandas'])
             else:
                 self._pdm = {}
-        print(self._pdm)
         return self._pdm
 
     @property

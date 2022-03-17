@@ -833,10 +833,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         schema.append(se)
         root[5] += 1
     fmd.schema = schema
-    print(fmd.key_value_metadata)
     meta.value = json.dumps(pandas_metadata, sort_keys=True).encode()
-    print(meta.value)
-    print(fmd.key_value_metadata)
     return fmd
 
 
@@ -1218,7 +1215,6 @@ def write(filename, data, row_group_offsets=None,
                             object_encoding=object_encoding,
                             times=times, index_cols=index_cols,
                             partition_cols=partition_on)
-#        print(fmd.key_value_metadata)
         if custom_metadata is not None:
             kvm = fmd.key_value_metadata or []
             kvm.extend(
@@ -1345,7 +1341,7 @@ def consolidate_categories(fmd):
                     if ncats and int(ncats[0]) > cat['metadata'][
                             'num_categories']:
                         cat['metadata']['num_categories'] = int(ncats[0])
-    key_value[2] = json.dumps(meta, sort_keys=True)
+    key_value[2] = json.dumps(meta, sort_keys=True).encode()
 
 
 def merge(file_list, verify_schema=True, open_with=default_open,
