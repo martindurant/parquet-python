@@ -792,9 +792,9 @@ cdef class ThriftObject:
             else:
                 lower = getattr(self, k)
                 if isinstance(lower, bytes):
-                    lower = lower.decode()
+                    lower = str(lower)
                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
-                    lower = [l.decode() for l in lower]
+                    lower = [str(l) for l in lower]
                 out[k] = lower
         return out
 

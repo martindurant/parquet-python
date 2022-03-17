@@ -15299,7 +15299,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  *             else:
  *                 lower = getattr(self, k)             # <<<<<<<<<<<<<<
  *                 if isinstance(lower, bytes):
- *                     lower = lower.decode()
+ *                     lower = str(lower)
  */
     /*else*/ {
       __pyx_t_5 = __Pyx_GetAttr(((PyObject *)__pyx_v_self), __pyx_v_k); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 793, __pyx_L1_error)
@@ -15311,7 +15311,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  *             else:
  *                 lower = getattr(self, k)
  *                 if isinstance(lower, bytes):             # <<<<<<<<<<<<<<
- *                     lower = lower.decode()
+ *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
  */
       __pyx_t_8 = PyBytes_Check(__pyx_v_lower); 
@@ -15321,27 +15321,12 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
         /* "fastparquet/cencoding.pyx":795
  *                 lower = getattr(self, k)
  *                 if isinstance(lower, bytes):
- *                     lower = lower.decode()             # <<<<<<<<<<<<<<
+ *                     lower = str(lower)             # <<<<<<<<<<<<<<
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
- *                     lower = [l.decode() for l in lower]
+ *                     lower = [str(l) for l in lower]
  */
-        __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_lower, __pyx_n_s_decode); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 795, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_9);
-        __pyx_t_12 = NULL;
-        if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_9))) {
-          __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_9);
-          if (likely(__pyx_t_12)) {
-            PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_9);
-            __Pyx_INCREF(__pyx_t_12);
-            __Pyx_INCREF(function);
-            __Pyx_DECREF_SET(__pyx_t_9, function);
-          }
-        }
-        __pyx_t_5 = (__pyx_t_12) ? __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_t_12) : __Pyx_PyObject_CallNoArg(__pyx_t_9);
-        __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 795, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_v_lower); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 795, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
         __Pyx_DECREF_SET(__pyx_v_lower, __pyx_t_5);
         __pyx_t_5 = 0;
 
@@ -15349,7 +15334,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
  *             else:
  *                 lower = getattr(self, k)
  *                 if isinstance(lower, bytes):             # <<<<<<<<<<<<<<
- *                     lower = lower.decode()
+ *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
  */
         goto __pyx_L13;
@@ -15357,9 +15342,9 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
 
       /* "fastparquet/cencoding.pyx":796
  *                 if isinstance(lower, bytes):
- *                     lower = lower.decode()
+ *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):             # <<<<<<<<<<<<<<
- *                     lower = [l.decode() for l in lower]
+ *                     lower = [str(l) for l in lower]
  *                 out[k] = lower
  */
       __pyx_t_8 = PyList_Check(__pyx_v_lower); 
@@ -15385,9 +15370,9 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
       if (__pyx_t_7) {
 
         /* "fastparquet/cencoding.pyx":797
- *                     lower = lower.decode()
+ *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
- *                     lower = [l.decode() for l in lower]             # <<<<<<<<<<<<<<
+ *                     lower = [str(l) for l in lower]             # <<<<<<<<<<<<<<
  *                 out[k] = lower
  *         return out
  */
@@ -15435,23 +15420,8 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
             }
             __Pyx_XDECREF_SET(__pyx_8genexpr3__pyx_v_l, __pyx_t_12);
             __pyx_t_12 = 0;
-            __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_8genexpr3__pyx_v_l, __pyx_n_s_decode); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 797, __pyx_L19_error)
-            __Pyx_GOTREF(__pyx_t_13);
-            __pyx_t_14 = NULL;
-            if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_13))) {
-              __pyx_t_14 = PyMethod_GET_SELF(__pyx_t_13);
-              if (likely(__pyx_t_14)) {
-                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_13);
-                __Pyx_INCREF(__pyx_t_14);
-                __Pyx_INCREF(function);
-                __Pyx_DECREF_SET(__pyx_t_13, function);
-              }
-            }
-            __pyx_t_12 = (__pyx_t_14) ? __Pyx_PyObject_CallOneArg(__pyx_t_13, __pyx_t_14) : __Pyx_PyObject_CallNoArg(__pyx_t_13);
-            __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
-            if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 797, __pyx_L19_error)
+            __pyx_t_12 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_8genexpr3__pyx_v_l); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 797, __pyx_L19_error)
             __Pyx_GOTREF(__pyx_t_12);
-            __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
             if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_t_12))) __PYX_ERR(0, 797, __pyx_L19_error)
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           }
@@ -15468,9 +15438,9 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
 
         /* "fastparquet/cencoding.pyx":796
  *                 if isinstance(lower, bytes):
- *                     lower = lower.decode()
+ *                     lower = str(lower)
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):             # <<<<<<<<<<<<<<
- *                     lower = [l.decode() for l in lower]
+ *                     lower = [str(l) for l in lower]
  *                 out[k] = lower
  */
       }
@@ -15478,7 +15448,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
 
       /* "fastparquet/cencoding.pyx":798
  *                 elif isinstance(lower, list) and lower and isinstance(lower[0], bytes):
- *                     lower = [l.decode() for l in lower]
+ *                     lower = [str(l) for l in lower]
  *                 out[k] = lower             # <<<<<<<<<<<<<<
  *         return out
  * 
@@ -15490,7 +15460,7 @@ static PyObject *__pyx_f_11fastparquet_9cencoding_12ThriftObject__asdict(struct 
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "fastparquet/cencoding.pyx":799
- *                     lower = [l.decode() for l in lower]
+ *                     lower = [str(l) for l in lower]
  *                 out[k] = lower
  *         return out             # <<<<<<<<<<<<<<
  * 
