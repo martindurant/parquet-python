@@ -85,13 +85,13 @@ class ParquetFile(object):
         too; 'empty': no row groups at all.
     info: dict
         Combination of some of the other attributes
-    key_value_metadata: list
+    key_value_metadata: dict
         Additional information about this data's origin, e.g., pandas
-        description.
+        description. Also a placeholder for user-defined metadata.
     row_groups: list
         Thrift objects for each row group
     schema: schema.SchemaHelper
-        print this for a representation of the column structure
+        Print this for a representation of the column structure
     selfmade: bool
         If this file was created by fastparquet
     statistics: dict
@@ -100,6 +100,7 @@ class ParquetFile(object):
         You can use this instead of open_with (otherwise, it will be inferred)
     """
     _pdm = None
+    _kvm = None
     _categories = None
 
     def __init__(self, fn, verify=False, open_with=default_open, root=False,
@@ -242,10 +243,12 @@ class ParquetFile(object):
     def helper(self):
         return self.schema
 
-    @cached_property
+    @property
     def key_value_metadata(self):
-        return {k.key.decode(): k.value.decode()
+        if self._kvm is None:
+            self._kvm = {k.key.decode(): k.value.decode()
                 for k in self.fmd.key_value_metadata or []}
+        return self._kvm
 
     @property
     def columns(self):
@@ -624,10 +627,9 @@ class ParquetFile(object):
             elif value is not None:
                 kvm.append(parquet_thrift.KeyValue(key=key_b, value=value.encode()))
         self.fmd.key_value_metadata = kvm
-        if hasattr(self, "key_value_metadata"):
-            # Reset cached 'key_value_metadata', so that it gets updated at
-            # next call.
-            del self.key_value_metadata
+        # Reset cached 'key_value_metadata', so that it gets updated at
+        # next call.
+        self._kvm = None
         if write_fmd:
             self._write_common_metadata(open_with)
 
