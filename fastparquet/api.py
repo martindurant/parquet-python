@@ -1,7 +1,6 @@
 """parquet - read parquet files."""
 import ast
 from collections import OrderedDict, defaultdict
-from functools import cached_property
 import re
 import struct
 
