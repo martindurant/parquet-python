@@ -742,7 +742,8 @@ cdef class ThriftObject:
         if self.name == "RowGroup":
             size = 1000 * len(self[1])  # num-columns
         elif self.name == "FileMetaData":
-            size = 1000 * len(self[4]) * len(self[2])  # n-row-groups * (n-cols + 1)
+            # num-cols * num-rgs + size of key-values
+            size = 1000 * len(self[4]) * len(self[2]) + len(str(self[5]))
         if size < 500000:
             size = 500000
         cdef uint8_t[::1] ser_buf = np.empty(size, dtype='uint8')
