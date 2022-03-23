@@ -1448,4 +1448,11 @@ def test_update_kvm(tempdir):
                              for key, value in pf2.key_value_metadata.items()
                              if key != 'pandas'}
     assert custom_metadata_rec == custom_metadata_ref
-    
+
+def test_update_kvm_exception(tempdir):
+    fn = os.path.join(tempdir,'test.parquet')
+    df = pd.DataFrame({'a': [0, 1], 'b': [1, 0]})
+    write(fn, df)
+    pf = ParquetFile(fn)
+    with pytest.raises(AttributeError, match="^Not possible"):
+        pf.update_custom_metadata({'a':'test_a'})

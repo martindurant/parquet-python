@@ -607,6 +607,10 @@ class ParquetFile(object):
             When called with a f(path, mode), returns an open file-like object.
             Only needed if `write_fmd` is `True`.
         """
+        print(self.fn[-9:])
+        if self.fn[-9:] != '_metadata':
+            raise AttributeError("Not possible to update custom metadata "
+                                 "without a common metadata file.")
         kvm = self.fmd.key_value_metadata or []
         # Spare list of keys.
         kvm_keys = [item.key for item in kvm] if kvm else []
