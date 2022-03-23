@@ -126,7 +126,7 @@ jobs:
         run: |
           pip install Cython
           pip install hypothesis
-          pip install pytest-xdist # Needed for a pandas test, also runs tests in parallel
+          pip install pytest-xdist pytest-asyncio # Needed for a pandas test, also runs tests in parallel
           pip install -e . --no-deps # Install fastparquet
           git clone https://github.com/pandas-dev/pandas
           cd pandas
@@ -154,7 +154,7 @@ jobs:
           auto-update-conda: true
           auto-activate-base: false
           activate-environment: test_env
-          environment-file: ci/environment-py38.yml
+          environment-file: ci/environment-py38win.yml
 
       - name: pip-install
         shell: bash -l {0}
