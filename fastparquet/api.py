@@ -84,9 +84,9 @@ class ParquetFile(object):
         too; 'empty': no row groups at all.
     info: dict
         Combination of some of the other attributes
-    key_value_metadata: list
+    key_value_metadata: dict
         Additional information about this data's origin, e.g., pandas
-        description.
+        description, and custom metadata defined by user.
     row_groups: list
         Thrift objects for each row group
     schema: schema.SchemaHelper
@@ -99,6 +99,7 @@ class ParquetFile(object):
         You can use this instead of open_with (otherwise, it will be inferred)
     """
     _pdm = None
+    _kvm = None
     _categories = None
 
     def __init__(self, fn, verify=False, open_with=default_open, root=False,
@@ -228,8 +229,6 @@ class ParquetFile(object):
         self.version = fmd.version
         self._schema = fmd.schema
         self.row_groups = fmd.row_groups or []
-        self.key_value_metadata = {k.key: k.value
-                                   for k in fmd.key_value_metadata or []}
         self.created_by = fmd.created_by
         self.schema = schema.SchemaHelper(self._schema)
         self.selfmade = (
@@ -256,6 +255,13 @@ class ParquetFile(object):
         if self._statistics is None:
             self._statistics = statistics(self)
         return self._statistics
+
+    @property
+    def key_value_metadata(self):
+        if self._kvm is None:
+            self._kvm = {k.key.decode(): k.value.decode()
+                for k in self.fmd.key_value_metadata or []}
+        return self._kvm
 
     @property
     def partition_meta(self):
@@ -830,13 +836,13 @@ selection does not match number of rows in DataFrame.')
             return True
         if self.fmd.key_value_metadata is None:
             return False
-        return bool(self.key_value_metadata.get(b'pandas', False))
+        return bool(self.key_value_metadata.get('pandas', False))
 
     @property
     def pandas_metadata(self):
         if self._pdm is None:
             if self.has_pandas_metadata:
-                self._pdm = json_decoder()(self.key_value_metadata[b'pandas'])
+                self._pdm = json_decoder()(self.key_value_metadata['pandas'])
             else:
                 self._pdm = {}
         return self._pdm

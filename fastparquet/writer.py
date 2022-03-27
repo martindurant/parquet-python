@@ -1341,7 +1341,7 @@ def consolidate_categories(fmd):
                     if ncats and int(ncats[0]) > cat['metadata'][
                             'num_categories']:
                         cat['metadata']['num_categories'] = int(ncats[0])
-    key_value[2] = json.dumps(meta, sort_keys=True)
+    key_value[2] = json.dumps(meta, sort_keys=True).encode()
 
 
 def merge(file_list, verify_schema=True, open_with=default_open,
