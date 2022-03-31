@@ -1,11 +1,6 @@
 Release Notes
 -------------
 
-Please see the issue `Future Plans`_ for a list of features completed or
-planned in 2021. As of 0.7.0, only one larger item remains to be completed.
-
-.. _Future Plans: https://github.com/dask/fastparquet/issues/586
-
 0.8.1
 -----
 
