@@ -552,3 +552,10 @@ def test_sparse_column_multiindex_no_row_index(tempdir):
     writer.write(tempdir, df, file_scheme='hive')
     out = fastparquet.ParquetFile(tempdir).to_pandas()
     assert df.equals(out)
+
+
+def test_single_delta_value():
+    fn = os.path.join(TEST_DATA, "foo.parquet")
+    pf = fastparquet.ParquetFile(fn)
+    out = pf.to_pandas(columns=["kit_0", "kit_1"])
+    assert out.iloc[0].values.tolist() == [17498368, 17105160]

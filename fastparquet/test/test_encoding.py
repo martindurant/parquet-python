@@ -124,3 +124,53 @@ def testWidths():
     assert 7 == cencoding.width_from_max_int(127)
     assert 8 == cencoding.width_from_max_int(128)
     assert 8 == cencoding.width_from_max_int(255)
+
+
+def zigzag(n):
+    return (n << 1) ^ (n >> 63)
+
+
+def test_delta_from_def_1():
+    # https://github.com/apache/parquet-format/blob/master/Encodings.md#example-1
+    expected = [1, 2, 3, 4, 5]
+    data = np.zeros(1000, dtype="uint8")
+    o = cencoding.NumpyIO(data)
+    cencoding.encode_unsigned_varint(8, o)  # block size
+    cencoding.encode_unsigned_varint(1, o)  # miniblock count
+    cencoding.encode_unsigned_varint(8, o)  # value count
+    cencoding.encode_unsigned_varint(zigzag(1), o)  # first value (zigzag)
+
+    # one and only miniblock
+    cencoding.encode_unsigned_varint(zigzag(1), o)  # minimum delta (zigzag)
+    o.write_byte(0)  # bit-width list (only one)
+
+    o.seek(0)
+
+    outdata = np.zeros(1000, dtype="int32")
+    out = cencoding.NumpyIO(outdata.view("uint8"))
+    cencoding.delta_binary_unpack(o, out)
+    assert outdata[:5].tolist() == expected
+
+
+def test_delta_from_def_2():
+    # https://github.com/apache/parquet-format/blob/master/Encodings.md#example-2
+    expected = [7, 5, 3, 1, 2, 3, 4, 5]
+    data = np.zeros(1000, dtype="uint8")
+    o = cencoding.NumpyIO(data)
+    cencoding.encode_unsigned_varint(8, o)  # block size
+    cencoding.encode_unsigned_varint(1, o)  # miniblock count
+    cencoding.encode_unsigned_varint(8, o)  # value count
+    cencoding.encode_unsigned_varint(zigzag(7), o)  # first value (zigzag)
+
+    # one and only miniblock
+    cencoding.encode_unsigned_varint(zigzag(-2), o)  # minimum delta (zigzag)
+    o.write_byte(2)  # bit-width list (only one)
+    o.write_byte(0b00000011)  # [0, 0, 0, 3]
+    o.write_byte(0b11111100)  # [3, 3, 3, pad]
+
+    o.seek(0)
+
+    outdata = np.zeros(1000, dtype="int32")
+    out = cencoding.NumpyIO(outdata.view("uint8"))
+    cencoding.delta_binary_unpack(o, out)
+    assert outdata[:8].tolist() == expected

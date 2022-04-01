@@ -7,7 +7,7 @@
 # cython: initializedcheck=False
 # cython: boundscheck=False
 # cython: wraparound=False
-# cython: overflowcheck=True
+# cython: overflowcheck=False
 # cython: cdivision=True
 # cython: always_allow_keywords=False
 
@@ -212,36 +212,59 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t le
         else:
             read_bitpacked(io_obj, header, width, o, itemsize)
 
+
+cdef void delta_read_bitpacked(NumpyIO file_obj, uint8_t bitwidth,
+                               NumpyIO o, uint64_t count, uint8_t itemsize=4):
+    cdef:
+        uint64_t data = 0
+        char stop = -bitwidth
+        uint64_t mask = 0XFFFFFFFFFFFFFFFF >> (64 - bitwidth)
+    while count > 0:
+        if stop < 0:
+            data = ((data & 0X00FFFFFFFFFFFFFF) << 8) | file_obj.read_byte()
+            stop += 8
+        else:
+            o.write_int((data >> stop) & mask)
+            stop -= bitwidth
+            count -= 1
+
+
 cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
     cdef:
         uint64_t block_size = read_unsigned_var_int(file_obj)
         uint64_t miniblock_per_block = read_unsigned_var_int(file_obj)
         int64_t count = read_unsigned_var_int(file_obj)
-        int32_t value = zigzag_int(read_unsigned_var_int(file_obj))
-        int32_t block, min_delta, i, j, values_per_miniblock, temp
+        int64_t value = zigzag_long(read_unsigned_var_int(file_obj))
+        int64_t block, min_delta, i, j, values_per_miniblock, temp
         const uint8_t[:] bitwidths
-        char bitwidth, header
+        uint8_t bitwidth
     values_per_miniblock = block_size // miniblock_per_block
     while True:
-        min_delta = zigzag_int(read_unsigned_var_int(file_obj))
+        min_delta = zigzag_long(read_unsigned_var_int(file_obj))
         bitwidths = file_obj.read(miniblock_per_block)
         for i in range(miniblock_per_block):
             bitwidth = bitwidths[i]
             if bitwidth:
-                header = ((block_size // miniblock_per_block) // 8) << 1
-                read_bitpacked(file_obj, header, bitwidth, o, itemsize=4)
+                temp = o.loc
+                if count > 1:
+                    # no more diffs if on last value
+                    delta_read_bitpacked(file_obj, bitwidth, o, values_per_miniblock, count)
+                o.loc = temp
                 for j in range(values_per_miniblock):
                     temp = o.read_int()
-                    o.seek(-4, 1)
+                    o.loc -= 4
                     o.write_int(value)
                     value += min_delta + temp
+                    count -= 1
+                    if count <= 0:
+                        return
             else:
                 for j in range(values_per_miniblock):
                     o.write_int(value)
                     value += min_delta
-            count -= values_per_miniblock
-            if count <= 0:
-                return
+                    count -= 1
+                    if count <= 0:
+                        return
 
 
 cpdef void encode_unsigned_varint(uint64_t x, NumpyIO o):  # pragma: no cover
@@ -318,7 +341,7 @@ cdef class NumpyIO(object):
         self.loc += x
         return out
 
-    cpdef char read_byte(self):
+    cpdef uint8_t read_byte(self):
         cdef char out
         out = self.ptr[self.loc]
         self.loc += 1
@@ -336,7 +359,7 @@ cdef class NumpyIO(object):
         memcpy(<void*>self.ptr[self.loc], <void*>&d[0], d.shape[0])
         self.loc += d.shape[0]
 
-    cpdef void write_byte(self, char b):
+    cpdef void write_byte(self, uint8_t b):
         if self.loc >= self.nbytes:
             # ignore attempt to write past end of buffer
             return
