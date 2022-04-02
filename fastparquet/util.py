@@ -321,6 +321,7 @@ def update_custom_metadata(obj, custom_metadata : dict):
 # simple cache to avoid re compile every time
 seps = {}
 
+
 def ex_from_sep(sep):
     """Generate regex for category folder matching"""
     if sep not in seps:
