@@ -1,9 +1,11 @@
-import os
 import pandas as pd
 import pytest
 
+from .util import tempdir
+from fastparquet import write, ParquetFile
 from fastparquet.util import (analyse_paths, get_file_scheme, val_to_num,
-                              join_path, groupby_types, get_column_metadata)
+                              join_path, groupby_types, get_column_metadata,
+                              update_custom_metadata)
 
 
 def test_analyse_paths():
@@ -99,3 +101,33 @@ def test_bad_tz():
     idx = pd.date_range('2012-01-01', periods=3, tz='dateutil/Europe/London')
     with pytest.raises(ValueError):
         get_column_metadata(idx, 'tz')
+
+def test_update_custom_metadata(tempdir):
+    df = pd.DataFrame({'a': [0, 1]})
+    custom_metadata = {'a':'test_a', 'b': 'test_b'}
+    write(tempdir, df, file_scheme='hive', custom_metadata=custom_metadata)
+    # Test existing custom metadata.
+    custom_metadata_ref = {key: value
+                           for key, value in custom_metadata.items()}
+    pf = ParquetFile(tempdir)
+    custom_metadata_rec = {key: value
+                           for key, value in pf.key_value_metadata.items()
+                           if key != 'pandas'}
+    assert custom_metadata_rec == custom_metadata_ref
+    # Test custom metadata update.
+    custom_metadata = {'a': None, 'b': 'test_b2', 'c': 'test_c', 'd': None}
+    update_custom_metadata(pf, custom_metadata)
+    custom_metadata_ref = {key: value
+                           for key, value in custom_metadata.items()
+                           if key not in ['a', 'd']}
+    custom_metadata_upd = {key: value
+                           for key, value in pf.key_value_metadata.items()
+                           if key != 'pandas'}
+    assert custom_metadata_upd == custom_metadata_ref
+    # Check values recorded are also ok.
+    pf._write_common_metadata()
+    pf2 = ParquetFile(tempdir)
+    custom_metadata_rec = {key: value
+                           for key, value in pf2.key_value_metadata.items()
+                           if key != 'pandas'}
+    assert custom_metadata_rec == custom_metadata_ref

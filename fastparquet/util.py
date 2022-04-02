@@ -15,6 +15,8 @@ import pandas as pd
 import fsspec
 from pandas.api.types import is_categorical_dtype
 
+from . import parquet_thrift
+from .cencoding import ThriftObject
 from fastparquet import __version__
 
 PANDAS_VERSION = LooseVersion(pd.__version__)
@@ -263,9 +265,61 @@ def _get_fmd(inbytes):
     return from_buffer(data, "FileMetaData")
 
 
+def update_custom_metadata(obj, custom_metadata : dict):
+    """Update custom metadata stored in thrift object or parquet file.
+
+    Update strategy depends if key found in new custom metadata is also found
+    in already existing custom metadata within thrift object, as well as its
+    value.
+        
+      - If not found in existing, it is added.
+      - If found in existing, it is updated.
+      - If its value is `None`, it is not added, and if found in existing,
+        it is removed from existing.
+
+    Parameters
+    ----------
+    obj : metadata ThriftObject or parquet file
+        Thrift object or parquet file which metadata is to update.
+    custom_metadata : dict
+        Key-value metadata to update in thrift object.
+        
+    Notes
+    -----
+    Key-value metadata are expected binary encoded. This function ensures it
+    is.
+    """       
+    kvm = (obj.key_value_metadata if isinstance(obj, ThriftObject)
+           else obj.fmd.key_value_metadata)
+    # Spare list of keys.
+    kvm_keys = [item.key for item in kvm]
+    for key, value in custom_metadata.items():
+        key_b = key.encode()
+        if key_b in kvm_keys:
+            idx = kvm_keys.index(key_b)
+            if value is None:
+                # Remove item.
+                del kvm[idx]
+                # Update 'kvm_keys' as well, for keeping indexing
+                # up-to-date.
+                del kvm_keys[idx]
+            else:
+                # Replace item.
+                kvm[idx] = parquet_thrift.KeyValue(key=key_b,
+                                                   value=value.encode())
+        elif value is not None:
+            kvm.append(parquet_thrift.KeyValue(key=key_b,
+                                               value=value.encode()))
+    if isinstance(obj, ThriftObject):
+        obj.key_value_metadata = kvm
+    else:
+        obj.fmd.key_value_metadata = kvm
+        # Reset '_kvm' to refresh 'key_value_metadata' cached property.
+        obj._kvm = None
+
+
 # simple cache to avoid re compile every time
 seps = {}
-
 
 def ex_from_sep(sep):
     """Generate regex for category folder matching"""
