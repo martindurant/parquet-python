@@ -19,11 +19,12 @@ from .compression import compress_data
 from .converted_types import tobson
 from .util import (default_open, default_mkdirs, check_column_names,
                    metadata_from_many, created_by, get_column_metadata,
-                   norm_col_name, path_string, reset_row_idx, get_fs)
+                   norm_col_name, path_string, reset_row_idx, get_fs,
+                   update_custom_metadata)
 from . import encoding, __version__
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
-from .cencoding import NumpyIO, ThriftObject
+from .cencoding import NumpyIO, ThriftObject, from_buffer
 from decimal import Decimal
 
 MARKER = b'PAR1'
@@ -1486,3 +1487,52 @@ def overwrite(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
 def write_thrift(f, obj):
     # TODO inline this
     return f.write(obj.to_bytes())
+
+def update_file_metadata(path: str, custom_metadata: dict,
+                         is_metadata: bool = None):
+    """Update metadata in file without rewriting data portion if a data file.
+
+    Update strategy depends if key found in new custom metadata is also found
+    in already existing custom metadata within thrift object, as well as its
+    value.
+        
+      - If not found in existing, it is added.
+      - If found in existing, it is updated.
+      - If its value is `None`, it is not added, and if found in existing,
+        it is removed from existing.
+
+    Parameters
+    ----------
+    path : str
+        Path to file.
+    custom_metadata : dict
+        Key-value metadata to update in thrift object.
+    is_metadata : bool, default None
+        Define if target file is a pure metadata file, or is a parquet data
+        file. Depending file type, metadata is not stores at same location.
+        If `None`, is set depending file name.
+
+          - if ending with '_metadata', it assumes file is a metadata file.
+          - otherwise, it assumes it is a parquet data file.
+
+    """
+    if is_metadata is None:
+        if path[-9:] == '_metadata':
+            is_metadata = True
+        else:
+            is_metadata = False
+    with open(path, "rb+") as f:
+        if is_metadata:
+            loc = 4
+        else:
+            loc0 = f.seek(-8, 2)
+            size = int.from_bytes(f.read(4), "little")
+            loc = loc0 - size
+        f.seek(loc)
+        data = f.read()
+        fmd = from_buffer(data, "FileMetaData")
+        update_custom_metadata(fmd, custom_metadata)
+        f.seek(loc)
+        foot_size = write_thrift(f, fmd)
+        f.write(struct.pack(b"<I", foot_size))
+        f.write(b"PAR1")

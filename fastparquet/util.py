@@ -288,7 +288,7 @@ def update_custom_metadata(obj, custom_metadata : dict):
     -----
     Key-value metadata are expected binary encoded. This function ensures it
     is.
-    """       
+    """
     kvm = (obj.key_value_metadata if isinstance(obj, ThriftObject)
            else obj.fmd.key_value_metadata)
     # Spare list of keys.
