@@ -1504,16 +1504,19 @@ def update_file_metadata(path: str, custom_metadata: dict,
     Parameters
     ----------
     path : str
-        Path to file.
+        Local path to file.
     custom_metadata : dict
         Key-value metadata to update in thrift object.
     is_metadata : bool, default None
         Define if target file is a pure metadata file, or is a parquet data
-        file. Depending file type, metadata is not stores at same location.
-        If `None`, is set depending file name.
+        file. If `None`, is set depending file name.
 
           - if ending with '_metadata', it assumes file is a metadata file.
           - otherwise, it assumes it is a parquet data file.
+
+    Notes
+    -----
+    This method does not work for remote files.
 
     """
     if is_metadata is None:
@@ -1523,6 +1526,7 @@ def update_file_metadata(path: str, custom_metadata: dict,
             is_metadata = False
     with open(path, "rb+") as f:
         if is_metadata:
+            # For pure metadata file, metadata starts just four bytes in.
             loc = 4
         else:
             loc0 = f.seek(-8, 2)
