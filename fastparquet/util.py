@@ -1,6 +1,6 @@
 from collections import defaultdict
 import copy
-from distutils.version import LooseVersion
+from packaging.version import Version
 from functools import lru_cache
 import io
 import struct
@@ -17,7 +17,7 @@ from pandas.api.types import is_categorical_dtype
 
 from fastparquet import __version__
 
-PANDAS_VERSION = LooseVersion(pd.__version__)
+PANDAS_VERSION = Version(pd.__version__)
 created_by = f"fastparquet-python version {__version__} (build 0)"
 
 

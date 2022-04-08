@@ -2,3 +2,4 @@ pandas>=1.1.0
 numpy>=1.18
 cramjam>=2.3.0
 fsspec
+packaging

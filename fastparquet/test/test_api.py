@@ -4,7 +4,6 @@ import os
 from shutil import copytree
 import subprocess
 import sys
-from distutils.version import LooseVersion
 
 import fsspec
 import numpy as np

@@ -1,15 +1,17 @@
 import re
 from collections import OrderedDict
-from distutils.version import LooseVersion
+from packaging.version import Version
 import numpy as np
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    __version__ as pdver, DatetimeIndex
+    DatetimeIndex
 )
 from pandas.core.arrays.masked import BaseMaskedDtype
 from pandas.api.types import is_categorical_dtype
 import warnings
+
+from .util import PANDAS_VERSION
 
 
 class Dummy(object):
@@ -163,7 +165,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             x._set_categories = set_cats
 
             d = np.zeros(size, dtype=int)
-            if LooseVersion(pdver) >= LooseVersion("0.24.0"):
+            if PANDAS_VERSION >= Version("0.24.0"):
                 index._codes = list(index._codes) + [d]
             else:
                 index._labels.append(d)

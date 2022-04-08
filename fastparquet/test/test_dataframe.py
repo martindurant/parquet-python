@@ -1,17 +1,18 @@
-import distutils
 import shutil
 import warnings
 from unittest import mock
 
+from packaging.version import Version
 import pytest
 import pandas as pd
 from numpy import empty as np_empty
 from pandas.testing import assert_frame_equal
 
 from fastparquet.dataframe import empty
+from fastparquet.util import PANDAS_VERSION
 
 
-if distutils.version.LooseVersion(pd.__version__) >= "0.24.0":
+if PANDAS_VERSION >= Version("0.24.0"):
     DatetimeTZDtype = pd.DatetimeTZDtype
 else:
     DatetimeTZDtype = pd.api.types.DatetimeTZDtype
