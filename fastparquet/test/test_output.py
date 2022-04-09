@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import pandas.testing as tm
 from fastparquet import ParquetFile
-from fastparquet import write, parquet_thrift
+from fastparquet import write, parquet_thrift, update_file_custom_metadata
 from fastparquet import writer, encoding
 from pandas.testing import assert_frame_equal
 from pandas.api.types import CategoricalDtype
@@ -1053,14 +1053,14 @@ def test_no_string(tmpdir):
     assert pd.isna(df2.A).all()
 
 
-def test_update_file_metadata(tempdir):
+def test_update_file_custom_metadata(tempdir):
     df = pd.DataFrame({'a': [0, 1]})
     custom_metadata_ref = {'a':'test_a', 'b': 'test_b'}
     write(tempdir, df, file_scheme='hive', custom_metadata=custom_metadata_ref)
     # Test custom metadata update in '_metadata'.
     custom_metadata_upd = {'a': None, 'b': 'test_b2', 'c': 'test_c', 'd': None}
     mdfn = os.path.join(tempdir, '_metadata')
-    writer.update_file_metadata(mdfn, custom_metadata_upd)
+    update_file_custom_metadata(mdfn, custom_metadata_upd)
     custom_metadata_upd_ref = {key: value
                                for key, value in custom_metadata_upd.items()
                                if key not in ['a', 'd']}
@@ -1080,7 +1080,7 @@ def test_update_file_metadata(tempdir):
                            if key != 'pandas'}
     assert custom_metadata_rec == custom_metadata_ref
     # Modify them in 'part.0.parquet' and check.
-    writer.update_file_metadata(datafn, custom_metadata_upd)  
+    update_file_custom_metadata(datafn, custom_metadata_upd)  
     pf = ParquetFile(datafn)
     custom_metadata_upd_rec = {key: value
                                for key, value in pf.key_value_metadata.items()

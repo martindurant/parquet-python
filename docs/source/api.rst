@@ -21,3 +21,5 @@ API
 .. automethod:: ParquetFile.iter_row_groups
 
 .. autofunction:: write
+
+.. autofunction:: update_file_custom_metadata

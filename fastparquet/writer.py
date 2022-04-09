@@ -1488,10 +1488,12 @@ def write_thrift(f, obj):
     # TODO inline this
     return f.write(obj.to_bytes())
 
-def update_file_metadata(path: str, custom_metadata: dict,
-                         is_metadata: bool = None):
+def update_file_custom_metadata(path: str, custom_metadata: dict,
+                                is_metadata_file: bool = None):
     """Update metadata in file without rewriting data portion if a data file.
 
+    This function updates only the user key-values metadata, not the whole
+    metadata of a parquet file.
     Update strategy depends if key found in new custom metadata is also found
     in already existing custom metadata within thrift object, as well as its
     value.
@@ -1507,7 +1509,7 @@ def update_file_metadata(path: str, custom_metadata: dict,
         Local path to file.
     custom_metadata : dict
         Key-value metadata to update in thrift object.
-    is_metadata : bool, default None
+    is_metadata_file : bool, default None
         Define if target file is a pure metadata file, or is a parquet data
         file. If `None`, is set depending file name.
 
@@ -1517,9 +1519,8 @@ def update_file_metadata(path: str, custom_metadata: dict,
     Notes
     -----
     This method does not work for remote files.
-
     """
-    if is_metadata is None:
+    if is_metadata_file is None:
         if path[-9:] == '_metadata':
             is_metadata = True
         else:
