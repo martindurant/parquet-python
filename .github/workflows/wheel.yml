@@ -14,8 +14,6 @@ jobs:
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: windows-2019
-            skip: "*2*win* *win32 pp*"
           - os: ubuntu-20.04
             linux_archs: "aarch64"
             skip: "pp*"
@@ -69,8 +67,6 @@ jobs:
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: windows-2019
-            skip: "*2*win* *win32 pp*"
           - os: ubuntu-20.04
             linux_archs: "ppc64le"
             skip: "pp*"
@@ -124,8 +120,6 @@ jobs:
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: windows-2019
-            skip: "*2*win* *win32 pp*"
           - os: ubuntu-20.04
             linux_archs: "s390"
             skip: "pp*"
@@ -179,8 +173,6 @@ jobs:
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: windows-2019
-            skip: "*2*win* *win32 pp*"
           - os: ubuntu-20.04
             linux_archs: "i686"
             skip: "pp*"
@@ -234,8 +226,6 @@ jobs:
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: windows-2019
-            skip: "*2*win* *win32 pp*"
           - os: ubuntu-20.04
             linux_archs: "x86_64"
             skip: "pp*"
@@ -291,9 +281,6 @@ jobs:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: windows-2019
             skip: "*2*win* *win32 pp*"
-          - os: ubuntu-20.04
-            linux_archs: "auto aarch64"
-            skip: "pp*"
 
     name: Python ${{ matrix.os }}
     env:
