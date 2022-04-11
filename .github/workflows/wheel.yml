@@ -121,7 +121,7 @@ jobs:
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: ubuntu-20.04
-            linux_archs: "s390"
+            linux_archs: "s390x"
             skip: "pp*"
 
     name: Python ${{ matrix.os }}
