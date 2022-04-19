@@ -1329,7 +1329,11 @@ def write_common_metadata(fn, fmd, open_with=default_open,
 
 def consolidate_categories(fmd):
     key_value = [k for k in fmd.key_value_metadata
-                 if k.key == b'pandas'][0]
+                 if k.key == b'pandas']
+    if not key_value:
+        # no pandas categories
+        return
+    key_value = key_value[0]
     meta = json.loads(key_value.value)
     cats = [c for c in meta['columns']
             if 'num_categories' in (c['metadata'] or [])]
