@@ -16,7 +16,7 @@ jobs:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: ubuntu-20.04
             linux_archs: "aarch64"
-            skip: "pp*"
+            skip: "pp* *-musllinux_aarch64"
 
     name: Python ${{ matrix.os }}
     env:
