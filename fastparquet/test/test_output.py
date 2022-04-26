@@ -1086,3 +1086,13 @@ def test_update_file_custom_metadata(tempdir):
                                for key, value in pf.key_value_metadata.items()
                                if key != 'pandas'}
     assert custom_metadata_upd_rec == custom_metadata_upd_ref
+
+
+def test_json_stats(tempdir):
+    df = pd.DataFrame(
+        [{'a': [(1, 2, 4), ('x', 'y', 'z')]}]
+    )
+    fn = os.path.join(tempdir, "out.parq")
+    write(filename=fn, data=df, object_encoding={'a': 'json'}, write_index=False, compression="SNAPPY")
+    out = ParquetFile(fn).to_pandas()
+    assert out['a'].tolist() == [[[1, 2, 4], ['x', 'y', 'z']]]  # tuple became list
