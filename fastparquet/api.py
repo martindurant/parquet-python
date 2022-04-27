@@ -915,7 +915,12 @@ selection does not match number of rows in DataFrame.')
                         z = dataframe.tz_to_dt_tz(tz[col])
                         dtype[col] = pd.Series([], dtype='M8[ns]').dt.tz_localize(z).dtype
                 elif dt in converted_types.nullable:
+                    if self.pandas_metadata:
+                        tt = md.get(col, {}).get("numpy_type")
+                        if tt and ("int" in tt or "bool" in tt):
+                            continue
                     # uint/int/bool columns that may have nulls become nullable
+                    # skip is pandas_metadata gives original types
                     num_nulls = 0
                     for rg in self.row_groups:
                         if rg[3] == 0:

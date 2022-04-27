@@ -1089,6 +1089,7 @@ def test_update_file_custom_metadata(tempdir):
 
 
 def test_json_stats(tempdir):
+    # https://github.com/dask/fastparquet/issues/775
     df = pd.DataFrame(
         [{'a': [(1, 2, 4), ('x', 'y', 'z')]}]
     )
@@ -1096,3 +1097,12 @@ def test_json_stats(tempdir):
     write(filename=fn, data=df, object_encoding={'a': 'json'}, write_index=False, compression="SNAPPY")
     out = ParquetFile(fn).to_pandas()
     assert out['a'].tolist() == [[[1, 2, 4], ['x', 'y', 'z']]]  # tuple became list
+
+
+def test_original_type_without_stats(tempdir):
+    # https://github.com/dask/fastparquet/issues/775
+    df = pd.DataFrame([{'b': 65}])
+    fn = os.path.join(tempdir, "out.parq")
+    write(fn, df, stats=False)
+    out = ParquetFile(fn).to_pandas()
+    assert out.dtypes["b"] == "int64"
