@@ -136,7 +136,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             # Initialize datetime index to zero: uninitialized data might fail
             # validation due to being an out-of-bounds datetime. xref
             # https://github.com/dask/fastparquet/issues/778
-            d = np.zeros(size, dtype=t) if t.kind == "M" else np.empty(size, dtype=t)
+            dtype = np.dtype(t)
+            d = np.zeros(size, dtype=dtype) if dtype.kind == "M" else np.empty(size, dtype=dtype)
             if d.dtype.kind == "M" and str(col) in timezones:
                 # 1) create the DatetimeIndex in UTC as no datetime conversion is needed and
                 # it works with d uninitialised data (no NonExistentTimeError or AmbiguousTimeError)
