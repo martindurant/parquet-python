@@ -133,7 +133,10 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             if hasattr(t, 'base'):
                 # funky pandas not-dtype
                  t = t.base
-            d = np.empty(size, dtype=t)
+            # Initialize datetime index to zero: uninitialized data might fail
+            # validation due to being an out-of-bounds datetime. xref
+            # https://github.com/dask/fastparquet/issues/778
+            d = np.zeros(size, dtype=t) if t.kind == "M" else np.empty(size, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 # 1) create the DatetimeIndex in UTC as no datetime conversion is needed and
                 # it works with d uninitialised data (no NonExistentTimeError or AmbiguousTimeError)
