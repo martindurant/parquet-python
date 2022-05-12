@@ -70,6 +70,18 @@ def test_empty_tz_nonutc():
     assert df.a.dtype.tz.zone == "CET"
 
 
+# non-regression test for https://github.com/dask/fastparquet/issues/778
+def test_empty_valid_timestamp():
+    df, views = empty(
+        "i4",
+        size=100,
+        cols=["a"],
+        index_types=["datetime64[ms]"],
+        index_names=["timestamp"],
+    )
+    assert isinstance(df.index, pd.DatetimeIndex)
+
+
 def test_timestamps():
     z = 'US/Eastern'
 
