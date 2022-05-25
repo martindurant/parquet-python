@@ -82,6 +82,6 @@ setup(
                       else ''),
     include_package_data=True,
     exclude_package_data={'fastparquet': ['test/*']},
-    python_requires=">=3.7,",
+    python_requires=">=3.7",
     **extra
 )
