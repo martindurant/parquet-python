@@ -227,7 +227,7 @@ def convert(data, se, timestamp96=True):
             out = np.empty(len(data), dtype="O")
         else:
             out = data
-        # TODO: unnecessary list - loop would save memory, and can cythonise
+        # TODO: unnecessary list - loop would save memory, and can cythonize
         decoder = json_decoder()
         out[:] = [decoder(d) for d in data]
         return out
@@ -236,7 +236,7 @@ def convert(data, se, timestamp96=True):
             out = np.empty(len(data), dtype="O")
         else:
             out = data
-        # TODO: unnecessary list - loop would save memory, and can cythonise
+        # TODO: unnecessary list - loop would save memory, and can cythonize
         #  and could use better BSON lib (bson-numpy, python-bsonjs)?
         out[:] = [unbson(d) for d in data]
         return out

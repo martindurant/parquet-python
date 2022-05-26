@@ -1124,7 +1124,7 @@ def filter_out_stats(rg, filters, schema):
 
 def statistics(obj):
     """
-    Return per-column statistics for a ParquerFile
+    Return per-column statistics for a ParquetFile
 
     Parameters
     ----------
@@ -1476,7 +1476,7 @@ def partitions(row_group, only_values=False) -> str:
     Returns
     -------
     str
-        Paritions values.
+        Partitions values.
     """
     f_path = (row_group if isinstance(row_group, str)
               else row_group.columns[0].file_path)

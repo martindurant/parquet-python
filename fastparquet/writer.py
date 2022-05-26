@@ -1262,7 +1262,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     Each combination of column values (determined by pandas groupby) will
     be written in structured directories.
     """
-    # Pandas grouby has by default 'sort=True' meaning groups are sorted
+    # Pandas groupby has by default 'sort=True' meaning groups are sorted
     # between them on key.
     gb = data.groupby(columns)
     remaining = list(data)
