@@ -9,7 +9,7 @@ import fsspec
 from fastparquet.util import join_path
 import pandas as pd
 
-from . import core, schema, converted_types, encoding, dataframe
+from . import core, schema, converted_types, encoding, dataframe, writer
 from . import parquet_thrift
 from .cencoding import ThriftObject, from_buffer
 from .util import (default_open, default_remove, ParquetException, val_to_num,
@@ -120,6 +120,7 @@ class ParquetFile(object):
             basepath, fmd = metadata_from_many(fn, verify_schema=verify,
                                                open_with=open_with, root=root,
                                                fs=fs)
+            writer.consolidate_categories(fmd)
             self.fn = join_path(
                 basepath, '_metadata') if basepath else '_metadata'
             self.fmd = fmd
@@ -160,6 +161,7 @@ class ParquetFile(object):
                     basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
                                                        open_with=open_with, root=root,
                                                        fs=fs)
+                    writer.consolidate_categories(fmd)
                     self.fn = join_path(basepath, '_metadata') if basepath \
                               else '_metadata'
                     self.fmd = fmd

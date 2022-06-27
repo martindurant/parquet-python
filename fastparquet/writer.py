@@ -18,10 +18,10 @@ from .api import ParquetFile, partitions, part_ids
 from .compression import compress_data
 from .converted_types import tobson
 from .util import (default_open, default_mkdirs, check_column_names,
-                   metadata_from_many, created_by, get_column_metadata,
+                   created_by, get_column_metadata,
                    norm_col_name, path_string, reset_row_idx, get_fs,
                    update_custom_metadata)
-from . import encoding, __version__
+from . import __version__
 from .speedups import array_encode_utf8, pack_byte_array
 from . import cencoding
 from .cencoding import NumpyIO, ThriftObject, from_buffer
