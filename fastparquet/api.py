@@ -931,7 +931,7 @@ selection does not match number of rows in DataFrame.')
                         if st is None:
                             num_nulls = True
                             break
-                        if st[3]:
+                        if st.get(3):
                             num_nulls = True
                             break
                     if num_nulls:
