@@ -314,7 +314,10 @@ class ParquetFile(object):
 
     def __len__(self):
         """Return number of row groups."""
-        return len(self.fmd.row_groups)
+        if self.fmd.row_groups:
+            return len(self.fmd.row_groups)
+        else:
+            return 0
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
