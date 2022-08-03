@@ -1246,6 +1246,16 @@ def test_remove_rgs_partitioned_pyarrow_multi(tempdir):
     assert pf.to_pandas().equals(df_ref) 
 
 
+def test_remove_all_rgs(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    write(dn, df_remove_rgs, file_scheme='hive', partition_on=['city'])
+    pf = ParquetFile(dn)
+    assert len(pf.row_groups) == 3 # check number of row groups
+    # Remove all row groups and check there is no row group anymore.
+    pf.remove_row_groups(pf.row_groups)
+    assert len(pf.row_groups) == 0 # check row group list updated
+
+
 def test_remove_rgs_simple_merge(tempdir):
     df = pd.DataFrame({'a':range(4), 'b':['lo']*2+['hi']*2})
     fn = os.path.join(tempdir, 'fn1.parquet')
@@ -1418,3 +1428,21 @@ def test_not_quite_fsspec():
     assert out.to_pandas().to_dict() == {'a': {0: 0, 1: 1}, 'b': {0: 1, 1: 0}}
     out = ParquetFile("memory://out2.parq/_metadata", open_with=myopen)
     assert out.to_pandas().to_dict() == {'a': {0: 0, 1: 1}, 'b': {0: 1, 1: 0}}
+
+
+def test_len_and_bool(tempdir):
+    dn = os.path.join(tempdir, 'test_parquet')
+    fn = os.path.join(tempdir, 'test.parquet')
+    df = pd.DataFrame({'val': [0.3, 0.8, 0.9]})
+    # Write simple.
+    write(fn, df)
+    pf = ParquetFile(fn)
+    assert len(pf) == 1
+    # Write multi.
+    write(dn, df, file_scheme='hive', row_group_offsets=[0,2])
+    pf = ParquetFile(dn)
+    assert len(pf) == 2
+    # When not defined, __bool__ is implicitly substituted by __len__
+    assert pf
+    pf.remove_row_groups(pf.row_groups)
+    assert not pf

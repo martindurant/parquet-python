@@ -312,6 +312,10 @@ class ParquetFile(object):
         new_pf.file_scheme = self.file_scheme
         return new_pf
 
+    def __len__(self):
+        """Return number of row groups."""
+        return len(self.fmd.row_groups)
+
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
             base = self.basepath
@@ -434,14 +438,20 @@ class ParquetFile(object):
                 or self.file_scheme == 'flat'):
                 # Check if some files contain row groups both to be removed and
                 # to be kept.
-                all_rgs = row_groups_map(self.row_groups)
+                all_rgs = row_groups_map(self.fmd.row_groups)
                 for file in rgs_to_remove:
                     if len(rgs_to_remove[file]) < len(all_rgs[file]):
                         raise ValueError(
                             f"File {file} contains row groups both to be kept "
                             "and to be removed. Removing row groups partially "
                             "from a file is not possible.")
-            rg_new = self.row_groups
+            if rgs != self.fmd.row_groups:
+                rg_new = self.fmd.row_groups
+            else:
+                # Deep copy required if 'rg_new' and 'rgs' points both to
+                # 'self.fmd.row_groups'.
+                from copy import deepcopy
+                rg_new = deepcopy(self.fmd.row_groups)
             for rg in rgs:
                 rg_new.remove(rg)
                 self.fmd.num_rows -= rg.num_rows
