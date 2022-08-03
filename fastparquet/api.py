@@ -320,8 +320,8 @@ class ParquetFile(object):
             return 0
 
     def __bool__(self):
-        """Return True if path defined."""
-        return bool(self.fn)
+        """Return True, takes precedence over `__len__`."""
+        return True
 
     def row_group_filename(self, rg):
         if rg.columns and rg.columns[0].file_path:
