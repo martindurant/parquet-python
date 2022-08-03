@@ -1442,7 +1442,3 @@ def test_len_and_bool(tempdir):
     write(dn, df, file_scheme='hive', row_group_offsets=[0,2])
     pf = ParquetFile(dn)
     assert len(pf) == 2
-    # When not defined, __bool__ is implicitly substituted by __len__
-    assert pf
-    pf.remove_row_groups(pf.row_groups)
-    assert not pf
