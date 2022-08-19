@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        CONDA_ENV: [py37, py38, py39, py310]
+        CONDA_ENV: [py38, py39, py310]
     steps:
       - name: APT
         run: sudo apt-get install liblzo2-dev
