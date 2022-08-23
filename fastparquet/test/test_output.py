@@ -1053,6 +1053,52 @@ def test_no_string(tmpdir):
     assert pd.isna(df2.A).all()
 
 
+@pytest.fixture
+def df():
+    yield pd.DataFrame(data={"a": [1]})
+
+
+@pytest.fixture
+def pf_fn(tmp_path):
+    yield str(tmp_path.joinpath("tmp.parquet"))
+
+
+@pytest.mark.parametrize("md_value", [True, 1, 1.0, 1j, [], {}, set()])
+def test_custom_metadata_reject_non_str_value(df, pf_fn, md_value):
+    with pytest.raises(ValueError):
+        write(pf_fn, df, custom_metadata={"my_key": md_value})
+
+
+@pytest.mark.parametrize("md_key", [None, True, 1, 1.0, 1j, (), frozenset()])
+def test_custom_metadata_reject_non_str_key(df, pf_fn, md_key):
+    with pytest.raises(ValueError):
+        write(pf_fn, df, custom_metadata={md_key: "abc"})
+
+
+def test_custom_metadata_key_decode(df, pf_fn):
+    write(pf_fn, df, custom_metadata={"str_key": "abc"})
+    assert "str_key" in ParquetFile(pf_fn).key_value_metadata
+    assert b"str_key" not in ParquetFile(pf_fn).key_value_metadata
+
+    write(pf_fn, df, custom_metadata={b"bytes_key": "abc"})
+    assert "bytes_key" in ParquetFile(pf_fn).key_value_metadata
+    assert b"bytes_key" not in ParquetFile(pf_fn).key_value_metadata
+
+    write(pf_fn, df, custom_metadata={b"\xe2": "abc"})
+    assert b"\xe2" in ParquetFile(pf_fn).key_value_metadata
+
+
+def test_custom_metadata_value_decode(df, pf_fn):
+    write(pf_fn, df, custom_metadata={"my_key": "abc"})
+    assert ParquetFile(pf_fn).key_value_metadata["my_key"] == "abc"
+
+    write(pf_fn, df, custom_metadata={"my_key": b"abc"})
+    assert ParquetFile(pf_fn).key_value_metadata["my_key"] == "abc"
+
+    write(pf_fn, df, custom_metadata={"my_key": b"\xe2"})
+    assert ParquetFile(pf_fn).key_value_metadata["my_key"] == b"\xe2"
+
+
 def test_update_file_custom_metadata(tempdir):
     df = pd.DataFrame({'a': [0, 1]})
     custom_metadata_ref = {'a':'test_a', 'b': 'test_b'}
