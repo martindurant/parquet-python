@@ -1328,7 +1328,7 @@ def write_common_metadata(fn, fmd, open_with=default_open,
 
 
 def consolidate_categories(fmd):
-    key_value = [k for k in fmd.key_value_metadata
+    key_value = [k for k in fmd.key_value_metadata or []
                  if k.key == b'pandas']
     if not key_value:
         # no pandas categories
