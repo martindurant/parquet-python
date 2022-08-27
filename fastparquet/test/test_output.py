@@ -1063,16 +1063,36 @@ def pf_fn(tmp_path):
     yield str(tmp_path.joinpath("tmp.parquet"))
 
 
-@pytest.mark.parametrize("md_value", [True, 1, 1.0, 1j, [], {}, set()])
-def test_custom_metadata_reject_non_str_value(df, pf_fn, md_value):
-    with pytest.raises(ValueError):
+@pytest.mark.parametrize("md_value", [None, True, 1, 1.0, 1j, [], {}, set()])
+def test_custom_metadata_write_reject_value_not_str_bytes(df, pf_fn, md_value):
+    with pytest.raises(TypeError):
         write(pf_fn, df, custom_metadata={"my_key": md_value})
 
 
 @pytest.mark.parametrize("md_key", [None, True, 1, 1.0, 1j, (), frozenset()])
-def test_custom_metadata_reject_non_str_key(df, pf_fn, md_key):
-    with pytest.raises(ValueError):
+def test_custom_metadata_write_reject_key_not_str_bytes(df, pf_fn, md_key):
+    with pytest.raises(TypeError):
         write(pf_fn, df, custom_metadata={md_key: "abc"})
+
+
+@pytest.fixture
+def pf_kvm_fn(df, tmp_path):
+    fn = str(tmp_path.joinpath("tmp_with_kvm.parquet"))
+    write(fn, df, custom_metadata={"k0": "abc", "k1": "efg"})
+    yield fn
+
+
+@pytest.mark.parametrize("md_value", [True, 1, 1.0, 1j, [], {}, set()])
+def test_custom_metadata_update_reject_value_not_str_bytes_none(pf_kvm_fn, md_value):
+    # `None` values are used in `update_file_custom_metadata` to indicate key removal
+    with pytest.raises(TypeError):
+        update_file_custom_metadata(pf_kvm_fn, {"k1": md_value})
+
+
+@pytest.mark.parametrize("md_key", [None, True, 1, 1.0, 1j, (), frozenset()])
+def test_custom_metadata_update_reject_key_not_str_bytes(pf_kvm_fn, md_key):
+    with pytest.raises(TypeError):
+        update_file_custom_metadata(pf_kvm_fn, {md_key: "abc"})
 
 
 def test_custom_metadata_key_decode(df, pf_fn):
