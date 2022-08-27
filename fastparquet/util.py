@@ -294,7 +294,7 @@ def update_custom_metadata(obj, custom_metadata : dict):
     # Spare list of keys.
     kvm_keys = [item.key for item in kvm]
     for key, value in custom_metadata.items():
-        key_b = key.encode()
+        key_b = ensure_bytes(key)
         if key_b in kvm_keys:
             idx = kvm_keys.index(key_b)
             if value is None:
@@ -306,10 +306,10 @@ def update_custom_metadata(obj, custom_metadata : dict):
             else:
                 # Replace item.
                 kvm[idx] = parquet_thrift.KeyValue(key=key_b,
-                                                   value=value.encode())
+                                                   value=ensure_bytes(value))
         elif value is not None:
             kvm.append(parquet_thrift.KeyValue(key=key_b,
-                                               value=value.encode()))
+                                               value=ensure_bytes(value)))
     if isinstance(obj, ThriftObject):
         obj.key_value_metadata = kvm
     else:

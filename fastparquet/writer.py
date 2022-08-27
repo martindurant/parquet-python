@@ -892,7 +892,7 @@ def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
                 rgs.append(rg)
 
         fmd.row_groups = rgs
-        foot_size = f.write(fmd.to_bytes())
+        foot_size = write_thrift(f, fmd)
         f.write(struct.pack(b"<I", foot_size))
         f.write(MARKER)
 
@@ -1490,6 +1490,12 @@ def overwrite(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
 
 def write_thrift(f, obj):
     # TODO inline this
+    if obj.thrift_name == "FileMetaData":
+        for kv in obj.key_value_metadata:
+            if not isinstance(kv.key, (bytes, str)):
+                raise TypeError(f"KeyValue key expected `str` or `bytes`, got: {kv.key!r}")
+            if not isinstance(kv.value, (bytes, str)):
+                raise TypeError(f"KeyValue value expected `str` or `bytes`, got: {kv.value!r}")
     return f.write(obj.to_bytes())
 
 def update_file_custom_metadata(path: str, custom_metadata: dict,
