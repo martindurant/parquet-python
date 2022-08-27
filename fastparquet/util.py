@@ -111,6 +111,18 @@ def ensure_bytes(s):
     return s.encode('utf-8') if isinstance(s, str) else s
 
 
+def ensure_str(b, *, ignore_error=False):
+    if isinstance(b, str):
+        return b
+    else:
+        try:
+            return b.decode('utf-8')
+        except (UnicodeDecodeError, AttributeError):
+            if not ignore_error:
+                raise
+            return b
+
+
 def check_column_names(columns, *args):
     """Ensure that parameters listing column names have corresponding columns"""
     for arg in args:

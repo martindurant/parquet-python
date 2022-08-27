@@ -13,7 +13,7 @@ from . import core, schema, converted_types, encoding, dataframe, writer
 from . import parquet_thrift
 from .cencoding import ThriftObject, from_buffer
 from .util import (default_open, default_remove, ParquetException, val_to_num,
-                   ops, ensure_bytes, check_column_names, metadata_from_many,
+                   ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
                    ex_from_sep, json_decoder, _strip_path_tail, get_fs)
 
 
@@ -261,7 +261,8 @@ class ParquetFile(object):
     @property
     def key_value_metadata(self):
         if self._kvm is None:
-            self._kvm = {k.key.decode(): k.value.decode()
+            self._kvm = {
+                ensure_str(k.key, ignore_error=True): ensure_str(k.value, ignore_error=True)
                 for k in self.fmd.key_value_metadata or []}
         return self._kvm
 
