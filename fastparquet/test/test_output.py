@@ -1095,28 +1095,18 @@ def test_custom_metadata_update_reject_key_not_str_bytes(pf_kvm_fn, md_key):
         update_file_custom_metadata(pf_kvm_fn, {md_key: "abc"})
 
 
-def test_custom_metadata_key_decode(df, pf_fn):
-    write(pf_fn, df, custom_metadata={"str_key": "abc"})
-    assert "str_key" in ParquetFile(pf_fn).key_value_metadata
-    assert b"str_key" not in ParquetFile(pf_fn).key_value_metadata
-
-    write(pf_fn, df, custom_metadata={b"bytes_key": "abc"})
-    assert "bytes_key" in ParquetFile(pf_fn).key_value_metadata
-    assert b"bytes_key" not in ParquetFile(pf_fn).key_value_metadata
-
-    write(pf_fn, df, custom_metadata={b"\xe2": "abc"})
-    assert b"\xe2" in ParquetFile(pf_fn).key_value_metadata
-
-
-def test_custom_metadata_value_decode(df, pf_fn):
-    write(pf_fn, df, custom_metadata={"my_key": "abc"})
-    assert ParquetFile(pf_fn).key_value_metadata["my_key"] == "abc"
-
-    write(pf_fn, df, custom_metadata={"my_key": b"abc"})
-    assert ParquetFile(pf_fn).key_value_metadata["my_key"] == "abc"
-
-    write(pf_fn, df, custom_metadata={"my_key": b"\xe2"})
-    assert ParquetFile(pf_fn).key_value_metadata["my_key"] == b"\xe2"
+@pytest.mark.parametrize(
+    "md_in,md_out", [
+        pytest.param({"k": "v"}, {"k": "v"}, id="str_kv"),
+        pytest.param({b"k": b"v"}, {"k": "v"}, id="bytes_utf8_kv"),
+        pytest.param({b"\xe2": b"\xe2"}, {b"\xe2": b"\xe2"}, id="bytes_non_utf8_kv"),
+    ]
+)
+def test_custom_metadata_key_value_decode(df, pf_fn, md_in, md_out):
+    write(pf_fn, df, custom_metadata=md_in)
+    kvm = ParquetFile(pf_fn).key_value_metadata
+    kvm.pop("pandas")
+    assert kvm == md_out
 
 
 def test_update_file_custom_metadata(tempdir):
