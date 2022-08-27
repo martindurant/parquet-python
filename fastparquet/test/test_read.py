@@ -559,3 +559,15 @@ def test_single_delta_value():
     pf = fastparquet.ParquetFile(fn)
     out = pf.to_pandas(columns=["kit_0", "kit_1"])
     assert out.iloc[0].values.tolist() == [17498368, 17105160]
+
+
+def test_reading_non_std_kvm():
+    fn = os.path.join(TEST_DATA, "non-std-kvm.fp-0.8.2.parquet")
+    pf = fastparquet.ParquetFile(fn)
+    kvm = pf.key_value_metadata.copy()
+    kvm.pop("pandas")
+    assert kvm == {
+        "k_none": None,
+        "k_int": 1,
+        "k_bool": True,
+    }
