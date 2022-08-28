@@ -1,6 +1,21 @@
 Release Notes
 -------------
 
+0.8.3
+-----
+
+#. improved key/value handling and rejection of bad types
+#. fix regression in consolidate_cats (caught in dask tests)
+
+0.8.2
+-----
+
+#. datetime indexes initialised to 0 to prevent overflow from randommemory
+#. case from csv_to_parquet where stats exists but has not nulls entry
+#. define len and bool for ParquetFile
+#. maintain int types of optional data tha came from pandas
+#. fix for delta encoding
+
 0.8.1
 -----
 
