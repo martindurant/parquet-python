@@ -16,3 +16,6 @@ dependencies:
   - cramjam
   - pyspark
   - packaging
+  - orjson
+  - ujson
+  - python-rapidjson

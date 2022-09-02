@@ -145,6 +145,17 @@ If the 'element' type is anything other than a primitive type,
 i.e., a struct, map or list, than fastparquet will not be able to read it, and the resulting
 column will either not be contained in the output, or contain only ``None`` values.
 
+Object encoding
+---------------
+
+Object columns are Json encoded and decoded if the data type is ``json``,
+as specified by the ``object_encoding`` parameter in ``fastparquet.write``.
+
+If any of the libraries ``orjson``, ``ujson``, ``python-rapidjson`` is installed,
+then it's used in place of the ``json`` module in the Python Standard Library.
+
+Using one of these libraries may improve both the reading and writing performance.
+
 Partitions and row-groups
 -------------------------
 

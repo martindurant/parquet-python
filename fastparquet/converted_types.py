@@ -12,7 +12,7 @@ import pandas as pd
 
 from . import parquet_thrift
 from .cencoding import time_shift
-from .util import json_decoder
+from .json import json_decoder
 
 logger = logging.getLogger('parquet')  # pylint: disable=invalid-name
 

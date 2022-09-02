@@ -502,22 +502,6 @@ def join_path(*path):
     return "/".join([p.replace("\\", "/").rstrip("/") for p in path if p])
 
 
-_json_decoder = [None]
-
-
-def json_decoder():
-    import importlib
-    if _json_decoder[0] is None:
-        for lib in ['orjson', 'ujson', 'rapidjson', 'json']:
-            try:
-                package = importlib.import_module(lib)
-                _json_decoder[0] = package.loads
-                break
-            except (ImportError, AttributeError):
-                pass
-    return _json_decoder[0]
-
-
 def _strip_path_tail(paths) -> set:
     return {path.rsplit("/", 1)[0] if "/" in path else "" for path in paths}
 

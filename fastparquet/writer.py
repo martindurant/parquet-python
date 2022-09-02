@@ -17,6 +17,7 @@ from . import parquet_thrift
 from .api import ParquetFile, partitions, part_ids
 from .compression import compress_data
 from .converted_types import tobson
+from .json import json_encoder
 from .util import (default_open, default_mkdirs, check_column_names,
                    created_by, get_column_metadata,
                    norm_col_name, path_string, reset_row_idx, get_fs,
@@ -272,9 +273,10 @@ def convert(data, se):
                 else:
                     out = data.values
             elif converted_type == parquet_thrift.ConvertedType.JSON:
-                # TODO: avoid list, use better JSON
-                out = np.array([json.dumps(x).encode('utf8') for x in data],
-                               dtype="O")
+                encoder = json_encoder()
+                # TODO: avoid list. np.fromiter can be used with numpy >= 1.23.0,
+                #  but older versions don't support object arrays.
+                out = np.array([encoder(x) for x in data], dtype="O")
             elif converted_type == parquet_thrift.ConvertedType.BSON:
                 out = data.map(tobson).values
             if type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
