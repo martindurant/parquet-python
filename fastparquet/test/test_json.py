@@ -135,18 +135,32 @@ def test_cache():
 
 
 def test_cache_with_env_variable():
-    with _clear_cache(), patch.dict("os.environ", {"FASTPARQUET_JSON_CODEC": "json"}):
+    with _clear_cache(), patch.dict("os.environ") as environ:
         assert _codec_cache.env is None
         assert _codec_cache.instance is None
 
         _get_cached_codec()
-        instance_1 = _codec_cache.instance
-        assert _codec_cache.env == "json"
+        instance_orig = _codec_cache.instance
+        assert _codec_cache.env == ""
         assert _codec_cache.instance is not None
 
+        for module, impl_class in _codec_classes.items():
+            environ["FASTPARQUET_JSON_CODEC"] = module
+            try:
+                _get_cached_codec()
+            except JsonCodecError:
+                # do not fail if the library isn't installed during tests
+                pass
+            else:
+                assert _codec_cache.env == module
+                assert _codec_cache.instance is not instance_orig
+                assert isinstance(_codec_cache.instance, impl_class)
+
+        del environ["FASTPARQUET_JSON_CODEC"]
         _get_cached_codec()
-        assert _codec_cache.env == "json"
-        assert _codec_cache.instance is instance_1
+        assert _codec_cache.env == ""
+        assert _codec_cache.instance is not instance_orig
+        assert type(_codec_cache.instance) == type(instance_orig)
 
         _codec_cache.clear()
         assert _codec_cache.env is None
