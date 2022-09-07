@@ -7,9 +7,9 @@ import pytest
 
 from fastparquet.json import (
     JsonCodecError,
+    _codec_cache,
     _codec_classes,
     _get_cached_codec,
-    clear_cached_codec,
     json_decoder,
     json_encoder,
 )
@@ -17,11 +17,11 @@ from fastparquet.json import (
 
 @contextmanager
 def _clear_cache():
-    clear_cached_codec()
+    _codec_cache.clear()
     try:
         yield
     finally:
-        clear_cached_codec()
+        _codec_cache.clear()
 
 
 @pytest.mark.parametrize(
@@ -117,24 +117,40 @@ def test__get_cached_codec_with_env_variable_and_unavailable_codec():
 
 def test_cache():
     with _clear_cache():
-        info = _get_cached_codec.cache_info()
-        assert info.hits == 0
-        assert info.misses == 0
+        assert _codec_cache.env is None
+        assert _codec_cache.instance is None
 
         _get_cached_codec()
-        info = _get_cached_codec.cache_info()
-        assert info.hits == 0
-        assert info.misses == 1
+        instance_1 = _codec_cache.instance
+        assert _codec_cache.env == ""
+        assert _codec_cache.instance is not None
 
         _get_cached_codec()
-        info = _get_cached_codec.cache_info()
-        assert info.hits == 1
-        assert info.misses == 1
+        assert _codec_cache.env == ""
+        assert _codec_cache.instance is instance_1
 
-        clear_cached_codec()
-        info = _get_cached_codec.cache_info()
-        assert info.hits == 0
-        assert info.misses == 0
+        _codec_cache.clear()
+        assert _codec_cache.env is None
+        assert _codec_cache.instance is None
+
+
+def test_cache_with_env_variable():
+    with _clear_cache(), patch.dict("os.environ", {"FASTPARQUET_JSON_CODEC": "json"}):
+        assert _codec_cache.env is None
+        assert _codec_cache.instance is None
+
+        _get_cached_codec()
+        instance_1 = _codec_cache.instance
+        assert _codec_cache.env == "json"
+        assert _codec_cache.instance is not None
+
+        _get_cached_codec()
+        assert _codec_cache.env == "json"
+        assert _codec_cache.instance is instance_1
+
+        _codec_cache.clear()
+        assert _codec_cache.env is None
+        assert _codec_cache.instance is None
 
 
 def test_json_encoder():

@@ -1,7 +1,8 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from dataclasses import dataclass
+from typing import Optional
 
 logger = logging.getLogger("parquet")
 
@@ -80,6 +81,20 @@ class JsonImpl(BaseImpl):
         return self.api.loads(s)
 
 
+@dataclass
+class CodecCache:
+    env: Optional[str] = None
+    instance: Optional[BaseImpl] = None
+
+    def clear(self):
+        self.env = None
+        self.instance = None
+
+    def update(self, env, instance):
+        self.env = env
+        self.instance = instance
+
+
 def _get_specific_codec(codec):
     try:
         return _codec_classes[codec]()
@@ -93,23 +108,22 @@ def _get_specific_codec(codec):
         ) from None
 
 
-@lru_cache(maxsize=None)
 def _get_cached_codec():
     """Return the requested or first available json encoder/decoder implementation."""
-    codec = os.getenv("FASTPARQUET_JSON_CODEC")
-    if codec:
-        return _get_specific_codec(codec)
+    env = os.getenv("FASTPARQUET_JSON_CODEC", "")
+    # return the cached codec instance only if the env variable didn't change
+    if _codec_cache.env == env:
+        return _codec_cache.instance
+    if env:
+        _codec_cache.update(env=env, instance=_get_specific_codec(env))
+        return _codec_cache.instance
     for codec in _codec_classes:
         try:
-            return _get_specific_codec(codec)
+            _codec_cache.update(env=env, instance=_get_specific_codec(codec))
+            return _codec_cache.instance
         except JsonCodecError:
             pass
     raise JsonCodecError("No available json codecs.")
-
-
-def clear_cached_codec():
-    """Clear the cached codec so that it can be selected again."""
-    _get_cached_codec.cache_clear()
 
 
 def json_encoder():
@@ -129,3 +143,4 @@ _codec_classes = {
     "rapidjson": RapidjsonImpl,
     "json": JsonImpl,  # it should be the last
 }
+_codec_cache = CodecCache()
