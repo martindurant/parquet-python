@@ -1,8 +1,13 @@
 import logging
+import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
 
 logger = logging.getLogger("parquet")
+
+
+class JsonCodecError(Exception):
+    """Exception raised when trying to load an invalid json codec."""
 
 
 class BaseImpl(ABC):
@@ -75,23 +80,52 @@ class JsonImpl(BaseImpl):
         return self.api.loads(s)
 
 
+def _get_specific_codec(codec):
+    try:
+        return _codec_classes[codec]()
+    except KeyError:
+        raise JsonCodecError(
+            f"Unsupported json codec {codec!r}. Please use one of {list(_codec_classes)}"
+        ) from None
+    except ImportError:
+        raise JsonCodecError(
+            f"Unavailable json codec {codec!r}. Please install the required library."
+        ) from None
+
+
 @lru_cache(maxsize=None)
-def _get_json_impl():
-    """Return the first available json encoder/decoder implementation."""
-    for engine_class in [OrjsonImpl, UjsonImpl, RapidjsonImpl]:
+def _get_cached_codec():
+    """Return the requested or first available json encoder/decoder implementation."""
+    codec = os.getenv("FASTPARQUET_JSON_CODEC")
+    if codec:
+        return _get_specific_codec(codec)
+    for codec in _codec_classes:
         try:
-            return engine_class()
-        except ImportError:
+            return _get_specific_codec(codec)
+        except JsonCodecError:
             pass
-    # slower but always available
-    return JsonImpl()
+    raise JsonCodecError("No available json codecs.")
+
+
+def clear_cached_codec():
+    """Clear the cached codec so that it can be selected again."""
+    _get_cached_codec.cache_clear()
 
 
 def json_encoder():
     """Return the first available json encoder function."""
-    return _get_json_impl().dumps
+    return _get_cached_codec().dumps
 
 
 def json_decoder():
     """Return the first available json decoder function."""
-    return _get_json_impl().loads
+    return _get_cached_codec().loads
+
+
+# module_name -> implementation_class
+_codec_classes = {
+    "orjson": OrjsonImpl,
+    "ujson": UjsonImpl,
+    "rapidjson": RapidjsonImpl,
+    "json": JsonImpl,  # it should be the last
+}

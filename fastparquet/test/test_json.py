@@ -1,10 +1,27 @@
+from contextlib import contextmanager
 from typing import Callable
 from unittest.mock import patch
 
 import numpy as np
 import pytest
 
-from fastparquet import json
+from fastparquet.json import (
+    JsonCodecError,
+    _codec_classes,
+    _get_cached_codec,
+    clear_cached_codec,
+    json_decoder,
+    json_encoder,
+)
+
+
+@contextmanager
+def _clear_cache():
+    clear_cached_codec()
+    try:
+        yield
+    finally:
+        clear_cached_codec()
 
 
 @pytest.mark.parametrize(
@@ -21,21 +38,11 @@ from fastparquet import json
 )
 @pytest.mark.parametrize(
     "encoder_module, encoder_class",
-    [
-        ("orjson", json.OrjsonImpl),
-        ("ujson", json.UjsonImpl),
-        ("rapidjson", json.RapidjsonImpl),
-        ("json", json.JsonImpl),
-    ],
+    list(_codec_classes.items()),
 )
 @pytest.mark.parametrize(
     "decoder_module, decoder_class",
-    [
-        ("orjson", json.OrjsonImpl),
-        ("ujson", json.UjsonImpl),
-        ("rapidjson", json.RapidjsonImpl),
-        ("json", json.JsonImpl),
-    ],
+    list(_codec_classes.items()),
 )
 def test_engine(encoder_module, encoder_class, decoder_module, decoder_class, data):
     pytest.importorskip(encoder_module)
@@ -53,30 +60,90 @@ def test_engine(encoder_module, encoder_class, decoder_module, decoder_class, da
 
 @pytest.mark.parametrize(
     "module, impl_class",
-    [
-        ("orjson", json.OrjsonImpl),
-        ("ujson", json.UjsonImpl),
-        ("rapidjson", json.RapidjsonImpl),
-        ("json", json.JsonImpl),
-    ],
+    list(_codec_classes.items()),
 )
-def test__get_json_impl(module, impl_class):
+def test__get_cached_codec(module, impl_class):
     pytest.importorskip(module)
 
-    json._get_json_impl.cache_clear()
-    missing_modules = {"orjson", "ujson", "rapidjson"} - {module}
+    missing_modules = set(_codec_classes) - {module}
     with patch.dict("sys.modules", {mod: None for mod in missing_modules}):
-        result = json._get_json_impl()
+        with _clear_cache():
+            result = _get_cached_codec()
     assert isinstance(result, impl_class)
 
 
+@pytest.mark.parametrize(
+    "module, impl_class",
+    list(_codec_classes.items()),
+)
+def test__get_cached_codec_without_any_available_codec(module, impl_class):
+    # it should never happen in real cases unless the json implementation is removed
+    pytest.importorskip(module)
+
+    missing_modules = set(_codec_classes)
+    with patch.dict("sys.modules", {mod: None for mod in missing_modules}):
+        with _clear_cache():
+            with pytest.raises(JsonCodecError, match="No available json codecs"):
+                _get_cached_codec()
+
+
+@pytest.mark.parametrize(
+    "module, impl_class",
+    list(_codec_classes.items()),
+)
+def test__get_cached_codec_with_env_variable(module, impl_class):
+    pytest.importorskip(module)
+
+    with patch.dict("os.environ", {"FASTPARQUET_JSON_CODEC": module}):
+        with _clear_cache():
+            result = _get_cached_codec()
+    assert isinstance(result, impl_class)
+
+
+def test__get_cached_codec_with_env_variable_and_invalid_codec():
+    with patch.dict("os.environ", {"FASTPARQUET_JSON_CODEC": "invalid"}):
+        with _clear_cache():
+            with pytest.raises(JsonCodecError, match="Unsupported json codec 'invalid'"):
+                _get_cached_codec()
+
+
+def test__get_cached_codec_with_env_variable_and_unavailable_codec():
+    with patch.dict("os.environ", {"FASTPARQUET_JSON_CODEC": "orjson"}):
+        with patch.dict("sys.modules", {"orjson": None}):
+            with _clear_cache():
+                with pytest.raises(JsonCodecError, match="Unavailable json codec 'orjson'"):
+                    _get_cached_codec()
+
+
+def test_cache():
+    with _clear_cache():
+        info = _get_cached_codec.cache_info()
+        assert info.hits == 0
+        assert info.misses == 0
+
+        _get_cached_codec()
+        info = _get_cached_codec.cache_info()
+        assert info.hits == 0
+        assert info.misses == 1
+
+        _get_cached_codec()
+        info = _get_cached_codec.cache_info()
+        assert info.hits == 1
+        assert info.misses == 1
+
+        clear_cached_codec()
+        info = _get_cached_codec.cache_info()
+        assert info.hits == 0
+        assert info.misses == 0
+
+
 def test_json_encoder():
-    json._get_json_impl.cache_clear()
-    result = json.json_encoder()
+    with _clear_cache():
+        result = json_encoder()
     assert isinstance(result, Callable)
 
 
 def test_json_decoder():
-    json._get_json_impl.cache_clear()
-    result = json.json_decoder()
+    with _clear_cache():
+        result = json_decoder()
     assert isinstance(result, Callable)

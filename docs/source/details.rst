@@ -156,6 +156,14 @@ then it's used in place of the ``json`` module in the Python Standard Library.
 
 Using one of these libraries may improve both the reading and writing performance.
 
+You can also enforce the use of a specific library by setting the environment variable
+``FASTPARQUET_JSON_CODEC`` to one of the supported modules:
+
+* ``orjson``
+* ``ujson``
+* ``rapidjson``
+* ``json``
+
 Partitions and row-groups
 -------------------------
 
