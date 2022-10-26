@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
 import os
+from pathlib import Path
 from shutil import copytree
 import subprocess
 import sys
@@ -255,6 +256,16 @@ def test_directory_mem_nest():
     assert pf.info['rows'] == 8
     assert pf.to_pandas()['z'].tolist() == ['a', 'b', 'c', 'd'] * 2
     assert pf.to_pandas()['field'].tolist() == ['a'] * 4 + ['b'] * 4
+
+
+def test_pathlib_path(tempdir):
+    file_path = Path(tempdir) / 'foo.parquet'
+    df = pd.DataFrame({'a': [0, 1], 'b': [1, 0]})
+    df.to_parquet(file_path, engine="fastparquet")
+    df.to_parquet(file_path, engine="fastparquet", append=True)
+    out = pd.read_parquet(file_path, engine="fastparquet")
+    expected = pd.concat([df, df]).reset_index(drop=True)
+    assert out.to_dict() == expected.to_dict()
 
 
 def test_attributes(tempdir):

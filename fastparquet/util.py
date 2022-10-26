@@ -499,7 +499,7 @@ def get_file_scheme(paths):
 
 
 def join_path(*path):
-    return "/".join([p.replace("\\", "/").rstrip("/") for p in path if p])
+    return "/".join([str(p).replace("\\", "/").rstrip("/") for p in path if p])
 
 
 def _strip_path_tail(paths) -> set:

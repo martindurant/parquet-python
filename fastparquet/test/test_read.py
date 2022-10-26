@@ -1,5 +1,6 @@
 """test_read.py - unit and integration tests for reading parquet data."""
 from itertools import product
+from pathlib import Path
 import numpy as np
 import os
 
@@ -92,6 +93,12 @@ def test_file_csv(parquet_file):
         if isinstance(data[col][0], bytes):
             data[col] = data[col].str.decode('utf8')
         assert (data[col] == expected[col]).all()
+
+
+def test_read_pathlib_path():
+    pf = fastparquet.ParquetFile(Path(TEST_DATA) / "test-null.parquet")
+    df = pf.to_pandas()
+    assert df.shape == (2, 2)
 
 
 def test_null_int():

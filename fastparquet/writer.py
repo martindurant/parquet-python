@@ -1036,7 +1036,7 @@ def write(filename, data, row_group_offsets=None,
 
     Parameters
     ----------
-    filename: string
+    filename: str or pathlib.Path
         Parquet collection to write to, either a single file (if file_scheme
         is simple) or a directory containing the metadata and data-files.
     data: pandas dataframe

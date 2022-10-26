@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+from pathlib import Path
 import numpy as np
 import os
 import pandas as pd
@@ -1162,3 +1163,11 @@ def test_original_type_without_stats(tempdir):
     write(fn, df, stats=False)
     out = ParquetFile(fn).to_pandas()
     assert out.dtypes["b"] == "int64"
+
+
+def test_roundtrip_pathlib_path(tempdir):
+    df = pd.DataFrame([{'a': 42, 'b': 100}])
+    file_path = Path(tempdir) / "out.parq"
+    write(file_path, df)
+    out = ParquetFile(file_path).to_pandas()
+    assert out.to_dict() == df.to_dict()
