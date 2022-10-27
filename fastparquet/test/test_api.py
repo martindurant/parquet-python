@@ -941,7 +941,8 @@ def test_multi_cat(tempdir):
 
     pf = ParquetFile(fn)
     df1 = pf.to_pandas()
-    assert df1.equals(df)
+    assert (df1.index.values == df.index.values).all()
+    assert (df1.c.values == df.c.values).all()
 
 
 def test_multi_cat_single(tempdir):
