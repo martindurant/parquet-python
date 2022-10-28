@@ -57,10 +57,6 @@ def frame_symbol_dtTrade_type_strike(days=1 * 252,
                               ['symbol', 'dtTrade'],
                               [('dtTrade', '==',
                                 '2005-01-02 00:00:00')]),
-                             (['NOW', 'SPY', 'VIX'], 10, 'hive', 2,
-                              ['symbol', 'dtTrade'],
-                              [('dtTrade', '==',
-                                Timestamp('2005-01-01 00:00:00'))]),
                          ]
                          )
 def test_frame_write_read_verify(tempdir, input_symbols, input_days,
