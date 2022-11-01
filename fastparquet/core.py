@@ -454,9 +454,10 @@ def read_col(column, schema_helper, infile, use_cat=False,
         else:
             my_nan = None
 
-    num = 0
-    row_idx = [0]
+    num = 0  # how far through the output we are
+    row_idx = [0]  # map/list objects
     dic = None
+    index_off = 0  # how far through row_filter we are
 
     while num < rows:
         off = infile.tell()
@@ -492,12 +493,17 @@ def read_col(column, schema_helper, infile, use_cat=False,
                                         skip_nulls, selfmade=selfmade)
         max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
         if isinstance(row_filter, np.ndarray):
+            io = index_off + len(val)  # will be new index_off
+            if row_filter[index_off:index_off+len(val)].sum() == 0:
+                num += len(defi) if defi is not None else len(val)
+                continue
             if defi is not None:
-                val = val[row_filter[defi == max_defi]]
-                defi = defi[row_filter]
+                val = val[row_filter[index_off:index_off+len(defi)][defi == max_defi]]
+                defi = defi[row_filter[index_off:index_off+len(defi)]]
             else:
-                val = val[row_filter]
-            rep = rep[row_filter] if rep is not None else rep
+                val = val[row_filter[index_off:index_off+len(val)]]
+            rep = rep[row_filter[index_off:index_off+len(defi)]] if rep is not None else rep
+            index_off = io
         if rep is not None and assign.dtype.kind != 'O':  # pragma: no cover
             # this should never get called
             raise ValueError('Column contains repeated value, must use object '
