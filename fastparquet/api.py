@@ -1179,12 +1179,30 @@ def statistics(obj):
                                                     md.type, 1, stat=True)[0]
             except:
                 rv['max'] = None
+        elif s.max_value is not None:
+            try:
+                if md.type == parquet_thrift.Type.BYTE_ARRAY:
+                    rv['max'] = ensure_bytes(s.max_value)
+                else:
+                    rv['max'] = encoding.read_plain(ensure_bytes(s.max_value),
+                                                    md.type, 1, stat=True)[0]
+            except:
+                rv['max'] = None
         if s.min is not None:
             try:
                 if md.type == parquet_thrift.Type.BYTE_ARRAY:
                     rv['min'] = ensure_bytes(s.min)
                 else:
                     rv['min'] = encoding.read_plain(ensure_bytes(s.min),
+                                                    md.type, 1, stat=True)[0]
+            except:
+                rv['min'] = None
+        elif s.min_value is not None:
+            try:
+                if md.type == parquet_thrift.Type.BYTE_ARRAY:
+                    rv['min'] = ensure_bytes(s.min_value)
+                else:
+                    rv['min'] = encoding.read_plain(ensure_bytes(s.min_value),
                                                     md.type, 1, stat=True)[0]
             except:
                 rv['min'] = None
