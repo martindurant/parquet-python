@@ -104,8 +104,10 @@ class ParquetFile(object):
     _categories = None
 
     def __init__(self, fn, verify=False, open_with=default_open, root=False,
-                 sep=None, fs=None, pandas_nulls=True):
+                 sep=None, fs=None, pandas_nulls=True, dtypes=None):
         self.pandas_nulls = pandas_nulls
+        self._base_dtype = dtypes
+        self.tz = None
         if open_with is default_open and fs is None:
             fs = fsspec.filesystem("file")
         elif fs is not None:
@@ -248,10 +250,7 @@ class ParquetFile(object):
     @property
     def columns(self):
         """ Column names """
-        return [c for c, i in self._schema[0]["children"].items()
-                if len(getattr(i, 'children', [])) == 0
-                or i.converted_type in [parquet_thrift.ConvertedType.LIST,
-                                        parquet_thrift.ConvertedType.MAP]]
+        return [_ for _ in self.dtypes if _ not in self.cats]
 
     @property
     def statistics(self):
@@ -729,7 +728,6 @@ scheme is 'simple'.")
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
-        df_limited = None
         if row_filter is not False:
             if filters and row_filter is True:
                 # Rows are selected as per filters.
@@ -918,7 +916,7 @@ selection does not match number of rows in DataFrame.')
     def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
         import pandas as pd
-        if not hasattr(self, "_base_dtype"):
+        if self._base_dtype is None:
             if self.has_pandas_metadata:
                 md = self.pandas_metadata['columns']
                 md = {c['name']: c for c in md}
@@ -977,7 +975,8 @@ selection does not match number of rows in DataFrame.')
 
     def __getstate__(self):
         return {"fn": self.fn, "open": self.open, "fmd": self.fmd,
-                "pandas_nulls": self.pandas_nulls}
+                "pandas_nulls": self.pandas_nulls, "_base_dtype": self._base_dtype,
+                "tz": self.tz}
 
     def __setstate__(self, state):
         self.__dict__.update(state)

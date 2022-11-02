@@ -1460,8 +1460,8 @@ def test_var_dtypes():
     import pandas as pd
     from numpy import dtype
     import fastparquet
-    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "evo"))
     from collections import OrderedDict
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "evo"))
     dt = OrderedDict([('name', dtype('O')),
                  ('age', dtype('int32')),
                  ('email', dtype('O')),
@@ -1472,3 +1472,7 @@ def test_var_dtypes():
     assert out.other.isna().all()
     assert "email@email.email" in out.email.values
     assert out.iloc[2].tolist() == ['Steve', 36, None, pd.NA]
+
+    pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "evo"), dtypes=dt)
+    out2 = pf.to_pandas()
+    assert out2.equals(out)
