@@ -571,6 +571,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     are arrays.
     """
     out = assign
+    remains = set(_ for _ in out if not _.endswith("-catdef") and not _ + "-catdef" in out)
     maps = {}
 
     for column in rg.columns:
@@ -582,6 +583,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
             name = ".".join(column.meta_data.path_in_schema)
         if name not in columns:
             continue
+        remains.discard(name)
 
         read_col(column, schema_helper, file, use_cat=name+'-catdef' in out,
                  selfmade=selfmade, assign=out[name],
@@ -600,6 +602,8 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
                 out[name][:] = [dict(zip(k, v)) if k is not None else None
                                 for k, v in zip(key, value)]
                 del maps[name]
+    for k in remains:
+        out[k][:] = None
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,

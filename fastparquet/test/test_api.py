@@ -1454,3 +1454,20 @@ def test_len_and_bool(tempdir):
     write(dn, df, file_scheme='hive', row_group_offsets=[0,2])
     pf = ParquetFile(dn)
     assert len(pf) == 2
+
+
+def test_var_dtypes():
+    import pandas as pd
+    from numpy import dtype
+    import fastparquet
+    import fsspec
+    fs = fsspec.filesystem("file")
+    files = fs.glob("/Users/mdurant/temp/warehouse/db/my_table/data/*")
+    pf = fastparquet.ParquetFile(files, fs=fs)
+    from collections import OrderedDict
+    dt = OrderedDict([('name', dtype('O')),
+                 ('age', dtype('int32')),
+                 ('email', dtype('O')),
+                 ('other', pd.Int64Dtype())
+                 ])
+    out = pf.to_pandas(dtypes=dt)

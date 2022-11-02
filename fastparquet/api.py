@@ -675,7 +675,7 @@ scheme is 'simple'.")
         return out
 
     def to_pandas(self, columns=None, categories=None, filters=[],
-                  index=None, row_filter=False):
+                  index=None, row_filter=False, dtypes=None):
         """
         Read data from parquet into a Pandas dataframe.
 
@@ -729,6 +729,7 @@ scheme is 'simple'.")
         if index:
             columns += [i for i in index if i not in columns]
         check_column_names(self.columns + list(self.cats), columns, categories)
+        df_limited = None
         if row_filter is not False:
             if filters and row_filter is True:
                 # Rows are selected as per filters.
@@ -752,7 +753,7 @@ selection does not match number of rows in DataFrame.')
         else:
             size = sum(rg.num_rows for rg in rgs)
             selected = [None] * len(rgs)  # just to fill zip, below
-        df, views = self.pre_allocate(size, columns, categories, index)
+        df, views = self.pre_allocate(size, columns, categories, index, dtypes=dtypes)
         start = 0
         if self.file_scheme == 'simple':
             infile = self.open(self.fn, 'rb')
@@ -775,11 +776,15 @@ selection does not match number of rows in DataFrame.')
             start += thislen
         return df
 
-    def pre_allocate(self, size, columns, categories, index):
+    def pre_allocate(self, size, columns, categories, index, dtypes=None):
+        if dtypes is not None:
+            columns = list(dtypes)
+        else:
+            dtypes = self._dtypes(categories)
         categories = self.check_categories(categories)
         cats = {k: v for k, v in self.cats.items() if k in columns}
         df, arrs = _pre_allocate(size, columns, categories, index, cats,
-                                 self._dtypes(categories), self.tz)
+                                 dtypes, self.tz)
         i_no_name = re.compile(r"__index_level_\d+__")
         if self.has_pandas_metadata:
             md = self.pandas_metadata
