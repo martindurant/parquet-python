@@ -1476,3 +1476,8 @@ def test_var_dtypes():
     pf = fastparquet.ParquetFile(os.path.join(TEST_DATA, "evo"), dtypes=dt)
     out2 = pf.to_pandas()
     assert out2.equals(out)
+
+
+def test_not_a_path():
+    with pytest.raises(FileNotFoundError):
+        ParquetFile("notadir")

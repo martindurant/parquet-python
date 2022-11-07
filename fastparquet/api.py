@@ -170,6 +170,8 @@ class ParquetFile(object):
                     self.fmd = fmd
                     self._set_attrs()
                 self.fs = fs
+            else:
+                raise FileNotFoundError(fn)
         else:
             done = False
             try:
