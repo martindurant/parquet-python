@@ -46,7 +46,18 @@ install_requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='fastparquet',
-    version='0.8.3',
+    use_scm_version={
+        'version_scheme': 'guess-next-dev',
+        'local_scheme': 'dirty-tag',
+        'write_to': 'fastparquet/_version.py'
+    },
+    setup_requires=[
+        'setuptools>18.0',
+        'setuptools-scm>1.5.4',
+        'Cython',
+        'pytest-runner',
+        'oldest-supported-numpy'
+    ],
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@anaconda.com',
@@ -67,10 +78,6 @@ setup(
     packages=['fastparquet'],
     cmdclass={'build_ext': build_ext},
     install_requires=install_requires,
-    setup_requires=[
-        'pytest-runner',
-        'oldest-supported-numpy'
-    ],
     extras_require={
         'lzo': ['python-lzo'],
     },
