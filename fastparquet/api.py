@@ -141,6 +141,9 @@ class ParquetFile(object):
                 self.fn = join_path(fn)
                 with open_with(fn, 'rb') as f:
                     self._parse_header(f, verify)
+                if root:
+                    paths = [fn.replace(root, "")]
+                    self.file_scheme, self.cats = paths_to_cats(paths, None)
             elif "*" in fn or fs.isdir(fn):
                 fn2 = join_path(fn, '_metadata')
                 if fs.exists(fn2):

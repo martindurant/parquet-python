@@ -581,7 +581,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
             name = ".".join(column.meta_data.path_in_schema[:-2])
         else:
             name = ".".join(column.meta_data.path_in_schema)
-        if name not in columns:
+        if name not in columns or name in cats:
             continue
         remains.discard(name)
 
