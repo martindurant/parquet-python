@@ -20,6 +20,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 50
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
