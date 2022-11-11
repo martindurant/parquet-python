@@ -28,6 +28,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 50
 
       - name: Setup Python
         uses: actions/setup-python@v2
