@@ -979,6 +979,8 @@ selection does not match number of rows in DataFrame.')
         return dtype
 
     def __getstate__(self):
+        if self.fmd.row_groups is None:
+            self.fmd.row_groups = []
         return {"fn": self.fn, "open": self.open, "fmd": self.fmd,
                 "pandas_nulls": self.pandas_nulls, "_base_dtype": self._base_dtype,
                 "tz": self.tz}
@@ -986,11 +988,11 @@ selection does not match number of rows in DataFrame.')
     def __setstate__(self, state):
         self.__dict__.update(state)
         # Decode 'file_path'.
-        rgs = self.fmd[4]
+        rgs = self.fmd[4] or []
         # 4th condition should not be necessary, depends on 'deepcopy' version.
         # https://github.com/dask/fastparquet/pull/731#issuecomment-1013507287
-        if (rgs[0][1] and rgs[0][1][0] and rgs[0][1][0].get(1)
-            and isinstance(rgs[0][1][0].get(1), bytes)):
+        if (rgs and rgs[0][1] and rgs[0][1][0] and rgs[0][1][0].get(1)
+                and isinstance(rgs[0][1][0].get(1), bytes)):
             # for rg in fmd.row_groups:
             for rg in rgs:
                 # chunk = rg.columns[0]
