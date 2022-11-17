@@ -879,7 +879,11 @@ def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
     if isinstance(data, pd.DataFrame):
         data = iter_dataframe(data, row_group_offsets)
     mode = 'rb+' if append else 'wb'
-    with open_with(fn, mode) as f:
+    if hasattr(fn, "write"):
+        of = fn
+    else:
+        of = open_with(fn, mode)
+    with of as f:
         if append:
             f.seek(-8, 2)
             head_size = struct.unpack('<I', f.read(4))[0]
