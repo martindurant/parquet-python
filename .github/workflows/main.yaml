@@ -115,7 +115,7 @@ jobs:
       - name: Setup conda
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: ci/environment-py38.yml
+          environment-file: ci/environment-py310.yml
 
       - name: pip-install
         shell: bash -l {0}
