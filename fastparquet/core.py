@@ -541,7 +541,6 @@ def read_col(column, schema_helper, infile, use_cat=False,
         else:
             piece = assign[num:num+len(val)]
             if isinstance(piece.dtype, pd.core.arrays.masked.BaseMaskedDtype):
-                piece._mask[:] = 0
                 piece = piece._data
             if use_cat and not d:
                 # only possible for multi-index
