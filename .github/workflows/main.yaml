@@ -23,12 +23,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup conda
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          auto-update-conda: true
-          auto-activate-base: false
-          activate-environment: test_env
           environment-file: ci/environment-${{ matrix.CONDA_ENV }}.yml
 
       - name: pip-install
@@ -56,12 +53,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup conda
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          auto-update-conda: true
-          auto-activate-base: false
-          activate-environment: test_env
           environment-file: ci/environment-${{ matrix.CONDA_ENV }}.yml
 
       - name: pip-install
@@ -88,12 +82,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup conda
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          auto-update-conda: true
-          auto-activate-base: false
-          activate-environment: test_env
           environment-file: ci/environment-py38.yml
 
       - name: pip-install
@@ -121,12 +112,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup conda
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          auto-update-conda: true
-          auto-activate-base: false
-          activate-environment: test_env
           environment-file: ci/environment-py38.yml
 
       - name: pip-install
@@ -158,12 +146,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup conda
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          auto-update-conda: true
-          auto-activate-base: false
-          activate-environment: test_env
           environment-file: ci/environment-py38win.yml
 
       - name: pip-install
