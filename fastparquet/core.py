@@ -526,9 +526,9 @@ def read_col(column, schema_helper, infile, use_cat=False,
             )
         elif defi is not None:
             part = assign[num:num+len(defi)]
-            if isinstance(part, pd.core.arrays.masked.BaseMaskedDtype):
+            if isinstance(part.dtype, pd.core.arrays.masked.BaseMaskedDtype):
                 # TODO: could have read directly into array
-                part._mask = defi != max_defi
+                part._mask[:] = defi != max_defi
                 part = part._data
             elif part.dtype.kind != "O":
                 part[defi != max_defi] = my_nan
@@ -540,7 +540,8 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 part[defi == max_defi] = val
         else:
             piece = assign[num:num+len(val)]
-            if isinstance(piece, pd.core.arrays.masked.BaseMaskedDtype):
+            if isinstance(piece.dtype, pd.core.arrays.masked.BaseMaskedDtype):
+                piece._mask[:] = 0
                 piece = piece._data
             if use_cat and not d:
                 # only possible for multi-index
