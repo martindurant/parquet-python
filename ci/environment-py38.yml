@@ -13,7 +13,6 @@ dependencies:
   - thrift
   - numpy
   - cramjam
-  - pyspark
   - packaging
   - orjson
   - ujson
