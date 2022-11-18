@@ -189,6 +189,7 @@ jobs:
       CIBW_SKIP: ${{ matrix.skip }}
       CIBW_ARCHS_LINUX: ${{ matrix.linux_archs }}
       CIBW_TEST_SKIP: "*"
+      CIBW_BEFORE_TEST: "git status"
 
     steps:
         - uses: actions/checkout@v2

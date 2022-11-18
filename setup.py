@@ -4,6 +4,7 @@ import os
 import sys
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
+import subprocess
 
 
 class build_ext(_build_ext):
@@ -43,12 +44,16 @@ else:
     extra = {'ext_modules': cythonize(modules, language_level=3)}
 
 install_requires = open('requirements.txt').read().strip().split('\n')
+subprocess.call(["git", "status"], stdout=sys.stdout, stderr=sys.stderr)
+
+def no_version(*_, **__):
+    return ""
 
 setup(
     name='fastparquet',
     use_scm_version={
-        'version_scheme': 'guess-next-dev',
-        'local_scheme': 'dirty-tag',
+        'version_scheme': 'guess-next-dev' if os.getenv("CIBW_SKIP") else no_version,
+        'local_scheme': 'no-local-version',
         'write_to': 'fastparquet/_version.py'
     },
     setup_requires=[

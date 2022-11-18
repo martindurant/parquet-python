@@ -16,3 +16,4 @@ fastparquet.egg-info
 *.html
 .DS_Store
 __pycache__/
+_version.py
