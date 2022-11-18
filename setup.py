@@ -46,13 +46,10 @@ else:
 install_requires = open('requirements.txt').read().strip().split('\n')
 subprocess.call(["git", "status"], stdout=sys.stdout, stderr=sys.stderr)
 
-def no_version(*_, **__):
-    return ""
-
 setup(
     name='fastparquet',
     use_scm_version={
-        'version_scheme': 'guess-next-dev' if os.getenv("CIBW_SKIP") else no_version,
+        'version_scheme': 'guess-next-dev',
         'local_scheme': 'no-local-version',
         'write_to': 'fastparquet/_version.py'
     },
