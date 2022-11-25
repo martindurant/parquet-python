@@ -999,7 +999,7 @@ def test_tz_local(tempdir, tz):
 
 def test_no_stats(tempdir):
     fn = os.path.join(tempdir, 'temp.parq')
-    df = pd.DataFrame({'a': [0], 'b': [0]})
+    df = pd.DataFrame({'a': [0], 'b': [0.], 'c': ["hi"], 'd': pd.to_datetime([0])})
     write(fn, df, stats=False)
 
     pf = ParquetFile(fn)
@@ -1010,6 +1010,13 @@ def test_no_stats(tempdir):
     pf = ParquetFile(fn)
     assert pf.row_groups[0].columns[0].meta_data.statistics is not None
     assert pf.row_groups[0].columns[1].meta_data.statistics is None
+
+    write(fn, df, stats="auto")
+    pf = ParquetFile(fn)
+    assert pf.row_groups[0].columns[0].meta_data.statistics is not None
+    assert pf.row_groups[0].columns[1].meta_data.statistics is not None
+    assert pf.row_groups[0].columns[2].meta_data.statistics is None
+    assert pf.row_groups[0].columns[3].meta_data.statistics is not None
 
 
 def test_Float(tempdir):

@@ -483,7 +483,7 @@ class ParquetFile(object):
     def write_row_groups(self, data, row_group_offsets=None, sort_key=None,
                          sort_pnames:bool=False, compression=None,
                          write_fmd:bool=True, open_with=default_open,
-                         mkdirs=None, stats=True):
+                         mkdirs=None, stats="auto"):
         """Write data as new row groups to disk, with optional sorting.
 
         Parameters
@@ -527,6 +527,8 @@ class ParquetFile(object):
             If True (default), do it for every column;
             If False, never do;
             If a list of str, do it only for those specified columns.
+            "auto" means True for any int/float or timemstamp column, False
+            otherwise. This will become the default in a future release.
         """
         from .writer import write_simple, write_multi
         partition_on = list(self.cats)

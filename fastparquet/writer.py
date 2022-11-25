@@ -699,7 +699,6 @@ def make_row_group(f, data, schema, compression=None, stats=True):
                     comp = compression.get('_default', None)
             else:
                 comp = compression
-            st = stats if isinstance(stats, bool) else column.name in stats
             if isinstance(data.columns, pd.MultiIndex):
                 try:
                     name = ast.literal_eval(column.name)
@@ -708,6 +707,12 @@ def make_row_group(f, data, schema, compression=None, stats=True):
                 coldata = data[name]
             else:
                 coldata = data[column.name]
+            if isinstance(stats, int):
+                st = stats
+            elif stats == "auto":
+                st = coldata.dtype.kind in ["i", "f", "M"]
+            else:
+                st = column.name in stats
             chunk = write_column(f, coldata, column,
                                  compression=comp, stats=st)
             cols.append(chunk)
@@ -1152,11 +1157,13 @@ def write(filename, data, row_group_offsets=None,
     custom_metadata: dict
         Key-value metadata to write
         Ignored if appending to an existing parquet data-set.
-    stats: True|False|list(str)
+    stats: True|False|list(str)|"auto"
         Whether to calculate and write summary statistics.
         If True (default), do it for every column;
         If False, never do;
         And if a list of str, do it only for those specified columns.
+        "auto" means True for any int/float or timemstamp column, False
+        otherwise. This will become the default in a future release.
 
     Examples
     --------
