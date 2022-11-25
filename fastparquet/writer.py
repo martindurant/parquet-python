@@ -673,9 +673,35 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     return chunk
 
 
+class DataFrameSizeWarning(UserWarning):
+    pass
+
+
+WARNING_THRESHOLD = 2**30
+
+
+def warn_size(df, limit=None):
+    limit = limit or WARNING_THRESHOLD
+    total = 0
+    rows = len(df)
+    for col, dtype in df.dtypes.items():
+        if dtype.kind in ['f', 'i', 'M', 'm']:
+            # ignores nullability here, since the bools don't take up much space
+            total += dtype.itemsize * rows
+
+        else:
+            approx = sum([len(str(_)) + 4 for _ in df[col][:100]])
+            total += (approx * rows) // 100
+    if total > limit:
+        warnings.warn(DataFrameSizeWarning(
+            f"Parquet partition about warning size limit, {total} > {limit}"
+        ))
+
+
 def make_row_group(f, data, schema, compression=None, stats=True):
     """ Make a single row group of a Parquet file """
     rows = len(data)
+    warn_size(data)
     if rows == 0:
         return
     if isinstance(data.columns, pd.MultiIndex):

@@ -1019,13 +1019,21 @@ def test_no_stats(tempdir):
     assert pf.row_groups[0].columns[3].meta_data.statistics is not None
 
 
-def test_Float(tempdir):
+def test_float(tempdir):
     fn = os.path.join(tempdir, 'temp.parq')
     df = pd.DataFrame({"s": ["a", "b", "c", "d"], "v": [1, 2, 3, pd.NA]})
     df = df.astype({"s": "string", "v": "Float64"})
     write(fn, df, stats=False)
     out = ParquetFile(fn).to_pandas()
     assert (out.v == df.v).all()
+
+
+def test_limit(monkeypatch, tempdir):
+    fn = os.path.join(tempdir, 'temp.parq')
+    monkeypatch.setattr(writer, "WARNING_THRESHOLD", 1)
+    df = pd.DataFrame({'a': [0]})
+    with pytest.warns(writer.DataFrameSizeWarning):
+        write(fn, df)
 
 
 def test_empty_columns(tempdir):
