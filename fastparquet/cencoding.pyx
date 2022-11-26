@@ -599,7 +599,7 @@ cpdef void write_thrift(dict data, NumpyIO output):
                 output.write_byte((delt << 4) | 5)
             else:
                 output.write_byte((delt << 4) | 6)
-            encode_unsigned_varint(long_zigzag(<int>val), output)
+            encode_unsigned_varint(long_zigzag(<int64_t>val), output)
         elif isinstance(val, float):
             output.write_byte((delt << 4) | 7)
             d = val
