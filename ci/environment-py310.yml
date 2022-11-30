@@ -18,3 +18,4 @@ dependencies:
   - orjson
   - ujson
   - python-rapidjson
+  - versioneer
