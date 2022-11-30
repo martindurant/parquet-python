@@ -758,6 +758,7 @@ def test_append_simple(tempdir):
     write(fn, df, append=True, write_index=False)
 
     pf = ParquetFile(fn)
+    assert pf.fmd.num_rows == 8
     expected = pd.concat([df, df], ignore_index=True)
     pd.testing.assert_frame_equal(
         pf.to_pandas(), expected, check_categorical=False, check_dtype=False)

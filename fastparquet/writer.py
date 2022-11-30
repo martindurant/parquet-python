@@ -930,6 +930,7 @@ def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
                 rgs.append(rg)
 
         fmd.row_groups = rgs
+        fmd.num_rows = sum(rg.num_rows for rg in rgs)
         foot_size = write_thrift(f, fmd)
         f.write(struct.pack(b"<I", foot_size))
         f.write(MARKER)
