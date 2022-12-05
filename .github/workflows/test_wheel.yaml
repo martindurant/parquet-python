@@ -18,7 +18,7 @@ jobs:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: windows-2019
             skip: "*2*win* *win32 pp*"
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             linux_archs: native
             skip: "pp*"
 
@@ -55,7 +55,7 @@ jobs:
       - name: delvewheel install
         if: runner.os == 'Windows'
         run: |
-          python -m pip install delvewheel==0.0.9 cython
+          python -m pip install delvewheel cython
 
       - name: Build wheels
         uses: joerick/cibuildwheel@v2.11.2
