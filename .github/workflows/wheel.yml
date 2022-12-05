@@ -52,7 +52,7 @@ jobs:
           python -m pip install delvewheel==0.0.9 cython
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.3.0
+        uses: joerick/cibuildwheel@v2.11.2
 
       - uses: actions/upload-artifact@v2
         with:
@@ -107,7 +107,7 @@ jobs:
           python -m pip install delvewheel==0.0.9 cython
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.3.0
+        uses: joerick/cibuildwheel@v2.11.2
 
       - uses: actions/upload-artifact@v2
         with:
@@ -162,7 +162,7 @@ jobs:
           python -m pip install delvewheel==0.0.9 cython
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.3.0
+        uses: joerick/cibuildwheel@v2.11.2
 
       - uses: actions/upload-artifact@v2
         with:
@@ -217,7 +217,7 @@ jobs:
             python -m pip install delvewheel==0.0.9 cython
 
         - name: Build wheels
-          uses: joerick/cibuildwheel@v2.3.0
+          uses: joerick/cibuildwheel@v2.11.2
 
         - uses: actions/upload-artifact@v2
           with:
@@ -251,7 +251,7 @@ jobs:
           python-version: "3.8"
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.3.0
+        uses: joerick/cibuildwheel@v2.11.2
 
       - uses: actions/upload-artifact@v2
         with:

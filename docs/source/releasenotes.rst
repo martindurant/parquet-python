@@ -1,6 +1,13 @@
 Release Notes
 -------------
 
+2022.12.0
+---------
+
+#. add py3.11 wheel builds
+#. check all int32 values before passing to thrift writer
+#. fix type of num_rows to i64 for big single file
+
 2022.11.0
 ---------
 
