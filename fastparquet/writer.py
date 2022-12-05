@@ -1573,11 +1573,11 @@ def update_file_custom_metadata(path: str, custom_metadata: dict,
     """
     if is_metadata_file is None:
         if path[-9:] == '_metadata':
-            is_metadata = True
+            is_metadata_file = True
         else:
-            is_metadata = False
+            is_metadata_file = False
     with open(path, "rb+") as f:
-        if is_metadata:
+        if is_metadata_file:
             # For pure metadata file, metadata starts just four bytes in.
             loc = 4
         else:

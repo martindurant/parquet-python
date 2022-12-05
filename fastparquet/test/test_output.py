@@ -1161,6 +1161,17 @@ def test_update_file_custom_metadata(tempdir):
     assert custom_metadata_upd_rec == custom_metadata_upd_ref
 
 
+def test_update_file_custom_metadata_2(tempdir):
+    # Modifying metadata in a parquet file, specifying it is a parquet file.
+    df = pd.DataFrame([1, 2, 3], columns=["a"])
+    fn = os.path.join(tempdir, "data.parquet")
+    write(fn, df)
+    metadata = {"version": "1"}
+    update_file_custom_metadata(fn, custom_metadata=metadata, is_metadata_file=False)
+    pf = ParquetFile(fn)
+    assert pf.key_value_metadata["version"] == "1"
+
+
 def test_json_stats(tempdir):
     # https://github.com/dask/fastparquet/issues/775
     df = pd.DataFrame(
