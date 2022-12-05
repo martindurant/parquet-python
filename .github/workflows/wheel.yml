@@ -10,11 +10,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             linux_archs: "aarch64"
             skip: "pp* *-musllinux_aarch64"
 
@@ -65,11 +65,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             linux_archs: "i686"
             skip: "pp*"
 
@@ -120,11 +120,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             linux_archs: "x86_64"
             skip: "pp*"
 
