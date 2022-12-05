@@ -20,7 +20,7 @@ jobs:
             skip: "*2*win* *win32 pp*"
           - os: ubuntu-22.04
             linux_archs: native
-            skip: "pp*"
+            skip: "pp* *musl*"
 
     name: Test wheel (${{ matrix.numpy_version }} + ${{ matrix.os }})
     env:
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8"
+          python-version: "3.10"
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
