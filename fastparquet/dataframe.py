@@ -125,10 +125,12 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         if col is None:
             raise ValueError('If using an index, must give an index name')
         if str(t) == 'category':
-            c = Categorical([], categories=cat(col), fastpath=True)
-            vals = np.zeros(size, dtype=c.codes.dtype)
+            # https://github.com/dask/fastparquet/issues/576#issuecomment-805579337
+            temp = Categorical([], categories=cat(col), fastpath=True)
+            vals = np.zeros(size, dtype=temp.codes.dtype)
+            c = Categorical(vals, dtype=temp.dtype, fastpath=True)
             index = CategoricalIndex(c)
-            index._data._codes = vals
+
             views[col] = vals
             views[col+'-catdef'] = index._data
         else:
