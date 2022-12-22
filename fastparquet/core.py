@@ -472,7 +472,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             if use_cat and dic is not None:
                 # fastpath skips the check the number of categories hasn't changed.
                 # In this case, they may change, if the default RangeIndex was used.
-                ddt = [kv.value.decode() for kv in cmd.key_value_metadata
+                ddt = [kv.value.decode() for kv in (cmd.key_value_metadata or [])
                        if kv.key == b"label_dtype"]
                 ddt = ddt[0] or None
                 catdef._set_categories(pd.Index(dic, dtype=ddt), fastpath=True)
