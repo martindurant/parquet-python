@@ -223,6 +223,7 @@ cdef void delta_read_bitpacked(NumpyIO file_obj, uint8_t bitwidth,
         if stop < 0:
             data = ((data & 0X00FFFFFFFFFFFFFF) << 8) | file_obj.read_byte()
             stop += 8
+            print("bin stop", bin(stop), bin(data))
         else:
             o.write_int((data >> stop) & mask)
             print("bitpack value", (data >> stop) & mask, data, stop, mask)
