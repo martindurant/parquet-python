@@ -256,7 +256,7 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
                 for j in range(values_per_miniblock):
                     temp = o.read_int()
                     o.loc -= 4
-                    print("miniblock value", value)
+                    print("miniblock value (bw)", value)
                     o.write_int(value)
                     value += min_delta + temp
                     count -= 1
