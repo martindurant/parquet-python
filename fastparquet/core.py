@@ -472,7 +472,10 @@ def read_col(column, schema_helper, infile, use_cat=False,
             if use_cat and dic is not None:
                 # fastpath skips the check the number of categories hasn't changed.
                 # In this case, they may change, if the default RangeIndex was used.
-                catdef._set_categories(pd.Index(dic), fastpath=True)
+                ddt = [kv.value.decode() for kv in cmd.key_value_metadata
+                       if kv.key == b"label_dtype"]
+                ddt = ddt[0] or None
+                catdef._set_categories(pd.Index(dic, dtype=ddt), fastpath=True)
                 if np.iinfo(assign.dtype).max < len(dic):
                     raise RuntimeError('Assigned array dtype (%s) cannot accommodate '
                                        'number of category labels (%i)' %

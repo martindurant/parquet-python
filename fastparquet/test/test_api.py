@@ -1006,6 +1006,27 @@ def test_multi(tempdir):
     assert (df1.loc[1, 'a'].values == df.loc[1, 'a'].values).all()
 
 
+def test_multi_dtype(tempdir):
+    # https://github.com/dask/fastparquet/issues/831
+    fn = os.path.join(tempdir, 'test.parq')
+    idx = [
+        pd.Timestamp("2022-12-01 13:00", tz="UTC"),
+        pd.Timestamp("2022-12-01 14:00", tz="UTC"),
+    ]
+    data = [
+        [1, 55],
+        [2, 56],
+    ]
+    df = pd.DataFrame(data=data, index=idx, columns=["seq", "val"])
+    df.index.name = "time"
+    df.set_index("seq", append=True, inplace=True)
+    fastparquet.write(fn, df)
+
+    pf = fastparquet.ParquetFile(fn)
+    df2 = pf.to_pandas()
+    assert df.equals(df2)
+
+
 def test_simple_nested():
     fn = os.path.join(TEST_DATA, 'nested1.parquet')
     pf = ParquetFile(fn)

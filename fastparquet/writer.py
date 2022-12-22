@@ -531,6 +531,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         except (TypeError, ValueError):
             stats = False
         ncats = len(data.cat.categories)
+        dcat = data.cat.categories.dtype
         data = data.cat.codes
         cats = True
         encoding = "RLE_DICTIONARY"
@@ -667,6 +668,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
             parquet_thrift.KeyValue(key='num_categories', value=str(ncats)))
         kvm.append(
             parquet_thrift.KeyValue(key='numpy_dtype', value=str(data.dtype)))
+        kvm.append(
+            parquet_thrift.KeyValue(key='label_dtype', value=str(dcat)))
     chunk = parquet_thrift.ColumnChunk(file_offset=offset,
                                        meta_data=cmd,
                                        file_path=None)
