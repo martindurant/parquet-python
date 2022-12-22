@@ -225,6 +225,7 @@ cdef void delta_read_bitpacked(NumpyIO file_obj, uint8_t bitwidth,
             stop += 8
         else:
             o.write_int((data >> stop) & mask)
+            print("bitpack value", (data >> stop) & mask, data, stop, mask)
             stop -= bitwidth
             count -= 1
 
@@ -239,11 +240,13 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
         const uint8_t[:] bitwidths
         uint8_t bitwidth
     values_per_miniblock = block_size // miniblock_per_block
+    print("\nstart", count, value, values_per_miniblock)
     while True:
         min_delta = zigzag_long(read_unsigned_var_int(file_obj))
         bitwidths = file_obj.read(miniblock_per_block)
         for i in range(miniblock_per_block):
             bitwidth = bitwidths[i]
+            print("\n  miniblock", i, "width", bitwidth)
             if bitwidth:
                 temp = o.loc
                 if count > 1:
@@ -253,6 +256,7 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
                 for j in range(values_per_miniblock):
                     temp = o.read_int()
                     o.loc -= 4
+                    print("miniblock value", value)
                     o.write_int(value)
                     value += min_delta + temp
                     count -= 1
@@ -260,6 +264,7 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o):
                         return
             else:
                 for j in range(values_per_miniblock):
+                    print("miniblock value", value)
                     o.write_int(value)
                     value += min_delta
                     count -= 1
