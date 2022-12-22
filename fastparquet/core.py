@@ -474,7 +474,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 # In this case, they may change, if the default RangeIndex was used.
                 ddt = [kv.value.decode() for kv in (cmd.key_value_metadata or [])
                        if kv.key == b"label_dtype"]
-                ddt = ddt[0] or None
+                ddt = ddt[0] if ddt else None
                 catdef._set_categories(pd.Index(dic, dtype=ddt), fastpath=True)
                 if np.iinfo(assign.dtype).max < len(dic):
                     raise RuntimeError('Assigned array dtype (%s) cannot accommodate '
