@@ -18,7 +18,7 @@ cdef extern from "string.h":
 from cpython cimport (
     PyBytes_FromStringAndSize, PyBytes_GET_SIZE, PyUnicode_DecodeUTF8,
 )
-from libc.stdint cimport uint8_t, uint32_t, int32_t, uint64_t, int64_t
+from libc.stdint cimport int8_t, uint8_t, uint32_t, int32_t, uint64_t, int64_t
 
 
 cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO o, int32_t itemsize=4):
@@ -217,7 +217,7 @@ cdef void delta_read_bitpacked(NumpyIO file_obj, uint8_t bitwidth,
                                NumpyIO o, uint64_t count, uint8_t itemsize=4):
     cdef:
         uint64_t data = 0
-        char stop = -bitwidth
+        int8_t stop = -bitwidth
         uint64_t mask = 0XFFFFFFFFFFFFFFFF >> (64 - bitwidth)
     while count > 0:
         if stop < 0:
