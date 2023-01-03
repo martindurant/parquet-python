@@ -15,7 +15,7 @@ from .cencoding import ThriftObject, from_buffer
 from .json import json_decoder
 from .util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, get_fs)
+                   ex_from_sep, _strip_path_tail, get_fs, PANDAS_VERSION)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
@@ -942,9 +942,16 @@ selection does not match number of rows in DataFrame.')
                 # int and bool columns produce masked pandas types, no need to
                 # promote types here
                 if dt.kind == "M":
+                    if self.pandas_metadata and PANDAS_VERSION.major >= 2:
+                        # get original resolution when pandas supports non-ns
+                        dt = md[col]["numpy_type"]
                     if tz is not None and tz.get(col, False):
                         z = dataframe.tz_to_dt_tz(tz[col])
-                        dtype[col] = pd.Series([], dtype='M8[ns]').dt.tz_localize(z).dtype
+                        if PANDAS_VERSION.major >= 2:
+                            dt = pd.Series([], dtype=dt).dt.tz_convert(z).dtype
+                        else:
+                            dt = pd.Series([], dtype=dt).dt.tz_localize(z).dtype
+                    dtype[col] = dt
                 elif dt in converted_types.nullable:
                     if self.pandas_metadata:
                         tt = md.get(col, {}).get("numpy_type")

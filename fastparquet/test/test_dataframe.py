@@ -1,15 +1,11 @@
-import shutil
 import warnings
 from unittest import mock
 
-from packaging.version import Version
-import pytest
 import pandas as pd
 from numpy import empty as np_empty
 from pandas.testing import assert_frame_equal
 
 from fastparquet.dataframe import empty
-from fastparquet.util import PANDAS_VERSION
 
 DatetimeTZDtype = pd.DatetimeTZDtype
 
