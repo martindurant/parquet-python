@@ -132,6 +132,7 @@ jobs:
       - name: Run Tests
         shell: bash -l {0}
         run: |
+          pytest -v  # fastparquet test suite against dev pandas
           pytest --verbose pandas/pandas/tests/io/test_parquet.py
           # Test parquet with different filesystems
           pytest --verbose pandas/pandas/tests/io/test_gcs.py pandas/pandas/tests/io/test_fsspec.py -k "parquet"

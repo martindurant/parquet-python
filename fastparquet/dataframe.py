@@ -200,10 +200,12 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             if not isinstance(bvalues, np.ndarray):
                 # e.g. DatetimeLikeBlock backed by DatetimeArray/TimedeltaArray
                 if bvalues.dtype.kind == "m":
-                    values = np.zeros(shape=shape, dtype="m8[ns]")
+                    dt = "m8[ns]" if PANDAS_VERSION.major < 2 else bvalues.dtype
+                    values = np.zeros(shape=shape, dtype=dt)
                     values = type(bvalues)._from_sequence(values, copy=False)
                 elif bvalues.dtype.kind == "M":
-                    values = np.zeros(shape=shape, dtype="M8[ns]")
+                    dt = "M8[ns]" if PANDAS_VERSION.major < 2 else bvalues.dtype
+                    values = np.zeros(shape=shape, dtype=dt)
                     values = type(bvalues)._from_sequence(values, copy=False)
                 elif str(bvalues.dtype)[0] in {"I", "U"} or str(bvalues.dtype) == "boolean":
                     arr_type = bvalues.dtype.construct_array_type()

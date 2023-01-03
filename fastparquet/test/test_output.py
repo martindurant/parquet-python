@@ -8,6 +8,7 @@ import pandas.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift, update_file_custom_metadata
 from fastparquet import writer, encoding
+from pandas._testing import makeMixedDataFrame
 from pandas.testing import assert_frame_equal
 from pandas.api.types import CategoricalDtype
 import pytest
@@ -171,7 +172,7 @@ def test_roundtrip_complex(tempdir, scheme,):
 
 
 @pytest.mark.parametrize('df', [
-    pd.util.testing.makeMixedDataFrame(),
+    makeMixedDataFrame(),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
                   periods=10, freq='H', tz='Europe/London')}),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',

@@ -9,6 +9,7 @@ import sys
 import fsspec
 import numpy as np
 import pandas as pd
+from pandas._testing import makeMixedDataFrame
 try:
     from pandas.tslib import Timestamp
 except ImportError:
@@ -54,7 +55,7 @@ def test_statistics(tempdir):
 
 
 def test_logical_types(tempdir):
-    df = pd.util.testing.makeMixedDataFrame()
+    df = makeMixedDataFrame()
 
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2])
@@ -67,7 +68,7 @@ def test_logical_types(tempdir):
 
 
 def test_text_schema(tempdir):
-    df = pd.util.testing.makeMixedDataFrame()
+    df = makeMixedDataFrame()
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df)
     p = ParquetFile(fn)
@@ -879,7 +880,7 @@ def test_compression_snappy(tempdir):
 
 
 def test_int96_stats(tempdir):
-    df = pd.util.testing.makeMixedDataFrame()
+    df = makeMixedDataFrame()
 
     fn = os.path.join(tempdir, 'foo.parquet')
     write(fn, df, row_group_offsets=[0, 2], times='int96')
