@@ -7,7 +7,11 @@ import pytest
 
 import fastparquet
 from fastparquet import write
+from fastparquet.util import PANDAS_VERSION
 from .util import sql, s3, tempdir, TEST_DATA
+
+if PANDAS_VERSION.major >= 2:
+    pytest.skip("pyspark not yet compatible with pandas 2", allow_module_level=True)
 
 
 def test_map_array(sql):
