@@ -389,12 +389,21 @@ def groupby_types(iterable):
     return groups
 
 
-def get_column_metadata(column, name):
+def get_column_metadata(column, name, object_dtype=None):
     """Produce pandas column metadata block"""
-    # from pyarrow.pandas_compat
-    # https://github.com/apache/arrow/blob/master/python/pyarrow/pandas_compat.py
-    inferred_dtype = infer_dtype(column)
+    inferred_dtypes = {
+        "utf8": "unicode",
+        "bytes": "bytes",
+        "bool": "bool",
+        "int": "int",
+        "json": "object",
+        "bson": "object"
+    }
     dtype = column.dtype
+    if object_dtype in inferred_dtypes and not is_categorical_dtype(dtype):
+        inferred_dtype = inferred_dtypes.get(object_dtype, "mixed")
+    else:
+        inferred_dtype = infer_dtype(column)
     if str(dtype) == "bool":
         # pandas accidentally calls this "boolean"
         inferred_dtype = "bool"

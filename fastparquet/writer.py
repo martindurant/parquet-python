@@ -322,7 +322,7 @@ def convert(data, se):
 
 
 def infer_object_encoding(data):
-    head = data[:10] if isinstance(data, pd.Index) else data.dropna()[:10]
+    head = data[:10] if isinstance(data, pd.Index) else data.dropna().iloc[:10]
     if all(isinstance(i, str) for i in head if i is not None):
         return "utf8"
     elif all(isinstance(i, bytes) for i in head if i is not None):
@@ -693,7 +693,7 @@ def warn_size(df, limit=None):
             total += dtype.itemsize * rows
 
         else:
-            approx = sum([len(str(_)) + 4 for _ in df[col][:100]])
+            approx = sum([len(str(_)) + 4 for _ in df[col].iloc[:100]])
             total += (approx * rows) // 100
     if total > limit:
         warnings.warn(DataFrameSizeWarning(
@@ -847,10 +847,10 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
     for column in data.columns:
         if column in ignore_columns:
             continue
-        pandas_metadata['columns'].append(
-            get_column_metadata(data[column], column))
         oencoding = (object_encoding if isinstance(object_encoding, str)
                      else object_encoding.get(column, None))
+        pandas_metadata['columns'].append(
+            get_column_metadata(data[column], column, object_dtype=oencoding))
         fixed = None if fixed_text is None else fixed_text.get(column, None)
         is_index = (column in index_cols_orig) if index_cols_orig else None
         if is_categorical_dtype(data[column].dtype):
@@ -1315,7 +1315,11 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     if not remaining:
         raise ValueError("Cannot include all columns in partition_on")
     rgs = []
-    for key, group in sorted(gb):
+    for key in gb.groups:
+        try:
+            group = gb.get_group(key)
+        except KeyError:
+            continue
         if group.empty:
             continue
         df = group[remaining]
