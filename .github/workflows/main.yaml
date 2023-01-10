@@ -92,7 +92,7 @@ jobs:
         run: |
           git clone https://github.com/dask/dask
           pip install pyarrow
-          pip install dask/
+          pip install -e dask/
           pip install -e . --no-deps
 
       - name: Run Tests
