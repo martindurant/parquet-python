@@ -400,7 +400,7 @@ def get_column_metadata(column, name, object_dtype=None):
         "bson": "object"
     }
     dtype = column.dtype
-    if object_dtype in inferred_dtypes and not is_categorical_dtype(dtype):
+    if object_dtype in inferred_dtypes and dtype == "object":
         inferred_dtype = inferred_dtypes.get(object_dtype, "mixed")
     else:
         inferred_dtype = infer_dtype(column)
