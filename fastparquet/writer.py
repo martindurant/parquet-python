@@ -1308,18 +1308,14 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     """
     # Pandas groupby has by default 'sort=True' meaning groups are sorted
     # between them on key.
-    gb = data.groupby(columns)
+    gb = data.groupby(columns if len(columns) > 1 else columns[0])
     remaining = list(data)
     for column in columns:
         remaining.remove(column)
     if not remaining:
         raise ValueError("Cannot include all columns in partition_on")
     rgs = []
-    for key in gb.groups:
-        try:
-            group = gb.get_group(key)
-        except KeyError:
-            continue
+    for key, group in sorted(gb):
         if group.empty:
             continue
         df = group[remaining]
