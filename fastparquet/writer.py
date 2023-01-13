@@ -322,26 +322,37 @@ def convert(data, se):
 
 
 def infer_object_encoding(data):
-    head = data[:10] if isinstance(data, pd.Index) else data.dropna().iloc[:10]
-    if all(isinstance(i, str) for i in head if i is not None):
+    if data.empty:
         return "utf8"
-    elif all(isinstance(i, bytes) for i in head if i is not None):
-        return 'bytes'
-    elif all(isinstance(i, (list, dict)) for i in head if i is not None):
-        return 'json'
-    elif all(isinstance(i, bool) for i in head if i is not None):
-        return 'bool'
-    elif all(isinstance(i, Decimal) for i in head if i is not None):
-        return 'decimal'
-    elif all(isinstance(i, int) for i in head if i is not None):
-        return 'int'
-    elif all(isinstance(i, float) or isinstance(i, np.floating)
-             for i in head if i):
-        # You need np.floating here for pandas NaNs in object
-        # columns with python floats.
-        return 'float'
-    else:
-        raise ValueError("Can't infer object conversion type: %s" % head)
+    t = None
+    s = 0
+    encs = {
+        str: "utf8",
+        bytes: "bytes",
+        list: "json",
+        dict: "json",
+        bool: "bool",
+        Decimal: "decimal",
+        int: "int",
+        float: "float",
+        np.floating: "float"
+    }
+    for i in data:
+        if pd.isna(i):
+            continue
+        tt = type(i)
+        if tt in encs:
+            tt = encs[tt]
+            if t is None:
+                t = tt
+            elif t != tt:
+                raise ValueError("Can't infer object conversion type: %s" % data)
+            s += 1
+        else:
+            raise ValueError("Can't infer object conversion type: %s" % data)
+        if s > 10:
+            break
+    return t
 
 
 def time_shift(indata, outdata, factor=1000):
@@ -400,7 +411,8 @@ def make_definitions(data, no_nulls, datapage_version=1):
         out = data
     else:
         se = parquet_thrift.SchemaElement(type=parquet_thrift.Type.BOOLEAN)
-        out = encode_plain(data.notnull(), se)
+        dnn = data.notnull()
+        out = encode_plain(dnn, se)
 
         cencoding.encode_unsigned_varint(len(out) << 1 | 1, temp)
         head = temp.so_far()
@@ -412,11 +424,35 @@ def make_definitions(data, no_nulls, datapage_version=1):
             # no need to write length, it's in the header
             # head.write(out)?
             block = bytes(head) + out
-        out = data.dropna()  # better, data[data.notnull()], from above ?
+        out = data[dnn]
     return block, out
 
 
 DATAPAGE_VERSION = 2 if os.environ.get("FASTPARQUET_DATAPAGE_V2", False) else 1
+MAX_PAGE_SIZE = 500 * 2**20
+
+
+def _rows_per_page(data, selement, page_size=MAX_PAGE_SIZE):
+    if is_categorical_dtype(data.dtype):
+        bytes_per_element = data.dtype.itemsize
+    elif selement.type == parquet_thrift.Type.BOOLEAN:
+        bytes_per_element = 0.125
+    elif selement.type == parquet_thrift.Type.INT64:
+        bytes_per_element = 8
+    elif selement.type == parquet_thrift.Type.INT32:
+        bytes_per_element = 4
+    elif isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
+        bytes_per_element = np.dtype(pdoptional_to_numpy_typemap[data.dtype]).itemsize
+    elif data.dtype == "object" or data.dtype == "string":
+        dd = data.iloc[:1000]
+        d2 = dd[dd.notnull()]
+        sample = d2.astype(str).map(len)
+        chrs = sample.sum()
+        bytes_per_element = chrs / (len(sample) or 4) + 4
+    else:
+        bytes_per_element = data.dtype.itemsize
+
+    return page_size // bytes_per_element
 
 
 def write_column(f, data, selement, compression=None, datapage_version=None,
@@ -427,7 +463,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     Parameters
     ----------
     f: open binary file
-    data: pandas Series or numpy (1d) array
+    data: pandas Series
     selement: thrift SchemaElement
         produced by ``find_type``
     compression: str, dict, or None
@@ -452,6 +488,13 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     has_nulls = selement.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     tot_rows = len(data)
     encoding = "PLAIN"
+    first_page = True
+    cats = False
+    name = data.name
+    diff = 0
+    max, min = None, None
+    start = f.tell()
+    rows_per_page = _rows_per_page(data, selement)
 
     if has_nulls:
         if is_categorical_dtype(data.dtype):
@@ -463,12 +506,13 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         # the null-stripped `data` can be converted from Optional Types to
         # their numpy counterparts
         if isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
-            data = data.astype(pdoptional_to_numpy_typemap[data.dtype])
+            data = data.astype(pdoptional_to_numpy_typemap[data.dtype], copy=False)
         if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
             try:
-                if selement.type in [parquet_thrift.Type.INT64,
-                                     parquet_thrift.Type.INT32]:
-                    data = data.astype(int)
+                if selement.type == parquet_thrift.Type.INT64:
+                    data = data.astype("int64")
+                elif selement.type == parquet_thrift.Type.INT32:
+                    data = data.astype("int32")
                 elif selement.type == parquet_thrift.Type.BOOLEAN:
                     data = data.astype(bool)
             except ValueError as e:
@@ -484,12 +528,6 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
 
     # No nested field handling (encode those as J/BSON)
     repetition_data = b""
-
-    cats = False
-    name = data.name
-    diff = 0
-    max, min = None, None
-    start = f.tell()
 
     if is_categorical_dtype(data.dtype):
         dph = parquet_thrift.DictionaryPageHeader(
@@ -516,8 +554,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         f.write(bdata)
         try:
             if stats:
-                # TODO: this max/min works, but is slow
-                max, min = np.array(data[data.notnull()]).max(), np.array(data[data.notnull()]).min()
+                dnnu = data.unique().as_ordered()
+                max, min = dnnu.max(), dnnu.min()
                 if pd.isna(max):
                     stats = False
                 else:
@@ -544,7 +582,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         if encoding != 'RLE_DICTIONARY':
             # for categorical, we already did this above
             if stats:
-                max, min = data[data.notnull()].values.max(), data[data.notnull()].values.min()
+                max, min = data.max(), data.min()
                 if pd.isna(max):
                     stats = False
                 else:
@@ -680,31 +718,9 @@ class DataFrameSizeWarning(UserWarning):
     pass
 
 
-WARNING_THRESHOLD = 2**30
-
-
-def warn_size(df, limit=None):
-    limit = limit or WARNING_THRESHOLD
-    total = 0
-    rows = len(df)
-    for col, dtype in df.dtypes.items():
-        if dtype.kind in ['f', 'i', 'M', 'm']:
-            # ignores nullability here, since the bools don't take up much space
-            total += dtype.itemsize * rows
-
-        else:
-            approx = sum([len(str(_)) + 4 for _ in df[col].iloc[:100]])
-            total += (approx * rows) // 100
-    if total > limit:
-        warnings.warn(DataFrameSizeWarning(
-            f"Parquet partition about warning size limit, {total} > {limit}"
-        ))
-
-
 def make_row_group(f, data, schema, compression=None, stats=True):
     """ Make a single row group of a Parquet file """
     rows = len(data)
-    warn_size(data)
     if rows == 0:
         return
     if isinstance(data.columns, pd.MultiIndex):

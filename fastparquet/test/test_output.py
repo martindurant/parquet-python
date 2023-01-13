@@ -1030,14 +1030,6 @@ def test_float(tempdir):
     assert (out.v == df.v).all()
 
 
-def test_limit(monkeypatch, tempdir):
-    fn = os.path.join(tempdir, 'temp.parq')
-    monkeypatch.setattr(writer, "WARNING_THRESHOLD", 1)
-    df = pd.DataFrame({'a': [0]})
-    with pytest.warns(writer.DataFrameSizeWarning):
-        write(fn, df)
-
-
 def test_empty_columns(tempdir):
     fn = os.path.join(tempdir, 'temp.parq')
     df = pd.DataFrame(
