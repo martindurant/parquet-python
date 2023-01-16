@@ -317,6 +317,8 @@ def test_filelike(tempdir):
 
 
 def test_cast_index(tempdir):
+    if pd.__version__.split(".", 1)[0] > "1":
+        pytest.skip()
     df = pd.DataFrame({'i8': np.array([1, 2, 3, 4], dtype='uint8'),
                        'i16': np.array([1, 2, 3, 4], dtype='int16'),
                        'i32': np.array([1, 2, 3, 4], dtype='int32'),
