@@ -504,7 +504,7 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
     data_page_offset = column_chunk_start
 
     # column global stats
-    if is_categorical_dtype(data0) and stats:
+    if is_categorical_dtype(data0.dtype) and stats:
         try:
             dnnu = data0.unique().as_ordered()
             max, min = dnnu.max(), dnnu.min()
@@ -595,7 +595,6 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
                         compressed_page_size=check_32(l1),
                         dictionary_page_header=dph, crc=None, i32=1)
 
-                dict_start = f.tell()
                 write_thrift(f, ph)
                 f.write(bdata)
                 data_page_offset = f.tell()
@@ -604,7 +603,7 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
                 cats = True
                 encoding = "RLE_DICTIONARY"
             data = data.cat.codes
-        if str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
+        if str(data0.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
             # PLAIN encoding must be upcast to parquet primitive
             data = data.astype('int32')
 
