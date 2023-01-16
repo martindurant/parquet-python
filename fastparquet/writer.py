@@ -446,7 +446,7 @@ def _rows_per_page(data, selement, has_nulls=True, page_size=None):
         bytes_per_element = 4
     elif isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
         bytes_per_element = np.dtype(pdoptional_to_numpy_typemap[data.dtype]).itemsize
-    elif data.dtype == "object" or data.dtype == "string":
+    elif data.dtype == "object" or str(data.dtype) == "string":
         dd = data.iloc[:1000]
         d2 = dd[dd.notnull()]
         sample = d2.astype(str).map(len)
