@@ -322,6 +322,7 @@ def convert(data, se):
 
 
 def infer_object_encoding(data):
+    """Guess object type from first 10 non-na values by iteration"""
     if data.empty:
         return "utf8"
     t = None
@@ -335,7 +336,8 @@ def infer_object_encoding(data):
         Decimal: "decimal",
         int: "int",
         float: "float",
-        np.floating: "float"
+        np.floating: "float",
+        np.str_: "utf8"
     }
     for i in data:
         if pd.isna(i):
@@ -432,9 +434,10 @@ DATAPAGE_VERSION = 2 if os.environ.get("FASTPARQUET_DATAPAGE_V2", False) else 1
 MAX_PAGE_SIZE = 500 * 2**20
 
 
-def _rows_per_page(data, selement, page_size=MAX_PAGE_SIZE):
+def _rows_per_page(data, selement, has_nulls=True, page_size=None):
+    page_size = page_size or MAX_PAGE_SIZE
     if is_categorical_dtype(data.dtype):
-        bytes_per_element = data.dtype.itemsize
+        bytes_per_element = data.cat.codes.dtype.itemsize
     elif selement.type == parquet_thrift.Type.BOOLEAN:
         bytes_per_element = 0.125
     elif selement.type == parquet_thrift.Type.INT64:
@@ -452,10 +455,10 @@ def _rows_per_page(data, selement, page_size=MAX_PAGE_SIZE):
     else:
         bytes_per_element = data.dtype.itemsize
 
-    return page_size // bytes_per_element
+    return int(page_size // (bytes_per_element + 0.125 * has_nulls))
 
 
-def write_column(f, data, selement, compression=None, datapage_version=None,
+def write_column(f, data0, selement, compression=None, datapage_version=None,
                  stats=True):
     """
     Write a single column of data to an open Parquet file
@@ -463,7 +466,7 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     Parameters
     ----------
     f: open binary file
-    data: pandas Series
+    data0: pandas Series
     selement: thrift SchemaElement
         produced by ``find_type``
     compression: str, dict, or None
@@ -486,179 +489,187 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     """
     datapage_version = datapage_version or DATAPAGE_VERSION
     has_nulls = selement.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
-    tot_rows = len(data)
+    tot_rows = len(data0)
     encoding = "PLAIN"
     first_page = True
     cats = False
-    name = data.name
+    name = data0.name
     diff = 0
     max, min = None, None
-    start = f.tell()
-    rows_per_page = _rows_per_page(data, selement)
+    column_chunk_start = f.tell()
+    rows_per_page = _rows_per_page(data0, selement, has_nulls)
+    row_offsets = list(range(0, len(data0), rows_per_page)) + [len(data0)]
+    global_num_nulls = 0
+    dict_page_offset = None
+    data_page_offset = column_chunk_start
 
-    if has_nulls:
-        if is_categorical_dtype(data.dtype):
-            num_nulls = (data.cat.codes == -1).sum()
-        else:
-            num_nulls = len(data) - data.count()
-        definition_data, data = make_definitions(data, num_nulls == 0, datapage_version=datapage_version)
-        # make_definitions returns `data` with all nulls dropped
-        # the null-stripped `data` can be converted from Optional Types to
-        # their numpy counterparts
-        if isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
-            data = data.astype(pdoptional_to_numpy_typemap[data.dtype], copy=False)
-        if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
-            try:
-                if selement.type == parquet_thrift.Type.INT64:
-                    data = data.astype("int64")
-                elif selement.type == parquet_thrift.Type.INT32:
-                    data = data.astype("int32")
-                elif selement.type == parquet_thrift.Type.BOOLEAN:
-                    data = data.astype(bool)
-            except ValueError as e:
-                t = parquet_thrift.Type._VALUES_TO_NAMES[selement.type]
-                raise ValueError('Error converting column "%s" to primitive '
-                                 'type %s. Original error: '
-                                 '%s' % (data.name, t, e))
-
-    else:
-        definition_data = b""
-        num_nulls = 0
-    num_nulls = int(num_nulls)
-
-    # No nested field handling (encode those as J/BSON)
-    repetition_data = b""
-
-    if is_categorical_dtype(data.dtype):
-        dph = parquet_thrift.DictionaryPageHeader(
-            num_values=check_32(len(data.cat.categories)),
-            encoding=parquet_thrift.Encoding.PLAIN,
-            i32=1
-        )
-        bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
-        l0 = len(bdata)
-        if compression and compression.upper() != "UNCOMPRESSED":
-            bdata = compress_data(bdata, compression)
-            l1 = len(bdata)
-        else:
-            l1 = l0
-        diff += l0 - l1
-        ph = parquet_thrift.PageHeader(
-                type=parquet_thrift.PageType.DICTIONARY_PAGE,
-                uncompressed_page_size=check_32(l0),
-                compressed_page_size=check_32(l1),
-                dictionary_page_header=dph, crc=None, i32=1)
-
-        dict_start = f.tell()
-        write_thrift(f, ph)
-        f.write(bdata)
+    # column global stats
+    if is_categorical_dtype(data0) and stats:
         try:
-            if stats:
-                dnnu = data.unique().as_ordered()
-                max, min = dnnu.max(), dnnu.min()
-                if pd.isna(max):
-                    stats = False
+            dnnu = data0.unique().as_ordered()
+            max, min = dnnu.max(), dnnu.min()
+            if pd.isna(max):
+                stats = False
+            else:
+                if selement.type == parquet_thrift.Type.BYTE_ARRAY:
+                    if selement.converted_type is not None:
+                        max = encode['PLAIN'](pd.Series([max]), selement)[4:]
+                        min = encode['PLAIN'](pd.Series([min]), selement)[4:]
                 else:
-                    if selement.type == parquet_thrift.Type.BYTE_ARRAY:
-                        if selement.converted_type is not None:
-                            max = encode['PLAIN'](pd.Series([max]), selement)[4:]
-                            min = encode['PLAIN'](pd.Series([min]), selement)[4:]
-                    else:
-                        max = encode['PLAIN'](pd.Series([max]), selement)
-                        min = encode['PLAIN'](pd.Series([min]), selement)
+                    max = encode['PLAIN'](pd.Series([max]), selement)
+                    min = encode['PLAIN'](pd.Series([min]), selement)
         except (TypeError, ValueError):
             stats = False
-        ncats = len(data.cat.categories)
-        dcat = data.cat.categories.dtype
-        data = data.cat.codes
-        cats = True
-        encoding = "RLE_DICTIONARY"
-    elif str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
-        # encoding = "RLE"
-        # disallow bit-packing for compatibility
-        data = data.astype('int32')
-
-    try:
-        if encoding != 'RLE_DICTIONARY':
-            # for categorical, we already did this above
-            if stats:
-                max, min = data.max(), data.min()
-                if pd.isna(max):
-                    stats = False
+    elif stats:
+        try:
+            max, min = data0.max(), data0.min()
+            if pd.isna(max):
+                stats = False
+            else:
+                if selement.type == parquet_thrift.Type.BYTE_ARRAY:
+                    if selement.converted_type is not None:
+                        # max = max.encode("utf8") ?
+                        max = encode['PLAIN'](pd.Series([max], name=name), selement)[4:]
+                        min = encode['PLAIN'](pd.Series([min], name=name), selement)[4:]
                 else:
-                    if selement.type == parquet_thrift.Type.BYTE_ARRAY:
-                        if selement.converted_type is not None:
-                            # max = max.encode("utf8") ?
-                            max = encode['PLAIN'](pd.Series([max], name=data.name), selement)[4:]
-                            min = encode['PLAIN'](pd.Series([min], name=data.name), selement)[4:]
-                    else:
-                        max = encode['PLAIN'](pd.Series([max], name=data.name, dtype=data.dtype), selement)
-                        min = encode['PLAIN'](pd.Series([min], name=data.name, dtype=data.dtype), selement)
-    except (TypeError, ValueError):
-        stats = False
-    s = parquet_thrift.Statistics(max=max, min=min, null_count=num_nulls) if stats else None
+                    max = encode['PLAIN'](pd.Series([max], name=name, dtype=data0.dtype), selement)
+                    min = encode['PLAIN'](pd.Series([min], name=name, dtype=data0.dtype), selement)
+        except (TypeError, ValueError):
+            stats = False
 
-    if datapage_version == 1:
-        bdata = b"".join([
-            repetition_data, definition_data, encode[encoding](data, selement), 8 * b'\x00'
-        ])
-        dph = parquet_thrift.DataPageHeader(
-            num_values=check_32(tot_rows),
-            encoding=getattr(parquet_thrift.Encoding, encoding),
-            definition_level_encoding=parquet_thrift.Encoding.RLE,
-            repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED,
-            i32=1
-        )
-        l0 = len(bdata)
-
-        if compression:
-            bdata = compress_data(bdata, compression)
-            l1 = len(bdata)
+    for row_start, row_end in zip(row_offsets[:-1], row_offsets[1:]):
+        data = data0.iloc[row_start:row_end]
+        if has_nulls:
+            if is_categorical_dtype(data.dtype):
+                num_nulls = (data.cat.codes == -1).sum()
+            else:
+                num_nulls = len(data) - data.count()
+            definition_data, data = make_definitions(data, num_nulls == 0, datapage_version=datapage_version)
+            # make_definitions returns `data` with all nulls dropped
+            # the null-stripped `data` can be converted from Optional Types to
+            # their numpy counterparts
+            if isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
+                data = data.astype(pdoptional_to_numpy_typemap[data.dtype], copy=False)
+            if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
+                try:
+                    if selement.type == parquet_thrift.Type.INT64:
+                        data = data.astype("int64", copy=False)
+                    elif selement.type == parquet_thrift.Type.INT32:
+                        data = data.astype("int32", copy=False)
+                    elif selement.type == parquet_thrift.Type.BOOLEAN:
+                        data = data.astype(bool, copy=False)
+                except ValueError as e:
+                    t = parquet_thrift.Type._VALUES_TO_NAMES[selement.type]
+                    raise ValueError('Error converting column "%s" to primitive '
+                                     'type %s. Original error: '
+                                     '%s' % (data.name, t, e))
         else:
-            l1 = l0
-        diff += l0 - l1
+            definition_data = b""
+            num_nulls = 0
+        num_nulls = int(num_nulls)
+        global_num_nulls += num_nulls
 
-        ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE,
-                                       uncompressed_page_size=check_32(l0),
-                                       compressed_page_size=check_32(l1),
-                                       data_page_header=dph, i32=1)
-        write_thrift(f, ph)
-        f.write(bdata)
-    elif datapage_version == 2:
-        is_compressed = isinstance(compression, dict) or (
-            compression is not None and compression.upper() != "UNCOMPRESSED")
-        dph = parquet_thrift.DataPageHeaderV2(
-            num_values=check_32(tot_rows),
-            num_nulls=check_32(num_nulls),
-            num_rows=check_32(tot_rows),
-            encoding=getattr(parquet_thrift.Encoding, encoding),
-            definition_levels_byte_length=len(definition_data),
-            repetition_levels_byte_length=0,  # len(repetition_data),
-            is_compressed=is_compressed,
-            statistics=s,
-            i32=1
-        )
-        bdata = encode[encoding](data, selement)
-        lb = len(bdata)
-        if is_compressed:
-            bdata = compress_data(bdata, compression)
-            diff = lb - len(bdata)
-        else:
-            diff = 0
-        ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE_V2,
-                                       uncompressed_page_size=check_32(lb + len(definition_data)),
-                                       compressed_page_size=check_32(len(bdata) + len(definition_data)),
-                                       data_page_header_v2=dph, i32=1)
-        write_thrift(f, ph)
-        # f.write(repetition_data)  # no-op
-        f.write(definition_data)
-        f.write(bdata)
+        # No nested field handling (encode those as J/BSON)
+        repetition_data = b""
 
-    compressed_size = f.tell() - start
+        if is_categorical_dtype(data.dtype):
+            if first_page:
+                # make "index page"
+                dict_page_offset = column_chunk_start
+                dph = parquet_thrift.DictionaryPageHeader(
+                    num_values=check_32(len(data.cat.categories)),
+                    encoding=parquet_thrift.Encoding.PLAIN,
+                    i32=1
+                )
+                bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
+                l0 = len(bdata)
+                if compression and compression.upper() != "UNCOMPRESSED":
+                    bdata = compress_data(bdata, compression)
+                    l1 = len(bdata)
+                else:
+                    l1 = l0
+                diff += l0 - l1
+                ph = parquet_thrift.PageHeader(
+                        type=parquet_thrift.PageType.DICTIONARY_PAGE,
+                        uncompressed_page_size=check_32(l0),
+                        compressed_page_size=check_32(l1),
+                        dictionary_page_header=dph, crc=None, i32=1)
+
+                dict_start = f.tell()
+                write_thrift(f, ph)
+                f.write(bdata)
+                data_page_offset = f.tell()
+                ncats = len(data.cat.categories)
+                dcat = data.cat.categories.dtype
+                cats = True
+                encoding = "RLE_DICTIONARY"
+            data = data.cat.codes
+        if str(data.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
+            # PLAIN encoding must be upcast to parquet primitive
+            data = data.astype('int32')
+
+        if datapage_version == 1:
+            bdata = b"".join([
+                repetition_data, definition_data, encode[encoding](data, selement), 8 * b'\x00'
+            ])
+            dph = parquet_thrift.DataPageHeader(
+                num_values=check_32(row_end - row_start),
+                encoding=getattr(parquet_thrift.Encoding, encoding),
+                definition_level_encoding=parquet_thrift.Encoding.RLE,
+                repetition_level_encoding=parquet_thrift.Encoding.BIT_PACKED,
+                i32=1
+            )
+            l0 = len(bdata)
+
+            if compression:
+                bdata = compress_data(bdata, compression)
+                l1 = len(bdata)
+            else:
+                l1 = l0
+            diff += l0 - l1
+
+            ph = parquet_thrift.PageHeader(type=parquet_thrift.PageType.DATA_PAGE,
+                                           uncompressed_page_size=check_32(l0),
+                                           compressed_page_size=check_32(l1),
+                                           data_page_header=dph, i32=1)
+            write_thrift(f, ph)
+            f.write(bdata)
+        elif datapage_version == 2:
+            is_compressed = isinstance(compression, dict) or (
+                compression is not None and compression.upper() != "UNCOMPRESSED")
+            dph = parquet_thrift.DataPageHeaderV2(
+                num_values=check_32(row_end - row_start),
+                num_nulls=check_32(num_nulls),
+                num_rows=check_32(row_end - row_start),
+                encoding=getattr(parquet_thrift.Encoding, encoding),
+                definition_levels_byte_length=len(definition_data),
+                repetition_levels_byte_length=0,  # len(repetition_data),
+                is_compressed=is_compressed,
+                statistics=None,
+                i32=1
+            )
+            bdata = encode[encoding](data, selement)
+            lb = len(bdata)
+            if is_compressed:
+                bdata = compress_data(bdata, compression)
+                diff += lb - len(bdata)
+            else:
+                diff += 0
+            ph = parquet_thrift.PageHeader(
+                type=parquet_thrift.PageType.DATA_PAGE_V2,
+                uncompressed_page_size=check_32(lb + len(definition_data)),
+                compressed_page_size=check_32(len(bdata) + len(definition_data)),
+                data_page_header_v2=dph, i32=1)
+            write_thrift(f, ph)
+            # f.write(repetition_data)  # no-op
+            f.write(definition_data)
+            f.write(bdata)
+        first_page = False
+
+    compressed_size = f.tell() - column_chunk_start
     uncompressed_size = compressed_size + diff
 
-    offset = f.tell()
-
+    # encoding stats for thrift metadata
     if cats:
         p = [
             parquet_thrift.PageEncodingStats(
@@ -666,7 +677,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
                 encoding=parquet_thrift.Encoding.PLAIN, count=1, i32=1),
             parquet_thrift.PageEncodingStats(
                 page_type=parquet_thrift.PageType.DATA_PAGE,
-                encoding=parquet_thrift.Encoding.RLE_DICTIONARY, count=1, i32=1),
+                encoding=parquet_thrift.Encoding.RLE_DICTIONARY,
+                count=len(row_offsets) - 1, i32=1),
         ]
         encodings = [parquet_thrift.Encoding.PLAIN,
                      parquet_thrift.Encoding.RLE_DICTIONARY]
@@ -674,13 +686,17 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
     else:
         p = [parquet_thrift.PageEncodingStats(
              page_type=parquet_thrift.PageType.DATA_PAGE,
-             encoding=parquet_thrift.Encoding.PLAIN, count=1, i32=1)]
+             encoding=parquet_thrift.Encoding.PLAIN,
+             count=len(row_offsets) - 1, i32=1)]
         encodings = [parquet_thrift.Encoding.PLAIN]
 
     if isinstance(compression, dict):
         algorithm = compression.get("type", None)
     else:
         algorithm = compression
+
+    # output thrift metadata
+    s = parquet_thrift.Statistics(max=max, min=min, null_count=global_num_nulls) if stats else None
 
     kvm = []
     if isinstance(name, (list, tuple)):
@@ -693,7 +709,8 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
                if algorithm else 0),
         num_values=tot_rows,
         statistics=s,
-        data_page_offset=start,
+        data_page_offset=data_page_offset,
+        dictionary_page_offset=dict_page_offset,
         encoding_stats=p,
         key_value_metadata=kvm,
         total_uncompressed_size=uncompressed_size,
@@ -701,14 +718,13 @@ def write_column(f, data, selement, compression=None, datapage_version=None,
         i32list=[1, 4]
     )
     if cats:
-        cmd.dictionary_page_offset = dict_start
         kvm.append(
             parquet_thrift.KeyValue(key='num_categories', value=str(ncats)))
         kvm.append(
             parquet_thrift.KeyValue(key='numpy_dtype', value=str(data.dtype)))
         kvm.append(
             parquet_thrift.KeyValue(key='label_dtype', value=str(dcat)))
-    chunk = parquet_thrift.ColumnChunk(file_offset=offset,
+    chunk = parquet_thrift.ColumnChunk(file_offset=column_chunk_start,
                                        meta_data=cmd,
                                        file_path=None)
     return chunk
@@ -755,7 +771,7 @@ def make_row_group(f, data, schema, compression=None, stats=True):
             if isinstance(stats, int):
                 st = stats
             elif stats == "auto":
-                st = coldata.dtype.kind in ["i", "f", "M"]
+                st = coldata.dtype.kind in ["i", "u", "f", "M"]
             else:
                 st = column.name in stats
             chunk = write_column(f, coldata, column,
@@ -1087,7 +1103,7 @@ def write(filename, data, row_group_offsets=None,
           mkdirs=None, has_nulls=True, write_index=None,
           partition_on=[], fixed_text=None, append=False,
           object_encoding='infer', times='int64',
-          custom_metadata=None, stats=True):
+          custom_metadata=None, stats="auto"):
     """Write pandas dataframe to filename with parquet format.
 
     Parameters
@@ -1205,11 +1221,10 @@ def write(filename, data, row_group_offsets=None,
         Ignored if appending to an existing parquet data-set.
     stats: True|False|list(str)|"auto"
         Whether to calculate and write summary statistics.
-        If True (default), do it for every column;
+        If True, do it for every column;
         If False, never do;
         And if a list of str, do it only for those specified columns.
-        "auto" means True for any int/float or timemstamp column, False
-        otherwise. This will become the default in a future release.
+        "auto" (default) means True for any int/float or timestamp column
 
     Examples
     --------
@@ -1254,7 +1269,7 @@ def write(filename, data, row_group_offsets=None,
         # Case 'append=False'.
         # Define 'index_cols' to be recorded in metadata.
         if (write_index or write_index is None
-            and not isinstance(data.index, pd.RangeIndex)):
+                and not isinstance(data.index, pd.RangeIndex)):
             # Keep name(s) of index to metadata.
             cols = set(data)
             data = reset_row_idx(data)

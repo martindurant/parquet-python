@@ -252,7 +252,7 @@ def test_statistics(tempdir):
     s = pd.Series([b'a', b'b', b'c']*20)
     df = pd.DataFrame({'a': s, 'b': s.astype('category'),
                        'c': s.astype('category').cat.as_ordered()})
-    fastparquet.write(tempdir, df, file_scheme='hive')
+    fastparquet.write(tempdir, df, file_scheme='hive', stats=True)
     pf = fastparquet.ParquetFile(tempdir)
     stat = pf.statistics
     assert stat['max']['a'] == [b'c']

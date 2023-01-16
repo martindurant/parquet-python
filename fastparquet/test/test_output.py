@@ -500,7 +500,7 @@ def test_text_convert(tempdir):
                        'b': [b'a'] * 100})
     fn = os.path.join(tempdir, 'tmp.parq')
 
-    write(fn, df, fixed_text={'a': 2, 'b': 1})
+    write(fn, df, fixed_text={'a': 2, 'b': 1}, stats=True)
     pf = ParquetFile(fn)
     assert pf._schema[1].type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY
     assert pf._schema[1].type_length == 2
@@ -510,7 +510,7 @@ def test_text_convert(tempdir):
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df, df2, check_categorical=False)
 
-    write(fn, df)
+    write(fn, df, stats=True)
     pf = ParquetFile(fn)
     assert pf._schema[1].type == parquet_thrift.Type.BYTE_ARRAY
     assert pf._schema[2].type == parquet_thrift.Type.BYTE_ARRAY
@@ -518,7 +518,7 @@ def test_text_convert(tempdir):
     df2 = pf.to_pandas()
     tm.assert_frame_equal(df, df2, check_categorical=False)
 
-    write(fn, df, fixed_text={'a': 2})
+    write(fn, df, fixed_text={'a': 2}, stats=True)
     pf = ParquetFile(fn)
     assert pf._schema[1].type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY
     assert pf._schema[2].type == parquet_thrift.Type.BYTE_ARRAY
@@ -548,10 +548,7 @@ def test_null_time(tempdir):
     assert sum(data['t'].isnull()) == sum(expected['t'].isnull())
 
 
-@pytest.mark.parametrize(
-    "pnull", [True, False]
-)
-def test_auto_null_object(tempdir, pnull):
+def test_auto_null_object(tempdir):
     tmp = str(tempdir)
     df = pd.DataFrame({'a': [1, 2, 3, 0],
                        'aa': pd.Series([1, 2, 3, None], dtype=object),
@@ -571,24 +568,6 @@ def test_auto_null_object(tempdir, pnull):
         write(fn, df, has_nulls=False)
 
     write(fn, df, has_nulls=True)
-    pf = ParquetFile(fn, pandas_nulls=pnull)
-    for col in pf._schema[1:]:
-        assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
-    df2 = pf.to_pandas(categories=['e'])
-
-    tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
-                          check_dtype=False)
-    tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
-    if pnull:
-        tm.assert_frame_equal(df[['aa']].astype('Int64'), df2[['aa']])
-        tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
-    else:
-        tm.assert_frame_equal(df[['aa']].astype('float'), df2[['aa']])
-        tm.assert_frame_equal(df[['ff']].astype("float"), df2[['ff']])
-
-    # not giving any value same as has_nulls=True
-    write(fn, df)
     pf = ParquetFile(fn)
     for col in pf._schema[1:]:
         assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
@@ -596,11 +575,12 @@ def test_auto_null_object(tempdir, pnull):
 
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
                           check_dtype=False)
-    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['aa']].astype('Int64'), df2[['aa']])
+    tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
+    tm.assert_frame_equal(df[['aaa']].astype('Int64'), df2[['aaa']])
 
-    # 'infer' is new recommended auto-null
+    # 'infer' is equivalent of None, previous default
     write(fn, df, has_nulls='infer')
     pf = ParquetFile(fn)
     for col in pf._schema[1:]:
@@ -612,21 +592,7 @@ def test_auto_null_object(tempdir, pnull):
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
     tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
-
-    # nut legacy None still works
-    write(fn, df, has_nulls=None)
-    pf = ParquetFile(fn)
-    for col in pf._schema[1:]:
-        if col.name in object_cols:
-            assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
-        else:
-            assert col.repetition_type == parquet_thrift.FieldRepetitionType.REQUIRED
-    df2 = pf.to_pandas()
-    tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
-    tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
-    tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['aaa']].astype('Int64'), df2[['aaa']])
 
 
 @pytest.mark.parametrize('n', (10, 127, 2**8 + 1, 2**16 + 1))
@@ -1191,3 +1157,43 @@ def test_roundtrip_pathlib_path(tempdir):
     write(file_path, df)
     out = ParquetFile(file_path).to_pandas()
     assert out.to_dict() == df.to_dict()
+
+
+def test_pagesize(monkeypatch, tempdir):
+    monkeypatch.setattr(writer, "MAX_PAGE_SIZE", 50)
+    fn = os.path.join(tempdir, "out.parq")
+    # 480 bytes + 60/8 because optional -> 10 pages
+    df = pd.DataFrame({'a': [0, 1, 2] * 20}, dtype="int64")
+    write(fn, df)
+    pf = ParquetFile(fn)
+    col = pf.row_groups[0].columns[0]
+    assert col.meta_data.dictionary_page_offset is None
+    assert col.file_offset == 4
+    assert col.meta_data.statistics.max == b'\x02\x00\x00\x00\x00\x00\x00\x00'
+    assert col.meta_data.data_page_offset == 4
+    enc = col.meta_data.encoding_stats
+    assert len(enc) == 1
+    assert enc[0].count == 10
+    out = pf.to_pandas()
+    assert out.to_dict() == df.to_dict()
+
+
+def test_pagesize_cat(monkeypatch, tempdir):
+    monkeypatch.setattr(writer, "MAX_PAGE_SIZE", 10)
+    fn = os.path.join(tempdir, "out.parq")
+    # 60 bytes + 60/8 because optional -> 8 pages
+    df = pd.DataFrame({'a': ["0", "1", "2"] * 20}, dtype="category")
+    write(fn, df)
+    pf = ParquetFile(fn)
+    col = pf.row_groups[0].columns[0]
+    assert col.meta_data.dictionary_page_offset == 4
+    assert col.file_offset == 4
+    assert col.meta_data.statistics is None
+    assert col.meta_data.data_page_offset > 4
+    enc = col.meta_data.encoding_stats
+    assert len(enc) == 2
+    assert enc[0].count == 1  # dict comes first
+    assert enc[1].count == 8  # dict comes first
+    out = pf.to_pandas()
+    assert out.to_dict() == df.to_dict()
+

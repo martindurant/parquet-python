@@ -39,7 +39,7 @@ def test_statistics(tempdir):
                        'z': ['a', 'b', 'c']})
 
     fn = os.path.join(tempdir, 'foo.parquet')
-    write(fn, df, row_group_offsets=[0, 2])
+    write(fn, df, row_group_offsets=[0, 2], stats=True)
 
     p = ParquetFile(fn)
 
@@ -111,8 +111,9 @@ def test_sorted_row_group_columns(tempdir):
                        'z': ['a', 'b', 'c', 'd']})
 
     fn = os.path.join(tempdir, 'foo.parquet')
-    write(fn, df, row_group_offsets=[0, 2], object_encoding={'v': 'json',
-                                                             'z': 'utf8'})
+    write(fn, df, row_group_offsets=[0, 2],
+          object_encoding={'v': 'json', 'z': 'utf8'},
+          stats=True)
 
     pf = ParquetFile(fn)
 
