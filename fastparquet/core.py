@@ -192,7 +192,7 @@ def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, 
 
 def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                       dic, assign, num, use_cat, file_offset, ph, idx=None,
-                      selfmade=False):
+                      selfmade=False, row_filter=None):
     """
     :param infile: open file
     :param schema_helper:
@@ -264,7 +264,9 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     # can read-into
     into0 = ((use_cat or converts_inplace(se) and see)
              and data_header2.num_nulls == 0
-             and max_rep == 0 and assign.dtype.kind != "O")
+             and max_rep == 0 and assign.dtype.kind != "O" and row_filter is None)
+    if row_filter is None:
+        row_filter = Ellipsis
     # can decompress-into
     if data_header2.is_compressed is None:
         data_header2.is_compressed = True
@@ -299,12 +301,15 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                             utf=se.converted_type == 0)
         if data_header2.num_nulls:
             if nullable:
-                assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
+                assign[num:num+data_header2.num_values][~nulls[row_filter]] = convert(values, se)[row_filter]
             else:
-                assign[num:num+data_header2.num_values][nulls] = None  # or nan or nat
-                assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
+                assign[num:num+data_header2.num_values][nulls[row_filter]] = None  # or nan or nat
+                if row_filter is Ellipsis:
+                    assign[num:num+data_header2.num_values][~nulls] = convert(values, se)
+                else:
+                    assign[num:num+data_header2.num_values][~nulls[row_filter]] = convert(values, se)[row_filter[~nulls]]
         else:
-            assign[num:num+data_header2.num_values] = convert(values, se)
+            assign[num:num+data_header2.num_values] = convert(values, se)[row_filter]
     elif (use_cat and data_header2.encoding in [
         parquet_thrift.Encoding.PLAIN_DICTIONARY,
         parquet_thrift.Encoding.RLE_DICTIONARY,
@@ -325,13 +330,16 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             # special fastpath for cats
             outbytes = raw_bytes[pagefile.tell():]
             if len(outbytes) == assign[num:num+data_header2.num_values].nbytes:
-                assign[num:num+data_header2.num_values].view('uint8')[:] = outbytes
+                assign[num:num+data_header2.num_values].view('uint8')[row_filter] = outbytes[row_filter]
             else:
                 if data_header2.num_nulls == 0:
-                    assign[num:num+data_header2.num_values][:] = outbytes
+                    assign[num:num+data_header2.num_values][row_filter] = outbytes[row_filter]
                 else:
-                    assign[num:num+data_header2.num_values][~nulls] = outbytes
-                    assign[num:num+data_header2.num_values][nulls] = -1
+                    if row_filter is Ellipsis:
+                        assign[num:num+data_header2.num_values][~nulls] = outbytes
+                    else:
+                        assign[num:num + data_header2.num_values][~nulls[row_filter]] = outbytes[~nulls * row_filter]
+                    assign[num:num+data_header2.num_values][nulls[row_filter]] = -1
         else:
             if data_header2.num_nulls == 0:
                 encoding.read_rle_bit_packed_hybrid(
@@ -351,8 +359,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
                     itemsize=bit_width
                 )
                 if not nullable:
-                    assign[num:num+data_header2.num_values][nulls] = None
-                assign[num:num+data_header2.num_values][~nulls] = temp
+                    assign[num:num+data_header2.num_values][nulls[row_filter]] = None
+                assign[num:num+data_header2.num_values][~nulls[row_filter]] = temp[row_filter]
 
     elif data_header2.encoding in [
         parquet_thrift.Encoding.PLAIN_DICTIONARY,
@@ -382,9 +390,9 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         elif data_header2.num_nulls:
             if not nullable and assign.dtype != "O":
                 assign[num:num+data_header2.num_values][nulls] = None  # may be unnecessary
-            assign[num:num+data_header2.num_values][~nulls] = dic[out]
+            assign[num:num+data_header2.num_values][~nulls[row_filter]] = dic[out][row_filter]
         else:
-            assign[num:num+data_header2.num_values] = dic[out]
+            assign[num:num+data_header2.num_values][row_filter] = dic[out][row_filter]
     elif data_header2.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
         assert data_header2.num_nulls == 0, "null delta-int not implemented"
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
@@ -401,7 +409,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             encoding.delta_binary_unpack(
                 encoding.NumpyIO(raw_bytes), encoding.NumpyIO(out.view('uint8'))
             )
-            assign[num:num+data_header2.num_values] = convert(out, se)
+            assign[num:num+data_header2.num_values][row_filter] = convert(out, se)[row_filter]
     else:
         # codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         # raw_bytes = decompress_data(infile.read(size),
@@ -482,10 +490,9 @@ def read_col(column, schema_helper, infile, use_cat=False,
                                        (assign.dtype, len(dic)))
             continue
         if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
-            if isinstance(row_filter, np.ndarray):
-                raise NotImplementedError
             num += read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
-                                     dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade)
+                                     dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade,
+                                     row_filter=row_filter)
             continue
         if (selfmade and hasattr(cmd, 'statistics') and
                 getattr(cmd.statistics, 'null_count', 1) == 0):

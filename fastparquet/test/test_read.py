@@ -497,7 +497,6 @@ def test_or_filtering(tempdir):
     assert(or_df.equals(ref_df))
 
 
-@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
 def test_row_filter_nulls(tempdir):
     fn = os.path.join(tempdir, "test.parq")
     df = pd.DataFrame(

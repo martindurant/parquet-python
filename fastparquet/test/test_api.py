@@ -130,7 +130,6 @@ def test_sorted_row_group_columns(tempdir):
     assert result == expected
 
 
-@pytest.mark.xfail(reason="needs dask fix")
 def test_sorted_row_group_columns_with_filters(tempdir):
     # fails up to 2021.08.1
     dd = pytest.importorskip('dask.dataframe')
@@ -1089,7 +1088,6 @@ def test_timestamp_filer(tempdir):
     assert pf.to_pandas(filters=filt).val.tolist() == [34]
 
 
-@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
 def test_row_filter(tempdir):
     fn = os.path.join(tempdir, 'test.parquet')
     df = pd.DataFrame({
@@ -1110,7 +1108,6 @@ def test_row_filter(tempdir):
     ]
 
 
-@pytest.mark.xfail(condition=fastparquet.writer.DATAPAGE_VERSION == 2, reason="not implemented")
 def test_custom_row_filter(tempdir):
     dn = os.path.join(tempdir, 'test_parquet')
     row_group_idx = [0,2,5,8,11]
