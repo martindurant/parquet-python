@@ -695,7 +695,10 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
         algorithm = compression
 
     # output thrift metadata
-    s = parquet_thrift.Statistics(max=max, min=min, null_count=global_num_nulls) if stats else None
+    if stats:
+        s = parquet_thrift.Statistics(max=max, min=min, null_count=global_num_nulls)
+    else:
+        s = parquet_thrift.Statistics(null_count=global_num_nulls)
 
     kvm = []
     if isinstance(name, (list, tuple)):

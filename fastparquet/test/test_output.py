@@ -578,7 +578,7 @@ def test_auto_null_object(tempdir):
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
     tm.assert_frame_equal(df[['aa']].astype('Int64'), df2[['aa']])
     tm.assert_frame_equal(df[['ff']].astype("boolean"), df2[['ff']])
-    tm.assert_frame_equal(df[['aaa']].astype('Int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
     # 'infer' is equivalent of None, previous default
     write(fn, df, has_nulls='infer')
@@ -592,7 +592,7 @@ def test_auto_null_object(tempdir):
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False)
     tm.assert_frame_equal(df[['ff']].astype('boolean'), df2[['ff']])
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
-    tm.assert_frame_equal(df[['aaa']].astype('Int64'), df2[['aaa']])
+    tm.assert_frame_equal(df[['aaa']].astype('int64'), df2[['aaa']])
 
 
 @pytest.mark.parametrize('n', (10, 127, 2**8 + 1, 2**16 + 1))
@@ -971,20 +971,20 @@ def test_no_stats(tempdir):
     write(fn, df, stats=False)
 
     pf = ParquetFile(fn)
-    assert pf.row_groups[0].columns[0].meta_data.statistics is None
-    assert pf.row_groups[0].columns[1].meta_data.statistics is None
+    assert pf.row_groups[0].columns[0].meta_data.statistics.max is None
+    assert pf.row_groups[0].columns[1].meta_data.statistics.max is None
 
     write(fn, df, stats=['a'])
     pf = ParquetFile(fn)
-    assert pf.row_groups[0].columns[0].meta_data.statistics is not None
-    assert pf.row_groups[0].columns[1].meta_data.statistics is None
+    assert pf.row_groups[0].columns[0].meta_data.statistics.max is not None
+    assert pf.row_groups[0].columns[1].meta_data.statistics.max is None
 
     write(fn, df, stats="auto")
     pf = ParquetFile(fn)
-    assert pf.row_groups[0].columns[0].meta_data.statistics is not None
-    assert pf.row_groups[0].columns[1].meta_data.statistics is not None
-    assert pf.row_groups[0].columns[2].meta_data.statistics is None
-    assert pf.row_groups[0].columns[3].meta_data.statistics is not None
+    assert pf.row_groups[0].columns[0].meta_data.statistics.max is not None
+    assert pf.row_groups[0].columns[1].meta_data.statistics.max is not None
+    assert pf.row_groups[0].columns[2].meta_data.statistics.max is None
+    assert pf.row_groups[0].columns[3].meta_data.statistics.max is not None
 
 
 def test_float(tempdir):
@@ -1188,7 +1188,7 @@ def test_pagesize_cat(monkeypatch, tempdir):
     col = pf.row_groups[0].columns[0]
     assert col.meta_data.dictionary_page_offset == 4
     assert col.file_offset == 4
-    assert col.meta_data.statistics is None
+    assert col.meta_data.statistics.max is None
     assert col.meta_data.data_page_offset > 4
     enc = col.meta_data.encoding_stats
     assert len(enc) == 2
