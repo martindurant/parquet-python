@@ -770,7 +770,7 @@ def make_row_group(f, data, schema, compression=None, stats=True):
             if isinstance(stats, int):
                 st = stats
             elif stats == "auto":
-                st = coldata.dtype.kind in ["i", "u", "f", "M"]
+                st = coldata.dtype.kind in ["i", "u", "f", "M"] or len(data) < 10_000
             else:
                 st = column.name in stats
             chunk = write_column(f, coldata, column,
