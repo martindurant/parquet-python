@@ -1,6 +1,14 @@
 Release Notes
 -------------
 
+2023.1.0
+--------
+
+#. big improvement to write speed
+#. paging support for bigger row-groups
+#. pandas 2.0 support
+#. delta for big-endian architecture
+
 2022.12.0
 ---------
 
