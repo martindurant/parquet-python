@@ -340,8 +340,11 @@ def infer_object_encoding(data):
         np.str_: "utf8"
     }
     for i in data:
-        if pd.isna(i):
-            continue
+        try:
+            if i is None or i is pd.NA or i is pd.NaT or i is np.nan or pd.isna(i):
+                continue
+        except (ValueError, TypeError):
+            pass
         tt = type(i)
         if tt in encs:
             tt = encs[tt]

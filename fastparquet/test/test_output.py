@@ -1197,3 +1197,11 @@ def test_pagesize_cat(monkeypatch, tempdir):
     out = pf.to_pandas()
     assert out.to_dict() == df.to_dict()
 
+
+def test_nested_infer(tempdir):
+    # https://github.com/dask/fastparquet/issues/846
+    fn = os.path.join(tempdir, "out.parq")
+    df = pd.DataFrame({"A": np.array([[1.1, 1.2], [], None], dtype=object)})
+    df.to_parquet(path=fn, engine="fastparquet")
+    df2 = pd.read_parquet(fn, engine="fastparquet")
+    assert df.to_dict() == df2.to_dict()
