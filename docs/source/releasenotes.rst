@@ -1,5 +1,5 @@
 Release Notes
--------------
+=============
 
 2023.1.0
 --------
@@ -84,7 +84,7 @@ Release Notes
 .. _0.7.0:
 
 0.7.0
-~~~~~
+-----
 
 (July 2021)
 
@@ -137,7 +137,7 @@ fixes and additions.
    datatype was nullable. We already handled writing of nullable columns.
 
 0.6.0
-~~~~~
+-----
 
 (May 2021)
 
