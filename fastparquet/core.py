@@ -370,15 +370,15 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         compressed_bytes = np.frombuffer(infile.read(size), "uint8")
         raw_bytes = decompress_data(compressed_bytes, uncompressed_page_size, codec)
-        out = np.empty(n_values, dtype='uint8')
+        out = np.empty(n_values, dtype='uint32')
         pagefile = encoding.NumpyIO(raw_bytes)
         bit_width = pagefile.read_byte()
         encoding.read_rle_bit_packed_hybrid(
             pagefile,
             bit_width,
             uncompressed_page_size,
-            encoding.NumpyIO(out),
-            itemsize=1
+            encoding.NumpyIO(out.view("uint8")),
+            itemsize=4
         )
         if max_rep:
             # num_rows got filled, but consumed num_values data entries
