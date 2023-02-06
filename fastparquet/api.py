@@ -1338,7 +1338,8 @@ def filter_row_groups(pf, filters, as_idx: bool = False):
     # `filters` into a list (OR condition) of list (AND condition)
     # of filters (tuple or list with 1st component being a column
     # name).
-    filters = [[filt] if filt and isinstance(filt[0], str) else filt for filt in filters]
+    if filters[0] and isinstance(filters[0][0], str):
+        filters = [filters]
     # Retrieve all column names onto which are applied filters, and check they
     # are existing columns of the dataset.
     as_cols = pf.columns + list(pf.cats.keys())

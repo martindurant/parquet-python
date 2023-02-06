@@ -239,9 +239,9 @@ def test_cat_filters():
     filters = [[('cat', '==', 'freda'), ('catnum', '>=', 2.5)]]
     assert len(pf.to_pandas(filters=filters)) == 333
 
-    # OR
+    # implicit AND from one level
     filters = [('cat', '==', 'freda'), ('catnum', '>=', 2.5)]
-    assert len(pf.to_pandas(filters=filters)) == 1333
+    assert len(pf.to_pandas(filters=filters)) == 333
 
     # AND
     filters = [[('cat', '==', 'freda'), ('catnum', '!=', 2.5)]]
