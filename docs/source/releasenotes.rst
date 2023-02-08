@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+2023.2.0
+--------
+
+#. revert one-level set of filters (#852)
+#. full size dict for decoding V2 pages (#850)
+#. infer_object_encoding fix (#847)
+#. row filtering with V2 pages (#845)
+
 2023.1.0
 --------
 
