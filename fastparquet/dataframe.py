@@ -181,7 +181,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             views[col+'-catdef'] = x
 
     # Patch our blocks with desired-length arrays.  Kids: don't try this at home.
-    mgr = df._data
+    mgr = df._mgr
     for block in mgr.blocks:
         bvalues = block.values
         shape = list(bvalues.shape)
@@ -223,7 +223,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     mgr.axes[-1] = index
 
     # create views
-    for block in df._data.blocks:
+    for block in df._mgr.blocks:
         dtype = block.dtype
         inds = block.mgr_locs.indexer
         if isinstance(inds, slice):

@@ -34,7 +34,6 @@ def test_empty():
     assert len(views) == 5
 
 
-@pytest.mark.xfail(reason="df._data is going away")
 def test_empty_tz_utc():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
