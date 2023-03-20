@@ -311,11 +311,14 @@ class ParquetFile(object):
         new_rgs = self.row_groups[item]
         if not isinstance(new_rgs, list):
             new_rgs = [new_rgs]
-        new_pf = copy.deepcopy(self)
-        new_pf.fmd.row_groups = new_rgs
-        new_pf._set_attrs()
-        # would otherwise be "simple" when selecting one rg
-        new_pf.file_scheme = self.file_scheme
+        new_pf = object.__new__(ParquetFile)
+        fmd = copy.copy(self.fmd)
+        fmd.row_groups = new_rgs
+        new_pf.__setstate__(
+            {"fn": self.fn, "open": self.open, "fmd": fmd,
+             "pandas_nulls": self.pandas_nulls, "_base_dtype": self._base_dtype,
+             "tz": self.tz}
+        )
         return new_pf
 
     def __len__(self):
