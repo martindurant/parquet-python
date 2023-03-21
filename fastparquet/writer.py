@@ -452,9 +452,14 @@ def _rows_per_page(data, selement, has_nulls=True, page_size=None):
     elif data.dtype == "object" or str(data.dtype) == "string":
         dd = data.iloc[:1000]
         d2 = dd[dd.notnull()]
-        sample = d2.astype(str).map(len)
-        chrs = sample.sum()
-        bytes_per_element = chrs / (len(sample) or 4) + 4
+        try:
+            sample = d2.str.len()
+            chrs = sample.sum()
+            bytes_per_element = chrs / (len(sample) or 4) + 4
+        except AttributeError:
+            # could not apply str to this type of object
+            # this estimate is probably grossly wrong
+            bytes_per_element = (dd.memory_usage(index=False, deep=True) / (len(dd) or 1)) or 16
     else:
         bytes_per_element = data.dtype.itemsize
 
