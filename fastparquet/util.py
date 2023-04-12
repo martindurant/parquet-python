@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 
 import fsspec
-from pandas.api.types import is_categorical_dtype
 
 from . import parquet_thrift
 from .cencoding import ThriftObject
@@ -408,7 +407,7 @@ def get_column_metadata(column, name, object_dtype=None):
         # pandas accidentally calls this "boolean"
         inferred_dtype = "bool"
 
-    if is_categorical_dtype(dtype):
+    if isinstance(dtype, pd.CategoricalDtype):
         extra_metadata = {
             'num_categories': len(column.cat.categories),
             'ordered': column.cat.ordered,
@@ -463,7 +462,7 @@ def get_column_metadata(column, name, object_dtype=None):
 
 
 def get_numpy_type(dtype):
-    if is_categorical_dtype(dtype):
+    if isinstance(dtype, pd.CategoricalDtype):
         return 'category'
     elif "Int" in str(dtype):
         return str(dtype).lower()

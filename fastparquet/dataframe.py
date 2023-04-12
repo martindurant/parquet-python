@@ -5,10 +5,9 @@ import numpy as np
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    DatetimeIndex
+    DatetimeIndex, CategoricalDtype
 )
 from pandas.core.arrays.masked import BaseMaskedDtype
-from pandas.api.types import is_categorical_dtype
 import warnings
 
 from .util import PANDAS_VERSION
@@ -229,7 +228,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             inds = list(range(inds.start, inds.stop, inds.step))
         for i, ind in enumerate(inds):
             col = df.columns[ind]
-            if is_categorical_dtype(dtype):
+            if isinstance(dtype, CategoricalDtype):
                 views[col] = block.values._codes
                 views[col+'-catdef'] = block.values
             elif getattr(block.dtype, 'tz', None):

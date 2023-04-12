@@ -4,7 +4,6 @@ import itertools
 import json
 import os
 import struct
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -12,7 +11,6 @@ from pandas.core.arrays.masked import BaseMaskedDtype
 
 from fastparquet.util import join_path
 
-from pandas.api.types import is_categorical_dtype
 from . import parquet_thrift
 from .api import ParquetFile, partitions, part_ids
 from .compression import compress_data
@@ -439,7 +437,7 @@ MAX_PAGE_SIZE = 500 * 2**20
 
 def _rows_per_page(data, selement, has_nulls=True, page_size=None):
     page_size = page_size or MAX_PAGE_SIZE
-    if is_categorical_dtype(data.dtype):
+    if isinstance(data.dtype, pd.CategoricalDtype):
         bytes_per_element = data.cat.codes.dtype.itemsize
     elif selement.type == parquet_thrift.Type.BOOLEAN:
         bytes_per_element = 0.125
@@ -512,7 +510,7 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
     data_page_offset = column_chunk_start
 
     # column global stats
-    if is_categorical_dtype(data0.dtype) and stats:
+    if isinstance(data0.dtype, pd.CategoricalDtype) and stats:
         try:
             dnnu = data0.unique().as_ordered()
             max, min = dnnu.max(), dnnu.min()
@@ -548,7 +546,7 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
     for row_start, row_end in zip(row_offsets[:-1], row_offsets[1:]):
         data = data0.iloc[row_start:row_end]
         if has_nulls:
-            if is_categorical_dtype(data.dtype):
+            if isinstance(data.dtype, pd.CategoricalDtype):
                 num_nulls = (data.cat.codes == -1).sum()
             else:
                 num_nulls = len(data) - data.count()
@@ -558,7 +556,7 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
             # their numpy counterparts
             if isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
                 data = data.astype(pdoptional_to_numpy_typemap[data.dtype], copy=False)
-            if data.dtype.kind == "O" and not is_categorical_dtype(data.dtype):
+            if data.dtype.kind == "O" and not isinstance(data.dtype, pd.CategoricalDtype):
                 try:
                     if selement.type == parquet_thrift.Type.INT64:
                         data = data.astype("int64", copy=False)
@@ -580,7 +578,7 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
         # No nested field handling (encode those as J/BSON)
         repetition_data = b""
 
-        if is_categorical_dtype(data.dtype):
+        if isinstance(data.dtype, pd.CategoricalDtype):
             if first_page:
                 # make "index page"
                 dict_page_offset = column_chunk_start
@@ -895,7 +893,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
             get_column_metadata(data[column], column, object_dtype=oencoding))
         fixed = None if fixed_text is None else fixed_text.get(column, None)
         is_index = (column in index_cols_orig) if index_cols_orig else None
-        if is_categorical_dtype(data[column].dtype):
+        if isinstance(data[column].dtype, pd.CategoricalDtype):
             se, type = find_type(data[column].cat.categories, fixed_text=fixed,
                                  object_encoding=oencoding, is_index=is_index)
             se.name = column
