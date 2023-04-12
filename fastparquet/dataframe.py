@@ -91,7 +91,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     df = OrderedDict()
     for t, col in zip(types, cols):
         if str(t) == 'category':
-            df[str(col)] = Categorical([], categories=cat(col), fastpath=True)
+            df[str(col)] = Categorical.from_codes([], categories=cat(col))
         elif isinstance(t, BaseMaskedDtype):
             # pandas masked types
             arr_type = t.construct_array_type()
@@ -126,9 +126,9 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             raise ValueError('If using an index, must give an index name')
         if str(t) == 'category':
             # https://github.com/dask/fastparquet/issues/576#issuecomment-805579337
-            temp = Categorical([], categories=cat(col), fastpath=True)
+            temp = Categorical.from_codes([], categories=cat(col))
             vals = np.zeros(size, dtype=temp.codes.dtype)
-            c = Categorical(vals, dtype=temp.dtype, fastpath=True)
+            c = Categorical.from_codes(vals, dtype=temp.dtype)
             index = CategoricalIndex(c)
 
             views[col] = vals
@@ -190,8 +190,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         if isinstance(bvalues, Categorical):
             code = np.zeros(shape=shape, dtype=bvalues.codes.dtype)
 
-            values = Categorical(values=code, dtype=bvalues.dtype,
-                                 fastpath=True)
+            values = Categorical.from_codes(codes=code, dtype=bvalues.dtype)
 
         elif getattr(bvalues.dtype, 'tz', None):
             values = np.zeros(shape=shape, dtype='M8[ns]')

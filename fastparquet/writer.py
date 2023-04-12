@@ -1349,7 +1349,7 @@ def partition_on_columns(data, columns, root_path, partname, fmd,
     """
     # Pandas groupby has by default 'sort=True' meaning groups are sorted
     # between them on key.
-    gb = data.groupby(columns if len(columns) > 1 else columns[0])
+    gb = data.groupby(columns if len(columns) > 1 else columns[0], observed=False)
     remaining = list(data)
     for column in columns:
         remaining.remove(column)
