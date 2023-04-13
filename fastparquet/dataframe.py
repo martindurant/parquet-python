@@ -116,7 +116,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                                   "" % (timezones[str(col)], col))
             df[str(col)] = d
 
-    df = DataFrame(df)
+    columns = [] if len(df) == 0 else None
+    df = DataFrame(df, columns=columns)
     if not index_types:
         index = RangeIndex(size)
     elif len(index_types) == 1:
