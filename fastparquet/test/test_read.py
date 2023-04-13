@@ -391,7 +391,7 @@ def test_no_columns(tempdir, filename):
     result = pf.to_pandas()
     expected = pd.DataFrame({"A": [1, 2]})[[]]
     assert len(result) == 2
-    if filename == "no_columns.parquet" and PANDAS_VERSION.major > 2:
+    if filename == "no_columns.parquet" and PANDAS_VERSION.major > (2, 0, 0):
         expected.columns = pd.RangeIndex(start=0, stop=0)
     pd.testing.assert_frame_equal(result, expected)
 
