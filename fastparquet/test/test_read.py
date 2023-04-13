@@ -10,9 +10,9 @@ import pytest
 import fastparquet
 from fastparquet import writer, core
 from fastparquet.cencoding import NumpyIO
+from fastparquet.util import PANDAS_VERSION
 
 from .util import TEST_DATA, s3, tempdir
-from ..util import PANDAS_VERSION
 
 
 def test_header_magic_bytes(tempdir):
