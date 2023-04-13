@@ -12,6 +12,7 @@ from fastparquet import writer, core
 from fastparquet.cencoding import NumpyIO
 
 from .util import TEST_DATA, s3, tempdir
+from ..util import PANDAS_VERSION
 
 
 def test_header_magic_bytes(tempdir):
@@ -390,7 +391,7 @@ def test_no_columns(tempdir, filename):
     result = pf.to_pandas()
     expected = pd.DataFrame({"A": [1, 2]})[[]]
     assert len(result) == 2
-    if filename == "no_columns.parquet":
+    if filename == "no_columns.parquet" and PANDAS_VERSION.major > 2:
         expected.columns = pd.RangeIndex(start=0, stop=0)
     pd.testing.assert_frame_equal(result, expected)
 
