@@ -108,6 +108,7 @@ class ParquetFile(object):
         self.pandas_nulls = pandas_nulls
         self._base_dtype = dtypes
         self.tz = None
+        self._columns_dtype = None
         if open_with is default_open and fs is None:
             fs = fsspec.filesystem("file")
         elif fs is not None:
@@ -792,7 +793,7 @@ selection does not match number of rows in DataFrame.')
         categories = self.check_categories(categories)
         cats = {k: v for k, v in self.cats.items() if k in columns}
         df, arrs = _pre_allocate(size, columns, categories, index, cats,
-                                 dtypes, self.tz)
+                                 dtypes, self.tz, columns_dtype=self._columns_dtype)
         i_no_name = re.compile(r"__index_level_\d+__")
         if self.has_pandas_metadata:
             md = self.pandas_metadata
@@ -887,6 +888,10 @@ selection does not match number of rows in DataFrame.')
             return self._categories
         if self.has_pandas_metadata:
             metadata = self.pandas_metadata
+            if "column_indexes" in metadata and len(metadata["column_indexes"]) > 0:
+                self._columns_dtype = metadata["column_indexes"][0]["numpy_type"]
+            else:
+                self._columns_dtype = None
             cats = {}
             for m in metadata['columns']:
                 if m['pandas_type'] != 'categorical':
@@ -1019,7 +1024,7 @@ selection does not match number of rows in DataFrame.')
     __repr__ = __str__
 
 
-def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
+def _pre_allocate(size, columns, categories, index, cs, dt, tz=None, columns_dtype=None):
     index = [index] if isinstance(index, str) else (index or [])
     cols = [c for c in columns if c not in index]
     categories = categories or {}
@@ -1040,7 +1045,8 @@ def _pre_allocate(size, columns, categories, index, cs, dt, tz=None):
     cols.extend(cs)
     dtypes.extend(['category'] * len(cs))
     df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
-                                index_types=index_types, cats=cats, timezones=tz)
+                                index_types=index_types, cats=cats, timezones=tz,
+                                columns_dtype=columns_dtype)
     return df, views
 
 

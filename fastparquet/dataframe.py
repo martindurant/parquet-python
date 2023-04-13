@@ -18,7 +18,7 @@ class Dummy(object):
 
 
 def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
-          timezones=None):
+          timezones=None, columns_dtype=None):
     """
     Create empty DataFrame to assign into
 
@@ -65,6 +65,8 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
     timezones: dict {col: timezone_str}
         for timestamp type columns, apply this timezone to the pandas series;
         the numpy view will be UTC.
+    file_has_columns: bool, default False
+        for files that are filtered but had columns before
 
     Returns
     -------
@@ -116,7 +118,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                                   "" % (timezones[str(col)], col))
             df[str(col)] = d
 
-    columns = [] if len(df) == 0 else None
+    columns = Index(df.keys(), dtype=columns_dtype) if columns_dtype is not None else None
     df = DataFrame(df, columns=columns)
     if not index_types:
         index = RangeIndex(size)

@@ -819,7 +819,8 @@ def make_part_file(f, data, schema, compression=None, fmd=None,
 
 
 def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
-                  object_encoding=None, times='int64', index_cols=None, partition_cols=None):
+                  object_encoding=None, times='int64', index_cols=None, partition_cols=None,
+                  cols_dtype="object"):
     if ignore_columns is None:
         ignore_columns = []
     if index_cols is None:
@@ -849,7 +850,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         ci = [{'name': data.columns.name,
                'field_name': data.columns.name,
                'pandas_type': 'mixed-integer',
-               'numpy_type': 'object',
+               'numpy_type': str(cols_dtype),
                'metadata': None}]
     if not isinstance(index_cols, list):
         start = index_cols.start
@@ -1276,6 +1277,7 @@ def write(filename, data, row_group_offsets=None,
     else:
         # Case 'append=False'.
         # Define 'index_cols' to be recorded in metadata.
+        cols_dtype = data.columns.dtype
         if (write_index or write_index is None
                 and not isinstance(data.index, pd.RangeIndex)):
             # Keep name(s) of index to metadata.
@@ -1298,7 +1300,7 @@ def write(filename, data, row_group_offsets=None,
                             fixed_text=fixed_text,
                             object_encoding=object_encoding,
                             times=times, index_cols=index_cols,
-                            partition_cols=partition_on)
+                            partition_cols=partition_on, cols_dtype=cols_dtype)
         if custom_metadata is not None:
             kvm = fmd.key_value_metadata or []
             kvm.extend(
