@@ -857,7 +857,7 @@ selection does not match number of rows in DataFrame.')
             return cats or {}
         if cats is None:
             return categ or {}
-        if set(cats) - set(categ):
+        if set(cats) - set(categ) and len(self.row_groups) > 1:
             raise TypeError("Attempt to read as category a field that "
                             "was not stored as such")
         if isinstance(cats, dict):
