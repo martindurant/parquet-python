@@ -171,6 +171,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
             x = Dummy()
             x._set_categories = set_cats
+            x._multiindex = True
 
             d = np.zeros(size, dtype=int)
             if PANDAS_VERSION >= Version("0.24.0"):
