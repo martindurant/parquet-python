@@ -862,7 +862,9 @@ selection does not match number of rows in DataFrame.')
                             "was not stored as such")
         if isinstance(cats, dict):
             return cats
-        return {k: v for k, v in categ.items() if k in cats}
+        out = {k: v for k, v in categ.items() if k in cats}
+        out.update({c: None for c in cats if c not in categ})
+        return out
 
     @property
     def has_pandas_metadata(self):
