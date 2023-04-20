@@ -489,6 +489,9 @@ def read_col(column, schema_helper, infile, use_cat=False,
                                        'number of category labels (%i)' %
                                        (assign.dtype, len(dic)))
             continue
+        elif use_cat and dic is None:
+            raise TypeError("Attempt to load as categorical a column with no dictionary")
+
         if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
             num += read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
                                      dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade,
@@ -554,6 +557,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 piece = piece._data
             if use_cat and not d:
                 # only possible for multi-index
+                breakpoint()
                 val = convert(val, se)
                 try:
                     i = pd.Categorical(val)

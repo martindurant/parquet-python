@@ -863,7 +863,7 @@ selection does not match number of rows in DataFrame.')
         if isinstance(cats, dict):
             return cats
         out = {k: v for k, v in categ.items() if k in cats}
-        out.update({c: None for c in cats if c not in categ})
+        out.update({c: pd.RangeIndex(0, 2**14) for c in cats if c not in categ})
         return out
 
     @property

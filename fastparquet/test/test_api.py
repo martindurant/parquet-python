@@ -1503,3 +1503,13 @@ def test_var_dtypes():
 def test_not_a_path():
     with pytest.raises(FileNotFoundError):
         ParquetFile("notadir")
+
+
+def test_cat_not_cat(tempdir):
+    fn = os.path.join(tempdir, 'test.parquet')
+    df = pd.DataFrame({'val': [1]})
+    write(fn, df)
+
+    pf = ParquetFile(fn)
+    with pytest.raises(TypeError):
+        pf.to_pandas(categories=["val"])
