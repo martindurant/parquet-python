@@ -1513,3 +1513,15 @@ def test_cat_not_cat(tempdir):
     pf = ParquetFile(fn)
     with pytest.raises(TypeError):
         pf.to_pandas(categories=["val"])
+
+
+def test_select_or_iter():
+    fn = os.path.join(TEST_DATA, "baz.parquet")
+    pf = ParquetFile(fn)
+
+    df1 = pf[0].to_pandas()
+    dfs = list(pf.iter_row_groups())
+    assert len(dfs) == 1
+
+    assert df1["id"].tolist() == dfs[0]["id"].tolist() == list(range(32))
+

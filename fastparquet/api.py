@@ -318,8 +318,9 @@ class ParquetFile(object):
         new_pf.__setstate__(
             {"fn": self.fn, "open": self.open, "fmd": fmd,
              "pandas_nulls": self.pandas_nulls, "_base_dtype": self._base_dtype,
-             "tz": self.tz}
+             "tz": self.tz, "_columns_dtype": self._columns_dtype}
         )
+        new_pf._set_attrs()
         return new_pf
 
     def __len__(self):
