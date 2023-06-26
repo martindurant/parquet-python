@@ -1525,3 +1525,17 @@ def test_select_or_iter():
 
     assert df1["id"].tolist() == dfs[0]["id"].tolist() == list(range(32))
 
+
+def test_read_a_non_pandas_parquet_file(tempdir):
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+
+    fn = os.path.join(tempdir, "test.parquet")
+
+    test_table = pa.table({"foo": [0, 1], "bar": ["a", "b"]})
+    pq.write_table(test_table, fn)
+
+    parquet_file = ParquetFile(fn)
+
+    assert parquet_file.count() == 2
+    assert parquet_file.head(1).equals(pd.DataFrame({"foo": [0], "bar": ["a"]}))

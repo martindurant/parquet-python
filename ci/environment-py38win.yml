@@ -17,3 +17,4 @@ dependencies:
   - orjson
   - ujson
   - python-rapidjson
+  - pyarrow
