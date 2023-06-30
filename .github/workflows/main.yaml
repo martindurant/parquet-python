@@ -127,7 +127,7 @@ jobs:
           git clone https://github.com/pandas-dev/pandas
           cd pandas
           python setup.py build_ext -j 4
-          pip install -e . --no-build-isolation --no-use-pep517
+          pip install -e . --no-build-isolation
 
       - name: Run Tests
         shell: bash -l {0}
