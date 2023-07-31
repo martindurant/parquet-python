@@ -189,21 +189,13 @@ def convert(data, se, timestamp96=True):
         data = data * DAYS_TO_MILLIS
         return data.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
-        out = data.astype('int64', copy=False)
-        time_shift(out.view("int64"), 1000000)
-        return out.view('timedelta64[ns]')
+        return data.astype("int64").view('timedelta64[ms]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MILLIS:
-        out = data
-        time_shift(data.view("int64"), 1000000)
-        return out.view('datetime64[ns]')
+        return data.astype("int64").view('datetime64[ms]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MICROS:
-        out = data
-        time_shift(data.view("int64"))
-        return out.view('timedelta64[ns]')
+        return data.view('timedelta64[us]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MICROS:
-        out = data
-        time_shift(data.view("int64"))
-        return out.view('datetime64[ns]')
+        return data.view('datetime64[us]')
     elif ctype == parquet_thrift.ConvertedType.UINT_8:
         # TODO: return strided views?
         #  data.view('uint8')[::data.itemsize].view(out_dtype)
