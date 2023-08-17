@@ -97,3 +97,9 @@ Index
 1. :ref:`genindex`
 1. :ref:`modindex`
 1. :ref:`search`
+
+
+.. raw:: html
+
+    <script data-goatcounter="https://distdatacats.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>

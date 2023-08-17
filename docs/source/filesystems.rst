@@ -32,3 +32,9 @@ Similarly, providing an open function and another to make any necessary director
          row_group_offsets=[0, 500], open_with=myopen, mkdirs=noop)
 
 (In the case of s3, no intermediate directories need to be created)
+
+
+.. raw:: html
+
+    <script data-goatcounter="https://distdatacats.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>

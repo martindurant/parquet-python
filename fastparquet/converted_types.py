@@ -56,11 +56,11 @@ complex = {
     parquet_thrift.ConvertedType.INT_16: np.dtype("int16"),
     parquet_thrift.ConvertedType.INT_32: np.dtype('int32'),
     parquet_thrift.ConvertedType.INT_64: np.dtype('int64'),
-    parquet_thrift.ConvertedType.TIME_MILLIS: np.dtype('<m8[ns]'),
+    parquet_thrift.ConvertedType.TIME_MILLIS: np.dtype('<m8[ms]'),
     parquet_thrift.ConvertedType.DATE: np.dtype('<M8[ns]'),
-    parquet_thrift.ConvertedType.TIMESTAMP_MILLIS: np.dtype('<M8[ns]'),
-    parquet_thrift.ConvertedType.TIME_MICROS: np.dtype('<m8[ns]'),
-    parquet_thrift.ConvertedType.TIMESTAMP_MICROS: np.dtype('<M8[ns]')
+    parquet_thrift.ConvertedType.TIMESTAMP_MILLIS: np.dtype('<M8[ms]'),
+    parquet_thrift.ConvertedType.TIME_MICROS: np.dtype('<m8[us]'),
+    parquet_thrift.ConvertedType.TIMESTAMP_MICROS: np.dtype('<M8[us]')
 }
 nullable = {
     np.dtype('int8'): pd.Int8Dtype(),
@@ -115,6 +115,8 @@ def typemap(se, md=None):
             return simple[se.type]
         else:
             return np.dtype("S%i" % se.type_length)
+    if md and "time" in md.get("numpy_type", ""):
+        return np.dtype(md["numpy_type"])
     if se.converted_type in complex:
         return complex[se.converted_type]
     return np.dtype("O")
@@ -145,7 +147,7 @@ def converts_inplace(se):
     return False
 
 
-def convert(data, se, timestamp96=True):
+def convert(data, se, timestamp96=True, dtype=None):
     """Convert known types from primitive to rich.
 
     Parameters
@@ -157,6 +159,7 @@ def convert(data, se, timestamp96=True):
     ctype = se.converted_type
     if se.type == parquet_thrift.Type.INT96 and timestamp96:
         data2 = data.view([('ns', 'i8'), ('day', 'i4')])
+        # TODO: this should be ms unit, now that we can?
         return ((data2['day'] - 2440588) * 86400000000000 +
                 data2['ns']).view('M8[ns]')
     if se.logicalType is not None and se.logicalType.TIMESTAMP is not None:
@@ -179,6 +182,7 @@ def convert(data, se, timestamp96=True):
             # NB: general but slow method
             # could optimize when data.dtype.itemsize <= 8
             # TODO: easy cythonize (but rare)
+            # TODO: extension point for pandas-decimal (no conversion needed)
             return np.array([
                 int.from_bytes(
                     data.data[i:i + 1], byteorder='big', signed=True
@@ -189,21 +193,16 @@ def convert(data, se, timestamp96=True):
         data = data * DAYS_TO_MILLIS
         return data.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
-        out = data.astype('int64', copy=False)
-        time_shift(out.view("int64"), 1000000)
-        return out.view('timedelta64[ns]')
+        # this was not covered by new pandas time units
+        data = data.astype('int64', copy=False)
+        time_shift(data, 1000000)
+        return data.view('timedelta64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MILLIS:
-        out = data
-        time_shift(data.view("int64"), 1000000)
-        return out.view('datetime64[ns]')
+        return data.view('datetime64[ms]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MICROS:
-        out = data
-        time_shift(data.view("int64"))
-        return out.view('timedelta64[ns]')
+        return data.view('timedelta64[us]')
     elif ctype == parquet_thrift.ConvertedType.TIMESTAMP_MICROS:
-        out = data
-        time_shift(data.view("int64"))
-        return out.view('datetime64[ns]')
+        return data.view('datetime64[us]')
     elif ctype == parquet_thrift.ConvertedType.UINT_8:
         # TODO: return strided views?
         #  data.view('uint8')[::data.itemsize].view(out_dtype)

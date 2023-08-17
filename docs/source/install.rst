@@ -71,3 +71,9 @@ This will produce a ``build/html/`` subdirectory, where the entry point is
 ``index.html``.
 
 
+
+
+.. raw:: html
+
+    <script data-goatcounter="https://distdatacats.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>

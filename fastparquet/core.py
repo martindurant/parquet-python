@@ -548,7 +548,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             if d and not use_cat:
                 part[defi == max_defi] = dic[val]
             elif not use_cat:
-                part[defi == max_defi] = convert(val, se)
+                part[defi == max_defi] = convert(val, se, dtype=assign.dtype)
             else:
                 part[defi == max_defi] = val
         else:
@@ -557,7 +557,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 piece = piece._data
             if use_cat and not d:
                 # only possible for multi-index
-                val = convert(val, se)
+                val = convert(val, se, dtype=assign.dtype)
                 try:
                     i = pd.Categorical(val)
                 except:
@@ -567,7 +567,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             elif d and not use_cat:
                 piece[:] = dic[val]
             elif not use_cat:
-                piece[:] = convert(val, se)
+                piece[:] = convert(val, se, dtype=assign.dtype)
             else:
                 piece[:] = val
 

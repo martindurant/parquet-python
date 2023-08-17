@@ -188,3 +188,9 @@ NB: minor versions up to 0.6.3 fix build issues
    consolidate of many data files.
 
 .. _cramjam: https://github.com/milesgranger/pyrus-cramjam
+
+
+.. raw:: html
+
+    <script data-goatcounter="https://distdatacats.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>

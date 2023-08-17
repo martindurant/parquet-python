@@ -87,3 +87,9 @@ Further options that may be of interest are:
     write('outdir.parq', df, row_group_offsets=[0, 10000, 20000],
           compression='GZIP', file_scheme='hive')
 
+
+
+.. raw:: html
+
+    <script data-goatcounter="https://distdatacats.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>

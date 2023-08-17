@@ -303,8 +303,12 @@ def convert(data, se):
 
     elif converted_type == parquet_thrift.ConvertedType.TIME_MICROS:
         # TODO: shift inplace
-        out = np.empty(len(data), 'int64')
-        time_shift(data.values.view('int64'), out)
+        if data.dtype == "m8[ns]":
+            out = np.empty(len(data), 'int64')
+            time_shift(data.values.view('int64'), out)
+        else:
+            # assuming ms or us
+            out = data.values
     elif type == parquet_thrift.Type.INT96 and dtype.kind == 'M':
         ns_per_day = (24 * 3600 * 1000000000)
         day = data.values.view('int64') // ns_per_day + 2440588

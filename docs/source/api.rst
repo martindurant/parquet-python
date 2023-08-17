@@ -23,3 +23,9 @@ API
 .. autofunction:: write
 
 .. autofunction:: update_file_custom_metadata
+
+
+.. raw:: html
+
+    <script data-goatcounter="https://distdatacats.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>

@@ -256,3 +256,9 @@ Dask and Pandas fully support calling ``fastparquet`` directly, with the functio
 Please see their relevant docstrings. Remote filesystems are supported by using
 a URL with a "protocol://" specifier and any ``storage_options`` to be passed to
 the file system implementation.
+
+
+.. raw:: html
+
+    <script data-goatcounter="https://distdatacats.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
