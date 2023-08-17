@@ -5,6 +5,6 @@ cython
 cramjam
 fastparquet
 numpydoc
-sphynx<7
+sphinx<7
 docutils<0.19
 sphinx_rtd_theme
