@@ -264,7 +264,8 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     # can read-into
     into0 = ((use_cat or converts_inplace(se) and see)
              and data_header2.num_nulls == 0
-             and max_rep == 0 and assign.dtype.kind != "O" and row_filter is None)
+             and max_rep == 0 and assign.dtype.kind != "O" and row_filter is None
+             and assign.dtype.kind not in "Mm")  # TODO: this can be done in place but is complex
     if row_filter is None:
         row_filter = Ellipsis
     # can decompress-into

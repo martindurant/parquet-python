@@ -561,7 +561,7 @@ def test_auto_null_object(tempdir):
     df['bb'] = df['b'].astype('object')
     df['aaa'] = df['a'].astype('object')
     object_cols = ['d', 'ff', 'bb', 'aaa', 'aa']
-    test_cols = list(set(df) - set(object_cols)) + ['d']
+    test_cols = list(set(df) - set(object_cols) - {"c"}) + ['d']
     fn = os.path.join(tmp, "test.parq")
 
     with pytest.raises(ValueError):
@@ -573,6 +573,7 @@ def test_auto_null_object(tempdir):
         assert col.repetition_type == parquet_thrift.FieldRepetitionType.OPTIONAL
     df2 = pf.to_pandas(categories=['e'])
 
+    assert df2.c.equals(df.c)
     tm.assert_frame_equal(df[test_cols], df2[test_cols], check_categorical=False,
                           check_dtype=False)
     tm.assert_frame_equal(df[['bb']].astype('float64'), df2[['bb']])
