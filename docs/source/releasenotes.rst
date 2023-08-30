@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+2023.8.0
+--------
+
+#. More general timestamp units (#874)
+#. ReadTheDocs V2 (#871)
+#. Better roundtrip dtypes (#861, 859)
+#. No convert when computing bytes-per-item for str (#858)
+
+
 2023.4.0
 --------
 
