@@ -159,6 +159,10 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
             values = values.data[:nval]
         else:
             values = np.zeros(nval, dtype=np.int8)
+    elif daph.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
+        values = np.empty(daph.num_values - num_nulls, dtype=np.int32)
+        o = encoding.NumpyIO(values.view('uint8'))
+        encoding.delta_binary_unpack(io_obj, o)
     else:
         raise NotImplementedError('Encoding %s' % daph.encoding)
     return definition_levels, repetition_levels, values[:nval]
