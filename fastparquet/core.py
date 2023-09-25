@@ -126,8 +126,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
     nval = daph.num_values - num_nulls
     se = helper.schema_element(metadata.path_in_schema)
     if daph.encoding == parquet_thrift.Encoding.PLAIN:
-
-        width = helper.schema_element(metadata.path_in_schema).type_length
+        width = se.type_length
         values = read_plain(io_obj.read(),
                             metadata.type,
                             int(daph.num_values - num_nulls),
@@ -137,7 +136,9 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
                            parquet_thrift.Encoding.RLE_DICTIONARY,
                            parquet_thrift.Encoding.RLE]:
         # bit_width is stored as single byte.
-        if daph.encoding == parquet_thrift.Encoding.RLE:
+        if metadata.type == parquet_thrift.Type.BOOLEAN:
+            bit_width = 1
+        elif daph.encoding == parquet_thrift.Encoding.RLE:
             bit_width = se.type_length
         else:
             bit_width = io_obj.read_byte()
