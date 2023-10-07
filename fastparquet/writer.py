@@ -243,7 +243,7 @@ def convert(data, se):
         elif type == parquet_thrift.Type.BOOLEAN:
             # TODO: with our own bitpack writer, no need to copy for
             #  the padding
-            padded = np.lib.pad(data.values, (0, 8 - (len(data) % 8)),
+            padded = np.pad(data.values, (0, 8 - (len(data) % 8)),
                                 'constant', constant_values=(0, 0))
             out = np.packbits(padded.reshape(-1, 8)[:, ::-1].ravel())
         elif dtype.name in typemap:
@@ -265,7 +265,7 @@ def convert(data, se):
                 elif type == parquet_thrift.Type.BOOLEAN:
                     # TODO: with our own bitpack writer, no need to copy for
                     #  the padding
-                    padded = np.lib.pad(data.values, (0, 8 - (len(data) % 8)),
+                    padded = np.pad(data.values, (0, 8 - (len(data) % 8)),
                                         'constant', constant_values=(0, 0))
                     out = np.packbits(padded.reshape(-1, 8)[:, ::-1].ravel())
                 else:
