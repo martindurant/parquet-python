@@ -120,7 +120,7 @@ jobs:
       - name: pip-install
         shell: bash -l {0}
         run: |
-          pip install Cython
+          pip install 'Cython<3'
           pip install hypothesis
           pip install pytest-localserver pytest-xdist pytest-asyncio
           pip install -e . --no-deps # Install fastparquet
