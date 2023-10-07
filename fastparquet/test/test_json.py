@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from packaging.version import Version
 
 from fastparquet.json import (
     JsonCodecError,
@@ -25,15 +26,15 @@ def _clear_cache():
 
 
 @pytest.mark.parametrize(
-    "data",
+    "data,has_float64",
     [
-        None,
-        [1, 1, 2, 3, 5],
-        [1.23, -3.45],
-        [np.float64(0.12), np.float64(4.56)],
-        [[1, 2, 4], ["x", "y", "z"]],
-        {"k1": "value", "k2": "à/è", "k3": 3},
-        {"k1": [1, 2, 3], "k2": [4.1, 5.2, 6.3]},
+        (None, False),
+        ([1, 1, 2, 3, 5], False),
+        ([1.23, -3.45], False),
+        ([np.float64(0.12), np.float64(4.56)], True),
+        ([[1, 2, 4], ["x", "y", "z"]], False),
+        ({"k1": "value", "k2": "à/è", "k3": 3}, False),
+        ({"k1": [1, 2, 3], "k2": [4.1, 5.2, 6.3]}, False),
     ],
 )
 @pytest.mark.parametrize(
@@ -44,7 +45,10 @@ def _clear_cache():
     "decoder_module, decoder_class",
     list(_codec_classes.items()),
 )
-def test_engine(encoder_module, encoder_class, decoder_module, decoder_class, data):
+def test_engine(encoder_module, encoder_class, decoder_module, decoder_class, data, has_float64):
+    if encoder_module == "rapidjson" and has_float64 and Version(np.__version__).major >= 2:
+        pytest.skip(reason="rapidjson cannot json dump np.float64 on numpy 2")
+
     pytest.importorskip(encoder_module)
     pytest.importorskip(decoder_module)
 
