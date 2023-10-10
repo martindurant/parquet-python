@@ -191,7 +191,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
         shape[-1] = size
 
         if isinstance(bvalues, Categorical):
-            code = np.zeros(shape=shape, dtype=bvalues.codes.dtype)
+            code = np.full(fill_value=-1, shape=shape, dtype=bvalues.codes.dtype)
 
             values = Categorical.from_codes(codes=code, dtype=bvalues.dtype)
 

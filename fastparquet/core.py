@@ -446,7 +446,12 @@ def read_col(column, schema_helper, infile, use_cat=False,
         column.
     """
     cmd = column.meta_data
-    se = schema_helper.schema_element(cmd.path_in_schema)
+    try:
+        se = schema_helper.schema_element(cmd.path_in_schema)
+    except KeyError:
+        # column not present in this row group
+        assign[:] = None
+        return
     off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
                cmd.data_page_offset))
 

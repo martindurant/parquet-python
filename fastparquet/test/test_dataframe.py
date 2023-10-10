@@ -1,6 +1,7 @@
 import warnings
 from unittest import mock
 
+import numpy as np
 import pandas as pd
 import pytest
 from numpy import empty as np_empty
@@ -26,12 +27,18 @@ def test_empty():
     df, views = empty('category', size=n, cols=['c'],
                       cats={'c': ['one', 'two']})
     views['c'][0] = 1
-    assert df.c[:2].tolist() == ['two', 'one']
+    assert df.c[:2].tolist() == ['two', np.nan]
 
     df, views = empty('i4,i8,f8,f8,O', size=n,
                       cols=['i4', 'i8', 'f8_1', 'f8_2', 'O'])
     assert df.shape == (n, 5)
     assert len(views) == 5
+
+
+def test_no_cats():
+    df, views = empty('category', size=10, cols=['c'],
+                      cats={'c': []})
+    assert (views["c"] == -1).all()
 
 
 def test_empty_tz_utc():
