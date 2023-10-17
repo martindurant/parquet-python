@@ -142,8 +142,6 @@ def converts_inplace(se):
     if getattr(se.logicalType, "TIMESTAMP", None) is not None:
         # this will be nanos, since micro and milli hit block above
         return True
-    if se.type == parquet_thrift.Type.FIXED_LEN_BYTE_ARRAY:
-        return ctype != parquet_thrift.ConvertedType.UTF8
     return False
 
 
