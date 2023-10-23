@@ -195,7 +195,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
             values = Categorical.from_codes(codes=code, dtype=bvalues.dtype)
 
-        elif getattr(bvalues.dtype, 'tz', None):
+        elif isinstance(dtype, pd.DatetimeTZDtype):
             dt = "M8[ns]" if PANDAS_VERSION.major < 2 else f'M8[{bvalues.dtype.unit}]'
             values = np.zeros(shape=shape, dtype=dt)
             values = type(bvalues)._from_sequence(values, copy=False, dtype=bvalues.dtype)
