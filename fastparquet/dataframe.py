@@ -5,7 +5,8 @@ import numpy as np
 from pandas import (
     Categorical, DataFrame, Series,
     CategoricalIndex, RangeIndex, Index, MultiIndex,
-    DatetimeIndex, CategoricalDtype
+    DatetimeIndex, CategoricalDtype,
+    DatetimeTZDtype
 )
 from pandas.core.arrays.masked import BaseMaskedDtype
 import warnings
@@ -195,7 +196,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
 
             values = Categorical.from_codes(codes=code, dtype=bvalues.dtype)
 
-        elif isinstance(dtype, pd.DatetimeTZDtype):
+        elif isinstance(bvalues.dtype, DatetimeTZDtype):
             dt = "M8[ns]" if PANDAS_VERSION.major < 2 else f'M8[{bvalues.dtype.unit}]'
             values = np.zeros(shape=shape, dtype=dt)
             values = type(bvalues)._from_sequence(values, copy=False, dtype=bvalues.dtype)
