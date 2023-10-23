@@ -196,8 +196,9 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
             values = Categorical.from_codes(codes=code, dtype=bvalues.dtype)
 
         elif getattr(bvalues.dtype, 'tz', None):
-            values = np.zeros(shape=shape, dtype='M8[ns]')
-            values = type(bvalues)(values, dtype=bvalues.dtype)
+            dt = "M8[ns]" if PANDAS_VERSION.major < 2 else f'M8[{bvalues.dtype.unit}]'
+            values = np.zeros(shape=shape, dtype=dt)
+            values = type(bvalues)._from_sequence(values, copy=False, dtype=bvalues.dtype)
         else:
             if not isinstance(bvalues, np.ndarray):
                 # e.g. DatetimeLikeBlock backed by DatetimeArray/TimedeltaArray
