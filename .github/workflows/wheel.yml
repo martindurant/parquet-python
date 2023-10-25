@@ -27,34 +27,34 @@ jobs:
       CIBW_TEST_SKIP: "*"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout
         with:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python
         with:
-          python-version: "3.8"
+          python-version: "3.11"
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action
         with:
           platforms: all
 
       - name: Add msbuild to PATH
         if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild
 
       - name: delvewheel install
         if: runner.os == 'Windows'
         run: |
-          python -m pip install delvewheel==0.0.9 cython
+          python -m pip install delvewheel cython
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.11.2
+        uses: joerick/cibuildwheel@v2.16.2
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact
         with:
           path: ./wheelhouse/*.whl
           name: wheels
@@ -82,34 +82,34 @@ jobs:
       CIBW_TEST_SKIP: "*"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout
         with:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python
         with:
-          python-version: "3.8"
+          python-version: "3.11"
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action
         with:
           platforms: all
 
       - name: Add msbuild to PATH
         if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild
 
       - name: delvewheel install
         if: runner.os == 'Windows'
         run: |
-          python -m pip install delvewheel==0.0.9 cython
+          python -m pip install delvewheel cython
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.11.2
+        uses: joerick/cibuildwheel@v2.16.2
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact
         with:
           path: ./wheelhouse/*.whl
           name: wheels
@@ -137,34 +137,34 @@ jobs:
       CIBW_TEST_SKIP: "*"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout
         with:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python
         with:
-          python-version: "3.8"
+          python-version: "3.11"
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action
         with:
           platforms: all
 
       - name: Add msbuild to PATH
         if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild
 
       - name: delvewheel install
         if: runner.os == 'Windows'
         run: |
-          python -m pip install delvewheel==0.0.9 cython
+          python -m pip install delvewheel cython
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.11.2
+        uses: joerick/cibuildwheel@v2.16.2
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifac
         with:
           path: ./wheelhouse/*.whl
           name: wheels
@@ -192,34 +192,34 @@ jobs:
       CIBW_BEFORE_TEST: "git status"
 
     steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout
           with:
             fetch-depth: 0
 
         - name: Setup Python
-          uses: actions/setup-python@v2
+          uses: actions/setup-python
           with:
-            python-version: "3.8"
+            python-version: "3.11"
 
         - name: Set up QEMU
           if: runner.os == 'Linux'
-          uses: docker/setup-qemu-action@v1
+          uses: docker/setup-qemu-action
           with:
             platforms: all
 
         - name: Add msbuild to PATH
           if: runner.os == 'Windows'
-          uses: microsoft/setup-msbuild@v1.0.2
+          uses: microsoft/setup-msbuild
 
         - name: delvewheel install
           if: runner.os == 'Windows'
           run: |
-            python -m pip install delvewheel==0.0.9 cython
+            python -m pip install delvewheel cython
 
         - name: Build wheels
-          uses: joerick/cibuildwheel@v2.11.2
+          uses: joerick/cibuildwheel@v2.16.2
 
-        - uses: actions/upload-artifact@v2
+        - uses: actions/upload-artifact
           with:
             path: ./wheelhouse/*.whl
             name: wheels
@@ -241,19 +241,19 @@ jobs:
       CIBW_TEST_SKIP: "*"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout
         with:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python
         with:
-          python-version: "3.8"
+          python-version: "3.11"
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.11.2
+        uses: joerick/cibuildwheel@v2.16.2
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact
         with:
           path: ./wheelhouse/*.whl
           name: wheels

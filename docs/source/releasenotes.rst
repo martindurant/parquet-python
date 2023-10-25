@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+2023.10.0
+---------
+
+#. Datetime units in empty() with tz (#893)
+#. Fewer inplace decompressions for V2 pages (#890
+#. Allow writing categorical column with no categories (#888)
+#. Fixes for new numpy (#886)
+#. RLE bools and DELTA for v1 pages (#885, 883)
+
 2023.8.0
 --------
 
