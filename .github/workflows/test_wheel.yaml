@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-23.04, windows-2019]
+        os: [ubuntu-22.04, windows-2019]
         architecture: ['x64']
         linux_archs: ["native"]
         numpy_version: ["numpy~=1.23", "numpy~=1.24", "numpy~=1.25", "numpy#latest"]
@@ -18,7 +18,7 @@ jobs:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: windows-2019
             skip: "*2*win* *win32 pp*"
-          - os: ubuntu-23.04
+          - os: ubuntu-22.04
             linux_archs: native
             skip: "pp* *musl*"
 
