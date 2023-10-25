@@ -38,12 +38,12 @@ jobs:
         run: |
           pytest --verbose --cov=fastparquet
   v2:
-    name: v2-py38
+    name: v2-py310
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        CONDA_ENV: [py38]
+        CONDA_ENV: [py310]
     steps:
       - name: APT
         run: sudo apt-get install liblzo2-dev
@@ -150,7 +150,7 @@ jobs:
       - name: Setup conda
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: ci/environment-py38win.yml
+          environment-file: ci/environment-py310win.yml
 
       - name: pip-install
         shell: bash -l {0}
