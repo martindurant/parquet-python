@@ -206,7 +206,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 if bvalues.dtype.kind == "m":
                     dt = "m8[ns]" if PANDAS_VERSION.major < 2 else bvalues.dtype
                     values = np.zeros(shape=shape, dtype=dt)
-                    values = type(bvalues)._from_sequence(values, copy=False)
+                    values = type(bvalues)._from_sequence(values.view("int64"), copy=False, dtype=bvalues.dtype)
                 elif bvalues.dtype.kind == "M":
                     dt = "M8[ns]" if PANDAS_VERSION.major < 2 else bvalues.dtype
                     values = np.zeros(shape=shape, dtype=dt)

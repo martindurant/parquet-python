@@ -18,7 +18,7 @@ jobs:
             linux_archs: "aarch64"
             skip: "pp* *-musllinux_aarch64"
 
-    name: Python ${{ matrix.os }}
+    name: ${{ matrix.os }} ${{ matrix.architecture }} ${{ matrix.linux_archs }}
     env:
       CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
       CIBW_BEFORE_ALL: "pip install numpy cython"
@@ -71,9 +71,9 @@ jobs:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
           - os: ubuntu-22.04
             linux_archs: "i686"
-            skip: "pp*"
+            skip: "pp* *312*"
 
-    name: Python ${{ matrix.os }}
+    name: ${{ matrix.os }} ${{ matrix.architecture }} ${{ matrix.linux_archs }}
     env:
       CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
       CIBW_BEFORE_ALL: "pip install numpy cython"
@@ -128,7 +128,7 @@ jobs:
             linux_archs: "x86_64"
             skip: "pp*"
 
-    name: Python ${{ matrix.os }}
+    name: ${{ matrix.os }} ${{ matrix.architecture}}
     env:
       CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
       CIBW_BEFORE_ALL: "pip install numpy cython"
@@ -175,14 +175,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019]
+        os: [windows-latest]
         architecture: ['x64']
         include:
           # https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
-          - os: windows-2019
+          - os: windows-latest
             skip: "*2*win* *win32 pp*"
 
-    name: Python ${{ matrix.os }}
+    name: ${{ matrix.os }} ${{ matrix.architecture}}
     env:
       CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
       CIBW_BEFORE_ALL: "pip install numpy cython"
@@ -233,7 +233,7 @@ jobs:
         os: [macos-latest]
         architecture: ["universal2",  "arm64"]
 
-    name: Python ${{ matrix.os }}
+    name: ${{ matrix.os }} ${{ matrix.architecture}}
     env:
       CIBW_BEFORE_ALL: "pip install numpy cython"
       CIBW_SKIP: ${{ matrix.skip }}
