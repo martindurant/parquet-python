@@ -107,7 +107,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                 # funky pandas not-dtype
                 t = t.base
             if ("M" in str(t) or "time" in str(t)) and "[" not in str(t):
-                t = t + "[ns]"
+                t = str(t) + "[ns]"
             d = np.empty(0, dtype=t)
             if d.dtype.kind == "M" and str(col) in timezones:
                 try:
