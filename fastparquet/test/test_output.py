@@ -1206,3 +1206,13 @@ def test_nested_infer(tempdir):
     df.to_parquet(path=fn, engine="fastparquet")
     df2 = pd.read_parquet(fn, engine="fastparquet")
     assert df.to_dict() == df2.to_dict()
+
+
+def test_attrs_roundtrip(tempdir):
+    fn = os.path.join(tempdir, "out.parq")
+    attrs = {"oi": 5}
+    df = pd.DataFrame({"A": np.array([[1.1, 1.2], [], None], dtype=object)})
+    df.attrs = attrs
+    df.to_parquet(path=fn, engine="fastparquet")
+    df2 = pd.read_parquet(fn, engine="fastparquet")
+    assert df2.attrs == attrs
