@@ -380,6 +380,9 @@ class ParquetFile(object):
                 size = rg.num_rows
             df, assign = self.pre_allocate(
                     size, columns, categories, index)
+            if "PANDAS_ATTRS" in self.key_value_metadata:
+                import json
+                df.attrs = json.loads(self.key_value_metadata["PANDAS_ATTRS"])
             ret = True
         f = infile or self.open(fn, mode='rb')
 
@@ -765,6 +768,10 @@ selection does not match number of rows in DataFrame.')
             size = sum(rg.num_rows for rg in rgs)
             selected = [None] * len(rgs)  # just to fill zip, below
         df, views = self.pre_allocate(size, columns, categories, index, dtypes=dtypes)
+        if "PANDAS_ATTRS" in self.key_value_metadata:
+            import json
+            df.attrs = json.loads(self.key_value_metadata["PANDAS_ATTRS"])
+
         start = 0
         if self.file_scheme == 'simple':
             infile = self.open(self.fn, 'rb')

@@ -1243,6 +1243,9 @@ def write(filename, data, row_group_offsets=None,
     --------
     >>> fastparquet.write('myfile.parquet', df)  # doctest: +SKIP
     """
+    custom_metadata = custom_metadata or {}
+    if getattr(data, "attrs", None):
+        custom_metadata["PANDAS_ATTRS"] = json.dumps(data.attrs)
     if file_scheme not in ('simple', 'hive', 'drill'):
         raise ValueError( 'File scheme should be simple|hive|drill, not '
                          f'{file_scheme}.')
@@ -1305,7 +1308,7 @@ def write(filename, data, row_group_offsets=None,
                             object_encoding=object_encoding,
                             times=times, index_cols=index_cols,
                             partition_cols=partition_on, cols_dtype=cols_dtype)
-        if custom_metadata is not None:
+        if custom_metadata:
             kvm = fmd.key_value_metadata or []
             kvm.extend(
                 [
