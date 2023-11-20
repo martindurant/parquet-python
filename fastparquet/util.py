@@ -297,7 +297,7 @@ def update_custom_metadata(obj, custom_metadata : dict):
         Thrift object or parquet file which metadata is to update.
     custom_metadata : dict
         Key-value metadata to update in thrift object.
-        
+        The values must be strings or binary. To pass a dictionary, serialize it as json string then encode it in binary.
     Notes
     -----
     Key-value metadata are expected binary encoded. This function ensures it
@@ -305,6 +305,10 @@ def update_custom_metadata(obj, custom_metadata : dict):
     """
     kvm = (obj.key_value_metadata if isinstance(obj, ThriftObject)
            else obj.fmd.key_value_metadata)
+    
+    if kvm is None:
+        kvm=[]
+
     # Spare list of keys.
     kvm_keys = [item.key for item in kvm]
     for key, value in custom_metadata.items():
