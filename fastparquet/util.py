@@ -307,7 +307,7 @@ def update_custom_metadata(obj, custom_metadata : dict):
            else obj.fmd.key_value_metadata)
     
     if kvm is None:
-        kvm=[]
+        kvm = []
 
     # Spare list of keys.
     kvm_keys = [item.key for item in kvm]
