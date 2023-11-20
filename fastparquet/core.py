@@ -157,7 +157,10 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
                 o = encoding.NumpyIO(values)
                 encoding.read_rle_bit_packed_hybrid(
                     io_obj, bit_width, io_obj.len-io_obj.tell(), o=o, itemsize=1)
-            values = values.data[:nval]
+            if isinstance(values, np.ndarray):
+                values = values[:nval]
+            else:
+                values = values.data[:nval]
         else:
             values = np.zeros(nval, dtype=np.int8)
     elif daph.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
