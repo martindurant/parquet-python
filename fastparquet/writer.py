@@ -1605,7 +1605,6 @@ def update_file_custom_metadata(path: str, custom_metadata: dict,
       - If its value is `None`, it is not added, and if found in existing,
         it is removed from existing.
 
-
     Parameters
     ----------
     path : str
