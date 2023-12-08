@@ -966,10 +966,11 @@ selection does not match number of rows in DataFrame.')
                         dt = md[col]["numpy_type"]
                     if tz is not None and tz.get(col, False):
                         z = dataframe.tz_to_dt_tz(tz[col])
-                        if PANDAS_VERSION.major >= 2:
-                            dt = pd.Series([], dtype=dt).dt.tz_convert(z).dtype
+                        dt_series = pd.Series([], dtype=dt)
+                        if PANDAS_VERSION.major >= 2 and dt_series.dt.tz is not None:
+                            dt = dt_series.dt.tz_convert(z).dtype
                         else:
-                            dt = pd.Series([], dtype=dt).dt.tz_localize(z).dtype
+                            dt = dt_series.dt.tz_localize(z).dtype
                     dtype[col] = dt
                 elif dt in converted_types.nullable:
                     if self.pandas_metadata:
