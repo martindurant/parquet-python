@@ -80,20 +80,16 @@ def tempdir():
         shutil.rmtree(d, ignore_errors=True)
 
 
-def getMixedTypeDict():
+
+def makeMixedDataFrame():
     index = pd.Index(["a", "b", "c", "d", "e"])
 
     data = {
-        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
-        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
-        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+        "A": pd.Series([0.0, 1.0, 2.0, 3.0, 4.0], dtype="float64"),
+        "B": pd.Series([0.0, 1.0, 0.0, 1.0, 0.0], dtype=pd.Int32Dtype),
+        "C": pd.Series(["foo1", "foo2", "foo3", "foo4", "foo5"], dtype='object'),
         "D": pd.bdate_range("1/1/2009", periods=5),
     }
-
-    return index, data
-
-
-def makeMixedDataFrame():
-    return pd.DataFrame(getMixedTypeDict()[1])
+    return pd.DataFrame(index, data=data)
 
 
