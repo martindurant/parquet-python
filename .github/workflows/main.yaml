@@ -115,14 +115,14 @@ jobs:
       - name: Setup conda
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: ci/environment-py312.yml
+          environment-file: ci/environment-py310.yml
 
       - name: pip-install
         shell: bash -l {0}
         run: |
           pip install Cython
           pip install hypothesis
-          pip install pytest-localserver pytest-xdist pytest-asyncio versioneer meson meson-python ninja
+          pip install pytest-localserver pytest-xdist pytest-asyncio
           pip install -e . --no-deps # Install fastparquet
           git clone https://github.com/pandas-dev/pandas
           cd pandas
