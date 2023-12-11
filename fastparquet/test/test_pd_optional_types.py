@@ -55,18 +55,7 @@ TEST = pd.DataFrame({
 })
 
 
-EXPECTED = pd.DataFrame({
-    'int8': EXPECTED_SERIES_INT8.astype('float16'),
-    'int16': EXPECTED_SERIES_INT16.astype('float32'),
-    'int32': EXPECTED_SERIES_INT32.astype('float64'),
-    'int64': EXPECTED_SERIES_INT64.astype('float64'),
-    'uint8': EXPECTED_SERIES_UINT8.astype('float16'),
-    'uint16': EXPECTED_SERIES_UINT16.astype('float32'),
-    'uint32': EXPECTED_SERIES_UINT32.astype('float64'),
-    'uint64': EXPECTED_SERIES_UINT64.astype('float64'),
-    'bool': EXPECTED_SERIES_BOOL.astype('float16'),
-    'string': EXPECTED_SERIES_STRING
-})
+EXPECTED = TEST
 
 
 EXPECTED_PARQUET_TYPES = {
