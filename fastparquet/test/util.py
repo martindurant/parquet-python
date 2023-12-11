@@ -82,14 +82,14 @@ def tempdir():
 
 
 def makeMixedDataFrame():
-    index = pd.Index(["a", "b", "c", "d", "e"])
+    index = pd.Index(["a", "b", "c", "d", "e"], name="index")
 
     data = {
         "A": pd.Series([0.0, 1.0, 2.0, 3.0, 4.0], dtype="float64"),
-        "B": pd.Series([0.0, 1.0, 0.0, 1.0, 0.0], dtype=pd.Int32Dtype),
+        "B": pd.Series([0.0, 1.0, 0.0, 1.0, 0.0], dtype="float64"),
         "C": pd.Series(["foo1", "foo2", "foo3", "foo4", "foo5"], dtype='object'),
         "D": pd.bdate_range("1/1/2009", periods=5),
     }
-    return pd.DataFrame(index=index, data=data)
+    return pd.DataFrame(data=data)
 
 
