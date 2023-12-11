@@ -90,6 +90,6 @@ def makeMixedDataFrame():
         "C": pd.Series(["foo1", "foo2", "foo3", "foo4", "foo5"], dtype='object'),
         "D": pd.bdate_range("1/1/2009", periods=5),
     }
-    return pd.DataFrame(index, data=data)
+    return pd.DataFrame(index=index, data=data)
 
 
