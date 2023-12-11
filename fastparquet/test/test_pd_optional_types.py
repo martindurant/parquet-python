@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
+from pandas.core.arrays import IntegerArray
 import fastparquet as fp
 from .util import tempdir
 from fastparquet import write, parquet_thrift
@@ -37,18 +38,19 @@ EXPECTED_SERIES_UINT32[20:30] = np.nan
 EXPECTED_SERIES_UINT64[20:30] = np.nan
 EXPECTED_SERIES_BOOL[20:30] = np.nan
 EXPECTED_SERIES_STRING[20:30] = np.nan
+mask = EXPECTED_SERIES_UINT64 > -1
 
 
 TEST = pd.DataFrame({
-    'int8': pd.Series(EXPECTED_SERIES_INT8, dtype='Int8'),
-    'int16': pd.Series(EXPECTED_SERIES_INT16, dtype='Int16'),
-    'int32': pd.Series(EXPECTED_SERIES_INT32, dtype='Int32'),
-    'int64': pd.Series(EXPECTED_SERIES_INT64, dtype='Int64'),
-    'uint8': pd.Series(EXPECTED_SERIES_UINT8, dtype='UInt8'),
-    'uint16': pd.Series(EXPECTED_SERIES_UINT16, dtype='UInt16'),
-    'uint32': pd.Series(EXPECTED_SERIES_UINT32, dtype='UInt32'),
-    'uint64': pd.Series(EXPECTED_SERIES_UINT64, dtype='UInt64'),
-    'bool': pd.Series(EXPECTED_SERIES_BOOL, dtype='boolean'),
+    'int8': pd.Series(pd.array(EXPECTED_SERIES_INT8, dtype='Int8')),
+    'int16': pd.Series(pd.array(EXPECTED_SERIES_INT16, dtype='Int16')),
+    'int32': pd.Series(pd.array(EXPECTED_SERIES_INT32, dtype='Int32')),
+    'int64': pd.Series(pd.array(EXPECTED_SERIES_INT64, dtype='Int64')),
+    'uint8': pd.Series(pd.array(EXPECTED_SERIES_UINT8, dtype='UInt8')),
+    'uint16': pd.Series(pd.array(EXPECTED_SERIES_UINT16, dtype='UInt16')),
+    'uint32': pd.Series(pd.array(EXPECTED_SERIES_UINT32, dtype='UInt32')),
+    'uint64': pd.Series(pd.array(EXPECTED_SERIES_UINT64, dtype='UInt64')),
+    'bool': pd.Series(pd.array(EXPECTED_SERIES_BOOL, dtype='boolean')),
     'string': pd.Series(EXPECTED_SERIES_STRING, dtype='string')
 })
 
