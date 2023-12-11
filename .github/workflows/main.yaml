@@ -122,7 +122,7 @@ jobs:
         run: |
           pip install Cython
           pip install hypothesis
-          pip install pytest-localserver pytest-xdist pytest-asyncio versioneer meson meson-python
+          pip install pytest-localserver pytest-xdist pytest-asyncio versioneer meson meson-python ninja
           pip install -e . --no-deps # Install fastparquet
           git clone https://github.com/pandas-dev/pandas
           cd pandas
