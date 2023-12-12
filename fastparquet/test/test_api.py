@@ -9,7 +9,7 @@ import sys
 import fsspec
 import numpy as np
 import pandas as pd
-from pandas._testing import makeMixedDataFrame
+from .util import makeMixedDataFrame
 try:
     from pandas.tslib import Timestamp
 except ImportError:

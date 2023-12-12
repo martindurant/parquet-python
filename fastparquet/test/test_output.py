@@ -8,7 +8,7 @@ import pandas.testing as tm
 from fastparquet import ParquetFile
 from fastparquet import write, parquet_thrift, update_file_custom_metadata
 from fastparquet import writer, encoding
-from pandas._testing import makeMixedDataFrame
+from .util import makeMixedDataFrame
 from pandas.testing import assert_frame_equal
 from pandas.api.types import CategoricalDtype
 import pytest

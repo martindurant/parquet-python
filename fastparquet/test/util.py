@@ -4,6 +4,8 @@ import pytest
 import tempfile
 import shutil
 
+import pandas as pd
+
 TEST_DATA = "test-data"
 
 port = 5555
@@ -76,3 +78,18 @@ def tempdir():
     yield d
     if os.path.exists(d):
         shutil.rmtree(d, ignore_errors=True)
+
+
+
+def makeMixedDataFrame():
+    index = pd.Index(["a", "b", "c", "d", "e"], name="index")
+
+    data = {
+        "A": pd.Series([0.0, 1.0, 2.0, 3.0, 4.0], dtype="float64"),
+        "B": pd.Series([0.0, 1.0, 0.0, 1.0, 0.0], dtype="float64"),
+        "C": pd.Series(["foo1", "foo2", "foo3", "foo4", "foo5"], dtype='object'),
+        "D": pd.bdate_range("1/1/2009", periods=5),
+    }
+    return pd.DataFrame(data=data)
+
+
