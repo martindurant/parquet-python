@@ -165,8 +165,8 @@ def test_delta_from_def_2():
     # one and only miniblock
     cencoding.encode_unsigned_varint(zigzag(-2), o)  # minimum delta (zigzag)
     o.write_byte(2)  # bit-width list (only one)
-    o.write_byte(0b00000011)  # [0, 0, 0, 3]
-    o.write_byte(0b11111100)  # [3, 3, 3, pad]
+    o.write_byte(0b11000000)  # rev([0, 0, 0, 3])
+    o.write_byte(0b00111111)  # rev([3, 3, 3, pad])
 
     o.seek(0)
 
