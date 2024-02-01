@@ -8,6 +8,7 @@ import os
 import operator
 import re
 import numbers
+import zoneinfo
 
 import numpy as np
 import pandas as pd
@@ -417,25 +418,28 @@ def get_column_metadata(column, name, object_dtype=None):
             'ordered': column.cat.ordered,
         }
         dtype = column.cat.codes.dtype
-    elif hasattr(dtype, 'tz'):
-        try:
-            stz = str(dtype.tz)
-            if "UTC" in stz and ":" in stz:
-                extra_metadata = {'timezone': stz.strip("UTC")}
-            elif len(str(stz)) == 3:  # like "UTC", "CET", ...
-                extra_metadata = {'timezone': str(stz)}
-            elif getattr(dtype.tz, "zone", False):
-                extra_metadata = {'timezone': dtype.tz.zone}
-            elif "pytz" not in stz:
-                pd.Series([pd.to_datetime('now', utc=True)]).dt.tz_localize(stz)
-                extra_metadata = {'timezone': stz}
-            elif "Offset" in stz:
-                extra_metadata = {'timezone': f"{dtype.tz._minutes // 60:+03}:00"}
-            else:
-                raise KeyError
-        except Exception as e:
-            raise ValueError("Time-zone information could not be serialised: "
-                             "%s, please use another" % str(dtype.tz)) from e
+    elif isinstance(dtype, pd.DatetimeTZDtype):
+        if isinstance(dtype.tz, zoneinfo.ZoneInfo):
+            extra_metadata = {'timezone': dtype.tz.zone.key}
+        else:
+            try:
+                stz = str(dtype.tz)
+                if "UTC" in stz and ":" in stz:
+                    extra_metadata = {'timezone': stz.strip("UTC")}
+                elif len(str(stz)) == 3:  # like "UTC", "CET", ...
+                    extra_metadata = {'timezone': str(stz)}
+                elif getattr(dtype.tz, "zone", False):
+                    extra_metadata = {'timezone': dtype.tz.zone}
+                elif "pytz" not in stz:
+                    pd.Series([pd.to_datetime('now', utc=True)]).dt.tz_localize(stz)
+                    extra_metadata = {'timezone': stz}
+                elif "Offset" in stz:
+                    extra_metadata = {'timezone': f"{dtype.tz._minutes // 60:+03}:00"}
+                else:
+                    raise KeyError
+            except Exception as e:
+                raise ValueError("Time-zone information could not be serialised: "
+                                "%s, please use another" % str(dtype.tz)) from e
     else:
         extra_metadata = None
 
