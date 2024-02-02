@@ -420,7 +420,7 @@ def get_column_metadata(column, name, object_dtype=None):
         dtype = column.cat.codes.dtype
     elif isinstance(dtype, pd.DatetimeTZDtype):
         if isinstance(dtype.tz, zoneinfo.ZoneInfo):
-            extra_metadata = {'timezone': dtype.tz.zone.key}
+            extra_metadata = {'timezone': dtype.tz.key}
         else:
             try:
                 stz = str(dtype.tz)
