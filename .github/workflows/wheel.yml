@@ -54,7 +54,7 @@ jobs:
       - name: Build wheels
         uses: joerick/cibuildwheel@v2.16.5
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
           name: wheels
@@ -109,7 +109,7 @@ jobs:
       - name: Build wheels
         uses: joerick/cibuildwheel@v2.16.5
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
           name: wheels
@@ -164,7 +164,7 @@ jobs:
       - name: Build wheels
         uses: joerick/cibuildwheel@v2.16.5
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
           name: wheels
@@ -219,7 +219,7 @@ jobs:
         - name: Build wheels
           uses: joerick/cibuildwheel@v2.16.5
 
-        - uses: actions/upload-artifact@v4
+        - uses: actions/upload-artifact@v3
           with:
             path: ./wheelhouse/*.whl
             name: wheels
@@ -253,7 +253,7 @@ jobs:
       - name: Build wheels
         uses: joerick/cibuildwheel@v2.16.5
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
           name: wheels
