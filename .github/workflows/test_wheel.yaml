@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -50,7 +50,7 @@ jobs:
 
       - name: Add msbuild to PATH
         if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v1.3
+        uses: microsoft/setup-msbuild@v2
 
       - name: delvewheel install
         if: runner.os == 'Windows'
@@ -58,7 +58,7 @@ jobs:
           python -m pip install delvewheel cython
 
       - name: Build wheels
-        uses: joerick/cibuildwheel@v2.16.2
+        uses: joerick/cibuildwheel@v2.16.5
 
       - name: Install wheels
         shell: bash -l {0}
