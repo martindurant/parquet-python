@@ -14,8 +14,8 @@ import pandas as pd
 
 import fsspec
 
-from . import parquet_thrift
-from .cencoding import ThriftObject
+from fastparquet import parquet_thrift
+from fastparquet.cencoding import ThriftObject
 from fastparquet import __version__
 
 PANDAS_VERSION = Version(pd.__version__)

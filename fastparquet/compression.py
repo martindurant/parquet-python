@@ -1,7 +1,7 @@
 
 import cramjam
 import numpy as np
-from . import parquet_thrift
+from fastparquet import parquet_thrift
 
 # TODO: use stream/direct-to-buffer conversions instead of memcopy
 

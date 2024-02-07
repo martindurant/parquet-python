@@ -1,8 +1,8 @@
 """encoding.py - methods for reading parquet encoded data blocks."""
 import numpy as np
-from .cencoding import read_bitpacked1, NumpyIO
-from .speedups import unpack_byte_array
-from . import parquet_thrift
+from fastparquet.cencoding import read_bitpacked1, NumpyIO
+from fastparquet.speedups import unpack_byte_array
+from fastparquet import parquet_thrift
 
 
 def read_plain_boolean(raw_bytes, count, out=None):

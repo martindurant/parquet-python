@@ -1,17 +1,16 @@
-import warnings
 import numpy as np
 import pandas as pd
 
-from . import encoding
-from . encoding import read_plain
+from fastparquet import encoding
+from fastparquet.encoding import read_plain
 import fastparquet.cencoding as encoding
-from .compression import decompress_data, rev_map, decom_into
-from .converted_types import convert, simple, converts_inplace
-from .schema import _is_list_like, _is_map_like
-from .speedups import unpack_byte_array
-from . import parquet_thrift
-from .cencoding import ThriftObject, read_thrift
-from .util import val_to_num, ex_from_sep
+from fastparquet.compression import decompress_data, rev_map, decom_into
+from fastparquet.converted_types import convert, simple, converts_inplace
+from fastparquet.schema import _is_list_like, _is_map_like
+from fastparquet.speedups import unpack_byte_array
+from fastparquet import parquet_thrift
+from fastparquet.cencoding import ThriftObject
+from fastparquet.util import val_to_num
 
 
 def _read_page(file_obj, page_header, column_metadata):

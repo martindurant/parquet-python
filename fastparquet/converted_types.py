@@ -10,9 +10,9 @@ import logging
 import numpy as np
 import pandas as pd
 
-from . import parquet_thrift
-from .cencoding import time_shift
-from .json import json_decoder
+from fastparquet import parquet_thrift
+from fastparquet.cencoding import time_shift
+from fastparquet.json import json_decoder
 
 logger = logging.getLogger('parquet')  # pylint: disable=invalid-name
 

@@ -1,7 +1,7 @@
 """Utils for working with the parquet thrift models."""
 from collections import OrderedDict
 
-from . import parquet_thrift
+from fastparquet import parquet_thrift
 
 
 def schema_tree(schema, i=0):

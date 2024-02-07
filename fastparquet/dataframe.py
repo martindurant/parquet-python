@@ -11,7 +11,7 @@ from pandas import (
 from pandas.core.arrays.masked import BaseMaskedDtype
 import warnings
 
-from .util import PANDAS_VERSION
+from fastparquet.util import PANDAS_VERSION
 
 
 class Dummy(object):

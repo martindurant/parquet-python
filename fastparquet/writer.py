@@ -11,19 +11,17 @@ from pandas.core.arrays.masked import BaseMaskedDtype
 
 from fastparquet.util import join_path
 
-from . import parquet_thrift
-from .api import ParquetFile, partitions, part_ids
-from .compression import compress_data
-from .converted_types import tobson
-from .json import json_encoder
-from .util import (default_open, default_mkdirs, check_column_names,
+from fastparquet import parquet_thrift, __version__, cencoding
+from fastparquet.api import ParquetFile, partitions, part_ids
+from fastparquet.compression import compress_data
+from fastparquet.converted_types import tobson
+from fastparquet.json import json_encoder
+from fastparquet.util import (default_open, default_mkdirs, check_column_names,
                    created_by, get_column_metadata,
                    norm_col_name, path_string, reset_row_idx, get_fs,
                    update_custom_metadata)
-from . import __version__
-from .speedups import array_encode_utf8, pack_byte_array
-from . import cencoding
-from .cencoding import NumpyIO, ThriftObject, from_buffer
+from fastparquet.speedups import array_encode_utf8, pack_byte_array
+from fastparquet.cencoding import NumpyIO, ThriftObject, from_buffer
 from decimal import Decimal
 
 MARKER = b'PAR1'
