@@ -14,7 +14,7 @@ from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, get_fs, PANDAS_VERSION, jion_path)
+                   ex_from_sep, _strip_path_tail, get_fs, PANDAS_VERSION, join_path)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
