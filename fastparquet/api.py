@@ -6,9 +6,8 @@ import struct
 
 import numpy as np
 import fsspec
-import pandas as pd
 
-from fastparquet import core, schema, converted_types, encoding, dataframe, writer
+from fastparquet import core, schema, converted_types, encoding, writer
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
@@ -247,7 +246,7 @@ class ParquetFile(object):
             else False
         )
         self._read_partitions()
-        self._dtypes()
+        # self._dtypes()
 
     @property
     def helper(self):
@@ -540,15 +539,6 @@ class ParquetFile(object):
         """
         from .writer import write_simple, write_multi
         partition_on = list(self.cats)
-        if isinstance(data, pd.DataFrame):
-            self_cols = sorted(self.columns + partition_on)
-            if self_cols != sorted(data.columns):
-                diff_cols = set(data.columns) ^ set(self_cols)
-                raise ValueError(
-                    f'Column names of new data are {sorted(data.columns)}. '
-                    f'But column names in existing file are {self_cols}. '
-                    f'{diff_cols} are columns being either only in existing '
-                     'file or only in new data. This is not possible.')
         if (self.file_scheme == 'simple'
             or (self.file_scheme == 'empty' and self.fn[-9:] != '_metadata')):
             # Case 'simple'.
@@ -688,6 +678,39 @@ scheme is 'simple'.")
                 out |= and_part
         return out
 
+    def to_numpy(self, columns=None, filters=None, row_filter=None, dtypes=None):
+        rgs = filter_row_groups(self, filters) if filters else self.row_groups
+        if columns is None:
+            columns = self.columns
+        check_column_names(self.columns, columns, ())
+        size = sum(rg.num_rows for rg in rgs)
+        selected = [None] * len(rgs)  # just to fill zip, below
+        views = self.pre_allocate_np(size, columns, dtypes=dtypes)
+        if self.file_scheme == 'simple':
+            infile = self.open(self.fn, 'rb')
+        else:
+            infile = None
+        start = 0
+        for rg, sel in zip(rgs, selected):
+            thislen = sel.sum() if sel is not None else rg.num_rows
+            if thislen == rg.num_rows:
+                # all good; noop if no row filtering
+                sel = None
+            elif thislen == 0:
+                # no valid rows
+                continue
+            parts = {name: v[start:start + thislen]
+                     for (name, v) in views.items()}
+            self.read_row_group_file(rg, columns, None, None,
+                                     assign=parts, partition_meta=self.partition_meta,
+                                     row_filter=sel, infile=infile)
+            start += thislen
+        return views
+    
+    def pre_allocate_np(self, size, columns, dtypes=None):
+        dtypes = self._dtypes(categories=[]) | (dtypes or {})
+        return {k: np.zeros(size, dtype=dt) for k, dt in dtypes.items()}
+
     def to_pandas(self, columns=None, categories=None, filters=[],
                   index=None, row_filter=False, dtypes=None):
         """
@@ -793,51 +816,6 @@ selection does not match number of rows in DataFrame.')
             start += thislen
         return df
 
-    def pre_allocate(self, size, columns, categories, index, dtypes=None):
-        if dtypes is not None:
-            columns = list(dtypes)
-        else:
-            dtypes = self._dtypes(categories)
-        categories = self.check_categories(categories)
-        cats = {k: v for k, v in self.cats.items() if k in columns}
-        df, arrs = _pre_allocate(size, columns, categories, index, cats,
-                                 dtypes, self.tz, columns_dtype=self._columns_dtype)
-        i_no_name = re.compile(r"__index_level_\d+__")
-        if self.has_pandas_metadata:
-            md = self.pandas_metadata
-            if categories:
-                for c in md['columns']:
-                    if c['name'] in categories and c['name'] in df and c['metadata']:
-                        df[c['name']].dtype._ordered = c['metadata']['ordered']
-            if md.get('index_columns', False) and not (index or index is False):
-                if len(md['index_columns']) == 1:
-                    ic = md['index_columns'][0]
-                    if isinstance(ic, dict) and ic.get('kind') == 'range':
-                        from pandas import RangeIndex
-                        df.index = RangeIndex(
-                            start=ic['start'],
-                            stop=ic['start'] + size * ic['step'] + 1,
-                            step=ic['step']
-                        )[:size]
-                names = [(c['name'] if isinstance(c, dict) else c)
-                         for c in md['index_columns']]
-                names = [None if n is None or i_no_name.match(n) else n
-                         for n in names]
-                df.index.names = names
-            if md.get('column_indexes', False):
-                names = [(c['name'] if isinstance(c, dict) else c)
-                         for c in md['column_indexes']]
-                names = [None if n is None or i_no_name.match(n) else n
-                         for n in names]
-                if len(names) > 1:
-                    df.columns = pd.MultiIndex.from_tuples(
-                        [ast.literal_eval(c) for c in df.columns if c not in df.index.names],
-                        names=names
-                    )
-                else:
-                    df.columns.names = names
-        return df, arrs
-
     def count(self, filters=None, row_filter=False):
         """ Total number of rows
 
@@ -861,6 +839,8 @@ selection does not match number of rows in DataFrame.')
                 "row_groups": len(self.row_groups)}
 
     def check_categories(self, cats):
+        if cats in [None, [], ()]:
+            return {}
         categ = self.categories
         if not self.has_pandas_metadata:
             return cats or {}
@@ -872,7 +852,7 @@ selection does not match number of rows in DataFrame.')
         if isinstance(cats, dict):
             return cats
         out = {k: v for k, v in categ.items() if k in cats}
-        out.update({c: pd.RangeIndex(0, 2**14) for c in cats if c not in categ})
+        out.update({c: None for c in cats if c not in categ})
         return out
 
     @property
@@ -938,9 +918,8 @@ selection does not match number of rows in DataFrame.')
         else:
             return {}
 
-    def _dtypes(self, categories=None):
+    def _dtypes(self, categories=None, np=False):
         """ Implied types of the columns in the schema """
-        import pandas as pd
         if self._base_dtype is None:
             if self.has_pandas_metadata:
                 md = self.pandas_metadata['columns']
@@ -957,20 +936,8 @@ selection does not match number of rows in DataFrame.')
                                 for name, f in self.schema.root["children"].items()
                                 if getattr(f, 'isflat', False) is False)
             for i, (col, dt) in enumerate(dtype.copy().items()):
-                # int and bool columns produce masked pandas types, no need to
-                # promote types here
                 if dt.kind == "M":
-                    if self.pandas_metadata and PANDAS_VERSION.major >= 2:
-                        # get original resolution when pandas supports non-ns
-                        dt = md[col]["numpy_type"]
-                    if tz is not None and tz.get(col, False):
-                        z = dataframe.tz_to_dt_tz(tz[col])
-                        dt_series = pd.Series([], dtype=dt)
-                        if PANDAS_VERSION.major >= 2 and dt_series.dt.tz is not None:
-                            dt = dt_series.dt.tz_convert(z).dtype
-                        else:
-                            dt = dt_series.dt.tz_localize(z).dtype
-                    dtype[col] = dt
+                    dtype[col] = md[col]["numpy_type"]
                 elif dt in converted_types.nullable:
                     if self.pandas_metadata:
                         tt = md.get(col, {}).get("numpy_type")
@@ -1033,32 +1000,6 @@ selection does not match number of rows in DataFrame.')
         return "<Parquet File: %s>" % self.info
 
     __repr__ = __str__
-
-
-def _pre_allocate(size, columns, categories, index, cs, dt, tz=None, columns_dtype=None):
-    index = [index] if isinstance(index, str) else (index or [])
-    cols = [c for c in columns if c not in index]
-    categories = categories or {}
-    cats = cs.copy()
-    if isinstance(categories, dict):
-        cats.update(categories)
-
-    def get_type(name, index=False):
-        if name in categories:
-            return 'category'
-        t = dt[name]
-        if index and isinstance(t, pd.core.arrays.masked.BaseMaskedDtype):
-            return "int64"
-        return t
-
-    dtypes = [get_type(c) for c in cols]
-    index_types = [get_type(i, index=True) for i in index]
-    cols.extend(cs)
-    dtypes.extend(['category'] * len(cs))
-    df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
-                                index_types=index_types, cats=cats, timezones=tz,
-                                columns_dtype=columns_dtype)
-    return df, views
 
 
 def paths_to_cats(paths, partition_meta=None):

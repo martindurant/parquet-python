@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 from fastparquet import encoding
 from fastparquet.encoding import read_plain
@@ -247,7 +246,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
 
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
 
-    nullable = isinstance(assign.dtype, pd.core.arrays.masked.BaseMaskedDtype)
+    nullable = False
     if max_def and data_header2.num_nulls:
         bit_width = encoding.width_from_max_int(max_def)
         # not the same as read_data(), because we know the length
@@ -467,7 +466,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
         my_nan = -1
     else:
         if assign.dtype.kind in ['i', 'u', 'b']:
-            my_nan = pd.NA
+            my_nan = -1
         elif assign.dtype.kind == 'f':
             my_nan = np.nan
         elif assign.dtype.kind in ["M", 'm']:
@@ -497,11 +496,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 ddt = [kv.value.decode() for kv in (cmd.key_value_metadata or [])
                        if kv.key == b"label_dtype"]
                 ddt = ddt[0] if ddt else None
-                catdef._set_categories(pd.Index(dic, dtype=ddt), fastpath=True)
-                if np.iinfo(assign.dtype).max < len(dic):
-                    raise RuntimeError('Assigned array dtype (%s) cannot accommodate '
-                                       'number of category labels (%i)' %
-                                       (assign.dtype, len(dic)))
+                catdef._set_categories(dic)
             continue
         elif use_cat and dic is None and getattr(catdef, "_multiindex", False) is False:
             raise TypeError("Attempt to load as categorical a column with no dictionary")
@@ -553,11 +548,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
             )
         elif defi is not None:
             part = assign[num:num+len(defi)]
-            if isinstance(part.dtype, pd.core.arrays.masked.BaseMaskedDtype):
-                # TODO: could have read directly into array
-                part._mask[:] = defi != max_defi
-                part = part._data
-            elif part.dtype.kind != "O":
+            if part.dtype.kind != "O":
                 part[defi != max_defi] = my_nan
             if d and not use_cat:
                 part[defi == max_defi] = dic[val]
@@ -567,18 +558,7 @@ def read_col(column, schema_helper, infile, use_cat=False,
                 part[defi == max_defi] = val
         else:
             piece = assign[num:num+len(val)]
-            if isinstance(piece.dtype, pd.core.arrays.masked.BaseMaskedDtype):
-                piece = piece._data
-            if use_cat and not d:
-                # only possible for multi-index
-                val = convert(val, se, dtype=assign.dtype)
-                try:
-                    i = pd.Categorical(val)
-                except:
-                    i = pd.Categorical(val.tolist())
-                catdef._set_categories(pd.Index(i.categories), fastpath=True)
-                piece[:] = i.codes
-            elif d and not use_cat:
+            if d and not use_cat:
                 piece[:] = dic[val]
             elif not use_cat:
                 piece[:] = convert(val, se, dtype=assign.dtype)

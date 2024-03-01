@@ -10,7 +10,6 @@ import re
 import numbers
 
 import numpy as np
-import pandas as pd
 
 import fsspec
 
@@ -18,7 +17,13 @@ from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
 from fastparquet import __version__
 
-PANDAS_VERSION = Version(pd.__version__)
+
+try:
+    import pandas as pd
+    PANDAS_VERSION = Version(pd.__version__)
+except ImportError:
+    pd = PANDAS_VERSION = None
+    
 created_by = f"fastparquet-python version {__version__} (build 0)"
 
 
@@ -135,7 +140,7 @@ def check_column_names(columns, *args):
                                  "" % (missing, arg, columns))
 
 
-def reset_row_idx(data: pd.DataFrame) -> pd.DataFrame:
+def reset_row_idx(data):
     """Reset row (multi-)index as column(s) of the DataFrame.
 
     Multi-index are stored in columns, one per index level.

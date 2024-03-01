@@ -1539,3 +1539,22 @@ def test_read_a_non_pandas_parquet_file(tempdir):
 
     assert parquet_file.count() == 2
     assert parquet_file.head(1).equals(pd.DataFrame({"foo": [0], "bar": ["a"]}))
+
+
+def test_categorical_roundrtip(tmpdir):
+    # GH#920
+    df = pd.Series(["a", "b", "c"]).rename("cat").astype("category").to_frame()
+
+    fn = f"{tmpdir}/cat.parquet"
+    data = []
+    df.to_parquet(fn, engine="fastparquet")
+    pf = ParquetFile(fn)
+    breakpoint()
+    df_ = pd.read_parquet(fn, engine="pyarrow")
+    {'field_name': 'cat', 'metadata': {'num_categories': 3, 'ordered': False}, 'name': 'cat', 'numpy_type': 'int8',
+     'pandas_type': 'categorical'}
+    {'field_name': 'cat', 'metadata': {'num_categories': 3, 'ordered': False}, 'name': 'cat', 'numpy_type': 'int8',
+     'pandas_type': 'categorical'}
+
+
+    assert df_['cat'].dtype == "category"
