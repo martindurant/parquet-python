@@ -18,12 +18,6 @@ from fastparquet.cencoding import ThriftObject
 from fastparquet import __version__
 
 
-try:
-    import pandas as pd
-    PANDAS_VERSION = Version(pd.__version__)
-except ImportError:
-    pd = PANDAS_VERSION = None
-    
 created_by = f"fastparquet-python version {__version__} (build 0)"
 
 
@@ -67,7 +61,7 @@ def val_from_meta(x, meta):
         return np.dtype(t).type(x)
     except ValueError:
         if meta['numpy_type'] == 'datetime64[ns]':
-            return pd.to_datetime(x, format=PATH_DATE_FMT)
+            return pd.to_datetime(x)
         else:
             raise
 
@@ -100,13 +94,11 @@ def _val_to_num(x):
     except:
         pass
     try:
-        return pd.Timestamp(x)
+        return np.timedelta64(x)
     except:
         pass
     try:
-        # TODO: determine the valid usecases for this, then try to limit the set
-        #  ofstrings which may get inadvertently converted to timedeltas
-        return pd.Timedelta(x)
+        return np.datetime64(x)
     except:
         return x
 
@@ -138,30 +130,6 @@ def check_column_names(columns, *args):
                                  "All requested columns: %s\n"
                                  "Available columns: %s"
                                  "" % (missing, arg, columns))
-
-
-def reset_row_idx(data):
-    """Reset row (multi-)index as column(s) of the DataFrame.
-
-    Multi-index are stored in columns, one per index level.
-
-    Parameters
-    ----------
-    data : dataframe
-
-    Returns
-    -------
-    dataframe
-    """
-    if isinstance(data.index, pd.MultiIndex):
-        for name, cats, codes in zip(data.index.names, data.index.levels,
-                                     data.index.codes):
-            data = data.assign(**{name: pd.Categorical.from_codes(codes,
-                                                                  cats)})
-        data.reset_index(drop=True)
-    else:
-        data = data.reset_index()
-    return data
 
 
 def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
@@ -383,13 +351,6 @@ def analyse_paths(file_list, root=False):
     return '/'.join(basepath), out_list  # use '/'.join() instead of join_path to be consistent with split('/')
 
 
-def infer_dtype(column):
-    try:
-        return pd.api.types.infer_dtype(column, skipna=False)
-    except AttributeError:
-        return pd.lib.infer_dtype(column)
-
-
 def groupby_types(iterable):
     groups = defaultdict(list)
     for x in iterable:
@@ -411,38 +372,12 @@ def get_column_metadata(column, name, object_dtype=None):
     if object_dtype in inferred_dtypes and dtype == "object":
         inferred_dtype = inferred_dtypes.get(object_dtype, "mixed")
     else:
-        inferred_dtype = infer_dtype(column)
+        inferred_dtype = "object"
     if str(dtype) == "bool":
         # pandas accidentally calls this "boolean"
         inferred_dtype = "bool"
 
-    if isinstance(dtype, pd.CategoricalDtype):
-        extra_metadata = {
-            'num_categories': len(column.cat.categories),
-            'ordered': column.cat.ordered,
-        }
-        dtype = column.cat.codes.dtype
-    elif hasattr(dtype, 'tz'):
-        try:
-            stz = str(dtype.tz)
-            if "UTC" in stz and ":" in stz:
-                extra_metadata = {'timezone': stz.strip("UTC")}
-            elif len(str(stz)) == 3:  # like "UTC", "CET", ...
-                extra_metadata = {'timezone': str(stz)}
-            elif getattr(dtype.tz, "zone", False):
-                extra_metadata = {'timezone': dtype.tz.zone}
-            elif "pytz" not in stz:
-                pd.Series([pd.to_datetime('now', utc=True)]).dt.tz_localize(stz)
-                extra_metadata = {'timezone': stz}
-            elif "Offset" in stz:
-                extra_metadata = {'timezone': f"{dtype.tz._minutes // 60:+03}:00"}
-            else:
-                raise KeyError
-        except Exception as e:
-            raise ValueError("Time-zone information could not be serialised: "
-                             "%s, please use another" % str(dtype.tz)) from e
-    else:
-        extra_metadata = None
+    extra_metadata = None
 
     if isinstance(name, tuple):
         name = str(name)
@@ -471,16 +406,7 @@ def get_column_metadata(column, name, object_dtype=None):
 
 
 def get_numpy_type(dtype):
-    if isinstance(dtype, pd.CategoricalDtype):
-        return 'category'
-    elif "Int" in str(dtype):
-        return str(dtype).lower()
-    elif str(dtype) == "boolean":
-        return "bool"
-    elif str(dtype) == "string":
-        return "object"
-    else:
-        return str(dtype)
+    return str(dtype)
 
 
 def get_file_scheme(paths):

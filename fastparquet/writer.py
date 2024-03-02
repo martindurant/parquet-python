@@ -1,13 +1,9 @@
-import ast
 from copy import copy
-import itertools
 import json
 import os
 import struct
 
 import numpy as np
-import pandas as pd
-from pandas.core.arrays.masked import BaseMaskedDtype
 
 from fastparquet.util import join_path
 
@@ -18,7 +14,7 @@ from fastparquet.converted_types import tobson
 from fastparquet.json import json_encoder
 from fastparquet.util import (default_open, default_mkdirs, check_column_names,
                    created_by, get_column_metadata,
-                   norm_col_name, path_string, reset_row_idx, get_fs,
+                   norm_col_name, path_string, get_fs,
                    update_custom_metadata)
 from fastparquet.speedups import array_encode_utf8, pack_byte_array
 from fastparquet.cencoding import NumpyIO, ThriftObject, from_buffer
@@ -26,19 +22,11 @@ from decimal import Decimal
 
 MARKER = b'PAR1'
 ROW_GROUP_SIZE = 50_000_000
-NaT = np.timedelta64(None).tobytes()  # require numpy version >= 1.7
+NaT = np.timedelta64(None).tobytes()
 nat = np.datetime64('NaT').view('int64')
 
 typemap = {  # primitive type, converted type, bit width
     'boolean': (parquet_thrift.Type.BOOLEAN, None, 1),
-    'Int32': (parquet_thrift.Type.INT32, None, 32),
-    'Int64': (parquet_thrift.Type.INT64, None, 64),
-    'Int8': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.INT_8, 8),
-    'Int16': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.INT_16, 16),
-    'UInt8': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_8, 8),
-    'UInt16': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_16, 16),
-    'UInt32': (parquet_thrift.Type.INT32, parquet_thrift.ConvertedType.UINT_32, 32),
-    'UInt64': (parquet_thrift.Type.INT64, parquet_thrift.ConvertedType.UINT_64, 64),
     'bool': (parquet_thrift.Type.BOOLEAN, None, 1),
     'int32': (parquet_thrift.Type.INT32, None, 32),
     'int64': (parquet_thrift.Type.INT64, None, 64),
@@ -60,18 +48,6 @@ revmap = {parquet_thrift.Type.INT32: np.int32,
           parquet_thrift.Type.INT64: np.int64,
           parquet_thrift.Type.FLOAT: np.float32,
           parquet_thrift.Type.DOUBLE: np.float64}
-
-pdoptional_to_numpy_typemap = {
-    pd.Int8Dtype(): np.int8,
-    pd.Int16Dtype(): np.int16,
-    pd.Int32Dtype(): np.int32,
-    pd.Int64Dtype(): np.int64,
-    pd.UInt8Dtype(): np.uint8,
-    pd.UInt16Dtype(): np.uint16,
-    pd.UInt32Dtype(): np.uint32,
-    pd.UInt64Dtype(): np.uint64,
-    pd.BooleanDtype(): bool
-}
 
 
 def find_type(data, fixed_text=None, object_encoding=None, times='int64',
@@ -341,7 +317,7 @@ def infer_object_encoding(data):
     }
     for i in data:
         try:
-            if i is None or i is pd.NA or i is pd.NaT or i is np.nan or pd.isna(i):
+            if i is None or i is np.nan:
                 continue
         except (ValueError, TypeError):
             pass
@@ -439,16 +415,12 @@ MAX_PAGE_SIZE = 500 * 2**20
 
 def _rows_per_page(data, selement, has_nulls=True, page_size=None):
     page_size = page_size or MAX_PAGE_SIZE
-    if isinstance(data.dtype, pd.CategoricalDtype):
-        bytes_per_element = data.cat.codes.dtype.itemsize
-    elif selement.type == parquet_thrift.Type.BOOLEAN:
+    if selement.type == parquet_thrift.Type.BOOLEAN:
         bytes_per_element = 0.125
     elif selement.type == parquet_thrift.Type.INT64:
         bytes_per_element = 8
     elif selement.type == parquet_thrift.Type.INT32:
         bytes_per_element = 4
-    elif isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
-        bytes_per_element = np.dtype(pdoptional_to_numpy_typemap[data.dtype]).itemsize
     elif data.dtype == "object" or str(data.dtype) == "string":
         dd = data.iloc[:1000]
         d2 = dd[dd.notnull()]
@@ -512,53 +484,32 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
     data_page_offset = column_chunk_start
 
     # column global stats
-    if isinstance(data0.dtype, pd.CategoricalDtype) and stats:
-        try:
-            dnnu = data0.unique().as_ordered()
-            max, min = dnnu.max(), dnnu.min()
-            if pd.isna(max):
-                stats = False
-            else:
-                if selement.type == parquet_thrift.Type.BYTE_ARRAY:
-                    if selement.converted_type is not None:
-                        max = encode['PLAIN'](pd.Series([max]), selement)[4:]
-                        min = encode['PLAIN'](pd.Series([min]), selement)[4:]
-                else:
-                    max = encode['PLAIN'](pd.Series([max]), selement)
-                    min = encode['PLAIN'](pd.Series([min]), selement)
-        except (TypeError, ValueError):
-            stats = False
-    elif stats:
+    if stats:
         try:
             max, min = data0.max(), data0.min()
-            if pd.isna(max):
+            if np.isna(max):
                 stats = False
             else:
                 if selement.type == parquet_thrift.Type.BYTE_ARRAY:
                     if selement.converted_type is not None:
                         # max = max.encode("utf8") ?
-                        max = encode['PLAIN'](pd.Series([max], name=name), selement)[4:]
-                        min = encode['PLAIN'](pd.Series([min], name=name), selement)[4:]
+                        max = encode['PLAIN']([max], selement)[4:]
+                        min = encode['PLAIN']([min], selement)[4:]
                 else:
-                    max = encode['PLAIN'](pd.Series([max], name=name, dtype=data0.dtype), selement)
-                    min = encode['PLAIN'](pd.Series([min], name=name, dtype=data0.dtype), selement)
+                    max = encode['PLAIN']([max], selement)
+                    min = encode['PLAIN']([min], selement)
         except (TypeError, ValueError):
             stats = False
 
     for row_start, row_end in zip(row_offsets[:-1], row_offsets[1:]):
         data = data0.iloc[row_start:row_end]
         if has_nulls:
-            if isinstance(data.dtype, pd.CategoricalDtype):
-                num_nulls = (data.cat.codes == -1).sum()
-            else:
-                num_nulls = len(data) - data.count()
+            um_nulls = len(data) - data.count()
             definition_data, data = make_definitions(data, num_nulls == 0, datapage_version=datapage_version)
             # make_definitions returns `data` with all nulls dropped
             # the null-stripped `data` can be converted from Optional Types to
             # their numpy counterparts
-            if isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
-                data = data.astype(pdoptional_to_numpy_typemap[data.dtype], copy=False)
-            if data.dtype.kind == "O" and not isinstance(data.dtype, pd.CategoricalDtype):
+            if data.dtype.kind == "O":
                 try:
                     if selement.type == parquet_thrift.Type.INT64:
                         data = data.astype("int64", copy=False)
@@ -580,37 +531,6 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
         # No nested field handling (encode those as J/BSON)
         repetition_data = b""
 
-        if isinstance(data.dtype, pd.CategoricalDtype):
-            if first_page:
-                # make "index page"
-                dict_page_offset = column_chunk_start
-                dph = parquet_thrift.DictionaryPageHeader(
-                    num_values=check_32(len(data.cat.categories)),
-                    encoding=parquet_thrift.Encoding.PLAIN,
-                    i32=1
-                )
-                bdata = encode['PLAIN'](pd.Series(data.cat.categories), selement)
-                l0 = len(bdata)
-                if compression and compression.upper() != "UNCOMPRESSED":
-                    bdata = compress_data(bdata, compression)
-                    l1 = len(bdata)
-                else:
-                    l1 = l0
-                diff += l0 - l1
-                ph = parquet_thrift.PageHeader(
-                        type=parquet_thrift.PageType.DICTIONARY_PAGE,
-                        uncompressed_page_size=check_32(l0),
-                        compressed_page_size=check_32(l1),
-                        dictionary_page_header=dph, crc=None, i32=1)
-
-                write_thrift(f, ph)
-                f.write(bdata)
-                data_page_offset = f.tell()
-                ncats = len(data.cat.categories)
-                dcat = data.cat.categories.dtype
-                cats = True
-                encoding = "RLE_DICTIONARY"
-            data = data.cat.codes
         if str(data0.dtype) in ['int8', 'int16', 'uint8', 'uint16']:
             # PLAIN encoding must be upcast to parquet primitive
             data = data.astype('int32')
@@ -727,7 +647,7 @@ def write_column(f, data0, selement, compression=None, datapage_version=None,
         total_compressed_size=compressed_size,
         i32list=[1, 4]
     )
-    if cats:
+    if False:  # cats:
         kvm.append(
             parquet_thrift.KeyValue(key='num_categories', value=str(ncats)))
         kvm.append(
@@ -749,17 +669,10 @@ def make_row_group(f, data, schema, compression=None, stats=True):
     rows = len(data)
     if rows == 0:
         return
-    if isinstance(data.columns, pd.MultiIndex):
-        if any(not isinstance(c, (bytes, str)) for c in itertools.chain(*data.columns.values)):
-            raise ValueError('Column names must be multi-index, str or bytes:',
-                             {c: type(c) for c in data.columns
-                              if not isinstance(c, (bytes, str))})
-
-    else:
-        if any(not isinstance(c, (bytes, str)) for c in data):
-            raise ValueError('Column names must be multi-index, str or bytes:',
-                             {c: type(c) for c in data.columns
-                              if not isinstance(c, (bytes, str))})
+    if any(not isinstance(c, (bytes, str)) for c in data):
+        raise ValueError('Column names must be multi-index, str or bytes:',
+                            {c: type(c) for c in data.columns
+                            if not isinstance(c, (bytes, str))})
 
     cols = []
     for column in schema:
@@ -770,14 +683,7 @@ def make_row_group(f, data, schema, compression=None, stats=True):
                     comp = compression.get('_default', None)
             else:
                 comp = compression
-            if isinstance(data.columns, pd.MultiIndex):
-                try:
-                    name = ast.literal_eval(column.name)
-                except ValueError:
-                    name = column.name
-                coldata = data[name]
-            else:
-                coldata = data[column.name]
+            coldata = data[column.name]
             if isinstance(stats, int):
                 st = stats
             elif stats == "auto":
@@ -833,27 +739,11 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
         raise ValueError('Cannot create parquet dataset with duplicate'
                          ' column names (%s)' % data.columns)
     index_cols_orig = None
-    if isinstance(data.columns, pd.MultiIndex):
-        if isinstance(index_cols, list) and index_cols != []:
-            index_cols_orig = copy(index_cols)
-            # TODO: for loop required to manage row multi-index.
-            name = index_cols[0][0]
-            index_cols = [{'field_name': name,
-                           'metadata': None,
-                           'name': name,
-                           'numpy_type': 'object',
-                           'pandas_type': 'mixed-integer'}]
-        ci = [
-            get_column_metadata(ser, n)
-            for ser, n
-            in zip(data.columns.levels, data.columns.names)
-        ]
-    else:
-        ci = [{'name': data.columns.name,
-               'field_name': data.columns.name,
-               'pandas_type': 'mixed-integer',
-               'numpy_type': str(cols_dtype),
-               'metadata': None}]
+    ci = [{'name': data.columns.name,
+            'field_name': data.columns.name,
+            'pandas_type': 'mixed-integer',
+            'numpy_type': str(cols_dtype),
+            'metadata': None}]
     if not isinstance(index_cols, list):
         start = index_cols.start
         stop = index_cols.stop
@@ -870,7 +760,7 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
                        'column_indexes': ci,
                        'creator': {'library': 'fastparquet',
                                    'version': __version__},
-                       'pandas_version': pd.__version__}
+                       }
     root = parquet_thrift.SchemaElement(name=b'schema',
                                         num_children=0,
                                         i32=True)
@@ -896,14 +786,9 @@ def make_metadata(data, has_nulls=True, ignore_columns=None, fixed_text=None,
             get_column_metadata(data[column], column, object_dtype=oencoding))
         fixed = None if fixed_text is None else fixed_text.get(column, None)
         is_index = (column in index_cols_orig) if index_cols_orig else None
-        if isinstance(data[column].dtype, pd.CategoricalDtype):
-            se, type = find_type(data[column].cat.categories, fixed_text=fixed,
-                                 object_encoding=oencoding, is_index=is_index)
-            se.name = column
-        else:
-            se, type = find_type(data[column], fixed_text=fixed,
-                                 object_encoding=oencoding, times=times,
-                                 is_index=is_index)
+        se, type = find_type(data[column], fixed_text=fixed,
+                                object_encoding=oencoding, times=times,
+                                is_index=is_index)
         col_has_nulls = has_nulls
         if has_nulls is None:
             se.repetition_type = data[column].dtype == "O"
@@ -954,8 +839,7 @@ def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
         if False, never do; and if a list of str, do it only for those
         specified columns.
     """
-    if isinstance(data, pd.DataFrame):
-        data = iter_dataframe(data, row_group_offsets)
+    data = iter_dataframe(data, row_group_offsets)
     mode = 'rb+' if append else 'wb'
     if hasattr(fn, "write"):
         of = fn
@@ -1043,8 +927,7 @@ def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
         mkdirs(dn)
     else:
         i_offset = find_max_part(fmd.row_groups)
-    if isinstance(data, pd.DataFrame):
-        data = iter_dataframe(data, row_group_offsets)
+    data = iter_dataframe(data, row_group_offsets)
     rg_list = fmd.row_groups
     for i, row_group in enumerate(data):
         part = 'part.%i.parquet' % (i + i_offset)
@@ -1259,9 +1142,6 @@ def write(filename, data, row_group_offsets=None,
         partition_on = [partition_on]
     if append:
         pf = ParquetFile(filename, open_with=open_with)
-        if pf._get_index():
-            # Format dataframe (manage row index).
-            data = reset_row_idx(data)
         if file_scheme == 'simple':
             # Case 'simple'
             if pf.file_scheme not in ['simple', 'empty']:
@@ -1283,18 +1163,7 @@ def write(filename, data, row_group_offsets=None,
         # Case 'append=False'.
         # Define 'index_cols' to be recorded in metadata.
         cols_dtype = data.columns.dtype
-        if (write_index or write_index is None
-                and not isinstance(data.index, pd.RangeIndex)):
-            # Keep name(s) of index to metadata.
-            cols = set(data)
-            data = reset_row_idx(data)
-            index_cols = [c for c in data if c not in cols]
-        elif write_index is None and isinstance(data.index, pd.RangeIndex):
-            # write_index=None, range to metadata
-            index_cols = data.index
-        else:
-            # write_index=False
-            index_cols = []
+        index_cols = []
         # Initialize common metadata.
         if str(has_nulls) == 'infer':
             has_nulls = None
@@ -1558,16 +1427,13 @@ def overwrite(dirpath, data, row_group_offsets=None, sort_pnames:bool=True,
     # 2nd step (from new and existing data).
     # Identify row groups from existing data with same partition values as
     # those in new data.
-    partition_values_in_new = pd.unique(data.loc[:,defined_partitions]
+    partition_values_in_new = set(data.loc[:,defined_partitions]
                                             .astype(str).agg('/'.join, axis=1))
     rgs_to_remove = filter(lambda rg : (partitions(rg, True)
                                         in partition_values_in_new),
                            pf.row_groups)
     # 3rd step (on new data).
     # Format new data so that it can be written to disk.
-    if pf._get_index():
-        # Reset index of pandas dataframe.
-        data = reset_row_idx(data)
     # 4th step: write new data, remove previously existing row groups,
     # sort row groups and write updated metadata.
     pf.write_row_groups(data, row_group_offsets=row_group_offsets,

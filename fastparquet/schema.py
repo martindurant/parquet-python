@@ -4,15 +4,20 @@ from collections import OrderedDict
 from fastparquet import parquet_thrift
 
 
-def schema_tree(schema, i=0):
+def schema_tree(schema, i=0, paths={}, path=[]):
     root = schema[i]
+    if i :
+        path = path + [root.name]
+        paths[".".join(path)] = root
     root["children"] = OrderedDict()
     while len(root["children"]) < root.num_children:
         i += 1
         s = schema[i]
         root["children"][s.name] = s
         if s.num_children not in [None, 0]:
-            i = schema_tree(schema, i)
+            i = schema_tree(schema, i, paths, path)
+        else:
+            paths[".".join(path + [s.name])] = s
     if root.num_children:
         return i
     else:
@@ -54,25 +59,6 @@ def schema_to_text(root, indent=[]):
     return text
 
 
-def flatten(schema, root, name_parts=[]):
-    if not hasattr(schema, 'children'):
-        return
-    if schema is not root:
-        name_parts = name_parts + [schema.name]
-    # root["children"].pop('.'.join(name_parts), None)
-    for name, item in schema["children"].copy().items():
-        if schema.repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
-            continue
-        if len(getattr(item, 'children', [])) == 0:
-            root["children"]['.'.join(name_parts + [name])] = item
-        elif item.converted_type in [parquet_thrift.ConvertedType.LIST,
-                                     parquet_thrift.ConvertedType.MAP]:
-            root["children"]['.'.join(name_parts + [name])] = item
-        else:
-            flatten(item, root, name_parts)
-            item["isflat"] = True
-
-
 class SchemaHelper(object):
     """Utility providing convenience methods for schema_elements."""
 
@@ -87,9 +73,9 @@ class SchemaHelper(object):
         self.root = schema_elements[0]
         self.schema_elements_by_name = dict(
             [(se.name, se) for se in schema_elements])
-        schema_tree(schema_elements)
+        self.tree = {}
+        schema_tree(schema_elements, paths = self.tree)
         self._text = None
-        flatten(self.root, self.root)
 
     @property
     def text(self):
@@ -107,17 +93,16 @@ class SchemaHelper(object):
         return self.text
 
     def __repr__(self):
-        return "<Parquet Schema with {} entries>".format(
-            len(self.schema_elements))
+        return f"<Parquet Schema with {self.schema_elements} entries>"
 
     def schema_element(self, name):
         """Get the schema element with the given name or path"""
-        root = self.root
-        if isinstance(name, str):
-            name = name.split('.')
-        for part in name:
-            root = root["children"][part]
-        return root
+        if not isinstance(name, str):
+            name = ".".join(name)
+        return self.tree[name]
+
+    def __getitem__(self, item):
+        return self.schema_element(item)
 
     def is_required(self, name):
         """Return true if the schema element with the given name is required."""
@@ -154,50 +139,3 @@ class SchemaHelper(object):
             if element.repetition_type != parquet_thrift.FieldRepetitionType.REQUIRED:
                 max_level += 1
         return max_level
-
-
-def _is_list_like(helper, column):
-    if len(column.meta_data.path_in_schema) < 3:
-        return False
-    se = helper.schema_element(
-        column.meta_data.path_in_schema[:-2])
-    ct = se.converted_type
-    if ct != parquet_thrift.ConvertedType.LIST:
-        return False
-    if len(se["children"]) > 1:
-        return False
-    se2 = list(se["children"].values())[0]
-    if len(se2["children"]) > 1:
-        return False
-    if se2.repetition_type != parquet_thrift.FieldRepetitionType.REPEATED:
-        return False
-    se3 = list(se2["children"].values())[0]
-    if se3.repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
-        return False
-    return True
-
-
-def _is_map_like(helper, column):
-    if len(column.meta_data.path_in_schema) < 3:
-        return False
-    se = helper.schema_element(
-        column.meta_data.path_in_schema[:-2])
-    ct = se.converted_type
-    if ct != parquet_thrift.ConvertedType.MAP:
-        return False
-    if len(se["children"]) > 1:
-        return False
-    se2 = list(se["children"].values())[0]
-    if len(se2["children"]) != 2:
-        return False
-    if se2.repetition_type != parquet_thrift.FieldRepetitionType.REPEATED:
-        return False
-    if set(se2["children"]) != {'key', 'value'}:
-        return False
-    se3 = se2["children"]['key']
-    if se3.repetition_type != parquet_thrift.FieldRepetitionType.REQUIRED:
-        return False
-    se3 = se2["children"]['value']
-    if se3.repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
-        return False
-    return True

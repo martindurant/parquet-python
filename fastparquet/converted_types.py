@@ -1,4 +1,3 @@
-# -#- coding: utf-8 -#-
 """
 Deal with parquet logical types (aka converted types), higher-order things built from primitive types.
 
@@ -8,7 +7,6 @@ but they're not necessarily the most performant.
 
 import logging
 import numpy as np
-import pandas as pd
 
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import time_shift
@@ -62,28 +60,6 @@ complex = {
     parquet_thrift.ConvertedType.TIME_MICROS: np.dtype('<m8[us]'),
     parquet_thrift.ConvertedType.TIMESTAMP_MICROS: np.dtype('<M8[us]')
 }
-nullable = {
-    np.dtype('int8'): pd.Int8Dtype(),
-    np.dtype('int16'): pd.Int16Dtype(),
-    np.dtype('int32'): pd.Int32Dtype(),
-    np.dtype('int64'): pd.Int64Dtype(),
-    np.dtype('uint8'): pd.UInt8Dtype(),
-    np.dtype('uint16'): pd.UInt16Dtype(),
-    np.dtype('uint32'): pd.UInt32Dtype(),
-    np.dtype('uint64'): pd.UInt64Dtype(),
-    np.dtype('bool'): pd.BooleanDtype()
-}
-pandas_nullable = {
-    "Int8": pd.Int8Dtype(),
-    "Int16": pd.Int16Dtype(),
-    "Int32": pd.Int32Dtype(),
-    "Int64": pd.Int64Dtype(),
-    "UInt8": pd.UInt8Dtype(),
-    "UInt16": pd.UInt16Dtype(),
-    "UInt32": pd.UInt32Dtype(),
-    "UInt64": pd.UInt64Dtype(),
-    "boolean": pd.BooleanDtype()
-}
 
 
 def _logical_to_time_dtype(logical_timestamp_type):
@@ -103,11 +79,6 @@ def typemap(se, md=None):
     """Get the final dtype - no actual conversion"""
     md = md or {}
     md = md.get(se.name, {})
-    if md and ("Int" in md["numpy_type"] or md["numpy_type"] == "boolean"):
-        # arrow has numpy and pandas types swapped
-        return pandas_nullable[md["numpy_type"]]
-    if md and ("Int" in md["pandas_type"] or md["pandas_type"] == "boolean"):
-        return pandas_nullable[md["pandas_type"]]
     if se.logicalType is not None and se.logicalType.TIMESTAMP is not None:
         return _logical_to_time_dtype(se.logicalType.TIMESTAMP)
     if se.converted_type is None:
@@ -168,8 +139,7 @@ def convert(data, se, timestamp96=True, dtype=None):
     if ctype == parquet_thrift.ConvertedType.UTF8:
         if data.dtype != "O" or (len(data) == 1 and not isinstance(data[0], str)):
             # fixed string
-            import pandas as pd
-            return pd.Series(data).str.decode("utf8").values
+            return [data[0].decode()]
         # already converted in speedups.unpack_byte_array
         return data
     if ctype == parquet_thrift.ConvertedType.DECIMAL:

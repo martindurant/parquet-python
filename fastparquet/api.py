@@ -1,5 +1,4 @@
 """parquet - read parquet files."""
-import ast
 from collections import OrderedDict, defaultdict
 import re
 import struct
@@ -13,7 +12,7 @@ from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, get_fs, PANDAS_VERSION, join_path)
+                   ex_from_sep, _strip_path_tail, get_fs, join_path)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
@@ -246,7 +245,7 @@ class ParquetFile(object):
             else False
         )
         self._read_partitions()
-        # self._dtypes()
+        self._dtypes()
 
     @property
     def helper(self):
@@ -918,60 +917,31 @@ selection does not match number of rows in DataFrame.')
         else:
             return {}
 
-    def _dtypes(self, categories=None, np=False):
+    def _dtypes(self, categories=None):
         """ Implied types of the columns in the schema """
         if self._base_dtype is None:
             if self.has_pandas_metadata:
                 md = self.pandas_metadata['columns']
                 md = {c['name']: c for c in md}
-                tz = {k: v["metadata"]['timezone'] for k, v in md.items()
-                      if v.get('metadata', {}) and v.get('metadata', {}).get('timezone', None)}
             else:
-                tz = None
                 md = None
-            self.tz = tz
 
-            dtype = OrderedDict((name, (converted_types.typemap(f, md=md)
-                                if f.num_children in [None, 0] else np.dtype("O")))
-                                for name, f in self.schema.root["children"].items()
-                                if getattr(f, 'isflat', False) is False)
-            for i, (col, dt) in enumerate(dtype.copy().items()):
-                if dt.kind == "M":
+            dtype = OrderedDict(
+                (name, converted_types.typemap(f, md=md))
+                for name, f in self.schema.tree.items()
+                if not(f.num_children)
+            )
+            for col, dt in dtype.copy().items():
+                if dt.kind == "M" and md and col in md:
                     dtype[col] = md[col]["numpy_type"]
-                elif dt in converted_types.nullable:
-                    if self.pandas_metadata:
-                        tt = md.get(col, {}).get("numpy_type")
-                        if tt and ("int" in tt or "bool" in tt):
-                            continue
-                    # uint/int/bool columns that may have nulls become nullable
-                    # skip is pandas_metadata gives original types
-                    num_nulls = 0
-                    for rg in self.row_groups:
-                        if rg[3] == 0:
-                            continue
-                        st = rg[1][i][3].get(12)
-                        if st is None:
-                            num_nulls = True
-                            break
-                        if st.get(3):
-                            num_nulls = True
-                            break
-                    if num_nulls:
-                        if self.pandas_nulls:
-                            dtype[col] = converted_types.nullable[dt]
-                        else:
-                            dtype[col] = np.float_()
                 elif dt == 'S12':
                     dtype[col] = 'M8[ns]'
             self._base_dtype = dtype
-        dtype = self._base_dtype.copy()
-        categories = self.check_categories(categories)
-        for field in categories:
-            dtype[field] = 'category'
-        for cat in self.cats:
-            dtype[cat] = "category"
-        self.dtypes = dtype
-        return dtype
+        return self._base_dtype
+
+    @property
+    def dtypes(self):
+        return self._dtypes()
 
     def __getstate__(self):
         if self.fmd.row_groups is None:

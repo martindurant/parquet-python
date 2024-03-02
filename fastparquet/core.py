@@ -5,7 +5,6 @@ from fastparquet.encoding import read_plain
 import fastparquet.cencoding as encoding
 from fastparquet.compression import decompress_data, rev_map, decom_into
 from fastparquet.converted_types import convert, simple, converts_inplace
-from fastparquet.schema import _is_list_like, _is_map_like
 from fastparquet.speedups import unpack_byte_array
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
@@ -578,39 +577,15 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     are arrays.
     """
     out = assign
-    remains = set(_ for _ in out if not _.endswith("-catdef") and not _ + "-catdef" in out)
-    maps = {}
-
     for column in rg.columns:
 
-        if (_is_list_like(schema_helper, column) or
-                _is_map_like(schema_helper, column)):
-            name = ".".join(column.meta_data.path_in_schema[:-2])
-        else:
-            name = ".".join(column.meta_data.path_in_schema)
-        if name not in columns or name in cats:
+        name = ".".join(column.meta_data.path_in_schema)
+        if name not in columns:
             continue
-        remains.discard(name)
-
-        read_col(column, schema_helper, file, use_cat=name+'-catdef' in out,
+        read_col(column, schema_helper, file, use_cat=False,
                  selfmade=selfmade, assign=out[name],
                  catdef=out.get(name+'-catdef', None),
                  row_filter=row_filter)
-
-        if _is_map_like(schema_helper, column):
-            # TODO: could be done in fast loop in _assemble_objects?
-            if name not in maps:
-                maps[name] = out[name].copy()
-            else:
-                if column.meta_data.path_in_schema[0] == 'key':
-                    key, value = out[name], maps[name]
-                else:
-                    value, key = out[name], maps[name]
-                out[name][:] = [dict(zip(k, v)) if k is not None else None
-                                for k, v in zip(key, value)]
-                del maps[name]
-    for k in remains:
-        out[k][:] = None
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
@@ -620,8 +595,6 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
     Access row-group in a file and read some columns into a data-frame.
     """
     partition_meta = partition_meta or {}
-    if assign is None:
-        raise RuntimeError('Going with pre-allocation!')
     read_row_group_arrays(file, rg, columns, categories, schema_helper,
                           cats, selfmade, assign=assign, row_filter=row_filter)
 
