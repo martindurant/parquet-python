@@ -1126,3 +1126,60 @@ cdef dict children = {
 #         if bit:
 #             children[o.__name__] = bit
 #
+
+
+def value_counts(uint8_t[::1] values):
+    output = np.zeros(255, dtype="uint32")  # reuse?
+    cdef uint32_t[::1] out = output
+    for i in range(values.shape[0]):
+        out[values[i]] += 1
+    return output
+
+
+def make_offsets_and_masks(
+        uint8_t[::1] reps, 
+        uint8_t[::1] defs,
+        list offsets,  # contains np arrayy
+        list masks,  # contains np array
+    ):
+    cdef:
+        uint64_t loffs = len(offsets)  # == max_rep
+        uint64_t lmasks = len(masks)  # == max_def
+        uint8_t rep
+        uint8_t de
+        uint64_t i
+        uint64_t[::1] ocounts
+        uint8_t[::1] temp
+        (uint64_t*)[256] offset_ptrs
+        (uint8_t*)[256] mask_ptrs
+    
+    # unbundle mutable inputs
+    for i in range(loffs):
+        ocounts = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &ocounts[0]
+    for i in range(lmasks):
+        temp = masks[i]  # checks type and dtype
+        mask_ptrs[i] = &temp[0]
+
+    # state
+    ocount_array = np.zeros(loffs + 1, dtype="uint64")
+    ocounts = ocount_array  # as memoryview
+    
+    # run
+    print("start", loffs, lmasks)
+    #with nogil:
+    for i in range(reps.shape[0]):
+        rep = reps[i]
+        de = defs[i]
+        print(i, rep, de, ocount_array)
+        if rep < loffs:
+            print('off', rep, ocounts[rep], ocounts[rep + 1])
+            offset_ptrs[rep][ocounts[rep]] = ocounts[rep + 1]
+        if de < lmasks:
+            print('mask', de, ocounts[rep])
+            mask_ptrs[de][ocounts[rep]] = 0  # makes False -> NULL
+        ocounts[rep] += 1  # bounds check?
+
+    # add final offsets to each array
+    for i in range(loffs):
+        offset_ptrs[i][ocounts[i]] = ocounts[i + 1]
