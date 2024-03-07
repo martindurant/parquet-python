@@ -144,7 +144,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, Numpy
         return
     endptr = (o.nbytes - o.loc) + outptr - itemsize
     mask = _mask_for_bits(width)
-    data = 0xff & <int32_t>inptr[0]
+    data = 0xff & (<int32_t>inptr[0])
     inptr += 1
     while count:
         if right > 8:
@@ -833,7 +833,7 @@ cdef class ThriftObject:
     cpdef _asdict(self):
         """Create dict version with field names instead of integers"""
         cdef str k
-        cdef out = {}
+        cdef dict out = {}
         for k in self.spec:
             if k in self.children:
                 lower = getattr(self, k)
@@ -873,7 +873,7 @@ cdef class ThriftObject:
 
     @staticmethod
     def from_fields(thrift_name,bint i32=0, list i32list=None, **kwargs):
-        cdef spec = specs[thrift_name]
+        cdef dict spec = specs[thrift_name]
         cdef int i
         cdef str k
         cdef dict out = {}
@@ -1129,57 +1129,46 @@ cdef dict children = {
 
 
 def value_counts(uint8_t[::1] values):
-    output = np.zeros(255, dtype="uint32")  # reuse?
-    cdef uint32_t[::1] out = output
-    for i in range(values.shape[0]):
-        out[values[i]] += 1
+    output = np.zeros(256, dtype="uint64")
+    cdef uint64_t i
+    cdef uint64_t[::1] out = output
+    with nogil:
+        for i in range(values.shape[0]):
+            out[values[i]] += 1
     return output
 
 
 def make_offsets_and_masks(
-        uint8_t[::1] reps, 
-        uint8_t[::1] defs,
+        uint8_t[::1] reps, # repetition levels
+        uint8_t[::1] defs, # definition levels
         list offsets,  # contains np arrayy
         list masks,  # contains np array
+        uint64_t[::1] ocounts  # offsets counter of length offsets
     ):
     cdef:
         uint64_t loffs = len(offsets)  # == max_rep
         uint64_t lmasks = len(masks)  # == max_def
-        uint8_t rep
-        uint8_t de
-        uint64_t i
-        uint64_t[::1] ocounts
+        uint64_t i, j
         uint8_t[::1] temp
+        uint64_t[::1] temp2
         (uint64_t*)[256] offset_ptrs
         (uint8_t*)[256] mask_ptrs
     
     # unbundle mutable inputs
     for i in range(loffs):
-        ocounts = offsets[i]  # checks type and dtype
-        offset_ptrs[i] = &ocounts[0]
+        temp2 = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &temp2[0]
     for i in range(lmasks):
         temp = masks[i]  # checks type and dtype
         mask_ptrs[i] = &temp[0]
 
-    # state
-    ocount_array = np.zeros(loffs + 1, dtype="uint64")
-    ocounts = ocount_array  # as memoryview
-    
     # run
-    print("start", loffs, lmasks)
-    #with nogil:
-    for i in range(reps.shape[0]):
-        rep = reps[i]
-        de = defs[i]
-        print(i, rep, de, ocount_array)
-        if rep < loffs:
-            print('off', rep, ocounts[rep], ocounts[rep + 1])
-            offset_ptrs[rep][ocounts[rep]] = ocounts[rep + 1]
-        if de < lmasks:
-            print('mask', de, ocounts[rep])
-            mask_ptrs[de][ocounts[rep]] = 0  # makes False -> NULL
-        ocounts[rep] += 1  # bounds check?
-
-    # add final offsets to each array
-    for i in range(loffs):
-        offset_ptrs[i][ocounts[i]] = ocounts[i + 1]
+    with nogil:
+        for i in range(reps.shape[0]):
+            for j in range(reps[i], defs[i] + 1):
+                if j < loffs:
+                    offset_ptrs[j][ocounts[j]] = ocounts[j + 1]
+                ocounts[j] += 1
+        for j in range(loffs):
+            # last offset
+            offset_ptrs[j][ocounts[j]] = ocounts[j + 1]

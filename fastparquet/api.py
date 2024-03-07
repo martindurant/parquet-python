@@ -362,25 +362,6 @@ class ParquetFile(object):
         """
         categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
-        ret = False
-        if assign is None:
-            if row_filter and isinstance(row_filter, list):
-                cs = self._columns_from_filters(row_filter)
-                df = self.read_row_group_file(
-                    rg, cs, categories, index=False,
-                    infile=infile, row_filter=False)
-                row_filter = self._column_filter(df, filters=row_filter)
-                size = row_filter.sum()
-                if size == rg.num_rows:
-                    row_filter = False
-            else:
-                size = rg.num_rows
-            df, assign = self.pre_allocate(
-                    size, columns, categories, index)
-            if "PANDAS_ATTRS" in self.key_value_metadata:
-                import json
-                df.attrs = json.loads(self.key_value_metadata["PANDAS_ATTRS"])
-            ret = True
         f = infile or self.open(fn, mode='rb')
 
         core.read_row_group(
@@ -389,8 +370,6 @@ class ParquetFile(object):
             assign=assign, scheme=self.file_scheme, partition_meta=partition_meta,
             row_filter=row_filter
         )
-        if ret:
-            return df
 
     def iter_row_groups(self, filters=None, **kwargs):
         """
@@ -682,7 +661,10 @@ scheme is 'simple'.")
         if columns is None:
             columns = self.columns
         check_column_names(self.columns, columns, ())
-        size = sum(rg.num_rows for rg in rgs)
+        size = sum(
+            rg.columns[0].meta_data.num_values - rg.columns[0].meta_data.statistics.null_count 
+            for rg in rgs
+        )
         selected = [None] * len(rgs)  # just to fill zip, below
         views = self.pre_allocate_np(size, columns, dtypes=dtypes)
         if self.file_scheme == 'simple':
@@ -691,7 +673,7 @@ scheme is 'simple'.")
             infile = None
         start = 0
         for rg, sel in zip(rgs, selected):
-            thislen = sel.sum() if sel is not None else rg.num_rows
+            thislen = rg.columns[0].meta_data.num_values - rg.columns[0].meta_data.statistics.null_count
             if thislen == rg.num_rows:
                 # all good; noop if no row filtering
                 sel = None
@@ -704,6 +686,7 @@ scheme is 'simple'.")
                                      assign=parts, partition_meta=self.partition_meta,
                                      row_filter=sel, infile=infile)
             start += thislen
+            return parts
         return views
     
     def pre_allocate_np(self, size, columns, dtypes=None):

@@ -2,7 +2,7 @@ import io
 import numpy as np
 
 from fastparquet import encoding
-from fastparquet.encoding import read_plain
+from fastparquet.encoding import read_plain, DECODE_TYPEMAP
 import fastparquet.cencoding as encoding
 from fastparquet.compression import decompress_data, rev_map, decom_into
 from fastparquet.converted_types import convert, simple, converts_inplace
@@ -38,7 +38,7 @@ def read_data(fobj, coding, count, bit_width, out=None):
 
     out: potentially provide a len(count) uint8 array to reuse
     """
-    out = out or np.empty(count, dtype=np.uint8)
+    out = np.empty(count, dtype=np.uint8) if out is None else out
     o = encoding.NumpyIO(out)
     if coding == parquet_thrift.Encoding.RLE:
         while o.tell() < count:
@@ -426,6 +426,9 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
         raise NotImplementedError
     return data_header2.num_values
 
+import concurrent.futures
+ex = concurrent.futures.ThreadPoolExecutor()
+
 
 def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBase, 
              assign: dict, use_cat: bool = False, row_filter=None,
@@ -449,7 +452,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
         column.
     """
     cmd = column.meta_data
-    colname = ".".join(".".join(cmd.path_in_schema))
+    colname = ".".join(cmd.path_in_schema)
     try:
         se = schema_helper.schema_element(cmd.path_in_schema)
     except KeyError:
@@ -467,41 +470,103 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
 
     num = 0  # how far through the output we are
     dic = None
+    parts = []
+    offsets = []
+    masks = []
+    headers = []
+    raws = []
+    import concurrent.futures
 
     while num < rows:
-        off = infile.tell()
         ph = ThriftObject.from_buffer(infile, "PageHeader")
-        if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-            dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
-            dic2 = convert(dic2, se)
-            if use_cat and dic is not None and (dic2 != dic).any():
-                raise RuntimeError("Attempt to read as categorical a column"
-                                   "with multiple dictionary pages.")
-            dic = dic2
-            if use_cat:
-                assign[f"{colname}-cats"] = dic
-            continue
-        if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
-            num += read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
-                                     dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade,
-                                     row_filter=row_filter)
-            continue
-        if (selfmade and hasattr(cmd, 'statistics') and
-                getattr(cmd.statistics, 'null_count', 1) == 0):
-            skip_nulls = True
-        else:
-            skip_nulls = False
-        defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
-                                        skip_nulls, selfmade=selfmade)
-        max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
-        breakpoint()
-        d = ph.data_page_header.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
-                                             parquet_thrift.Encoding.RLE_DICTIONARY]
-        data = convert(val, se, dtype=assign.dtype)
-        if not use_cat and dic is not None:
-            data = dic[val]
+        headers.append(ph)
+        raws.append(infile.read(ph.compressed_page_size))
+        num += ph.data_page_header.num_values
+        continue
+    
+    max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
+    max_def = schema_helper.max_definition_level(cmd.path_in_schema)
+    reps = np.zeros(cmd.num_values, dtype="uint8")
+    defs = np.zeros_like(reps)
+    rep_width = encoding.width_from_max_int(max_rep)
+    def_width = encoding.width_from_max_int(max_def)
+    futs = []
+    off = 0
+    off2 = 0
+    def run(raw, ph, o, o2):
+        io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
+        read_data(
+            io, 
+            parquet_thrift.Encoding.RLE, 
+            ph.data_page_header.num_values,
+            rep_width,
+            out=reps[o:o + ph.data_page_header.num_values]
+        )
+        read_data( 
+            io, 
+            parquet_thrift.Encoding.RLE, 
+            ph.data_page_header.num_values,
+            def_width,
+            out=defs[o:o + ph.data_page_header.num_values]
+        )
+        dtype = DECODE_TYPEMAP[se.type]
+        # PLAIN
+        o = np.frombuffer(io.read(), dtype=dtype)
+        assign[colname][o2:o2 + ph.data_page_header.num_values - ph.data_page_header.statistics.null_count] = o
         
-        num += len(defi) if defi is not None else len(val)
+    for raw, ph in zip(raws, headers):
+        futs.append(ex.submit(run, raw, ph, off, off2))
+        # run(raw, ph, off, off2)
+        off += ph.data_page_header.num_values
+        off2 += ph.data_page_header.num_values - ph.data_page_header.statistics.null_count
+    concurrent.futures.wait(futs)
+    # could value_count each part and add
+    off_lengths = sum(ex.map(encoding.value_counts, [reps, defs]))[:max_rep]
+    offsets = []
+    parts = []
+    for part in cmd.path_in_schema:
+        parts.append(part)
+        if schema_helper.schema_element(parts).repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
+            o = np.zeros(int(off_lengths[len(offsets)] + 1), dtype="uint64")
+            assign[".".join(parts)] = o
+            offsets.append(o)
+    masks = []
+    ocounts = np.zeros(len(offsets), dtype="uint64")
+    encoding.make_offsets_and_masks(reps, defs, offsets, masks, ocounts)
+    
+        # if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+        #     dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
+        #     dic2 = convert(dic2, se)
+        #     if use_cat and dic is not None and (dic2 != dic).any():
+        #         raise RuntimeError("Attempt to read as categorical a column"
+        #                             "with multiple dictionary pages.")
+        #     dic = dic2
+        #     if use_cat:
+        #         assign[f"{colname}-cats"] = dic
+        #     continue
+        # if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
+        #     #num += read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
+        #     #                         dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade,
+        #     #                         row_filter=row_filter)
+        #     continue
+        # if (selfmade and hasattr(cmd, 'statistics') and
+        #         getattr(cmd.statistics, 'null_count', 1) == 0):
+        #     skip_nulls = True
+        # else:
+        #     skip_nulls = False
+        # defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
+        #                                 skip_nulls, selfmade=selfmade)
+        # parts.append(val)
+        # max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
+        # breakpoint()
+        # d = ph.data_page_header.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
+        #                                         parquet_thrift.Encoding.RLE_DICTIONARY]
+        
+        # data = convert(val, se, dtype=assign.dtype)
+        # if not use_cat and dic is not None:
+        #     data = dic[val]
+        
+        # num += len(defi) if defi is not None else len(val)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -520,7 +585,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
         if name not in columns:
             continue
         read_col(column, schema_helper, file, use_cat=False,
-                 selfmade=selfmade, assign=out[name],
+                 selfmade=selfmade, assign=assign,
                  row_filter=row_filter)
 
 
