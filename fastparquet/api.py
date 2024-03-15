@@ -691,7 +691,7 @@ scheme is 'simple'.")
     
     def pre_allocate_np(self, size, columns, dtypes=None):
         dtypes = self._dtypes(categories=[]) | (dtypes or {})
-        return {k: np.zeros(size, dtype=dt) for k, dt in dtypes.items()}
+        return {f"{k}-data": np.zeros(size, dtype=dt) for k, dt in dtypes.items()}
 
     def to_pandas(self, columns=None, categories=None, filters=[],
                   index=None, row_filter=False, dtypes=None):

@@ -1128,39 +1128,48 @@ cdef dict children = {
 #
 
 
-def value_counts(uint8_t[::1] values):
-    output = np.zeros(256, dtype="uint64")
-    cdef uint64_t i
-    cdef uint64_t[::1] out = output
-    with nogil:
-        for i in range(values.shape[0]):
-            out[values[i]] += 1
-    return output
+#def value_counts(uint8_t[::1] values, uint64_t[::1] out):
+#    # good enough when there are no mixed refs/defs; can be called repeatedly to fill out
+#    cdef uint64_t i
+#    with nogil:
+#        for i in range(values.shape[0]):
+#            out[values[i]] += 1
 
 
-def make_offsets_and_masks(
+#def lengths(uint8_t[::1] reps, uint8_t[::1] defs, uint64_t[::1] out, uint8_t[::1] rep_map):
+#    cdef:
+#        uint64_t i
+#        uint8_t j, r, d
+#
+#    with nogil:
+#        for i in range(reps.shape[0]):
+#            r = rep_map[reps[i]]
+#            d = defs[i]
+#            if r == d:
+#                out[d] += 1
+#            else:
+#                for j in range(r, d):
+#                    out[j] += 1
+
+
+def make_offsets_and_masks_no_nulls(
         uint8_t[::1] reps, # repetition levels
         uint8_t[::1] defs, # definition levels
-        list offsets,  # contains np arrayy
-        list masks,  # contains np array
-        uint64_t[::1] ocounts  # offsets counter of length offsets
+        list offsets,  # contains uint64 np arrays
+        uint64_t[::1] ocounts  # offsets counter of length offsets, same length as offsets
     ):
+    # when we have nested required ragged lists
+    # regular arrays would be a special case of this
     cdef:
-        uint64_t loffs = len(offsets)  # == max_rep
-        uint64_t lmasks = len(masks)  # == max_def
-        uint64_t i, j
-        uint8_t[::1] temp
-        uint64_t[::1] temp2
-        (uint64_t*)[256] offset_ptrs
-        (uint8_t*)[256] mask_ptrs
+        uint64_t loffs = len(offsets)  # == max_def
+        uint64_t i, j  # counters
+        int64_t[::1] temp  # for unbundling
+        (int64_t*)[256] offset_ptrs  # max number of levels allowed here is 256
     
     # unbundle mutable inputs
     for i in range(loffs):
-        temp2 = offsets[i]  # checks type and dtype
-        offset_ptrs[i] = &temp2[0]
-    for i in range(lmasks):
-        temp = masks[i]  # checks type and dtype
-        mask_ptrs[i] = &temp[0]
+        temp = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &temp[0]
 
     # run
     with nogil:
@@ -1172,3 +1181,88 @@ def make_offsets_and_masks(
         for j in range(loffs):
             # last offset
             offset_ptrs[j][ocounts[j]] = ocounts[j + 1]
+
+
+def make_offsets_and_masks_no_reps(
+        uint8_t[::1] defs, # definition levels
+        list offsets,  # contains uint64 np arrays
+        uint64_t[::1] ocounts  # offsets counter of length offsets, same length as offsets
+    ):
+    # where we have nested nullable structs, but no lists
+    cdef:
+        uint64_t loffs = len(offsets)  # == max_def
+        uint64_t i  # counters8
+        uint8_t d
+        int64_t[::1] temp  # for unbundling
+        (int64_t*)[256] offset_ptrs  # max number of levels allowed here is 256
+    
+    # unbundle mutable inputs
+    for i in range(loffs):
+        temp = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &temp[0]
+
+    # run
+    with nogil:
+        for i in range(defs.shape[0]):
+            d = defs[i]
+            if d < loffs:
+                offset_ptrs[d][i] = -1
+            else:
+                offset_ptrs[d][i] = ocounts[d + 1]
+            ocounts[d] += 1
+
+
+def one_level_optional(
+        uint8_t[::1] defs,
+        int64_t[::1] inds,
+        uint64_t count0 = 0,  # first index value
+        uint8_t max_def = 1   # level that means "real value" 
+    ):
+    # nullable simple type; equivalent:
+    # inds[defs == 1] = np.arange(count0, len(values) + count0)
+    # inds[defs == 0] = 0
+    # this can be parallel, by passing count0 (values so far), which we always can know
+    cdef uint64_t i, count
+    with nogil:
+        for i in range(defs.shape[0]):
+            if defs[i] == max_def:
+                inds[count] = count0
+                count0 += 1
+            else:
+                inds[count] = -1
+            count += 1
+
+
+def make_offsets_and_masks(
+        uint8_t[::1] reps, # repetition levels
+        uint8_t[::1] defs, # definition levels
+        list offsets,  # contains uint64 np arrays
+        uint8_t[::1] rep_map, # rep value -> offset index mapping
+        uint8_t[::1] rep_flags,  # is index (not offset) for each item of offsets list 
+        uint64_t[::1] ocounts,  # offsets counter of length offsets, len(offsets) + 1
+    ):
+    # general case
+    cdef:
+        uint64_t loffs = len(offsets)  # == max_def
+        uint64_t i, j  # counters
+        uint8_t r, d
+        int64_t[::1] temp  # for unbundling
+        (int64_t*)[256] offset_ptrs  # max number of levels allowed here is 256
+    
+    # unbundle mutable inputs
+    for i in range(loffs):
+        temp = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &temp[0]
+
+    # run
+    with nogil:
+        for i in range(reps.shape[0]):
+            r = rep_map[reps[i]]
+            d = defs[i]
+            for j in range(r, d + 1):
+                if j < loffs:
+                    if rep_flags[j] & (j == d):
+                        offset_ptrs[j][ocounts[j]] = -1
+                    else:
+                        offset_ptrs[j][ocounts[j]] = ocounts[j + 1]
+                ocounts[j] += 1

@@ -173,6 +173,7 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
 
 
 def skip_definition_bytes(io_obj, num):
+    # for self-made set of valid values; this could be cython but is rarely called
     io_obj.seek(6, 1)
     n = num // 64
     while n:
@@ -420,14 +421,42 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             )
             assign[num:num+data_header2.num_values][row_filter] = convert(out, se)[row_filter]
     else:
-        # codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        # raw_bytes = decompress_data(infile.read(size),
-        #                             ph.uncompressed_page_size, codec)
         raise NotImplementedError
     return data_header2.num_values
 
+
+# TODO: this executor should not persist between runs to free up threads.
 import concurrent.futures
 ex = concurrent.futures.ThreadPoolExecutor()
+
+
+def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int, o2: int,
+         cmd, rep_width, reps, def_width, defs, assign, colname, se,
+         with_data=True):
+    io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
+    if rep_width:
+        read_data(
+            io, 
+            parquet_thrift.Encoding.RLE, 
+            dph.num_values,
+            rep_width,
+            out=reps[o:o + dph.num_values]
+        )
+    if def_width:
+        read_data( 
+            io, 
+            parquet_thrift.Encoding.RLE, 
+            dph.num_values,
+            def_width,
+            out=defs[o:o + dph.num_values]
+        )
+    if with_data:
+        dtype = DECODE_TYPEMAP[se.type]
+        # PLAIN - testing
+        o = np.frombuffer(io.read(), dtype=dtype)
+        assign[f"{colname}-data"][
+            o2:o2 + dph.num_values - dph.statistics.null_count
+            ] = o    
 
 
 def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBase, 
@@ -466,7 +495,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     infile.seek(off)
     column_binary = infile.read(cmd.total_compressed_size)
     infile = encoding.NumpyIO(column_binary)
-    rows = row_filter.sum() if isinstance(row_filter, np.ndarray) else cmd.num_values
+    rows = cmd.num_values
 
     num = 0  # how far through the output we are
     dic = None
@@ -491,48 +520,53 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     rep_width = encoding.width_from_max_int(max_rep)
     def_width = encoding.width_from_max_int(max_def)
     futs = []
-    off = 0
+    off = 0  # counts number of rep/defs across pages
     off2 = 0
-    def run(raw, ph, o, o2):
-        io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
-        read_data(
-            io, 
-            parquet_thrift.Encoding.RLE, 
-            ph.data_page_header.num_values,
-            rep_width,
-            out=reps[o:o + ph.data_page_header.num_values]
-        )
-        read_data( 
-            io, 
-            parquet_thrift.Encoding.RLE, 
-            ph.data_page_header.num_values,
-            def_width,
-            out=defs[o:o + ph.data_page_header.num_values]
-        )
-        dtype = DECODE_TYPEMAP[se.type]
-        # PLAIN
-        o = np.frombuffer(io.read(), dtype=dtype)
-        assign[colname][o2:o2 + ph.data_page_header.num_values - ph.data_page_header.statistics.null_count] = o
-        
     for raw, ph in zip(raws, headers):
-        futs.append(ex.submit(run, raw, ph, off, off2))
-        # run(raw, ph, off, off2)
-        off += ph.data_page_header.num_values
-        off2 += ph.data_page_header.num_values - ph.data_page_header.statistics.null_count
+        dph = ph.data_page_header
+        # TODO: merge V1 and V2? Can you have both in one RG?
+        # _run(raw, ph, dph, off, off2, cmd, rep_width, reps, def_width, defs, assign, colname, se)
+        futs.append(
+            ex.submit(
+                lambda raw=raw, ph=ph, dph=dph, off=off, off2=off2: _run(
+                    raw, ph, dph, off, off2, cmd, rep_width, reps, 
+                    def_width, defs, assign, colname, se
+                )
+            )   
+        )
+        off += dph.num_values
+        # TODO: what if no stats? Then we need to decode defs first (defs == max_def).sum()
+        #  or concatenate values
+        off2 += dph.num_values - dph.statistics.null_count
+    # TODO: one of these can run in the current thread, good when only one page
     concurrent.futures.wait(futs)
-    # could value_count each part and add
-    off_lengths = sum(ex.map(encoding.value_counts, [reps, defs]))[:max_rep]
-    offsets = []
-    parts = []
+    OPT = parquet_thrift.FieldRepetitionType.OPTIONAL
+    REP = parquet_thrift.FieldRepetitionType.REPEATED
+    rep_map = np.zeros(256, dtype="uint8")  # list of output offset/index arrays
+    rep_flags = np.zeros(256, dtype="uint8")
+    parts = []  
+    nreps = 0
+    i = 0
     for part in cmd.path_in_schema:
         parts.append(part)
-        if schema_helper.schema_element(parts).repetition_type == parquet_thrift.FieldRepetitionType.REPEATED:
-            o = np.zeros(int(off_lengths[len(offsets)] + 1), dtype="uint64")
-            assign[".".join(parts)] = o
+        if schema_helper.schema_element(parts).repetition_type == OPT:
+            o = np.zeros(off, dtype="int64")
+            assign[f'{".".join(parts)}-index'] = o
             offsets.append(o)
-    masks = []
-    ocounts = np.zeros(len(offsets), dtype="uint64")
-    encoding.make_offsets_and_masks(reps, defs, offsets, masks, ocounts)
+            rep_flags[i] = 1
+            i += 1
+        elif schema_helper.schema_element(parts).repetition_type == REP:
+            # offset has one extra element for closing last list
+            o = np.zeros(off + 1, dtype="int64")
+            assign[f'{".".join(parts)}-offsets'] = o
+            offsets.append(o)
+            nreps += 1
+            i += 1
+            rep_map[nreps] = i
+    ocounts = np.zeros(len(offsets) + 1, dtype="uint64")
+    encoding.make_offsets_and_masks(reps, defs, offsets, rep_map, rep_flags, ocounts)
+    for o, count, flag in zip(offsets, ocounts, rep_flags):
+        o.resize(count + flag, refcheck=False)
     
         # if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
         #     dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)

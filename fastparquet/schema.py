@@ -13,6 +13,7 @@ def schema_tree(schema, i=0, paths={}, path=[]):
     while len(root["children"]) < root.num_children:
         i += 1
         s = schema[i]
+        s["parent"] = root
         root["children"][s.name] = s
         if s.num_children not in [None, 0]:
             i = schema_tree(schema, i, paths, path)
