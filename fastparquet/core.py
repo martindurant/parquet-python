@@ -9,7 +9,7 @@ from fastparquet.converted_types import convert, simple, converts_inplace
 from fastparquet.speedups import unpack_byte_array
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
-from fastparquet.util import val_to_num
+from fastparquet.util import val_to_num, simple_concat
 from fastparquet.schema import SchemaHelper
 
 
@@ -430,7 +430,7 @@ import concurrent.futures
 ex = concurrent.futures.ThreadPoolExecutor()
 
 
-def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int, o2: int,
+def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
          cmd, rep_width, reps, def_width, defs, assign, colname, se,
          with_data=True):
     io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
@@ -454,9 +454,9 @@ def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int, o2: int,
         dtype = DECODE_TYPEMAP[se.type]
         # PLAIN - testing
         o = np.frombuffer(io.read(), dtype=dtype)
-        assign[f"{colname}-data"][
-            o2:o2 + dph.num_values - dph.statistics.null_count
-            ] = o    
+        assign[f"{colname}-data"].append(o)
+
+DUMMY = np.zeros(1, dtype="int64")
 
 
 def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBase, 
@@ -482,13 +482,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     """
     cmd = column.meta_data
     colname = ".".join(cmd.path_in_schema)
-    try:
-        se = schema_helper.schema_element(cmd.path_in_schema)
-    except KeyError:
-        # column not present in this row group
-        # TODO: we make an all-false mask at the lowest available level
-        assign[colname] = None
-        return
+    se = schema_helper.schema_element(cmd.path_in_schema)
     off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
                cmd.data_page_offset))
 
@@ -501,10 +495,9 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     dic = None
     parts = []
     offsets = []
-    masks = []
     headers = []
     raws = []
-    import concurrent.futures
+    assign[f"{colname}-data"] = []
 
     while num < rows:
         ph = ThriftObject.from_buffer(infile, "PageHeader")
@@ -515,31 +508,28 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     
     max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
-    reps = np.zeros(cmd.num_values, dtype="uint8")
-    defs = np.zeros_like(reps)
+    reps = np.empty(cmd.num_values, dtype="uint8")
+    defs = np.empty_like(reps)
     rep_width = encoding.width_from_max_int(max_rep)
     def_width = encoding.width_from_max_int(max_def)
     futs = []
     off = 0  # counts number of rep/defs across pages
-    off2 = 0
-    for raw, ph in zip(raws, headers):
+    for i, (raw, ph) in enumerate(zip(raws, headers)):
         dph = ph.data_page_header
         # TODO: merge V1 and V2? Can you have both in one RG?
-        # _run(raw, ph, dph, off, off2, cmd, rep_width, reps, def_width, defs, assign, colname, se)
-        futs.append(
-            ex.submit(
-                lambda raw=raw, ph=ph, dph=dph, off=off, off2=off2: _run(
-                    raw, ph, dph, off, off2, cmd, rep_width, reps, 
+        l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
+                    raw, ph, dph, off, cmd, rep_width, reps, 
                     def_width, defs, assign, colname, se
                 )
-            )   
-        )
+        if i + 1 < len(raws):
+            futs.append(ex.submit(l))
+        else:
+            # TODO: does this hurt parallelism over columns/rgs?
+            l()  # single-page column needs no threads
         off += dph.num_values
-        # TODO: what if no stats? Then we need to decode defs first (defs == max_def).sum()
-        #  or concatenate values
-        off2 += dph.num_values - dph.statistics.null_count
+    if futs:
+        concurrent.futures.wait(futs)
     # TODO: one of these can run in the current thread, good when only one page
-    concurrent.futures.wait(futs)
     OPT = parquet_thrift.FieldRepetitionType.OPTIONAL
     REP = parquet_thrift.FieldRepetitionType.REPEATED
     rep_map = np.zeros(256, dtype="uint8")  # list of output offset/index arrays
@@ -550,57 +540,46 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     for part in cmd.path_in_schema:
         parts.append(part)
         if schema_helper.schema_element(parts).repetition_type == OPT:
-            o = np.zeros(off, dtype="int64")
-            assign[f'{".".join(parts)}-index'] = o
-            offsets.append(o)
-            rep_flags[i] = 1
+            name = f'{".".join(parts)}-index'
+            if name not in assign:
+                o = np.empty(off, dtype="int64")
+                assign[name] = o
+                offsets.append(o)
+                rep_flags[i] = 1
+            else:
+                offsets.append(DUMMY)
+                rep_flags[i] = 2
             i += 1
         elif schema_helper.schema_element(parts).repetition_type == REP:
             # offset has one extra element for closing last list
-            o = np.zeros(off + 1, dtype="int64")
-            assign[f'{".".join(parts)}-offsets'] = o
-            offsets.append(o)
+            name = f'{".".join(parts)}-offsets'
+            if name not in assign:
+                o = np.empty(off + 1, dtype="int64")
+                assign[name] = o
+                offsets.append(o)
+            else:
+                offsets.append(DUMMY)
+                rep_flags[i] = 2  # do not use
             nreps += 1
             i += 1
             rep_map[nreps] = i
+    assign[f"{colname}-data"] = simple_concat(*assign[f"{colname}-data"])
+    # Optimization conditions
+    if all(_ is DUMMY for _ in offsets):
+        # nothing to do
+        # includes no offsets at all, or all accounted for
+        return
+    if rep_flags.max():
+        encoding.make_offsets_and_masks_no_nulls
+    if all(_ is DUMMY for _ in offsets[:-1]) and rep_flags[i - 1] == 1:
+        encoding.one_level_optional(defs, offsets[-1], 0, max_def)
+        return # ocount? Is equal to len of vals or last index
+    if (rep_flags[:max_def] == 1).all():
+        encoding.make_offsets_and_masks_no_reps
     ocounts = np.zeros(len(offsets) + 1, dtype="uint64")
     encoding.make_offsets_and_masks(reps, defs, offsets, rep_map, rep_flags, ocounts)
     for o, count, flag in zip(offsets, ocounts, rep_flags):
         o.resize(count + flag, refcheck=False)
-    
-        # if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-        #     dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
-        #     dic2 = convert(dic2, se)
-        #     if use_cat and dic is not None and (dic2 != dic).any():
-        #         raise RuntimeError("Attempt to read as categorical a column"
-        #                             "with multiple dictionary pages.")
-        #     dic = dic2
-        #     if use_cat:
-        #         assign[f"{colname}-cats"] = dic
-        #     continue
-        # if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
-        #     #num += read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
-        #     #                         dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade,
-        #     #                         row_filter=row_filter)
-        #     continue
-        # if (selfmade and hasattr(cmd, 'statistics') and
-        #         getattr(cmd.statistics, 'null_count', 1) == 0):
-        #     skip_nulls = True
-        # else:
-        #     skip_nulls = False
-        # defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
-        #                                 skip_nulls, selfmade=selfmade)
-        # parts.append(val)
-        # max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
-        # breakpoint()
-        # d = ph.data_page_header.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
-        #                                         parquet_thrift.Encoding.RLE_DICTIONARY]
-        
-        # data = convert(val, se, dtype=assign.dtype)
-        # if not use_cat and dic is not None:
-        #     data = dic[val]
-        
-        # num += len(defi) if defi is not None else len(val)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -612,7 +591,6 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     will be pandas Categorical objects: the codes and the category labels
     are arrays.
     """
-    out = assign
     for column in rg.columns:
 
         name = ".".join(column.meta_data.path_in_schema)

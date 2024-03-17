@@ -1261,8 +1261,8 @@ def make_offsets_and_masks(
             d = defs[i]
             for j in range(r, d + 1):
                 if j < loffs:
-                    if rep_flags[j] & (j == d):
+                    if (rep_flags[j] == 1) & (j == d):
                         offset_ptrs[j][ocounts[j]] = -1
-                    else:
+                    elif rep_flags[j] == 0:
                         offset_ptrs[j][ocounts[j]] = ocounts[j + 1]
                 ocounts[j] += 1

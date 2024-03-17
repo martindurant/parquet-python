@@ -35,7 +35,7 @@ PATH_DATE_FMT = '%Y%m%d_%H%M%S.%f'
 
 
 def path_string(o):
-    if isinstance(o, pd.Timestamp):
+    if hasattr(o, "isoformat"):
         return o.isoformat()
     return str(o)
 
@@ -482,3 +482,14 @@ def get_fs(fn, open_with, mkdirs):
         mkdirs = mkdirs or (lambda d: fs.mkdirs(d, exist_ok=True))
     return fs, fn, open_with, mkdirs
 
+
+def simple_concat(*arrs):
+    # 3x faster than np.concatenate (2.4x with casting="no")
+    if len(arrs) == 1:
+        return arrs[0]
+    tot = sum(len(arr) for arr in arrs)
+    out = np.empty(tot, dtype=arrs[0].dtype)
+    off = 0
+    for arr in arrs:
+        out[off:off+len(arr)] = arr
+    return out
