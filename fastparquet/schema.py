@@ -68,12 +68,12 @@ class SchemaHelper(object):
         self.schema_elements = schema_elements
         for se in schema_elements:
             try:
-                se.name = se.name.decode()
+                se[4] = se[4].decode()
             except AttributeError:
                 pass  # already a str
         self.root = schema_elements[0]
         self.schema_elements_by_name = dict(
-            [(se.name, se) for se in schema_elements])
+            [(se[4], se) for se in schema_elements])
         self.tree = {}
         schema_tree(schema_elements, paths = self.tree)
         self._text = None
