@@ -195,17 +195,21 @@ class ParquetFile(object):
             self._head_size = len(data)
         else:
             try:
-                f.seek(0)
-                if verify:
-                    assert f.read(4) == b'PAR1'
-                f.seek(-8, 2)
-                # TODO: don't need two reads here in most cases
-                head_size = int.from_bytes(f.read(4), "little")
-                if verify:
-                    assert f.read() == b'PAR1'
+                guess_size = 1000000
+                try:
+                    f.seek(-(guess_size + 8), 2)
+                except OSError:
+                    # guess_size is too big for file
+                    f.seek(0)
+                data = f.read()
+                assert data[-4:] == b"PAR1"
+                head_size = int.from_bytes(data[-8:-4], "little")
                 self._head_size = head_size
-                f.seek(-(head_size + 8), 2)
-                data = f.read(head_size)
+                if head_size < guess_size:
+                    data = data[-(head_size +8): -8]
+                else:
+                    f.seek(-(head_size + 8), 2)
+                    data = f.read(head_size)
             except (AssertionError, ValueError, TypeError) as e:
                 raise ParquetException('File parse failed: %s' % self.fn) from e
 
@@ -265,7 +269,10 @@ class ParquetFile(object):
 
     @property
     def partition_meta(self):
-        return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
+        if self.pandas_metadata:
+            return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
+        else:
+            return {}
 
     @property
     def basepath(self):
@@ -690,7 +697,12 @@ scheme is 'simple'.")
     @property
     def pandas_metadata(self):
         if self._pdm is None:
-            self._pdm = json_decoder()(self.key_value_metadata.get('pandas', "{}"))
+            b = [kv.value for kv in self.fmd.key_value_metadata or []
+                 if kv.key in (b"pandas", "pandas")]
+            if b:
+                self._pdm = json_decoder()(b)
+            else:
+                self._pdm = {}
         return self._pdm
 
     @property

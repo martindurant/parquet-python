@@ -492,4 +492,5 @@ def simple_concat(*arrs):
     off = 0
     for arr in arrs:
         out[off:off+len(arr)] = arr
+        off += len(arr)
     return out

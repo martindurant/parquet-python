@@ -1,4 +1,5 @@
 import io
+import logging
 import numpy as np
 
 from fastparquet import encoding
@@ -11,6 +12,8 @@ from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
 from fastparquet.util import val_to_num, simple_concat
 from fastparquet.schema import SchemaHelper
+
+logger = logging.getLogger("fastparquet.core")
 
 
 def _read_page(file_obj, page_header, column_metadata):
@@ -460,8 +463,7 @@ DUMMY = np.zeros(1, dtype="int64")
 
 
 def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBase, 
-             assign: dict, use_cat: bool = False, row_filter=None,
-             selfmade=False):
+             assign: dict, use_cat: bool = False, read_data=True):
     """Using the given metadata, read one column in one row-group.
 
     Parameters
@@ -475,66 +477,22 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     use_cat: bool (False)
         If this column is encoded throughout with dict encoding, give back
         a pandas categorical column; otherwise, decode to values
-    row_filter: bool array or None
-        if given, selects which of the values read are to be written
-        into the output. Effectively implies NULLs, even for a required
-        column.
+    read_data: bool (True)
+        Whether to ingest the payload values. If False, only reads offset/index
+        information, if they are not already in the output.
     """
     cmd = column.meta_data
     colname = ".".join(cmd.path_in_schema)
     se = schema_helper.schema_element(cmd.path_in_schema)
-    off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
-               cmd.data_page_offset))
-
-    infile.seek(off)
-    column_binary = infile.read(cmd.total_compressed_size)
-    infile = encoding.NumpyIO(column_binary)
     rows = cmd.num_values
 
-    num = 0  # how far through the output we are
-    dic = None
-    parts = []
-    offsets = []
-    headers = []
-    raws = []
-    assign[f"{colname}-data"] = []
-
-    while num < rows:
-        ph = ThriftObject.from_buffer(infile, "PageHeader")
-        headers.append(ph)
-        raws.append(infile.read(ph.compressed_page_size))
-        num += ph.data_page_header.num_values
-        continue
-    
-    max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
-    max_def = schema_helper.max_definition_level(cmd.path_in_schema)
-    reps = np.empty(cmd.num_values, dtype="uint8")
-    defs = np.empty_like(reps)
-    rep_width = encoding.width_from_max_int(max_rep)
-    def_width = encoding.width_from_max_int(max_def)
-    futs = []
-    off = 0  # counts number of rep/defs across pages
-    for i, (raw, ph) in enumerate(zip(raws, headers)):
-        dph = ph.data_page_header
-        # TODO: merge V1 and V2? Can you have both in one RG?
-        l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
-                    raw, ph, dph, off, cmd, rep_width, reps, 
-                    def_width, defs, assign, colname, se
-                )
-        if i + 1 < len(raws):
-            futs.append(ex.submit(l))
-        else:
-            # TODO: does this hurt parallelism over columns/rgs?
-            l()  # single-page column needs no threads
-        off += dph.num_values
-    if futs:
-        concurrent.futures.wait(futs)
-    # TODO: one of these can run in the current thread, good when only one page
+    # make outputs
     OPT = parquet_thrift.FieldRepetitionType.OPTIONAL
     REP = parquet_thrift.FieldRepetitionType.REPEATED
-    rep_map = np.zeros(256, dtype="uint8")  # list of output offset/index arrays
-    rep_flags = np.zeros(256, dtype="uint8")
-    parts = []  
+    rep_map = np.zeros(256, dtype="uint8")  # which rep value maps to which offset arr
+    rep_flags = np.zeros(256, dtype="uint8")  # is array offset or index?
+    parts = []  # schema names as we walk
+    offsets = []  # list of output offset/index arrays
     nreps = 0
     i = 0
     for part in cmd.path_in_schema:
@@ -542,7 +500,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
         if schema_helper.schema_element(parts).repetition_type == OPT:
             name = f'{".".join(parts)}-index'
             if name not in assign:
-                o = np.empty(off, dtype="int64")
+                o = np.empty(rows, dtype="int64")
                 assign[name] = o
                 offsets.append(o)
                 rep_flags[i] = 1
@@ -554,7 +512,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             # offset has one extra element for closing last list
             name = f'{".".join(parts)}-offsets'
             if name not in assign:
-                o = np.empty(off + 1, dtype="int64")
+                o = np.empty(rows + 1, dtype="int64")
                 assign[name] = o
                 offsets.append(o)
             else:
@@ -563,23 +521,109 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             nreps += 1
             i += 1
             rep_map[nreps] = i
-    assign[f"{colname}-data"] = simple_concat(*assign[f"{colname}-data"])
-    # Optimization conditions
+    
+    # read bytes from source    
+    off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
+               cmd.data_page_offset))
+    infile.seek(off)
+    column_binary = infile.read(cmd.total_compressed_size)
+    infile = encoding.NumpyIO(column_binary)
+
+    # ingest page headers
+    num = 0  # how far through the output we are
+    dic = None
+    parts = []  # data values from each page
+    headers = []  # header objects
+    raws = []  # bytes
+    assign[f"{colname}-data"] = []
+
+    while num < rows:
+        # TODO: if read_data is False, and we have offsets already (OPT 4), can skip all
+        ph = ThriftObject.from_buffer(infile, "PageHeader")
+        raw = infile.read(ph.compressed_page_size)
+        isdict = ph.type == parquet_thrift.PageType.DICTIONARY_PAGE
+        headers.append(ph)
+        raws.append(raw)
+        if isdict and use_cat and f"{colname}-dict" in assign:
+            # assert that the dict inherited from elsewhere is fine
+            continue
+        if ph.type == parquet_thrift.PageType.DATA_PAGE:
+            num += ph.data_page_header.num_values
+        elif ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
+            # NB: this one always knows its num_nulls, but v1 does not
+            num += ph.data_page_header_v2.num_values
+        elif ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+            assert dic is None
+            dic = True  # should always be first page
+        else:
+            raise NotImplementedError
+    logger.debug("Column %s,  %s headers (inc dict page %s)", colname, len(headers),
+                 bool(dic))
+
+    max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
+    max_def = schema_helper.max_definition_level(cmd.path_in_schema)
+    
+    # Set optimisation conditions, so that we can avoid unecessary reads
     if all(_ is DUMMY for _ in offsets):
-        # nothing to do
-        # includes no offsets at all, or all accounted for
+        # no deps/defs needed
+        if read_data is False:
+            return
+        OPT = 4
+    elif rep_flags.max() == 0:
+        OPT = 1
+    elif all(_ is DUMMY for _ in offsets[:-1]) and rep_flags[i - 1] == 1:
+        OPT = 2
+    elif (rep_flags[:max_def] == 1).all():
+        OPT = 3
+    else:
+        OPT = 0
+
+    # process raw pages
+    reps = np.empty(cmd.num_values, dtype="uint8")
+    defs = np.empty(cmd.num_values, dtype="uint8")
+    rep_width = encoding.width_from_max_int(max_rep)
+    def_width = encoding.width_from_max_int(max_def)
+    futs = []
+    off = 0  # counts number of rep/defs across pages
+    for i, (raw, ph) in enumerate(zip(raws, headers)):
+        dph = ph.data_page_header
+        # CONDITIONS:
+        #  - (1) need all reps/defs
+        #  - (2) need data
+        #  - (3) only need last defs (optional, but offsets known)
+        # if (1) or (2) or (3)  and v1, must decompress and read sequentially
+        # if (1) and v2, need to read reps and defs
+        # if (2) and v2, need to decompress and read data
+        # if (3) and v2, need to read defs (not reps)
+        l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
+                    raw, ph, dph, off, cmd, rep_width, reps, 
+                    def_width, defs, assign, colname, se
+                )
+        if i + 1 < len(raws):
+            futs.append(ex.submit(l))
+        else:
+            l()
+        off += dph.num_values
+    if futs:
+        concurrent.futures.wait(futs)
+
+    assign[f"{colname}-data"] = simple_concat(*assign[f"{colname}-data"])
+
+    # Optimization conditions
+    if OPT == 4:
         return
-    if rep_flags.max():
-        encoding.make_offsets_and_masks_no_nulls
-    if all(_ is DUMMY for _ in offsets[:-1]) and rep_flags[i - 1] == 1:
-        encoding.one_level_optional(defs, offsets[-1], 0, max_def)
-        return # ocount? Is equal to len of vals or last index
-    if (rep_flags[:max_def] == 1).all():
-        encoding.make_offsets_and_masks_no_reps
     ocounts = np.zeros(len(offsets) + 1, dtype="uint64")
-    encoding.make_offsets_and_masks(reps, defs, offsets, rep_map, rep_flags, ocounts)
+    if OPT == 1:
+        encoding.make_offsets_and_masks_no_nulls(reps, defs, offsets, ocounts)
+    elif OPT == 2:
+        count = encoding.one_level_optional(defs, offsets[-1], 0, max_def)
+    elif OPT == 3:
+        encoding.make_offsets_and_masks_no_reps(defs, offsets, ocounts)
+    else:
+        encoding.make_offsets_and_masks(reps, defs, offsets, rep_map, rep_flags, ocounts)
     for o, count, flag in zip(offsets, ocounts, rep_flags):
-        o.resize(count + flag, refcheck=False)
+        if o is not DUMMY:
+            o.resize(count + flag, refcheck=False)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -597,8 +641,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
         if name not in columns:
             continue
         read_col(column, schema_helper, file, use_cat=False,
-                 selfmade=selfmade, assign=assign,
-                 row_filter=row_filter)
+                 assign=assign)
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
