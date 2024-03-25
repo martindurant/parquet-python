@@ -13,10 +13,11 @@
 
 import cython
 import numpy as np
+cimport numpy as np
 cdef extern from "string.h":
     void *memcpy(void *dest, const void *src, size_t n) noexcept nogil
 from cpython cimport (
-    PyBytes_FromStringAndSize, PyBytes_GET_SIZE, PyUnicode_DecodeUTF8,
+    PyBytes_FromStringAndSize, PyBytes_GET_SIZE, PyUnicode_DecodeUTF8
 )
 from libc.stdint cimport int8_t, uint8_t, uint32_t, int32_t, uint64_t, int64_t
 
@@ -248,43 +249,44 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o, uint8_t longval=0):
         const uint8_t[:] bitwidths
         uint8_t bitwidth
     values_per_miniblock = block_size // miniblock_per_block
-    while True:
-        min_delta = zigzag_long(read_unsigned_var_int(file_obj))
-        bitwidths = file_obj.read(miniblock_per_block)
-        for i in range(miniblock_per_block):
-            bitwidth = bitwidths[i]
-            if bitwidth:
-                temp = o.loc
-                if count > 1:
-                    # no more diffs if on last value
-                    delta_read_bitpacked(file_obj, bitwidth, o, values_per_miniblock, longval)
-                o.loc = temp
-                for j in range(values_per_miniblock):
-                    if longval:
-                        temp = o.read_long()
-                        o.loc -= 8
-                        o.write_long(value)
-                    else:
-                        temp = o.read_int()
-                        o.loc -= 4
-                        o.write_int(value)
-                    value += min_delta + temp
-                    count -= 1
-                    if count <= 0:
-                        return
-            else:
-                for j in range(values_per_miniblock):
-                    if longval:
-                        o.write_long(value)
-                    else:
-                        o.write_int(value)
-                    value += min_delta
-                    count -= 1
-                    if count <= 0:
-                        return
+    with nogil:
+        while True:
+            min_delta = zigzag_long(read_unsigned_var_int(file_obj))
+            bitwidths = file_obj.read(miniblock_per_block)
+            for i in range(miniblock_per_block):
+                bitwidth = bitwidths[i]
+                if bitwidth:
+                    temp = o.loc
+                    if count > 1:
+                        # no more diffs if on last value
+                        delta_read_bitpacked(file_obj, bitwidth, o, values_per_miniblock, longval)
+                    o.loc = temp
+                    for j in range(values_per_miniblock):
+                        if longval:
+                            temp = o.read_long()
+                            o.loc -= 8
+                            o.write_long(value)
+                        else:
+                            temp = o.read_int()
+                            o.loc -= 4
+                            o.write_int(value)
+                        value += min_delta + temp
+                        count -= 1
+                        if count <= 0:
+                            return
+                else:
+                    for j in range(values_per_miniblock):
+                        if longval:
+                            o.write_long(value)
+                        else:
+                            o.write_int(value)
+                        value += min_delta
+                        count -= 1
+                        if count <= 0:
+                            return
 
 
-cpdef void encode_unsigned_varint(uint64_t x, NumpyIO o):  # pragma: no cover
+cpdef void encode_unsigned_varint(uint64_t x, NumpyIO o) noexcept nogil:
     while x > 127:
         o.write_byte((x & 0x7F) | 0x80)
         x >>= 7
@@ -577,6 +579,7 @@ cpdef dict read_thrift(NumpyIO data):
 cdef list read_list(NumpyIO data):
     cdef unsigned char byte, typ
     cdef int32_t size, bsize, _
+    cdef list out
     byte = data.read_byte()
     if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)
@@ -1129,12 +1132,12 @@ cdef dict children = {
 #
 
 
-#def value_counts(uint8_t[::1] values, uint64_t[::1] out):
-#    # good enough when there are no mixed refs/defs; can be called repeatedly to fill out
-#    cdef uint64_t i
-#    with nogil:
-#        for i in range(values.shape[0]):
-#            out[values[i]] += 1
+def value_counts(uint8_t[::1] values, uint64_t[::1] out):
+    # good enough when there are no mixed refs/defs; can be called repeatedly to fill out
+    cdef uint64_t i
+    with nogil:
+        for i in range(values.shape[0]):
+            out[values[i]] += 1
 
 
 def make_offsets_and_masks_no_nulls(
@@ -1254,8 +1257,9 @@ def make_offsets_and_masks(
                 ocounts[j] += 1
 
 
-def parse_strings(uint8_t[::1] data, uint64_t[::1] offsets, uint64_t nvalues):
-    """Extract strings into compact form and offstes, like arrow would"""
+def parse_plain_strings(uint8_t[::1] data, uint64_t[::1] offsets, uint64_t nvalues):
+    """Extract strings into compact form and offsets, like arrow would"""
+    # may need delta-string decoder, if we ever see such data
     out = np.empty(data.shape[0] - (4 * nvalues), dtype="uint8")
     cdef uint8_t[::1] o = out
     cdef uint64_t i, offset, tot

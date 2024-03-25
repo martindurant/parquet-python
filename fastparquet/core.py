@@ -1,16 +1,16 @@
+import concurrent.futures
 import io
 import logging
 import numpy as np
 
 from fastparquet import encoding
-from fastparquet.encoding import read_plain, DECODE_TYPEMAP
+from fastparquet.encoding import read_plain, byte_stream_unsplit4, byte_stream_unsplit8, DECODE_TYPEMAP
 import fastparquet.cencoding as encoding
 from fastparquet.compression import decompress_data, rev_map, decom_into
 from fastparquet.converted_types import convert, simple, converts_inplace
-from fastparquet.speedups import unpack_byte_array
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
-from fastparquet.util import val_to_num, simple_concat
+from fastparquet.util import val_to_num, simple_concat, empty_context
 from fastparquet.schema import SchemaHelper
 
 logger = logging.getLogger("fastparquet.core")
@@ -429,15 +429,17 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
 
 
 # TODO: this executor should not persist between runs to free up threads.
-import concurrent.futures
-ex = concurrent.futures.ThreadPoolExecutor()
+import threading
+lock = threading.Lock()
 
 
 def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
          cmd, rep_width, reps, def_width, defs, assign, colname, se,
          with_data=True):
+    # V1 or dict page, decompress immediately
     io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
     if rep_width:
+        # reading reps is not optional, if they exist
         read_data(
             io, 
             parquet_thrift.Encoding.RLE, 
@@ -446,6 +448,7 @@ def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
             out=reps[o:o + dph.num_values]
         )
     if def_width:
+        # reading defs is not optional, if they exist
         read_data( 
             io, 
             parquet_thrift.Encoding.RLE, 
@@ -454,16 +457,55 @@ def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
             out=defs[o:o + dph.num_values]
         )
     if with_data:
-        dtype = DECODE_TYPEMAP[se.type]
-        # PLAIN - testing
-        o = np.frombuffer(io.read(), dtype=dtype)
-        assign[f"{colname}-data"].append(o)
+        dtype = DECODE_TYPEMAP.get(se.type, "uint8")
+        if dph.encoding == parquet_thrift.Encoding.PLAIN:
+            o = np.frombuffer(io.read(), dtype=dtype)
+            if cmd.type == parquet_thrift.Type.BOOLEAN:
+                o = np.unpackbits(o).astype(np.bool_)
+        elif dph.encoding in [parquet_thrift.Encoding.RLE_DICTIONARY,
+                              parquet_thrift.Encoding.PLAIN_DICTIONARY,
+                              parquet_thrift.Encoding.RLE]:
+            if cmd.type == parquet_thrift.Type.BOOLEAN:
+                bit_width = 1
+            elif dph.encoding == parquet_thrift.Encoding.RLE:
+                bit_width = se.type_length
+            else:
+                bit_width = io.read_byte()
+            o = np.empty(dph.num_values, dtype=np.uint8)
+            out = encoding.NumpyIO(o)
+            encoding.read_rle_bit_packed_hybrid(io, bit_width, dph.num_values, out, itemsize=1)
+        elif dph.encoding == parquet_thrift.Encoding.BYTE_STREAM_SPLIT:
+            o = np.frombuffer(io.read(), dtype=dtype)
+            if o.dtype == "f8":
+                o = byte_stream_unsplit8(o)
+            else:
+                o = byte_stream_unsplit4(o)
+        elif dph.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
+            o = np.empty(dph.num_values, dtype='int32')
+            encoding.delta_binary_unpack(
+                io, encoding.NumpyIO(o.view('uint8'))
+            )
+        elif dph.encoding == parquet_thrift.Encoding.DELTA_LENGTH_BYTE_ARRAY:
+            # (delta int sizes followed by bytesbuffer)
+            sizes = np.zeros(dph.num_values + 1, dtype='int32')
+            encoding.delta_binary_unpack(
+                io, encoding.NumpyIO(sizes[1:].view('uint8'))
+            )
+            o = np.frombuffer(io.read(), dtype="uint8")
+            assign[f"{colname}-offsets"] = np.cumsum(sizes, dtype="int64")
+        else:
+            raise NotImplementedError
+        if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+            assign[f"{colname}-cats"] = o
+        else:
+            # TODO: order is not preserved here!
+            assign[f"{colname}-data"].append(o)
 
 DUMMY = np.zeros(1, dtype="int64")
 
 
 def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBase, 
-             assign: dict, use_cat: bool = False, read_data=True):
+             assign: dict, use_cat: bool = False, read_data=True, ex=None):
     """Using the given metadata, read one column in one row-group.
 
     Parameters
@@ -525,8 +567,9 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     # read bytes from source    
     off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
                cmd.data_page_offset))
-    infile.seek(off)
-    column_binary = infile.read(cmd.total_compressed_size)
+    with lock:
+        infile.seek(off)
+        column_binary = infile.read(cmd.total_compressed_size)
     infile = encoding.NumpyIO(column_binary)
 
     # ingest page headers
@@ -535,7 +578,8 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     parts = []  # data values from each page
     headers = []  # header objects
     raws = []  # bytes
-    assign[f"{colname}-data"] = []
+    if f"{colname}-data" not in assign:
+        assign[f"{colname}-data"] = []
 
     while num < rows:
         # TODO: if read_data is False, and we have offsets already (OPT 4), can skip all
@@ -553,7 +597,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             # NB: this one always knows its num_nulls, but v1 does not
             num += ph.data_page_header_v2.num_values
         elif ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-            assert dic is None
+            assert dic is None, "Second dict page found within a row-group"
             dic = True  # should always be first page
         else:
             raise NotImplementedError
@@ -586,7 +630,6 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     futs = []
     off = 0  # counts number of rep/defs across pages
     for i, (raw, ph) in enumerate(zip(raws, headers)):
-        dph = ph.data_page_header
         # CONDITIONS:
         #  - (1) need all reps/defs
         #  - (2) need data
@@ -595,19 +638,32 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
         # if (1) and v2, need to read reps and defs
         # if (2) and v2, need to decompress and read data
         # if (3) and v2, need to read defs (not reps)
-        l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
-                    raw, ph, dph, off, cmd, rep_width, reps, 
-                    def_width, defs, assign, colname, se
-                )
-        if i + 1 < len(raws):
+        if ph.type == parquet_thrift.PageType.DATA_PAGE:
+            dph = ph.data_page_header
+            l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
+                        raw, ph, dph, off, cmd, rep_width, reps, 
+                        def_width, defs, assign, colname, se
+                    )
+            off += getattr(dph, "num_values", 0)
+        elif ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
+            dph = ph.data_page_header_v2
+            l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
+                        raw, ph, dph, off, cmd, rep_width, reps, 
+                        def_width, defs, assign, colname, se
+                    )
+            off += getattr(dph, "num_values", 0)
+        elif ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+            dph = ph.dictionary_page_header
+            l = lambda raw=raw, ph=ph, dph=dph, off=0: _run(
+                        raw, ph, dph, off, cmd, 0, reps, 
+                        0, defs, assign, colname, se
+                    )
+        if ex is not None and i + 1 < len(raws):
             futs.append(ex.submit(l))
         else:
             l()
-        off += dph.num_values
     if futs:
         concurrent.futures.wait(futs)
-
-    assign[f"{colname}-data"] = simple_concat(*assign[f"{colname}-data"])
 
     # Optimization conditions
     if OPT == 4:
@@ -626,6 +682,9 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             o.resize(count + flag, refcheck=False)
 
 
+no_parallel = True
+
+
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
                           selfmade=False, assign=None, row_filter=False):
     """
@@ -635,13 +694,27 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     will be pandas Categorical objects: the codes and the category labels
     are arrays.
     """
-    for column in rg.columns:
-
-        name = ".".join(column.meta_data.path_in_schema)
-        if name not in columns:
-            continue
-        read_col(column, schema_helper, file, use_cat=False,
-                 assign=assign)
+    ex = empty_context if no_parallel else concurrent.futures.ThreadPoolExecutor()
+    with concurrent.futures.ThreadPoolExecutor() as ex:
+        futs = []
+        #TODO: if columns is None, read whole file in one go?
+        rgcols = rg.columns
+        for column in rgcols:
+            # column.meta_data.path_in_schema
+            name = ".".join(column[3][3])
+            if name not in columns:
+                continue
+            if no_parallel:
+                read_col(column, schema_helper, file, use_cat=False,
+                         assign=assign)
+            elif len(columns or rgcols) < 2:
+                read_col(column, schema_helper, file, use_cat=False,
+                         assign=assign, ex=ex)
+            else:
+                futs.append(ex.submit(read_col, column, schema_helper, file, 
+                                      use_cat=False, assign=assign))
+        if futs:
+            concurrent.futures.wait(futs)
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,

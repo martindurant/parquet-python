@@ -1,7 +1,6 @@
 """encoding.py - methods for reading parquet encoded data blocks."""
 import numpy as np
 from fastparquet.cencoding import read_bitpacked1, NumpyIO
-from fastparquet.speedups import unpack_byte_array
 from fastparquet import parquet_thrift
 
 
@@ -39,3 +38,48 @@ def read_plain(raw_bytes, type_, count, width=0, utf=False, stat=False):
             else:
                 return np.array([bytes(raw_bytes)], dtype='O')
         return unpack_byte_array(raw_bytes, count, utf=utf)
+
+
+def byte_stream_unsplit8(arr):
+    assert arr.dtype == "f8"
+    out = np.empty_like(arr)
+    view1 = out.view('uint8')
+    view2 = arr.view("uint8")
+    l = len(arr)
+    for i in range(8):
+        view1[i::8] = view2[i*l: (i+1)*l]
+    return out
+
+
+def byte_stream_split8(arr):
+    assert arr.dtype == "f8"
+    out = np.empty_like(arr)
+    view1 = out.view('uint8')
+    view2 = arr.view("uint8")
+    l = len(arr)
+    for i in range(8):
+        view1[i*l: (i+1)*l] = view2[i::8]
+    return out
+
+
+
+def byte_stream_unsplit4(arr):
+    assert arr.dtype == "f4"
+    out = np.empty_like(arr)
+    view1 = out.view('uint8')
+    view2 = arr.view("uint8")
+    l = len(arr)
+    for i in range(4):
+        view1[i::4] = view2[i*l: (i+1)*l]
+    return out
+
+
+def byte_stream_split4(arr):
+    assert arr.dtype == "f4"
+    out = np.empty_like(arr)
+    view1 = out.view('uint8')
+    view2 = arr.view("uint8")
+    l = len(arr)
+    for i in range(4):
+        view1[i*l: (i+1)*l] = view2[i::4]
+    return out

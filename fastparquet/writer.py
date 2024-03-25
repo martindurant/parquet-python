@@ -16,7 +16,6 @@ from fastparquet.util import (default_open, default_mkdirs, check_column_names,
                    created_by, get_column_metadata,
                    norm_col_name, path_string, get_fs,
                    update_custom_metadata)
-from fastparquet.speedups import array_encode_utf8, pack_byte_array
 from fastparquet.cencoding import NumpyIO, ThriftObject, from_buffer
 from decimal import Decimal
 

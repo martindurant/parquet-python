@@ -11,7 +11,7 @@ from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, get_fs, join_path)
+                   ex_from_sep, _strip_path_tail, get_fs, join_path, simple_concat)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
@@ -39,24 +39,12 @@ class ParquetFile(object):
         that they make up a single parquet data set. This parameter can also
         be any file-like object, in which case this must be a single-file
         dataset.
-    verify: bool [False]
-        test file start/end byte markers
-    open_with: function
-        With the signature `func(path, mode)`, returns a context which
-        evaluated to a file open for reading. Defaults to the built-in `open`.
     root: str
         If passing a list of files, the top directory of the data-set may
         be ambiguous for partitioning where the upmost field has only one
         value. Use this to specify the dataset root directory, if required.
     fs: fsspec-compatible filesystem
         You can use this instead of open_with (otherwise, it will be inferred)
-    pandas_nulls: bool (True)
-        If True, columns that are int or bool in parquet, but have nulls, will become
-        pandas nullale types (Uint, Int, boolean). If False (the only behaviour
-        prior to v0.7.0), both kinds will be cast to float, and nulls will be NaN
-        unless pandas metadata indicates that the original datatypes were nullable.
-        Pandas nullable types were introduces in v1.0.0, but were still marked as
-        experimental in v1.3.0.
 
     Attributes
     ----------
@@ -97,42 +85,24 @@ class ParquetFile(object):
     _pdm = None
     _kvm = None
     _categories = None
+    _statistics = None
 
-    def __init__(self, fn, verify=False, open_with=default_open, root=False,
-                 sep=None, fs=None):
-        if open_with is default_open and fs is None:
-            fs = fsspec.filesystem("file")
-        elif fs is not None:
-            open_with = fs.open
-        else:
-            fs = getattr(open_with, "__self__", None)
-        if fs is None:
-            fs, fn, open_with, mkdirs = get_fs(fn, open_with, None)
-
+    def __init__(self, fn: str, fs=fsspec.filesystem("file"), root=False):
+        self.fs = fs
         if isinstance(fn, (tuple, list)):
             if root and fs is not None:
                 root = fs._strip_protocol(root)
-            basepath, fmd = metadata_from_many(fn, verify_schema=verify,
-                                               open_with=open_with, root=root,
-                                               fs=fs)
+            basepath, fmd = metadata_from_many(fn, root=root, fs=fs)
             writer.consolidate_categories(fmd)
             self.fn = join_path(
                 basepath, '_metadata') if basepath else '_metadata'
             self.fmd = fmd
             self._set_attrs()
-        elif hasattr(fn, 'read'):
-            # file-like
-            self.fn = None
-            self._parse_header(fn, verify)
-            if self.file_scheme not in ['simple', 'empty']:
-                raise ValueError('Cannot use file-like input '
-                                 'with multi-file data')
-            open_with = lambda *args, **kwargs: fn
         elif isinstance(fs, fsspec.AbstractFileSystem):
             if fs.isfile(fn):
                 self.fn = join_path(fn)
-                with open_with(fn, 'rb') as f:
-                    self._parse_header(f, verify)
+                with fs.open(fn, 'rb') as f:
+                    self._parse_header(f)
                 if root:
                     paths = [fn.replace(root, "")]
                     self.file_scheme, self.cats = paths_to_cats(paths, None)
@@ -140,8 +110,8 @@ class ParquetFile(object):
                 fn2 = join_path(fn, '_metadata')
                 if fs.exists(fn2):
                     self.fn = fn2
-                    with open_with(fn2, 'rb') as f:
-                        self._parse_header(f, verify)
+                    with fs.open(fn2, 'rb') as f:
+                        self._parse_header(f)
                     fn = fn2
                 else:
                     # TODO: get details from fs here, rather than do suffix cat in
@@ -156,9 +126,7 @@ class ParquetFile(object):
                         raise ValueError("No files in dir")
                     if root:
                         root = fs._strip_protocol(root)
-                    basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
-                                                       open_with=open_with, root=root,
-                                                       fs=fs)
+                    basepath, fmd = metadata_from_many(allfiles, root=root, fs=fs)
                     writer.consolidate_categories(fmd)
                     self.fn = join_path(basepath, '_metadata') if basepath \
                               else '_metadata'
@@ -168,30 +136,14 @@ class ParquetFile(object):
             else:
                 raise FileNotFoundError(fn)
         else:
-            done = False
-            try:
-                self.fn = fn
-                f = open_with(fn)
-                self._parse_header(f, verify)
-                done = True
-            except IOError:
-                pass
-            if not done:
-                # allow this to error with FileNotFound or whatever
-                try:
-                    self.fn = join_path(fn, "_metadata")
-                    f = open_with(self.fn)
-                    self._parse_header(f, verify)
-                except IOError as e:
-                    raise ValueError("Opening directories without a _metadata requires"
-                                     "a filesystem compatible with fsspec") from e
-        self.open = open_with
-        self._statistics = None
+            raise TypeError
 
-    def _parse_header(self, f, verify=True):
+    def _parse_header(self, f):
         if self.fn and self.fn.endswith("_metadata"):
             #  no point attempting to read footer only for pure metadata
-            data = f.read()[4:-8]
+            data = f.read()
+            assert data[-4:] == b"PAR1"
+            data = data[4:-8]
             self._head_size = len(data)
         else:
             try:
@@ -312,12 +264,15 @@ class ParquetFile(object):
         return True
 
     def row_group_filename(self, rg):
-        if rg.columns and rg.columns[0].file_path:
+        if self.file_scheme == "simple":
+            return self.fn
+        cs = rg.columns
+        if cs and cs[0].file_path:
             base = self.basepath
             if base:
-                return join_path(base, rg.columns[0].file_path)
+                return join_path(base, cs[0].file_path)
             else:
-                return rg.columns[0].file_path
+                return cs[0].file_path
         else:
             return self.fn
 
@@ -642,13 +597,16 @@ scheme is 'simple'.")
         check_column_names(self.columns, columns, ())
         views = {}
         if self.file_scheme == 'simple':
-            infile = self.open(self.fn, 'rb')
+            infile = self.fs.open(self.fn, 'rb')
         else:
             infile = None
         for rg in rgs:
             self.read_row_group_file(rg, columns, None, None,
                                      assign=views, partition_meta=self.partition_meta,
                                      infile=infile)
+        for k, v in views.copy().items():
+            if isinstance(v, list):
+                views[k] = simple_concat(*v)
         return views
     
     def count(self, filters=None, row_filter=False):

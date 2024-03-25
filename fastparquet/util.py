@@ -1,4 +1,5 @@
 from collections import defaultdict
+import contextlib
 import copy
 from packaging.version import Version
 from functools import lru_cache
@@ -494,3 +495,8 @@ def simple_concat(*arrs):
         out[off:off+len(arr)] = arr
         off += len(arr)
     return out
+
+
+@contextlib.contextmanager
+def empty_context():
+    yield
