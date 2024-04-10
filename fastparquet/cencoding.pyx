@@ -579,13 +579,12 @@ cpdef dict read_thrift(NumpyIO data):
 cdef list read_list(NumpyIO data):
     cdef unsigned char byte, typ
     cdef int32_t size, bsize, _
-    cdef list out
+    cdef list out = []
     byte = data.read_byte()
     if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)
     else:
         size = ((byte & 0xf0) >> 4)
-    out = []
     typ = byte & 0x0f # 0b00001111
     if typ == 5 or typ == 6:
         for _ in range(size):
@@ -1260,6 +1259,8 @@ def make_offsets_and_masks(
 def parse_plain_strings(uint8_t[::1] data, uint64_t[::1] offsets, uint64_t nvalues):
     """Extract strings into compact form and offsets, like arrow would"""
     # may need delta-string decoder, if we ever see such data
+    # TODO: replace np python calls with CAPI PyArray_SimpleNew?
+    #  https://stackoverflow.com/a/53162659/3821154
     out = np.empty(data.shape[0] - (4 * nvalues), dtype="uint8")
     cdef uint8_t[::1] o = out
     cdef uint64_t i, offset, tot

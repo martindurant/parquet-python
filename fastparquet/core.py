@@ -699,6 +699,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
         futs = []
         #TODO: if columns is None, read whole file in one go?
         rgcols = rg.columns
+        columns = set(columns) if columns is not None else None
         for column in rgcols:
             # column.meta_data.path_in_schema
             name = ".".join(column[3][3])
