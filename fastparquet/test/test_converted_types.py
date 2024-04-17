@@ -171,7 +171,7 @@ def test_tz_nonstring(tmpdir):
 
 
 def test_tz_zoneinfo(tmpdir):
-    dti = pd.DatetimeIndex([pd.Timestamp(2020, 1, 1)]).tz_localize(zoneinfo.ZoneInfo("UTC"))
+    dti = pd.DatetimeIndex([pd.Timestamp(2020, 1, 1)], name="a").tz_localize(zoneinfo.ZoneInfo("UTC"))
     df = pd.DataFrame({"a": dti})
     fn = '{}/{}.parquet'.format(tmpdir, 'zoneinfo_tmp')
     df.to_parquet(fn, compression='uncompressed', engine='fastparquet')
