@@ -130,6 +130,11 @@ def test_sorted_row_group_columns(tempdir):
     assert result == expected
 
 
+@pytest.mark.xfail(
+    reason="Not supported by dask expressions",
+    raises=NotImplementedError, 
+    strict=True,
+)
 def test_sorted_row_group_columns_with_filters(tempdir):
     # fails up to 2021.08.1
     dask = pytest.importorskip('dask')
