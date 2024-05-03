@@ -31,8 +31,9 @@ except ImportError:  # pragma: no cover
         def tobson(x):
             raise ImportError("BSON not found")
 
-DAYS_TO_MILLIS = 86400000000000
-"""Number of millis in a day. Used to convert a Date to a date"""
+# Explicitly use numpy type in order to avoid promotion errors due to NEP 50 in numpy >= 2
+DAYS_TO_NANOS = np.int64(86400000000000)
+"""Number of nanoseconds in a day. Used to convert a Date to a date"""
 nat = np.datetime64('NaT').view('int64')
 
 simple = {
@@ -158,7 +159,7 @@ def convert(data, se, timestamp96=True, dtype=None):
     if se.type == parquet_thrift.Type.INT96 and timestamp96:
         data2 = data.view([('ns', 'i8'), ('day', 'i4')])
         # TODO: this should be ms unit, now that we can?
-        return ((data2['day'] - 2440588) * 86400000000000 +
+        return ((data2['day'] - np.int64(2440588)) * DAYS_TO_NANOS +
                 data2['ns']).view('M8[ns]')
     if se.logicalType is not None and se.logicalType.TIMESTAMP is not None:
         dt = _logical_to_time_dtype(se.logicalType.TIMESTAMP)
@@ -188,7 +189,7 @@ def convert(data, se, timestamp96=True, dtype=None):
                 for i in range(len(data))
             ])
     elif ctype == parquet_thrift.ConvertedType.DATE:
-        data = data * DAYS_TO_MILLIS
+        data = data * DAYS_TO_NANOS
         return data.view('datetime64[ns]')
     elif ctype == parquet_thrift.ConvertedType.TIME_MILLIS:
         # this was not covered by new pandas time units
