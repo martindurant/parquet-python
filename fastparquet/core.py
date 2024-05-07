@@ -682,7 +682,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             o.resize(count + flag, refcheck=False)
 
 
-no_parallel = True
+no_parallel = False
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -694,8 +694,8 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     will be pandas Categorical objects: the codes and the category labels
     are arrays.
     """
-    ex = empty_context if no_parallel else concurrent.futures.ThreadPoolExecutor()
-    with concurrent.futures.ThreadPoolExecutor() as ex:
+    cont = empty_context if no_parallel else concurrent.futures.ThreadPoolExecutor()
+    with cont as ex:
         futs = []
         #TODO: if columns is None, read whole file in one go?
         rgcols = rg.columns

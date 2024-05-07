@@ -156,72 +156,35 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
     basepath: the root path that other paths are relative to
     fmd: metadata thrift structure
     """
+    # TODO: evolution belongs here, unless we stick strictly to rowgroup-wise iteration
     from fastparquet import api
 
-    legacy = True
     if all(isinstance(pf, api.ParquetFile) for pf in file_list):
         pfs = file_list
         file_list = [pf.fn for pf in pfs]
     elif all(not isinstance(pf, api.ParquetFile) for pf in file_list):
 
-        if verify_schema or fs is None or len(file_list) < 3:
-            pfs = [api.ParquetFile(fn, open_with=open_with) for fn in file_list]
+        f0 = file_list[0]
+        pf0 = api.ParquetFile(f0, fs=fs)
+        if pf0.file_scheme not in ['empty', 'simple']:
+            # set of directories, revert
+            pfs = [pf0] + [api.ParquetFile(fn, fs=fs) for fn in file_list[1:]]
         else:
-            # activate new code path here
-            f0 = file_list[0]
-            pf0 = api.ParquetFile(f0, open_with=open_with)
-            if pf0.file_scheme not in ['empty', 'simple']:
-                # set of directories, revert
-                pfs = [pf0] + [api.ParquetFile(fn, open_with=open_with) for fn in file_list[1:]]
-            else:
-                # permits concurrent fetch of footers; needs fsspec >= 2021.6
-                size = int(1.4 * pf0._head_size)
-                pieces = fs.cat(file_list[1:], start=-size)
-                sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
-                         path, piece in pieces.items()}
-                not_bigenough = [path for path, s in sizes.items() if s > size]
-                if not_bigenough:
-                    new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
-                    pieces.update(new_pieces)
-                pieces = {k: _get_fmd(v) for k, v in pieces.items()}
-                pieces = [(fn, pieces[fn]) for fn in file_list[1:]]  # recover ordering
-                legacy = False
+            # permits concurrent fetch of footers; needs fsspec >= 2021.6
+            size = int(1.4 * pf0._head_size)
+            pieces = fs.cat(file_list[1:], start=-size)
+            sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
+                     path, piece in pieces.items()}
+            not_bigenough = [path for path, s in sizes.items() if s > size]
+            if not_bigenough:
+                new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
+                pieces.update(new_pieces)
+            pieces = {k: _get_fmd(v) for k, v in pieces.items()}
+            pieces = [(fn, pieces[fn]) for fn in file_list[1:]]  # recover ordering
+            legacy = False
     else:
         raise ValueError("Merge requires all ParquetFile instances or none")
     basepath, file_list = analyse_paths(file_list, root=root)
-
-    if legacy:
-        # legacy code path
-        if verify_schema:
-            for pf in pfs[1:]:
-                if pf._schema != pfs[0]._schema:
-                    raise ValueError('Incompatible schemas')
-
-        fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
-        rgs = []
-
-        for pf, fn in zip(pfs, file_list):
-            if pf.file_scheme not in ['simple', 'empty']:
-                for rg in pf.row_groups:
-                    rg = copy.copy(rg)
-                    rg.columns = [copy.copy(c) for c in rg.columns]
-                    for chunk in rg.columns:
-                        chunk.file_path = '/'.join(
-                            [fn, chunk.file_path if isinstance(chunk.file_path, str) else chunk.file_path.decode()]
-                        )
-                    rgs.append(rg)
-
-            else:
-                for rg in pf.row_groups:
-                    rg = copy.copy(rg)
-                    rg.columns = [copy.copy(c) for c in rg.columns]
-                    for chunk in rg.columns:
-                        chunk.file_path = fn
-                    rgs.append(rg)
-
-        fmd.row_groups = rgs
-        fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
-        return basepath, fmd
 
     for rg in pf0.fmd.row_groups:
         # chunks of first file, which would have file_path=None
