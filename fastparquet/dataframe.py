@@ -153,7 +153,7 @@ def empty(types, size, cats=None, cols=None, index_types=None, index_names=None,
                     tz_to_dt_tz(timezones[str(col)]))
             else:
                 index = Index(d)
-            views[col] = index.values
+            views[col] = d
     else:
         index = MultiIndex([[]], [[]])
         # index = MultiIndex.from_arrays(indexes)

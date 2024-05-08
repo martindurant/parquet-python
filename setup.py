@@ -53,13 +53,6 @@ setup(
         'local_scheme': 'no-local-version',
         'write_to': 'fastparquet/_version.py'
     },
-    setup_requires=[
-        'setuptools>18.0',
-        'setuptools-scm>1.5.4',
-        'Cython',
-        'pytest-runner',
-        'oldest-supported-numpy'
-    ],
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@anaconda.com',
