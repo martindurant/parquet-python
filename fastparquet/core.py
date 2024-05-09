@@ -3,7 +3,6 @@ import io
 import logging
 import numpy as np
 
-from fastparquet import encoding
 from fastparquet.encoding import read_plain, byte_stream_unsplit4, byte_stream_unsplit8, DECODE_TYPEMAP
 import fastparquet.cencoding as encoding
 from fastparquet.compression import decompress_data, rev_map, decom_into
@@ -182,24 +181,6 @@ def skip_definition_bytes(io_obj, num):
     while n:
         io_obj.seek(1, 1)
         n //= 128
-
-
-def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, utf=False):
-    """Read a page containing dictionary data.
-
-    Consumes data using the plain encoding and returns an array of values.
-    """
-    raw_bytes = _read_page(file_obj, page_header, column_metadata)
-    if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
-        values = unpack_byte_array(
-            raw_bytes, page_header.dictionary_page_header.num_values, utf=utf)
-    else:
-        width = schema_helper.schema_element(
-            column_metadata.path_in_schema).type_length
-        values = read_plain(
-                raw_bytes, column_metadata.type,
-                page_header.dictionary_page_header.num_values, width)
-    return values
 
 
 def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
@@ -501,11 +482,12 @@ def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
             # TODO: order is not preserved here!
             assign[f"{colname}-data"].append(o)
 
+
 DUMMY = np.zeros(1, dtype="int64")
 
 
 def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBase, 
-             assign: dict, use_cat: bool = False, read_data=True, ex=None):
+             assign: dict, use_cat: bool = False, read_data=True):
     """Using the given metadata, read one column in one row-group.
 
     Parameters
@@ -575,7 +557,6 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     # ingest page headers
     num = 0  # how far through the output we are
     dic = None
-    parts = []  # data values from each page
     headers = []  # header objects
     raws = []  # bytes
     if f"{colname}-data" not in assign:
@@ -627,7 +608,6 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     defs = np.empty(cmd.num_values, dtype="uint8")
     rep_width = encoding.width_from_max_int(max_rep)
     def_width = encoding.width_from_max_int(max_def)
-    futs = []
     off = 0  # counts number of rep/defs across pages
     for i, (raw, ph) in enumerate(zip(raws, headers)):
         # CONDITIONS:
@@ -640,30 +620,24 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
         # if (3) and v2, need to read defs (not reps)
         if ph.type == parquet_thrift.PageType.DATA_PAGE:
             dph = ph.data_page_header
-            l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
-                        raw, ph, dph, off, cmd, rep_width, reps, 
-                        def_width, defs, assign, colname, se
-                    )
+            _run(
+                raw, ph, dph, off, cmd, rep_width, reps,
+                def_width, defs, assign, colname, se
+            )
             off += getattr(dph, "num_values", 0)
         elif ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
             dph = ph.data_page_header_v2
-            l = lambda raw=raw, ph=ph, dph=dph, off=off: _run(
-                        raw, ph, dph, off, cmd, rep_width, reps, 
-                        def_width, defs, assign, colname, se
-                    )
+            _run(
+                raw, ph, dph, off, cmd, rep_width, reps,
+                def_width, defs, assign, colname, se
+            )
             off += getattr(dph, "num_values", 0)
         elif ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
             dph = ph.dictionary_page_header
-            l = lambda raw=raw, ph=ph, dph=dph, off=0: _run(
-                        raw, ph, dph, off, cmd, 0, reps, 
-                        0, defs, assign, colname, se
-                    )
-        if ex is not None and i + 1 < len(raws):
-            futs.append(ex.submit(l))
-        else:
-            l()
-    if futs:
-        concurrent.futures.wait(futs)
+            _run(
+                raw, ph, dph, off, cmd, 0, reps,
+                0, defs, assign, colname, se
+            )
 
     # Optimization conditions
     if OPT == 4:
@@ -672,6 +646,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     if OPT == 1:
         encoding.make_offsets_and_masks_no_nulls(reps, defs, offsets, ocounts)
     elif OPT == 2:
+
         count = encoding.one_level_optional(defs, offsets[-1], 0, max_def)
     elif OPT == 3:
         encoding.make_offsets_and_masks_no_reps(defs, offsets, ocounts)
@@ -682,11 +657,12 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             o.resize(count + flag, refcheck=False)
 
 
-no_parallel = False
+
+no_parallel = True
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
-                          selfmade=False, assign=None, row_filter=False):
+                          selfmade=False, assign=None, row_filter=False, ex=None):
     """
     Read a row group and return as a dict of arrays
 
@@ -694,7 +670,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     will be pandas Categorical objects: the codes and the category labels
     are arrays.
     """
-    cont = empty_context if no_parallel else concurrent.futures.ThreadPoolExecutor()
+    cont = empty_context(ex) if no_parallel else concurrent.futures.ThreadPoolExecutor()
     with cont as ex:
         futs = []
         #TODO: if columns is None, read whole file in one go?
@@ -708,12 +684,13 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
             if no_parallel:
                 read_col(column, schema_helper, file, use_cat=False,
                          assign=assign)
-            elif len(columns or rgcols) < 2:
-                read_col(column, schema_helper, file, use_cat=False,
-                         assign=assign, ex=ex)
             else:
-                futs.append(ex.submit(read_col, column, schema_helper, file, 
-                                      use_cat=False, assign=assign))
+                futs.append(
+                    ex.submit(
+                        read_col, column, schema_helper, file,
+                        use_cat=False, assign=assign
+                    )
+                )
         if futs:
             concurrent.futures.wait(futs)
 
