@@ -460,6 +460,19 @@ def simple_concat(*arrs):
     return out
 
 
+def concat_and_add(*arrs, offset=True):
+    if len(arrs) == 1:
+        return arrs[0]
+    tot = sum(len(arr) - offset for arr in arrs) + offset
+    out = np.empty(tot, dtype=arrs[0].dtype)
+    off = 0
+    for arr in arrs:
+        # TODO: test this!
+        out[off:off+len(arr)] = arr + out[off]
+        off += len(arr) - offset
+    return out
+
+
 @contextlib.contextmanager
 def empty_context(ob):
     yield ob

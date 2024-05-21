@@ -11,7 +11,7 @@ from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, get_fs, join_path, simple_concat)
+                   ex_from_sep, _strip_path_tail, get_fs, join_path, simple_concat, concat_and_add)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
@@ -242,14 +242,11 @@ class ParquetFile(object):
         if not isinstance(new_rgs, list):
             new_rgs = [new_rgs]
         new_pf = object.__new__(ParquetFile)
+        new_pf.__dict__.update(self.__dict__)
         fmd = copy.copy(self.fmd)
         fmd.row_groups = new_rgs
-        new_pf.__setstate__(
-            {"fn": self.fn, "open": self.open, "fmd": fmd,
-             "pandas_nulls": self.pandas_nulls, "_base_dtype": self._base_dtype,
-             "tz": self.tz, "_columns_dtype": self._columns_dtype}
-        )
-        new_pf._set_attrs()
+        new_pf.row_groups = new_rgs
+        self._read_partitions()
         return new_pf
 
     def __len__(self):
@@ -600,14 +597,23 @@ scheme is 'simple'.")
             infile = self.fs.open(self.fn, 'rb')
         else:
             infile = None
-        for rg in rgs:
+        # TODO: create executor here and pass in;
+        for i, rg in enumerate(rgs):
+            # This is the same as per rg iteration
+            ass = views.setdefault(i, {})
             self.read_row_group_file(rg, columns, None, None,
-                                     assign=views, partition_meta=self.partition_meta,
+                                     assign=ass, partition_meta=self.partition_meta,
                                      infile=infile)
-        for k, v in views.copy().items():
-            if isinstance(v, list):
-                views[k] = simple_concat(*v)
-        return views
+        out = {}
+        # simple concat, no evolution for now
+        for k in views[0]:
+            if k.endswith("-offsets"):
+                out[k] = concat_and_add([views[_][k] for _ in range(len(views))])
+            elif k.endswith("-index"):
+                out[k] = concat_and_add([views[_][k] for _ in range(len(views))], offset=False)
+            else:
+                out[k] = simple_concat([views[_][k] for _ in range(len(views))])
+        return out
     
     def count(self, filters=None, row_filter=False):
         """ Total number of rows

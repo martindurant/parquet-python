@@ -415,27 +415,26 @@ lock = threading.Lock()
 
 
 def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
-         cmd, rep_width, reps, def_width, defs, assign, colname, se,
+         cmd, rep_width, def_width, assign, colname, se,
          with_data=True):
     # V1 or dict page, decompress immediately
     io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
+    reps = defs = None
     if rep_width:
         # reading reps is not optional, if they exist
-        read_data(
+        reps = read_data(
             io, 
             parquet_thrift.Encoding.RLE, 
             dph.num_values,
             rep_width,
-            out=reps[o:o + dph.num_values]
         )
     if def_width:
         # reading defs is not optional, if they exist
-        read_data( 
+        defs = read_data(
             io, 
             parquet_thrift.Encoding.RLE, 
             dph.num_values,
             def_width,
-            out=defs[o:o + dph.num_values]
         )
     if with_data:
         dtype = DECODE_TYPEMAP.get(se.type, "uint8")
@@ -473,14 +472,14 @@ def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
                 io, encoding.NumpyIO(sizes[1:].view('uint8'))
             )
             o = np.frombuffer(io.read(), dtype="uint8")
-            assign[f"{colname}-offsets"] = np.cumsum(sizes, dtype="int64")
+            assign[f"{colname}-offsets"].append(np.cumsum(sizes, dtype="int64"))
         else:
             raise NotImplementedError
         if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
             assign[f"{colname}-cats"] = o
         else:
-            # TODO: order is not preserved here!
             assign[f"{colname}-data"].append(o)
+    return reps, defs
 
 
 DUMMY = np.zeros(1, dtype="int64")
@@ -520,12 +519,16 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     nreps = 0
     i = 0
     for part in cmd.path_in_schema:
+        # TODO: without threads, this can be big loop again, but knowing the
+        #  headers up front is actually useful
         parts.append(part)
+        # TODO: zeroth offsets has length of cmd.num_rows
+        #  leaf array has length num_values (from data page headers)
         if schema_helper.schema_element(parts).repetition_type == OPT:
             name = f'{".".join(parts)}-index'
             if name not in assign:
                 o = np.empty(rows, dtype="int64")
-                assign[name] = o
+                assign.setdefault(name, []).append(o)
                 offsets.append(o)
                 rep_flags[i] = 1
             else:
@@ -537,7 +540,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             name = f'{".".join(parts)}-offsets'
             if name not in assign:
                 o = np.empty(rows + 1, dtype="int64")
-                assign[name] = o
+                assign.setdefault(name, []).append(o)
                 offsets.append(o)
             else:
                 offsets.append(DUMMY)
@@ -565,6 +568,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     while num < rows:
         # TODO: if read_data is False, and we have offsets already (OPT 4), can skip all
         ph = ThriftObject.from_buffer(infile, "PageHeader")
+
         raw = infile.read(ph.compressed_page_size)
         isdict = ph.type == parquet_thrift.PageType.DICTIONARY_PAGE
         headers.append(ph)
@@ -588,9 +592,10 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
     
-    # Set optimisation conditions, so that we can avoid unecessary reads
+    # Set optimisation conditions, so that we can avoid unnecessary reads
     if all(_ is DUMMY for _ in offsets):
         # no deps/defs needed
+        assign.pop(name)
         if read_data is False:
             return
         OPT = 4
@@ -604,8 +609,6 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
         OPT = 0
 
     # process raw pages
-    reps = np.empty(cmd.num_values, dtype="uint8")
-    defs = np.empty(cmd.num_values, dtype="uint8")
     rep_width = encoding.width_from_max_int(max_rep)
     def_width = encoding.width_from_max_int(max_def)
     off = 0  # counts number of rep/defs across pages
@@ -620,23 +623,23 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
         # if (3) and v2, need to read defs (not reps)
         if ph.type == parquet_thrift.PageType.DATA_PAGE:
             dph = ph.data_page_header
-            _run(
-                raw, ph, dph, off, cmd, rep_width, reps,
-                def_width, defs, assign, colname, se
+            reps, defs = _run(
+                raw, ph, dph, off, cmd, rep_width,
+                def_width, assign, colname, se
             )
             off += getattr(dph, "num_values", 0)
         elif ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
             dph = ph.data_page_header_v2
-            _run(
-                raw, ph, dph, off, cmd, rep_width, reps,
-                def_width, defs, assign, colname, se
+            reps, defs = _run(
+                raw, ph, dph, off, cmd, rep_width,
+                def_width, assign, colname, se
             )
             off += getattr(dph, "num_values", 0)
         elif ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
             dph = ph.dictionary_page_header
             _run(
-                raw, ph, dph, off, cmd, 0, reps,
-                0, defs, assign, colname, se
+                raw, ph, dph, off, cmd, 0,
+                0, assign, colname, se
             )
 
     # Optimization conditions
@@ -652,6 +655,10 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
         encoding.make_offsets_and_masks_no_reps(defs, offsets, ocounts)
     else:
         encoding.make_offsets_and_masks(reps, defs, offsets, rep_map, rep_flags, ocounts)
+
+    # TODO: from [o]counts, we know if an index/offsets array is redundant and
+    #  can be removed
+
     for o, count, flag in zip(offsets, ocounts, rep_flags):
         if o is not DUMMY:
             o.resize(count + flag, refcheck=False)
@@ -673,7 +680,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     cont = empty_context(ex) if no_parallel else concurrent.futures.ThreadPoolExecutor()
     with cont as ex:
         futs = []
-        #TODO: if columns is None, read whole file in one go?
+        # TODO: if columns is None, read whole file in one go?
         rgcols = rg.columns
         columns = set(columns) if columns is not None else None
         for column in rgcols:
@@ -702,12 +709,14 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
     Access row-group in a file and read some columns into a data-frame.
     """
     partition_meta = partition_meta or {}
+    # TODO: pass through rg.num_rows, which is the number of top-most offsets/index
+    #  whereas the cmd.num_values (also in page headers) gives the number of leaf items
     read_row_group_arrays(file, rg, columns, categories, schema_helper,
                           cats, selfmade, assign=assign, row_filter=row_filter)
 
     for cat in cats:
         if cat not in assign:
-            # do no need to have partition columns in output
+            # do not need to have partition columns in output
             continue
         if scheme == 'hive':
             partitions = [s.split("=") for s in rg.columns[0].file_path.split("/")]
