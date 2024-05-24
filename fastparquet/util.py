@@ -9,6 +9,7 @@ import os
 import operator
 import re
 import numbers
+import zoneinfo
 
 import numpy as np
 
@@ -53,18 +54,13 @@ def default_remove(paths):
     
 
 def val_from_meta(x, meta):
-    try:
-        if meta['pandas_type'] == 'categorical':
-            return x
-        t = np.dtype(meta['numpy_type'])
-        if t == "bool":
-            return x in [True, "true", "True", 't', "T", 1, "1"]
-        return np.dtype(t).type(x)
-    except ValueError:
-        if meta['numpy_type'] == 'datetime64[ns]':
-            return pd.to_datetime(x)
-        else:
-            raise
+    # may raise ValueError
+    if meta['pandas_type'] == 'categorical':
+        return x
+    t = np.dtype(meta['numpy_type'])
+    if t == "bool":
+        return x in [True, "true", "True", 't', "T", 1, "1"]
+    return np.dtype(t).type(x)
 
 
 def val_to_num(x, meta=None):
@@ -342,7 +338,6 @@ def get_column_metadata(column, name, object_dtype=None):
         inferred_dtype = "bool"
 
     extra_metadata = None
-
     if isinstance(name, tuple):
         name = str(name)
     elif not isinstance(name, str):

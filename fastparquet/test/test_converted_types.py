@@ -2,6 +2,7 @@
 """test_converted_types.py - tests for decoding data to their logical data types."""
 import datetime
 import os.path
+import zoneinfo
 
 import numpy as np
 import pandas as pd
@@ -167,6 +168,17 @@ def test_tz_nonstring(tmpdir):
 
     round = pd.read_parquet(fn, engine="fastparquet")
     assert (event_df == round).all().all()
+
+
+def test_tz_zoneinfo(tmpdir):
+    dti = pd.DatetimeIndex([pd.Timestamp(2020, 1, 1)], name="a").tz_localize(zoneinfo.ZoneInfo("UTC"))
+    df = pd.DataFrame({"a": dti})
+    fn = '{}/{}.parquet'.format(tmpdir, 'zoneinfo_tmp')
+    df.to_parquet(fn, compression='uncompressed', engine='fastparquet')
+    result = pd.read_parquet(fn, engine="fastparquet")
+    result_dtype = result.iloc[:, 0].dtype
+    assert isinstance(result_dtype, pd.DatetimeTZDtype)
+    assert str(result_dtype.tz) == "UTC"
 
 
 def test_pandas_simple_type(tmpdir):

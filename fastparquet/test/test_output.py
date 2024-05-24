@@ -1022,9 +1022,7 @@ def test_no_string(tmpdir):
     df["A"] = df["A"].astype(pd.StringDtype())
 
     # set *all* values to NA
-    df["A"].iloc[0] = pd.NA
-    df["A"].iloc[1] = pd.NA
-    df["A"].iloc[2] = pd.NA
+    df.loc[:, "A"] = pd.NA
     df.to_parquet(fn, engine="fastparquet")
     df2 = pd.read_parquet(fn)
     assert pd.isna(df2.A).all()

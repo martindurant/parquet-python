@@ -130,8 +130,14 @@ def test_sorted_row_group_columns(tempdir):
     assert result == expected
 
 
+@pytest.mark.xfail(
+    reason="Not supported by dask expressions",
+    raises=NotImplementedError, 
+    strict=True,
+)
 def test_sorted_row_group_columns_with_filters(tempdir):
     # fails up to 2021.08.1
+    dask = pytest.importorskip('dask')
     dd = pytest.importorskip('dask.dataframe')
     # create dummy dataframe
     df = pd.DataFrame({'unique': [0, 0, 1, 1, 2, 2, 3, 3],
@@ -140,11 +146,12 @@ def test_sorted_row_group_columns_with_filters(tempdir):
                               'id1', 'id2',
                               'id1', 'id2']},
                       index=[0, 0, 1, 1, 2, 2, 3, 3])
-    df = dd.from_pandas(df, npartitions=2)
-    fn = os.path.join(tempdir, 'foo.parquet')
-    df.to_parquet(fn,
-                  engine='fastparquet',
-                  partition_on=['id'])
+    with dask.config.set({"dataframe.query-planning": False}):
+        df = dd.from_pandas(df, npartitions=2)
+        fn = os.path.join(tempdir, 'foo.parquet')
+        df.to_parquet(fn,
+                    engine='fastparquet',
+                    partition_on=['id'])
     # load ParquetFile
     pf = ParquetFile(fn)
     filters = [('id', '==', 'id1')]

@@ -70,36 +70,6 @@ jobs:
         run: |
           echo "FASTPARQUET_DATAPAGE_V2=$FASTPARQUET_DATAPAGE_V2"
           pytest --verbose --cov=fastparquet
-  dask:
-    name: dask
-    runs-on: ubuntu-latest
-    steps:
-      - name: APT
-        run: sudo apt-get install liblzo2-dev
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup conda
-        uses: mamba-org/provision-with-micromamba@main
-        with:
-          environment-file: ci/environment-py39.yml
-
-      - name: pip-install
-        shell: bash -l {0}
-        run: |
-          git clone https://github.com/dask/dask
-          pip install pyarrow
-          pip install -e dask/
-          pip install -e . --no-deps
-
-      - name: Run Tests
-        shell: bash -l {0}
-        run: |
-          pytest --verbose dask/dask/dataframe/io/tests/test_parquet.py
-  
   pandas:
     name: pandas
     runs-on: ubuntu-latest

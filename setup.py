@@ -52,13 +52,6 @@ setup(
         'local_scheme': 'no-local-version',
         'write_to': 'fastparquet/_version.py'
     },
-    setup_requires=[
-        'setuptools>18.0',
-        'setuptools-scm>1.5.4',
-        'Cython',
-        'pytest-runner',
-        'oldest-supported-numpy'
-    ],
     description='Python support for Parquet file format',
     author='Martin Durant',
     author_email='mdurant@anaconda.com',
@@ -71,9 +64,10 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     packages=['fastparquet'],
@@ -89,6 +83,6 @@ setup(
                       else ''),
     include_package_data=True,
     exclude_package_data={'fastparquet': ['test/*']},
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     **extra
 )
