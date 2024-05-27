@@ -524,9 +524,6 @@ cpdef dict read_thrift(NumpyIO data):
     cdef char byte, id = 0, bit
     cdef int32_t size
     cdef dict out = {}
-    cdef bint hasi64 = 0
-    cdef bint hasi32 = 0
-    cdef list i32 = None
     while True:
         byte = data.read_byte()
         if byte == 0:
@@ -536,12 +533,8 @@ cpdef dict read_thrift(NumpyIO data):
         if bit == 5:
             out[id] = zigzag_long(read_unsigned_var_int(data))
             hasi32 = True
-            if i32 is None:
-                i32 = list()
-            i32.append(id)
         elif bit == 6:
             out[id] = zigzag_long(read_unsigned_var_int(data))
-            hasi64 = True
         elif bit == 7:
             out[id] = <double>data.get_pointer()[0]
             data.seek(8, 1)
@@ -565,11 +558,6 @@ cpdef dict read_thrift(NumpyIO data):
             out[id] = data.read_byte()
         else:
             print("Corrupted thrift data at ", data.tell(), ": ", id, bit)
-    if hasi32:
-        if hasi64:
-            out["i32list"] = i32
-        else:
-            out["i32"] = 1
     return out
 
 
