@@ -176,7 +176,7 @@ cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):
     cdef uint64_t result = 0
     cdef int32_t shift = 0
     cdef char byte
-    cdef char * inptr = file_obj.get_pointer()
+    cdef char * inptr = file_obj.ptr + file_obj.loc  # file_obj.get_pointer()
 
     while True:
         byte = inptr[0]
@@ -185,7 +185,7 @@ cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):
         if (byte & 0x80) == 0:
             break
         shift += 7
-    file_obj.loc += inptr - file_obj.get_pointer()
+    file_obj.loc += inptr - (file_obj.ptr + file_obj.loc)
     return result
 
 
@@ -222,7 +222,9 @@ cdef void delta_read_bitpacked(NumpyIO file_obj, uint8_t bitwidth,
         uint64_t mask = 0XFFFFFFFFFFFFFFFF >> (64 - bitwidth)
     while count > 0:
         if (left - right) < bitwidth:
-            data = data | (<uint64_t>file_obj.read_byte() << left)
+            # data = data | (<uint64_t>file_obj.read_byte() << left)
+            data = data | (<uint64_t>file_obj.ptr[file_obj.loc] << left)
+            file_obj.loc += 1
             left += 8
         elif right > 8:
             data >>= 8
@@ -525,7 +527,10 @@ cpdef dict read_thrift(NumpyIO data):
     cdef int32_t size
     cdef dict out = {}
     while True:
-        byte = data.read_byte()
+        # byte = data.read_byte()
+        byte = data.ptr[data.loc]
+        data.loc += 1
+
         if byte == 0:
             break
         id += (byte & 0b11110000) >> 4
@@ -554,7 +559,9 @@ cpdef dict read_thrift(NumpyIO data):
             out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 3:
             # I8
-            out[id] = data.read_byte()
+            # out[id] = data.read_byte()
+            out[id] = data.ptr[data.loc]
+            data.loc = 1
         else:
             print("Corrupted thrift data at ", data.tell(), ": ", id, bit)
     return out
@@ -563,7 +570,10 @@ cpdef dict read_thrift(NumpyIO data):
 cdef list read_list(NumpyIO data):
     cdef unsigned char byte, typ
     cdef int32_t size, bsize, _
-    byte = data.read_byte()
+    # byte = data.read_byte()
+    byte = data.ptr[data.loc]
+    data.loc += 1
+
     if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)
     else:
@@ -577,8 +587,8 @@ cdef list read_list(NumpyIO data):
         for _ in range(size):
             # all parquet list types contain str, not bytes
             bsize = read_unsigned_var_int(data)
-            out.append(PyUnicode_DecodeUTF8(data.get_pointer(), bsize, "ignore"))
-            data.seek(bsize, 1)
+            out.append(PyUnicode_DecodeUTF8(data.ptr + data.loc, bsize, "ignore"))
+            data.loc += bsize
     else:
         for _ in range(size):
             out.append(read_thrift(data))
