@@ -532,7 +532,6 @@ cpdef dict read_thrift(NumpyIO data):
         bit = byte & 0b00001111
         if bit == 5:
             out[id] = zigzag_long(read_unsigned_var_int(data))
-            hasi32 = True
         elif bit == 6:
             out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 7:
