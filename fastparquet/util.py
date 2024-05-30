@@ -469,5 +469,5 @@ def concat_and_add(*arrs, offset=True):
 
 
 @contextlib.contextmanager
-def empty_context(ob):
+def empty_context(ob=None):
     yield ob

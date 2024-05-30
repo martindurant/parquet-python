@@ -664,8 +664,9 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
             o.resize(count + flag, refcheck=False)
 
 
-
-no_parallel = True
+def batcher(batch):
+    for func, args, kwargs in batch:
+        func(*args, **kwargs)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -677,34 +678,35 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     will be pandas Categorical objects: the codes and the category labels
     are arrays.
     """
-    cont = empty_context(ex) if no_parallel else concurrent.futures.ThreadPoolExecutor()
-    with cont as ex:
-        futs = []
-        # TODO: if columns is None, read whole file in one go?
-        rgcols = rg.columns
-        columns = set(columns) if columns is not None else None
-        for column in rgcols:
-            # column.meta_data.path_in_schema
-            name = ".".join(column[3][3])
-            if name not in columns:
-                continue
-            if no_parallel:
-                read_col(column, schema_helper, file, use_cat=False,
-                         assign=assign)
-            else:
-                futs.append(
-                    ex.submit(
-                        read_col, column, schema_helper, file,
-                        use_cat=False, assign=assign
-                    )
+    # TODO: batch reads and submit groups of tasks instead of one task per column
+    #  - where there are many columns, the current causes a lot of thread waiting overhead
+    #  - reads will currently happen haphazardly in the input and not make use of caching
+    futs = []
+    rgcols = rg.columns
+    columns = set(columns) if columns is not None else None
+    for column in rgcols:
+        # column.meta_data.path_in_schema
+        name = ".".join(column[3][3])
+        if name not in columns:
+            continue
+        if ex is None:
+            read_col(column, schema_helper, file, use_cat=False,
+                     assign=assign)
+        else:
+            futs.append(
+                ex.submit(
+                    read_col, column, schema_helper, file,
+                    use_cat=False, assign=assign
                 )
-        if futs:
-            concurrent.futures.wait(futs)
+            )
+    if futs:
+        concurrent.futures.wait(futs)
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
                    selfmade=False, index=None, assign=None,
-                   scheme='hive', partition_meta=None, row_filter=False):
+                   scheme='hive', partition_meta=None, row_filter=False,
+                   ex=None):
     """
     Access row-group in a file and read some columns into a data-frame.
     """
@@ -712,7 +714,7 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
     # TODO: pass through rg.num_rows, which is the number of top-most offsets/index
     #  whereas the cmd.num_values (also in page headers) gives the number of leaf items
     read_row_group_arrays(file, rg, columns, categories, schema_helper,
-                          cats, selfmade, assign=assign, row_filter=row_filter)
+                          cats, selfmade, assign=assign, row_filter=row_filter, ex=ex)
 
     for cat in cats:
         if cat not in assign:

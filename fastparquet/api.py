@@ -1,7 +1,9 @@
 """parquet - read parquet files."""
 from collections import OrderedDict, defaultdict
+import concurrent.futures
 import re
 
+import os
 import numpy as np
 import fsspec
 
@@ -11,12 +13,13 @@ from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, get_fs, join_path, simple_concat, concat_and_add)
+                   ex_from_sep, _strip_path_tail, empty_context, join_path, simple_concat, concat_and_add)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
 # as 'i'.
 PART_ID = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
+MAX_WORKERS = min(32, (os.cpu_count() or 1) + 4)  # from ThreadPoolExecutor
 
 
 class ParquetFile(object):
@@ -275,7 +278,7 @@ class ParquetFile(object):
 
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None, partition_meta=None, row_filter=False,
-                            infile=None):
+                            infile=None, ex=None):
         """ Open file for reading, and process it as a row-group
 
         assign is None if this method is called directly (not from to_pandas),
@@ -299,7 +302,7 @@ class ParquetFile(object):
             f, rg, columns, categories, self.schema, self.cats,
             selfmade=self.selfmade, index=index,
             assign=assign, scheme=self.file_scheme, partition_meta=partition_meta,
-            row_filter=row_filter
+            row_filter=row_filter, ex=ex
         )
 
     def iter_row_groups(self, filters=None, **kwargs):
@@ -587,7 +590,10 @@ scheme is 'simple'.")
                 out |= and_part
         return out
 
-    def to_numpy(self, columns=None, filters=None):
+    def to_numpy(self, columns=None, filters=None, worker_threads=MAX_WORKERS):
+        """
+        worker_threads: 0 means no threads.
+        """
         rgs = filter_row_groups(self, filters) if filters else self.row_groups
         if columns is None:
             columns = self.columns
@@ -597,13 +603,34 @@ scheme is 'simple'.")
             infile = self.fs.open(self.fn, 'rb')
         else:
             infile = None
-        # TODO: create executor here and pass in;
-        for i, rg in enumerate(rgs):
-            # This is the same as per rg iteration
-            ass = views.setdefault(i, {})
-            self.read_row_group_file(rg, columns, None, None,
-                                     assign=ass, partition_meta=self.partition_meta,
-                                     infile=infile)
+        if worker_threads:
+            ex = concurrent.futures.ThreadPoolExecutor(max_workers=worker_threads,
+                                                       thread_name_prefix="fastparquet")
+        else:
+            ex = empty_context()
+        with ex as ex:
+            # TODO: this condition is too simple, should also depend on
+            #  number of selected/available columns
+            if ex is not None and len(rgs) > worker_threads * 2 or len(columns or self.schema.root.num_children) < len(rgs):
+                futs = []
+                # parallel over row-groups
+                for i, rg in enumerate(rgs):
+                    # This is the same as per rg iteration
+                    ass = views.setdefault(i, {})
+                    futs.append(ex.submit(
+                        self.read_row_group_file, rg, columns, None, None,
+                                             assign=ass, partition_meta=self.partition_meta,
+                                             infile=infile, ex=None
+                    ))
+                concurrent.futures.wait(futs)
+            else:
+                # no parallel or parallel over columns
+                for i, rg in enumerate(rgs):
+                    # This is the same as per rg iteration
+                    ass = views.setdefault(i, {})
+                    self.read_row_group_file(rg, columns, None, None,
+                                             assign=ass, partition_meta=self.partition_meta,
+                                             infile=infile, ex=ex)
         out = {}
         # simple concat, no evolution for now
         for k in views[0]:
