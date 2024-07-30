@@ -993,7 +993,7 @@ selection does not match number of rows in DataFrame.')
                         if self.pandas_nulls:
                             dtype[col] = converted_types.nullable[dt]
                         else:
-                            dtype[col] = np.float_()
+                            dtype[col] = np.float64()
                 elif dt == 'S12':
                     dtype[col] = 'M8[ns]'
             self._base_dtype = dtype
