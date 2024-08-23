@@ -1274,3 +1274,23 @@ def parse_plain_strings(uint8_t[::1] data, uint64_t[::1] offsets, uint64_t nvalu
             offset += size
         offsets[i + 1] = tot
     return out
+
+
+def filter_rg_cols(ThriftObject rg, list cols):
+    if cols is None:
+        return rg.columns
+    
+    cdef list out = []
+    cdef set columns = set(cols) 
+    cdef str name
+    cdef dict col
+    cdef list internals = rg.columns
+    cdef int i = 0  # enumerator
+
+    for col in rg[1]:
+        # column.meta_data.path_in_schema
+        name = ".".join(col[3][3])
+        if name in columns:
+            out.append(internals[i])
+        i += 1
+    return out

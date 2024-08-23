@@ -682,13 +682,7 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     #  - where there are many columns, the current causes a lot of thread waiting overhead
     #  - reads will currently happen haphazardly in the input and not make use of caching
     futs = []
-    rgcols = rg.columns
-    columns = set(columns) if columns is not None else None
-    for column in rgcols:
-        # column.meta_data.path_in_schema
-        name = ".".join(column[3][3])
-        if name not in columns:
-            continue
+    for column in encoding.filter_rg_cols(rg, columns):
         if ex is None:
             read_col(column, schema_helper, file, use_cat=False,
                      assign=assign)

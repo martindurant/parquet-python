@@ -10,16 +10,17 @@ def schema_tree(schema, i=0, paths={}, path=[]):
         path = path + [root.name]
         paths[".".join(path)] = root
     root["children"] = OrderedDict()
-    while len(root["children"]) < root.num_children:
+    while len(root["children"]) < root[5]: # ,num_children
         i += 1
         s = schema[i]
         s["parent"] = root
-        root["children"][s.name] = s
-        if s.num_children not in [None, 0]:
+        name = s[4]
+        root["children"][name] = s
+        if s[5] not in [None, 0]:
             i = schema_tree(schema, i, paths, path)
         else:
-            paths[".".join(path + [s.name])] = s
-    if root.num_children:
+            paths[".".join(path + [name])] = s
+    if root[5]:
         return i
     else:
         return i + 1

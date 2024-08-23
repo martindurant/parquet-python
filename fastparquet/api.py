@@ -595,9 +595,11 @@ scheme is 'simple'.")
         worker_threads: 0 means no threads.
         """
         rgs = filter_row_groups(self, filters) if filters else self.row_groups
-        if columns is None:
-            columns = self.columns
-        check_column_names(self.columns, columns, ())
+        if columns is not None:
+            check_column_names(self.columns, columns, ())
+            cnum = len(columns)
+        else:
+            cnum = self.schema.root.num_children
         views = {}
         if self.file_scheme == 'simple':
             infile = self.fs.open(self.fn, 'rb')
@@ -611,7 +613,7 @@ scheme is 'simple'.")
         with ex as ex:
             # TODO: this condition is too simple, should also depend on
             #  number of selected/available columns
-            if ex is not None and len(rgs) > worker_threads * 2 or len(columns or self.schema.root.num_children) < len(rgs):
+            if ex is not None and (len(rgs) > worker_threads * 2 or cnum < len(rgs)):
                 futs = []
                 # parallel over row-groups
                 for i, rg in enumerate(rgs):
