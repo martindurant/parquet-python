@@ -9,7 +9,7 @@ from fastparquet.compression import decompress_data, rev_map, decom_into
 from fastparquet.converted_types import convert, simple, converts_inplace
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
-from fastparquet.util import val_to_num, simple_concat, empty_context
+from fastparquet.util import val_to_num
 from fastparquet.schema import SchemaHelper
 
 logger = logging.getLogger("fastparquet.core")

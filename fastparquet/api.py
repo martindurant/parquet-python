@@ -13,13 +13,14 @@ from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, empty_context, join_path, simple_concat, concat_and_add)
+                   ex_from_sep, _strip_path_tail, join_path)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
 # as 'i'.
 PART_ID = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
 MAX_WORKERS = min(32, (os.cpu_count() or 1) + 4)  # from ThreadPoolExecutor
+ex_stash = [None]
 
 
 class ParquetFile(object):
@@ -606,44 +607,45 @@ scheme is 'simple'.")
         else:
             infile = None
         if worker_threads:
-            ex = concurrent.futures.ThreadPoolExecutor(max_workers=worker_threads,
+            if ex_stash[0] is None:
+                ex_stash[0] =  concurrent.futures.ThreadPoolExecutor(max_workers=worker_threads,
                                                        thread_name_prefix="fastparquet")
+            ex = ex_stash[0]
         else:
-            ex = empty_context()
-        with ex as ex:
-            # TODO: this condition is too simple, should also depend on
-            #  number of selected/available columns
-            if ex is not None and (len(rgs) > worker_threads * 2 or cnum < len(rgs)):
-                futs = []
-                # parallel over row-groups
-                for i, rg in enumerate(rgs):
-                    # This is the same as per rg iteration
-                    ass = views.setdefault(i, {})
-                    futs.append(ex.submit(
-                        self.read_row_group_file, rg, columns, None, None,
-                                             assign=ass, partition_meta=self.partition_meta,
-                                             infile=infile, ex=None
-                    ))
-                concurrent.futures.wait(futs)
-            else:
-                # no parallel or parallel over columns
-                for i, rg in enumerate(rgs):
-                    # This is the same as per rg iteration
-                    ass = views.setdefault(i, {})
-                    self.read_row_group_file(rg, columns, None, None,
-                                             assign=ass, partition_meta=self.partition_meta,
-                                             infile=infile, ex=ex)
-        out = {}
-        # simple concat, no evolution for now
-        for k in views[0]:
-            if k.endswith("-offsets"):
-                out[k] = concat_and_add([views[_][k] for _ in range(len(views))])
-            elif k.endswith("-index"):
-                out[k] = concat_and_add([views[_][k] for _ in range(len(views))], offset=False)
-            else:
-                out[k] = simple_concat([views[_][k] for _ in range(len(views))])
-        return out
-    
+            ex = None
+        # TODO: this condition is too simple, should also depend on
+        #  number of selected/available columns
+        if ex is not None and (len(rgs) > worker_threads * 2 or cnum < len(rgs)):
+            futs = []
+            # parallel over row-groups
+            for i, rg in enumerate(rgs):
+                # This is the same as per rg iteration
+                ass = views.setdefault(i, {})
+                futs.append(ex.submit(
+                    self.read_row_group_file, rg, columns, None, None,
+                                         assign=ass, partition_meta=self.partition_meta,
+                                         infile=infile, ex=None
+                ))
+            concurrent.futures.wait(futs)
+        else:
+            # no parallel or parallel over columns
+            for i, rg in enumerate(rgs):
+                # This is the same as per rg iteration
+                ass = views.setdefault(i, {})
+                self.read_row_group_file(rg, columns, None, None,
+                                         assign=ass, partition_meta=self.partition_meta,
+                                         infile=infile, ex=ex)
+        # out = {}
+        # # simple concat, no evolution for now
+        # for k in views[0]:
+        #     if k.endswith("-offsets"):
+        #         out[k] = concat_and_add([views[_][k] for _ in range(len(views))])
+        #     elif k.endswith("-index"):
+        #         out[k] = concat_and_add([views[_][k] for _ in range(len(views))], offset=False)
+        #     else:
+        #         out[k] = simple_concat([views[_][k] for _ in range(len(views))])
+        return views
+
     def count(self, filters=None, row_filter=False):
         """ Total number of rows
 

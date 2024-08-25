@@ -525,7 +525,7 @@ cdef uint64_t long_zigzag(int64_t n) noexcept nogil:
     return (n << 1) ^ (n >> 63)
 
 
-cpdef dict read_thrift(NumpyIO data):
+cdef dict read_thrift(NumpyIO data):
     cdef char byte, id = 0, bit
     cdef int32_t size
     cdef dict out = {}
@@ -538,16 +538,14 @@ cpdef dict read_thrift(NumpyIO data):
             break
         id += (byte & 0b11110000) >> 4
         bit = byte & 0b00001111
-        if bit == 5:
-            out[id] = zigzag_long(read_unsigned_var_int(data))
-        elif bit == 6:
+        if 4 <= bit <= 6:
             out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 7:
-            out[id] = <double>data.get_pointer()[0]
+            out[id] = <double>(data.ptr + data.loc)[0]
             data.seek(8, 1)
         elif bit == 8:
             size = read_unsigned_var_int(data)
-            out[id] = PyBytes_FromStringAndSize(data.get_pointer(), size)
+            out[id] = PyBytes_FromStringAndSize((data.ptr + data.loc), size)
             data.seek(size, 1)
         elif bit == 9:
             out[id] = read_list(data)
@@ -557,9 +555,6 @@ cpdef dict read_thrift(NumpyIO data):
             out[id] = True
         elif bit == 2:
             out[id] = False
-        elif bit == 4:
-            # I16
-            out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 3:
             # I8
             # out[id] = data.read_byte()
@@ -573,7 +568,6 @@ cpdef dict read_thrift(NumpyIO data):
 cdef list read_list(NumpyIO data):
     cdef unsigned char byte, typ
     cdef int32_t size, bsize, _
-    cdef list out = []
     # byte = data.read_byte()
     byte = data.ptr[data.loc]
     data.loc += 1
@@ -583,18 +577,19 @@ cdef list read_list(NumpyIO data):
     else:
         size = ((byte & 0xf0) >> 4)
     typ = byte & 0x0f # 0b00001111
+    cdef list out = [None] * size
     if typ == 5 or typ == 6:
         for _ in range(size):
-            out.append(zigzag_long(read_unsigned_var_int(data)))
+            out[_] = zigzag_long(read_unsigned_var_int(data))
     elif typ == 8:
         for _ in range(size):
             # all parquet list types contain str, not bytes
             bsize = read_unsigned_var_int(data)
-            out.append(PyUnicode_DecodeUTF8(data.ptr + data.loc, bsize, "ignore"))
+            out[_] = PyUnicode_DecodeUTF8(data.ptr + data.loc, bsize, "ignore")
             data.loc += bsize
     else:
         for _ in range(size):
-            out.append(read_thrift(data))
+            out[_] = read_thrift(data)
 
     return out
 

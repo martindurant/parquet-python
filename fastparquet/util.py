@@ -467,7 +467,3 @@ def concat_and_add(*arrs, offset=True):
         off += len(arr) - offset
     return out
 
-
-@contextlib.contextmanager
-def empty_context(ob=None):
-    yield ob
