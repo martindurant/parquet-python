@@ -1,4 +1,5 @@
 from collections import defaultdict
+import contextlib
 import copy
 from packaging.version import Version
 from functools import lru_cache
@@ -11,7 +12,6 @@ import numbers
 import zoneinfo
 
 import numpy as np
-import pandas as pd
 
 import fsspec
 
@@ -19,7 +19,7 @@ from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
 from fastparquet import __version__
 
-PANDAS_VERSION = Version(pd.__version__)
+
 created_by = f"fastparquet-python version {__version__} (build 0)"
 
 
@@ -37,7 +37,7 @@ PATH_DATE_FMT = '%Y%m%d_%H%M%S.%f'
 
 
 def path_string(o):
-    if isinstance(o, pd.Timestamp):
+    if hasattr(o, "isoformat"):
         return o.isoformat()
     return str(o)
 
@@ -54,18 +54,13 @@ def default_remove(paths):
     
 
 def val_from_meta(x, meta):
-    try:
-        if meta['pandas_type'] == 'categorical':
-            return x
-        t = np.dtype(meta['numpy_type'])
-        if t == "bool":
-            return x in [True, "true", "True", 't', "T", 1, "1"]
-        return np.dtype(t).type(x)
-    except ValueError:
-        if meta['numpy_type'] == 'datetime64[ns]':
-            return pd.to_datetime(x, format=PATH_DATE_FMT)
-        else:
-            raise
+    # may raise ValueError
+    if meta['pandas_type'] == 'categorical':
+        return x
+    t = np.dtype(meta['numpy_type'])
+    if t == "bool":
+        return x in [True, "true", "True", 't', "T", 1, "1"]
+    return np.dtype(t).type(x)
 
 
 def val_to_num(x, meta=None):
@@ -96,13 +91,11 @@ def _val_to_num(x):
     except:
         pass
     try:
-        return pd.Timestamp(x)
+        return np.timedelta64(x)
     except:
         pass
     try:
-        # TODO: determine the valid usecases for this, then try to limit the set
-        #  ofstrings which may get inadvertently converted to timedeltas
-        return pd.Timedelta(x)
+        return np.datetime64(x)
     except:
         return x
 
@@ -136,30 +129,6 @@ def check_column_names(columns, *args):
                                  "" % (missing, arg, columns))
 
 
-def reset_row_idx(data: pd.DataFrame) -> pd.DataFrame:
-    """Reset row (multi-)index as column(s) of the DataFrame.
-
-    Multi-index are stored in columns, one per index level.
-
-    Parameters
-    ----------
-    data : dataframe
-
-    Returns
-    -------
-    dataframe
-    """
-    if isinstance(data.index, pd.MultiIndex):
-        for name, cats, codes in zip(data.index.names, data.index.levels,
-                                     data.index.codes):
-            data = data.assign(**{name: pd.Categorical.from_codes(codes,
-                                                                  cats)})
-        data.reset_index(drop=True)
-    else:
-        data = data.reset_index()
-    return data
-
-
 def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
                        root=False, fs=None):
     """
@@ -183,72 +152,35 @@ def metadata_from_many(file_list, verify_schema=False, open_with=default_open,
     basepath: the root path that other paths are relative to
     fmd: metadata thrift structure
     """
+    # TODO: evolution belongs here, unless we stick strictly to rowgroup-wise iteration
     from fastparquet import api
 
-    legacy = True
     if all(isinstance(pf, api.ParquetFile) for pf in file_list):
         pfs = file_list
         file_list = [pf.fn for pf in pfs]
     elif all(not isinstance(pf, api.ParquetFile) for pf in file_list):
 
-        if verify_schema or fs is None or len(file_list) < 3:
-            pfs = [api.ParquetFile(fn, open_with=open_with) for fn in file_list]
+        f0 = file_list[0]
+        pf0 = api.ParquetFile(f0, fs=fs)
+        if pf0.file_scheme not in ['empty', 'simple']:
+            # set of directories, revert
+            pfs = [pf0] + [api.ParquetFile(fn, fs=fs) for fn in file_list[1:]]
         else:
-            # activate new code path here
-            f0 = file_list[0]
-            pf0 = api.ParquetFile(f0, open_with=open_with)
-            if pf0.file_scheme not in ['empty', 'simple']:
-                # set of directories, revert
-                pfs = [pf0] + [api.ParquetFile(fn, open_with=open_with) for fn in file_list[1:]]
-            else:
-                # permits concurrent fetch of footers; needs fsspec >= 2021.6
-                size = int(1.4 * pf0._head_size)
-                pieces = fs.cat(file_list[1:], start=-size)
-                sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
-                         path, piece in pieces.items()}
-                not_bigenough = [path for path, s in sizes.items() if s > size]
-                if not_bigenough:
-                    new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
-                    pieces.update(new_pieces)
-                pieces = {k: _get_fmd(v) for k, v in pieces.items()}
-                pieces = [(fn, pieces[fn]) for fn in file_list[1:]]  # recover ordering
-                legacy = False
+            # permits concurrent fetch of footers; needs fsspec >= 2021.6
+            size = int(1.4 * pf0._head_size)
+            pieces = fs.cat(file_list[1:], start=-size)
+            sizes = {path: int.from_bytes(piece[-8:-4], "little") + 8 for
+                     path, piece in pieces.items()}
+            not_bigenough = [path for path, s in sizes.items() if s > size]
+            if not_bigenough:
+                new_pieces = fs.cat(not_bigenough, start=-max(sizes.values()))
+                pieces.update(new_pieces)
+            pieces = {k: _get_fmd(v) for k, v in pieces.items()}
+            pieces = [(fn, pieces[fn]) for fn in file_list[1:]]  # recover ordering
+            legacy = False
     else:
         raise ValueError("Merge requires all ParquetFile instances or none")
     basepath, file_list = analyse_paths(file_list, root=root)
-
-    if legacy:
-        # legacy code path
-        if verify_schema:
-            for pf in pfs[1:]:
-                if pf._schema != pfs[0]._schema:
-                    raise ValueError('Incompatible schemas')
-
-        fmd = copy.copy(pfs[0].fmd)  # we inherit "created by" field
-        rgs = []
-
-        for pf, fn in zip(pfs, file_list):
-            if pf.file_scheme not in ['simple', 'empty']:
-                for rg in pf.row_groups:
-                    rg = copy.copy(rg)
-                    rg.columns = [copy.copy(c) for c in rg.columns]
-                    for chunk in rg.columns:
-                        chunk.file_path = '/'.join(
-                            [fn, chunk.file_path if isinstance(chunk.file_path, str) else chunk.file_path.decode()]
-                        )
-                    rgs.append(rg)
-
-            else:
-                for rg in pf.row_groups:
-                    rg = copy.copy(rg)
-                    rg.columns = [copy.copy(c) for c in rg.columns]
-                    for chunk in rg.columns:
-                        chunk.file_path = fn
-                    rgs.append(rg)
-
-        fmd.row_groups = rgs
-        fmd.num_rows = sum(rg.num_rows for rg in fmd.row_groups)
-        return basepath, fmd
 
     for rg in pf0.fmd.row_groups:
         # chunks of first file, which would have file_path=None
@@ -379,13 +311,6 @@ def analyse_paths(file_list, root=False):
     return '/'.join(basepath), out_list  # use '/'.join() instead of join_path to be consistent with split('/')
 
 
-def infer_dtype(column):
-    try:
-        return pd.api.types.infer_dtype(column, skipna=False)
-    except AttributeError:
-        return pd.lib.infer_dtype(column)
-
-
 def groupby_types(iterable):
     groups = defaultdict(list)
     for x in iterable:
@@ -407,42 +332,12 @@ def get_column_metadata(column, name, object_dtype=None):
     if object_dtype in inferred_dtypes and dtype == "object":
         inferred_dtype = inferred_dtypes.get(object_dtype, "mixed")
     else:
-        inferred_dtype = infer_dtype(column)
+        inferred_dtype = "object"
     if str(dtype) == "bool":
         # pandas accidentally calls this "boolean"
         inferred_dtype = "bool"
 
-    if isinstance(dtype, pd.CategoricalDtype):
-        extra_metadata = {
-            'num_categories': len(column.cat.categories),
-            'ordered': column.cat.ordered,
-        }
-        dtype = column.cat.codes.dtype
-    elif isinstance(dtype, pd.DatetimeTZDtype):
-        if isinstance(dtype.tz, zoneinfo.ZoneInfo):
-            extra_metadata = {'timezone': dtype.tz.key}
-        else:
-            try:
-                stz = str(dtype.tz)
-                if "UTC" in stz and ":" in stz:
-                    extra_metadata = {'timezone': stz.strip("UTC")}
-                elif len(str(stz)) == 3:  # like "UTC", "CET", ...
-                    extra_metadata = {'timezone': str(stz)}
-                elif getattr(dtype.tz, "zone", False):
-                    extra_metadata = {'timezone': dtype.tz.zone}
-                elif "pytz" not in stz:
-                    pd.Series([pd.to_datetime('now', utc=True)]).dt.tz_localize(stz)
-                    extra_metadata = {'timezone': stz}
-                elif "Offset" in stz:
-                    extra_metadata = {'timezone': f"{dtype.tz._minutes // 60:+03}:00"}
-                else:
-                    raise KeyError
-            except Exception as e:
-                raise ValueError("Time-zone information could not be serialised: "
-                                "%s, please use another" % str(dtype.tz)) from e
-    else:
-        extra_metadata = None
-
+    extra_metadata = None
     if isinstance(name, tuple):
         name = str(name)
     elif not isinstance(name, str):
@@ -470,16 +365,7 @@ def get_column_metadata(column, name, object_dtype=None):
 
 
 def get_numpy_type(dtype):
-    if isinstance(dtype, pd.CategoricalDtype):
-        return 'category'
-    elif "Int" in str(dtype):
-        return str(dtype).lower()
-    elif str(dtype) == "boolean":
-        return "bool"
-    elif str(dtype) == "string":
-        return "object"
-    else:
-        return str(dtype)
+    return str(dtype)
 
 
 def get_file_scheme(paths):
@@ -555,3 +441,84 @@ def get_fs(fn, open_with, mkdirs):
         mkdirs = mkdirs or (lambda d: fs.mkdirs(d, exist_ok=True))
     return fs, fn, open_with, mkdirs
 
+
+def simple_concat(*arrs):
+    # 3x faster than np.concatenate (2.4x with casting="no")
+    if len(arrs) == 1:
+        return arrs[0]
+    tot = sum(len(arr) for arr in arrs)
+    out = np.empty(tot, dtype=arrs[0].dtype)
+    off = 0
+    for arr in arrs:
+        out[off:off+len(arr)] = arr
+        off += len(arr)
+    return out
+
+
+def concat_and_add(*arrs, offset=True):
+    if len(arrs) == 1:
+        return arrs[0]
+    tot = sum(len(arr) - offset for arr in arrs) + offset
+    out = np.empty(tot, dtype=arrs[0].dtype)
+    off = 0
+    for arr in arrs:
+        # TODO: test this!
+        out[off:off+len(arr)] = arr + out[off]
+        off += len(arr) - offset
+    return out
+
+
+class Task:
+    """Just holds a function and arguments for later call"""
+    def __init__(self, func, *args, **kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self):
+        self.func(*self.args, **self.kwargs)
+
+
+class ThreadPool:
+    """Simplistic fire&forget pool of X threads"""
+
+    def __init__(self, num_workers, poll_time=0.0003):
+        self.num_workers = num_workers
+        self.tasks = []
+        self.ntask = 0
+        self.th = set()
+        self.done = []
+        self.poll = poll_time
+        
+    def run_worker(self):
+        while True:
+            try:
+                self.tasks.pop(0)()
+            except IndexError:
+                raise SystemExit
+            finally:
+                self.done.append(None)
+
+    def wait(self):
+        import time
+        while len(self.done) < self.ntask:
+            time.sleep(self.poll)
+        self.th.clear()
+        self.done.clear()
+        self.tasks.clear()
+        self.ntask = 0
+
+    def submit(self, func, *args, **kwargs):
+        self.tasks.append(Task(func, *args, **kwargs))
+
+    def go(self, wait=True):
+        import _thread
+        self.th = {_thread.start_new_thread(self.run_worker, ())
+                   for _ in range(self.num_workers)}
+        self.ntask = len(self.tasks)
+        if wait:
+            self.wait()
+
+    def run_tasks(self, tasks: list[callable], wait=True):
+        self.tasks.extend(tasks)
+        self.go(wait)

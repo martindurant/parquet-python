@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 logger = logging.getLogger("parquet")
+env = os.getenv("FASTPARQUET_JSON_CODEC", "")
 
 
 class JsonCodecError(Exception):
@@ -110,7 +111,6 @@ def _get_specific_codec(codec):
 
 def _get_cached_codec():
     """Return the requested or first available json encoder/decoder implementation."""
-    env = os.getenv("FASTPARQUET_JSON_CODEC", "")
     # return the cached codec instance only if the env variable didn't change
     if _codec_cache.env == env:
         return _codec_cache.instance

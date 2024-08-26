@@ -13,15 +13,16 @@
 
 import cython
 import numpy as np
+cimport numpy as np
 cdef extern from "string.h":
-    void *memcpy(void *dest, const void *src, size_t n)
+    void *memcpy(void *dest, const void *src, size_t n) noexcept nogil
 from cpython cimport (
-    PyBytes_FromStringAndSize, PyBytes_GET_SIZE, PyUnicode_DecodeUTF8,
+    PyBytes_FromStringAndSize, PyBytes_GET_SIZE, PyUnicode_DecodeUTF8
 )
 from libc.stdint cimport int8_t, uint8_t, uint32_t, int32_t, uint64_t, int64_t
 
 
-cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO o, int32_t itemsize=4):
+cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO o, int32_t itemsize=4) noexcept nogil:
     """Read a run-length encoded run from the given fo with the given header and bit_width.
 
     The count is determined from the header and the width is used to grab the
@@ -52,7 +53,7 @@ cpdef void read_rle(NumpyIO file_obj, int32_t header, int32_t bit_width, NumpyIO
     file_obj.loc += inptr - file_obj.get_pointer()
 
 
-cpdef int32_t width_from_max_int(int64_t value):
+cpdef int32_t width_from_max_int(int64_t value) noexcept nogil:
     """Convert the value specified to a bit_width."""
     cdef int32_t i
     for i in range(0, 64):
@@ -61,17 +62,16 @@ cpdef int32_t width_from_max_int(int64_t value):
         value >>= 1
 
 
-cdef int32_t _mask_for_bits(int32_t i):
+cdef int32_t _mask_for_bits(int32_t i) noexcept nogil:
     """Generate a mask to grab `i` bits from an int value."""
     return (1 << i) - 1
 
 
-cpdef void read_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):
+cpdef void read_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o) noexcept nogil:
     # implementation of np.unpackbits with output array. Output is int8 array
     cdef:
         char * inptr = file_obj.get_pointer()
         char * outptr = o.get_pointer()
-        char * endptr
         unsigned char data
         int32_t counter, i, startcount=count
     if count > o.nbytes - o.loc:
@@ -126,7 +126,7 @@ cpdef void write_bitpacked1(NumpyIO file_obj, int32_t count, NumpyIO o):
     o.loc += (count + 7) // 8
 
 
-cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, NumpyIO o, int32_t itemsize=4):
+cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, NumpyIO o, int32_t itemsize=4) noexcept nogil:
     """
     Read values packed into width-bits each (which can be >8)
     """
@@ -144,7 +144,7 @@ cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, Numpy
         return
     endptr = (o.nbytes - o.loc) + outptr - itemsize
     mask = _mask_for_bits(width)
-    data = 0xff & <int32_t>inptr[0]
+    data = 0xff & (<int32_t>inptr[0])
     inptr += 1
     while count:
         if right > 8:
@@ -169,14 +169,14 @@ cpdef void read_bitpacked(NumpyIO file_obj, int32_t header, int32_t width, Numpy
     file_obj.loc += inptr - file_obj.get_pointer()
 
 
-cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):
+cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj) noexcept nogil:
     """Read a value using the unsigned, variable int encoding.
     file-obj is a NumpyIO of bytes; avoids struct to allow numba-jit
     """
     cdef uint64_t result = 0
     cdef int32_t shift = 0
     cdef char byte
-    cdef char * inptr = file_obj.get_pointer()
+    cdef char * inptr = file_obj.ptr + file_obj.loc  # file_obj.get_pointer()
 
     while True:
         byte = inptr[0]
@@ -185,12 +185,12 @@ cpdef uint64_t read_unsigned_var_int(NumpyIO file_obj):
         if (byte & 0x80) == 0:
             break
         shift += 7
-    file_obj.loc += inptr - file_obj.get_pointer()
+    file_obj.loc += inptr - (file_obj.ptr + file_obj.loc)
     return result
 
 
-cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t length, NumpyIO o,
-                                      int32_t itemsize=4):
+def read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t length, NumpyIO o,
+                               int32_t itemsize=4):
     """Read values from `io_obj` using the rel/bit-packed hybrid encoding.
 
     If length is not specified, then a 32-bit int is read first to grab the
@@ -202,27 +202,31 @@ cpdef void read_rle_bit_packed_hybrid(NumpyIO io_obj, int32_t width, uint32_t le
     at .tell().
     """
     cdef int32_t start, header
-    if length is False:
-        length = <uint32_t>io_obj.read_int()
-    start = io_obj.loc
-    while io_obj.loc - start < length and o.loc < o.nbytes:
-        header = <int32_t>read_unsigned_var_int(io_obj)
-        if header & 1 == 0:
-            read_rle(io_obj, header, width, o, itemsize)
-        else:
-            read_bitpacked(io_obj, header, width, o, itemsize)
+    with nogil:
+        if length is False:
+            length = <uint32_t>io_obj.read_int()
+        start = io_obj.loc
+        while io_obj.loc - start < length and o.loc < o.nbytes:
+            header = <int32_t>read_unsigned_var_int(io_obj)
+            if header & 1 == 0:
+                read_rle(io_obj, header, width, o, itemsize)
+            else:
+                read_bitpacked(io_obj, header, width, o, itemsize)
 
 
 cdef void delta_read_bitpacked(NumpyIO file_obj, uint8_t bitwidth,
-                               NumpyIO o, uint64_t count, uint8_t longval=0):
+                               NumpyIO o, uint64_t count, uint8_t longval=0) noexcept nogil:
     cdef:
         uint64_t data = 0
         int8_t left = 0
         int8_t right = 0
-        uint64_t mask = 0XFFFFFFFFFFFFFFFF >> (64 - bitwidth)
+        uint64_t mask = 0XFFFFFFFFFFFFFFFF
+    mask = mask >> (64 - bitwidth)
     while count > 0:
         if (left - right) < bitwidth:
-            data = data | (<uint64_t>file_obj.read_byte() << left)
+            # data = data | (<uint64_t>file_obj.read_byte() << left)
+            data = data | (<uint64_t>file_obj.ptr[file_obj.loc] << left)
+            file_obj.loc += 1
             left += 8
         elif right > 8:
             data >>= 8
@@ -247,43 +251,44 @@ cpdef void delta_binary_unpack(NumpyIO file_obj, NumpyIO o, uint8_t longval=0):
         const uint8_t[:] bitwidths
         uint8_t bitwidth
     values_per_miniblock = block_size // miniblock_per_block
-    while True:
-        min_delta = zigzag_long(read_unsigned_var_int(file_obj))
-        bitwidths = file_obj.read(miniblock_per_block)
-        for i in range(miniblock_per_block):
-            bitwidth = bitwidths[i]
-            if bitwidth:
-                temp = o.loc
-                if count > 1:
-                    # no more diffs if on last value
-                    delta_read_bitpacked(file_obj, bitwidth, o, values_per_miniblock, longval)
-                o.loc = temp
-                for j in range(values_per_miniblock):
-                    if longval:
-                        temp = o.read_long()
-                        o.loc -= 8
-                        o.write_long(value)
-                    else:
-                        temp = o.read_int()
-                        o.loc -= 4
-                        o.write_int(value)
-                    value += min_delta + temp
-                    count -= 1
-                    if count <= 0:
-                        return
-            else:
-                for j in range(values_per_miniblock):
-                    if longval:
-                        o.write_long(value)
-                    else:
-                        o.write_int(value)
-                    value += min_delta
-                    count -= 1
-                    if count <= 0:
-                        return
+    with nogil:
+        while True:
+            min_delta = zigzag_long(read_unsigned_var_int(file_obj))
+            bitwidths = file_obj.read(miniblock_per_block)
+            for i in range(miniblock_per_block):
+                bitwidth = bitwidths[i]
+                if bitwidth:
+                    temp = o.loc
+                    if count > 1:
+                        # no more diffs if on last value
+                        delta_read_bitpacked(file_obj, bitwidth, o, values_per_miniblock, longval)
+                    o.loc = temp
+                    for j in range(values_per_miniblock):
+                        if longval:
+                            temp = o.read_long()
+                            o.loc -= 8
+                            o.write_long(value)
+                        else:
+                            temp = o.read_int()
+                            o.loc -= 4
+                            o.write_int(value)
+                        value += min_delta + temp
+                        count -= 1
+                        if count <= 0:
+                            return
+                else:
+                    for j in range(values_per_miniblock):
+                        if longval:
+                            o.write_long(value)
+                        else:
+                            o.write_int(value)
+                        value += min_delta
+                        count -= 1
+                        if count <= 0:
+                            return
 
 
-cpdef void encode_unsigned_varint(uint64_t x, NumpyIO o):  # pragma: no cover
+cpdef void encode_unsigned_varint(uint64_t x, NumpyIO o) noexcept nogil:
     while x > 127:
         o.write_byte((x & 0x7F) | 0x80)
         x >>= 7
@@ -342,14 +347,14 @@ cdef class NumpyIO(object):
         self.ptr = <char*>&data[0]
         self.nbytes = data.shape[0]
 
-    cdef char* get_pointer(self):
+    cdef char* get_pointer(self) noexcept nogil:
         return self.ptr + self.loc
 
     @property
     def len(self):
         return self.nbytes
 
-    cpdef const uint8_t[:] read(self, int32_t x=-1):
+    cpdef const uint8_t[:] read(self, int32_t x=-1) noexcept nogil:
         cdef const uint8_t[:] out
         if x < 1:
             x = self.nbytes - self.loc
@@ -357,13 +362,13 @@ cdef class NumpyIO(object):
         self.loc += x
         return out
 
-    cpdef uint8_t read_byte(self):
+    cpdef uint8_t read_byte(self) noexcept nogil:
         cdef char out
         out = self.ptr[self.loc]
         self.loc += 1
         return out
 
-    cpdef int32_t read_int(self):
+    cpdef int32_t read_int(self) noexcept nogil:
         cdef int32_t i
         if self.nbytes - self.loc < 4:
             return 0
@@ -371,30 +376,30 @@ cdef class NumpyIO(object):
         self.loc += 4
         return i
 
-    cpdef void write(self, const char[::1] d):
+    cpdef void write(self, const char[::1] d) noexcept nogil:
         memcpy(<void*>self.ptr[self.loc], <void*>&d[0], d.shape[0])
         self.loc += d.shape[0]
 
-    cpdef void write_byte(self, uint8_t b):
+    cpdef void write_byte(self, uint8_t b) noexcept nogil:
         if self.loc >= self.nbytes:
             # ignore attempt to write past end of buffer
             return
         self.ptr[self.loc] = b
         self.loc += 1
 
-    cpdef void write_int(self, int32_t i):
+    cpdef void write_int(self, int32_t i) noexcept nogil:
         if self.nbytes - self.loc < 4:
             return
         (<int32_t*> self.get_pointer())[0] = i
         self.loc += 4
 
-    cdef void write_long(self, int64_t i):
+    cdef void write_long(self, int64_t i) noexcept nogil:
         if self.nbytes - self.loc < 8:
             return
         (<int64_t*> self.get_pointer())[0] = i
         self.loc += 8
 
-    cdef int64_t read_long(self):
+    cdef int64_t read_long(self) noexcept nogil:
         cdef int64_t i
         if self.nbytes - self.loc < 8:
             return 0
@@ -402,15 +407,15 @@ cdef class NumpyIO(object):
         self.loc += 8
         return i
 
-    cdef void write_many(self, char b, int32_t count):
+    cdef void write_many(self, char b, int32_t count) noexcept nogil:
         cdef int32_t i
         for i in range(count):
             self.write_byte(b)
 
-    cpdef int32_t tell(self):
+    cpdef int32_t tell(self) noexcept nogil:
         return self.loc
 
-    cpdef uint32_t seek(self, int32_t loc, int32_t whence=0):
+    cpdef uint32_t seek(self, int32_t loc, int32_t whence=0) noexcept nogil:
         if whence == 0:
             self.loc = loc
         elif whence == 1:
@@ -422,7 +427,7 @@ cdef class NumpyIO(object):
         return self.loc
 
     @cython.wraparound(False)
-    cpdef const uint8_t[:] so_far(self):
+    cpdef const uint8_t[:] so_far(self) noexcept nogil:
         """ In write mode, the data we have gathered until now
         """
         return self.data[:self.loc]
@@ -497,7 +502,7 @@ def _assemble_objects(object[:] assign, const uint8_t[:] defi, const uint8_t[:] 
 cdef int64_t nat = -9223372036854775808
 
 
-cpdef void time_shift(const int64_t[::1] data, int32_t factor=1000):
+cpdef void time_shift(const int64_t[::1] data, int32_t factor=1000) noexcept nogil:
     cdef int32_t i
     cdef int64_t * ptr
     cdef int64_t value
@@ -508,93 +513,87 @@ cpdef void time_shift(const int64_t[::1] data, int32_t factor=1000):
         ptr += 1
 
 
-cdef int32_t zigzag_int(uint64_t n):
+cdef int32_t zigzag_int(uint64_t n) noexcept nogil:
     return (n >> 1) ^ -(n & 1)
 
 
-cdef int64_t zigzag_long(uint64_t n):
+cdef int64_t zigzag_long(uint64_t n) noexcept nogil:
     return (n >> 1) ^ -(n & 1)
 
 
-cdef uint64_t long_zigzag(int64_t n):
+cdef uint64_t long_zigzag(int64_t n) noexcept nogil:
     return (n << 1) ^ (n >> 63)
 
 
-cpdef dict read_thrift(NumpyIO data):
+cdef dict read_thrift(NumpyIO data):
     cdef char byte, id = 0, bit
     cdef int32_t size
     cdef dict out = {}
-    cdef bint hasi64 = 0
-    cdef bint hasi32 = 0
-    cdef list i32 = None
     while True:
-        byte = data.read_byte()
+        # byte = data.read_byte()
+        byte = data.ptr[data.loc]
+        data.loc += 1
+
         if byte == 0:
             break
         id += (byte & 0b11110000) >> 4
         bit = byte & 0b00001111
-        if bit == 5:
+        if bit == 6:
             out[id] = zigzag_long(read_unsigned_var_int(data))
-            hasi32 = True
-            if i32 is None:
-                i32 = list()
-            i32.append(id)
-        elif bit == 6:
+        elif bit == 5:
             out[id] = zigzag_long(read_unsigned_var_int(data))
-            hasi64 = True
         elif bit == 7:
-            out[id] = <double>data.get_pointer()[0]
+            out[id] = <double>(data.ptr + data.loc)[0]
             data.seek(8, 1)
         elif bit == 8:
             size = read_unsigned_var_int(data)
-            out[id] = PyBytes_FromStringAndSize(data.get_pointer(), size)
+            out[id] = PyBytes_FromStringAndSize((data.ptr + data.loc), size)
             data.seek(size, 1)
         elif bit == 9:
             out[id] = read_list(data)
         elif bit == 12:
             out[id] = read_thrift(data)
+        elif bit == 4:
+            out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 1:
             out[id] = True
         elif bit == 2:
             out[id] = False
-        elif bit == 4:
-            # I16
-            out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 3:
             # I8
-            out[id] = data.read_byte()
+            # out[id] = data.read_byte()
+            out[id] = data.ptr[data.loc]
+            data.loc = 1
         else:
             print("Corrupted thrift data at ", data.tell(), ": ", id, bit)
-    if hasi32:
-        if hasi64:
-            out["i32list"] = i32
-        else:
-            out["i32"] = 1
     return out
 
 
 cdef list read_list(NumpyIO data):
     cdef unsigned char byte, typ
     cdef int32_t size, bsize, _
-    byte = data.read_byte()
+    # byte = data.read_byte()
+    byte = data.ptr[data.loc]
+    data.loc += 1
+
     if byte >= 0xf0:  # 0b11110000
         size = read_unsigned_var_int(data)
     else:
         size = ((byte & 0xf0) >> 4)
-    out = []
     typ = byte & 0x0f # 0b00001111
+    cdef list out = [None] * size
     if typ == 5 or typ == 6:
         for _ in range(size):
-            out.append(zigzag_long(read_unsigned_var_int(data)))
+            out[_] = zigzag_long(read_unsigned_var_int(data))
     elif typ == 8:
         for _ in range(size):
             # all parquet list types contain str, not bytes
             bsize = read_unsigned_var_int(data)
-            out.append(PyUnicode_DecodeUTF8(data.get_pointer(), bsize, "ignore"))
-            data.seek(bsize, 1)
+            out[_] = PyUnicode_DecodeUTF8(data.ptr + data.loc, bsize, "ignore")
+            data.loc += bsize
     else:
         for _ in range(size):
-            out.append(read_thrift(data))
+            out[_] = read_thrift(data)
 
     return out
 
@@ -833,7 +832,7 @@ cdef class ThriftObject:
     cpdef _asdict(self):
         """Create dict version with field names instead of integers"""
         cdef str k
-        cdef out = {}
+        cdef dict out = {}
         for k in self.spec:
             if k in self.children:
                 lower = getattr(self, k)
@@ -873,7 +872,7 @@ cdef class ThriftObject:
 
     @staticmethod
     def from_fields(thrift_name,bint i32=0, list i32list=None, **kwargs):
-        cdef spec = specs[thrift_name]
+        cdef dict spec = specs[thrift_name]
         cdef int i
         cdef str k
         cdef dict out = {}
@@ -1126,3 +1125,171 @@ cdef dict children = {
 #         if bit:
 #             children[o.__name__] = bit
 #
+
+
+def value_counts(uint8_t[::1] values, uint64_t[::1] out):
+    # good enough when there are no mixed refs/defs; can be called repeatedly to fill out
+    cdef uint64_t i
+    with nogil:
+        for i in range(values.shape[0]):
+            out[values[i]] += 1
+
+
+def make_offsets_and_masks_no_nulls(
+        uint8_t[::1] reps, # repetition levels
+        uint8_t[::1] defs, # definition levels
+        list offsets,  # contains uint64 np arrays
+        uint64_t[::1] ocounts  # offsets counter of length offsets, same length as offsets
+    ):
+    # when we have nested required ragged lists
+    # regular arrays would be a special case of this
+    cdef:
+        uint64_t loffs = len(offsets)  # == max_def
+        uint64_t i, j  # counters
+        int64_t[::1] temp  # for unbundling
+        (int64_t*)[256] offset_ptrs  # max number of levels allowed here is 256
+    
+    # unbundle mutable inputs
+    for i in range(loffs):
+        temp = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &temp[0]
+
+    # run
+    with nogil:
+        for i in range(reps.shape[0]):
+            for j in range(reps[i], defs[i] + 1):
+                if j < loffs:
+                    offset_ptrs[j][ocounts[j]] = ocounts[j + 1]
+                ocounts[j] += 1
+        for j in range(loffs):
+            # last offset
+            offset_ptrs[j][ocounts[j]] = ocounts[j + 1]
+
+
+def make_offsets_and_masks_no_reps(
+        uint8_t[::1] defs, # definition levels
+        list offsets,  # contains uint64 np arrays
+        uint64_t[::1] ocounts  # offsets counter of length offsets, same length as offsets
+    ):
+    # where we have nested nullable structs, but no lists
+    cdef:
+        uint64_t loffs = len(offsets)  # == max_def
+        uint64_t i  # counters8
+        uint8_t d
+        int64_t[::1] temp  # for unbundling
+        (int64_t*)[256] offset_ptrs  # max number of levels allowed here is 256
+    
+    # unbundle mutable inputs
+    for i in range(loffs):
+        temp = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &temp[0]
+
+    # run
+    with nogil:
+        for i in range(defs.shape[0]):
+            d = defs[i]
+            if d < loffs:
+                offset_ptrs[d][i] = -1
+            else:
+                offset_ptrs[d][i] = ocounts[d + 1]
+            ocounts[d] += 1
+
+
+def one_level_optional(
+        uint8_t[::1] defs,
+        int64_t[::1] inds,
+        uint64_t count0 = 0,  # first index value
+        uint8_t max_def = 1   # level that means "real value" 
+    ):
+    # nullable simple type; equivalent:
+    # inds[defs == 1] = np.arange(count0, len(values) + count0)
+    # inds[defs == 0] = 0
+    # this can be parallel, by passing count0 (values so far), which we always can know
+    cdef uint64_t i, count
+    with nogil:
+        for i in range(defs.shape[0]):
+            if defs[i] == max_def:
+                inds[count] = count0
+                count0 += 1
+            else:
+                inds[count] = -1
+            count += 1
+    return count
+
+
+def make_offsets_and_masks(
+        uint8_t[::1] reps, # repetition levels
+        uint8_t[::1] defs, # definition levels
+        list offsets,  # contains uint64 np arrays
+        uint8_t[::1] rep_map, # rep value -> offset index mapping
+        uint8_t[::1] rep_flags,  # is index (not offset) for each item of offsets list 
+        uint64_t[::1] ocounts,  # offsets counter of length offsets, len(offsets) + 1
+    ):
+    # general case
+    cdef:
+        uint64_t loffs = len(offsets)  # == max_def
+        uint64_t i, j  # counters
+        uint8_t r, d
+        int64_t[::1] temp  # for unbundling
+        (int64_t*)[256] offset_ptrs  # max number of levels allowed here is 256
+    
+    # unbundle mutable inputs
+    for i in range(loffs):
+        temp = offsets[i]  # checks type and dtype
+        offset_ptrs[i] = &temp[0]
+
+    # run
+    with nogil:
+        for i in range(reps.shape[0]):
+            r = rep_map[reps[i]]
+            d = defs[i]
+            for j in range(r, d + 1):
+                if j < loffs:
+                    if (rep_flags[j] == 1) & (j == d):
+                        offset_ptrs[j][ocounts[j]] = -1
+                    elif rep_flags[j] != 2:  # a value of 2 means do not use
+                        offset_ptrs[j][ocounts[j]] = ocounts[j + 1]
+                ocounts[j] += 1
+
+
+def parse_plain_strings(uint8_t[::1] data, uint64_t[::1] offsets, uint64_t nvalues):
+    """Extract strings into compact form and offsets, like arrow would"""
+    # may need delta-string decoder, if we ever see such data
+    # TODO: replace np python calls with CAPI PyArray_SimpleNew?
+    #  https://stackoverflow.com/a/53162659/3821154
+    out = np.empty(data.shape[0] - (4 * nvalues), dtype="uint8")
+    cdef uint8_t[::1] o = out
+    cdef uint64_t i, offset, tot
+    cdef uint32_t size
+    offset = 0
+    tot = 0
+    with nogil:
+        for i in range(nvalues):
+            offsets[i] = tot
+            size = (<uint32_t*>(&data[offset]))[0]
+            offset += 4
+            o[tot: tot + size] = data[offset: offset + size]
+            tot += size
+            offset += size
+        offsets[i + 1] = tot
+    return out
+
+
+def filter_rg_cols(ThriftObject rg, list cols):
+    if cols is None:
+        return rg.columns
+    
+    cdef list out = []
+    cdef set columns = set(cols) 
+    cdef str name
+    cdef dict col
+    cdef list internals = rg.columns
+    cdef int i = 0  # enumerator
+
+    for col in rg[1]:
+        # column.meta_data.path_in_schema
+        name = ".".join(col[3][3])
+        if name in columns:
+            out.append(internals[i])
+        i += 1
+    return out

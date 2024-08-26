@@ -25,7 +25,6 @@ if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or sys.argv[1] in allowed):
     extra = {}
 else:
     modules_to_build = {
-        'fastparquet.speedups': ['fastparquet/speedups.pyx'],
         'fastparquet.cencoding': ['fastparquet/cencoding.pyx']
     }
     try:

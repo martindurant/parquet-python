@@ -1,16 +1,18 @@
+import concurrent.futures
+import io
+import logging
 import numpy as np
-import pandas as pd
 
-from fastparquet import encoding
-from fastparquet.encoding import read_plain
+from fastparquet.encoding import read_plain, byte_stream_unsplit4, byte_stream_unsplit8, DECODE_TYPEMAP
 import fastparquet.cencoding as encoding
 from fastparquet.compression import decompress_data, rev_map, decom_into
 from fastparquet.converted_types import convert, simple, converts_inplace
-from fastparquet.schema import _is_list_like, _is_map_like
-from fastparquet.speedups import unpack_byte_array
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
 from fastparquet.util import val_to_num
+from fastparquet.schema import SchemaHelper
+
+logger = logging.getLogger("fastparquet.core")
 
 
 def _read_page(file_obj, page_header, column_metadata):
@@ -38,7 +40,7 @@ def read_data(fobj, coding, count, bit_width, out=None):
 
     out: potentially provide a len(count) uint8 array to reuse
     """
-    out = out or np.empty(count, dtype=np.uint8)
+    out = np.empty(count, dtype=np.uint8) if out is None else out
     o = encoding.NumpyIO(out)
     if coding == parquet_thrift.Encoding.RLE:
         while o.tell() < count:
@@ -173,29 +175,12 @@ def read_data_page(f, helper, header, metadata, skip_nulls=False,
 
 
 def skip_definition_bytes(io_obj, num):
+    # for self-made set of valid values; this could be cython but is rarely called
     io_obj.seek(6, 1)
     n = num // 64
     while n:
         io_obj.seek(1, 1)
         n //= 128
-
-
-def read_dictionary_page(file_obj, schema_helper, page_header, column_metadata, utf=False):
-    """Read a page containing dictionary data.
-
-    Consumes data using the plain encoding and returns an array of values.
-    """
-    raw_bytes = _read_page(file_obj, page_header, column_metadata)
-    if column_metadata.type == parquet_thrift.Type.BYTE_ARRAY:
-        values = unpack_byte_array(
-            raw_bytes, page_header.dictionary_page_header.num_values, utf=utf)
-    else:
-        width = schema_helper.schema_element(
-            column_metadata.path_in_schema).type_length
-        values = read_plain(
-                raw_bytes, column_metadata.type,
-                page_header.dictionary_page_header.num_values, width)
-    return values
 
 
 def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
@@ -247,7 +232,7 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
 
     max_def = schema_helper.max_definition_level(cmd.path_in_schema)
 
-    nullable = isinstance(assign.dtype, pd.core.arrays.masked.BaseMaskedDtype)
+    nullable = False
     if max_def and data_header2.num_nulls:
         bit_width = encoding.width_from_max_int(max_def)
         # not the same as read_data(), because we know the length
@@ -420,16 +405,88 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
             )
             assign[num:num+data_header2.num_values][row_filter] = convert(out, se)[row_filter]
     else:
-        # codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
-        # raw_bytes = decompress_data(infile.read(size),
-        #                             ph.uncompressed_page_size, codec)
         raise NotImplementedError
     return data_header2.num_values
 
 
-def read_col(column, schema_helper, infile, use_cat=False,
-             selfmade=False, assign=None, catdef=None,
-             row_filter=None):
+# TODO: this executor should not persist between runs to free up threads.
+import threading
+lock = threading.Lock()
+
+
+def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
+         cmd, rep_width, def_width, assign, colname, se,
+         with_data=True):
+    # V1 or dict page, decompress immediately
+    io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
+    reps = defs = None
+    if rep_width:
+        # reading reps is not optional, if they exist
+        reps = read_data(
+            io, 
+            parquet_thrift.Encoding.RLE, 
+            dph.num_values,
+            rep_width,
+        )
+    if def_width:
+        # reading defs is not optional, if they exist
+        defs = read_data(
+            io, 
+            parquet_thrift.Encoding.RLE, 
+            dph.num_values,
+            def_width,
+        )
+    if with_data:
+        dtype = DECODE_TYPEMAP.get(se.type, "uint8")
+        if dph.encoding == parquet_thrift.Encoding.PLAIN:
+            o = np.frombuffer(io.read(), dtype=dtype)
+            if cmd.type == parquet_thrift.Type.BOOLEAN:
+                o = np.unpackbits(o).astype(np.bool_)
+        elif dph.encoding in [parquet_thrift.Encoding.RLE_DICTIONARY,
+                              parquet_thrift.Encoding.PLAIN_DICTIONARY,
+                              parquet_thrift.Encoding.RLE]:
+            if cmd.type == parquet_thrift.Type.BOOLEAN:
+                bit_width = 1
+            elif dph.encoding == parquet_thrift.Encoding.RLE:
+                bit_width = se.type_length
+            else:
+                bit_width = io.read_byte()
+            o = np.empty(dph.num_values, dtype=np.uint8)
+            out = encoding.NumpyIO(o)
+            encoding.read_rle_bit_packed_hybrid(io, bit_width, dph.num_values, out, itemsize=1)
+        elif dph.encoding == parquet_thrift.Encoding.BYTE_STREAM_SPLIT:
+            o = np.frombuffer(io.read(), dtype=dtype)
+            if o.dtype == "f8":
+                o = byte_stream_unsplit8(o)
+            else:
+                o = byte_stream_unsplit4(o)
+        elif dph.encoding == parquet_thrift.Encoding.DELTA_BINARY_PACKED:
+            o = np.empty(dph.num_values, dtype='int32')
+            encoding.delta_binary_unpack(
+                io, encoding.NumpyIO(o.view('uint8'))
+            )
+        elif dph.encoding == parquet_thrift.Encoding.DELTA_LENGTH_BYTE_ARRAY:
+            # (delta int sizes followed by bytesbuffer)
+            sizes = np.zeros(dph.num_values + 1, dtype='int32')
+            encoding.delta_binary_unpack(
+                io, encoding.NumpyIO(sizes[1:].view('uint8'))
+            )
+            o = np.frombuffer(io.read(), dtype="uint8")
+            assign[f"{colname}-offsets"].append(np.cumsum(sizes, dtype="int64"))
+        else:
+            raise NotImplementedError
+        if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+            assign[f"{colname}-cats"] = o
+        else:
+            assign[f"{colname}-data"].append(o)
+    return reps, defs
+
+
+DUMMY = np.zeros(1, dtype="int64")
+
+
+def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBase, 
+             assign: dict, use_cat: bool = False, read_data=True):
     """Using the given metadata, read one column in one row-group.
 
     Parameters
@@ -443,153 +500,177 @@ def read_col(column, schema_helper, infile, use_cat=False,
     use_cat: bool (False)
         If this column is encoded throughout with dict encoding, give back
         a pandas categorical column; otherwise, decode to values
-    row_filter: bool array or None
-        if given, selects which of the values read are to be written
-        into the output. Effectively implies NULLs, even for a required
-        column.
+    read_data: bool (True)
+        Whether to ingest the payload values. If False, only reads offset/index
+        information, if they are not already in the output.
     """
     cmd = column.meta_data
-    try:
-        se = schema_helper.schema_element(cmd.path_in_schema)
-    except KeyError:
-        # column not present in this row group
-        assign[:] = None
-        return
+    colname = ".".join(cmd.path_in_schema)
+    se = schema_helper.schema_element(cmd.path_in_schema)
+    rows = cmd.num_values
+
+    # make outputs
+    OPT = parquet_thrift.FieldRepetitionType.OPTIONAL
+    REP = parquet_thrift.FieldRepetitionType.REPEATED
+    rep_map = np.zeros(256, dtype="uint8")  # which rep value maps to which offset arr
+    rep_flags = np.zeros(256, dtype="uint8")  # is array offset or index?
+    parts = []  # schema names as we walk
+    offsets = []  # list of output offset/index arrays
+    nreps = 0
+    i = 0
+    for part in cmd.path_in_schema:
+        # TODO: without threads, this can be big loop again, but knowing the
+        #  headers up front is actually useful
+        parts.append(part)
+        # TODO: zeroth offsets has length of cmd.num_rows
+        #  leaf array has length num_values (from data page headers)
+        if schema_helper.schema_element(parts).repetition_type == OPT:
+            name = f'{".".join(parts)}-index'
+            if name not in assign:
+                o = np.empty(rows, dtype="int64")
+                assign.setdefault(name, []).append(o)
+                offsets.append(o)
+                rep_flags[i] = 1
+            else:
+                offsets.append(DUMMY)
+                rep_flags[i] = 2
+            i += 1
+        elif schema_helper.schema_element(parts).repetition_type == REP:
+            # offset has one extra element for closing last list
+            name = f'{".".join(parts)}-offsets'
+            if name not in assign:
+                o = np.empty(rows + 1, dtype="int64")
+                assign.setdefault(name, []).append(o)
+                offsets.append(o)
+            else:
+                offsets.append(DUMMY)
+                rep_flags[i] = 2  # do not use
+            nreps += 1
+            i += 1
+            rep_map[nreps] = i
+    
+    # read bytes from source    
     off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
                cmd.data_page_offset))
-
-    infile.seek(off)
-    column_binary = infile.read(cmd.total_compressed_size)
+    with lock:
+        infile.seek(off)
+        column_binary = infile.read(cmd.total_compressed_size)
     infile = encoding.NumpyIO(column_binary)
-    rows = row_filter.sum() if isinstance(row_filter, np.ndarray) else cmd.num_values
 
-    if use_cat:
-        my_nan = -1
-    else:
-        if assign.dtype.kind in ['i', 'u', 'b']:
-            my_nan = pd.NA
-        elif assign.dtype.kind == 'f':
-            my_nan = np.nan
-        elif assign.dtype.kind in ["M", 'm']:
-            # GH#489 use a NaT representation compatible with ExtensionArray
-            my_nan = assign.dtype.type("NaT")
-        else:
-            my_nan = None
-
+    # ingest page headers
     num = 0  # how far through the output we are
-    row_idx = [0]  # map/list objects
     dic = None
-    index_off = 0  # how far through row_filter we are
+    headers = []  # header objects
+    raws = []  # bytes
+    if f"{colname}-data" not in assign:
+        assign[f"{colname}-data"] = []
 
     while num < rows:
-        off = infile.tell()
+        # TODO: if read_data is False, and we have offsets already (OPT 4), can skip all
         ph = ThriftObject.from_buffer(infile, "PageHeader")
-        if ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
-            dic2 = read_dictionary_page(infile, schema_helper, ph, cmd, utf=se.converted_type == 0)
-            dic2 = convert(dic2, se)
-            if use_cat and dic is not None and (dic2 != dic).any():
-                raise RuntimeError("Attempt to read as categorical a column"
-                                   "with multiple dictionary pages.")
-            dic = dic2
-            if use_cat and dic is not None:
-                # fastpath skips the check the number of categories hasn't changed.
-                # In this case, they may change, if the default RangeIndex was used.
-                ddt = [kv.value.decode() for kv in (cmd.key_value_metadata or [])
-                       if kv.key == b"label_dtype"]
-                ddt = ddt[0] if ddt else None
-                catdef._set_categories(pd.Index(dic, dtype=ddt), fastpath=True)
-                if np.iinfo(assign.dtype).max < len(dic):
-                    raise RuntimeError('Assigned array dtype (%s) cannot accommodate '
-                                       'number of category labels (%i)' %
-                                       (assign.dtype, len(dic)))
-            continue
-        elif use_cat and dic is None and getattr(catdef, "_multiindex", False) is False:
-            raise TypeError("Attempt to load as categorical a column with no dictionary")
 
-        if ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
-            num += read_data_page_v2(infile, schema_helper, se, ph.data_page_header_v2, cmd,
-                                     dic, assign, num, use_cat, off, ph, row_idx, selfmade=selfmade,
-                                     row_filter=row_filter)
+        raw = infile.read(ph.compressed_page_size)
+        isdict = ph.type == parquet_thrift.PageType.DICTIONARY_PAGE
+        headers.append(ph)
+        raws.append(raw)
+        if isdict and use_cat and f"{colname}-dict" in assign:
+            # assert that the dict inherited from elsewhere is fine
             continue
-        if (selfmade and hasattr(cmd, 'statistics') and
-                getattr(cmd.statistics, 'null_count', 1) == 0):
-            skip_nulls = True
+        if ph.type == parquet_thrift.PageType.DATA_PAGE:
+            num += ph.data_page_header.num_values
+        elif ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
+            # NB: this one always knows its num_nulls, but v1 does not
+            num += ph.data_page_header_v2.num_values
+        elif ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+            assert dic is None, "Second dict page found within a row-group"
+            dic = True  # should always be first page
         else:
-            skip_nulls = False
-        defi, rep, val = read_data_page(infile, schema_helper, ph, cmd,
-                                        skip_nulls, selfmade=selfmade)
-        max_defi = schema_helper.max_definition_level(cmd.path_in_schema)
-        if isinstance(row_filter, np.ndarray):
-            io = index_off + len(val)  # will be new index_off
-            if row_filter[index_off:index_off+len(val)].sum() == 0:
-                num += len(defi) if defi is not None else len(val)
-                continue
-            if defi is not None:
-                val = val[row_filter[index_off:index_off+len(defi)][defi == max_defi]]
-                defi = defi[row_filter[index_off:index_off+len(defi)]]
-            else:
-                val = val[row_filter[index_off:index_off+len(val)]]
-            rep = rep[row_filter[index_off:index_off+len(defi)]] if rep is not None else rep
-            index_off = io
-        if rep is not None and assign.dtype.kind != 'O':  # pragma: no cover
-            # this should never get called
-            raise ValueError('Column contains repeated value, must use object '
-                             'type, but has assumed type: %s' % assign.dtype)
-        d = ph.data_page_header.encoding in [parquet_thrift.Encoding.PLAIN_DICTIONARY,
-                                             parquet_thrift.Encoding.RLE_DICTIONARY]
-        if use_cat and not d:
-            if not hasattr(catdef, '_set_categories'):
-                raise ValueError('Returning category type requires all chunks'
-                                 ' to use dictionary encoding; column: %s',
-                                 cmd.path_in_schema)
+            raise NotImplementedError
+    logger.debug("Column %s,  %s headers (inc dict page %s)", colname, len(headers),
+                 bool(dic))
 
-        if rep is not None:
-            null = not schema_helper.is_required(cmd.path_in_schema[0])
-            null_val = (se.repetition_type !=
-                        parquet_thrift.FieldRepetitionType.REQUIRED)
-            row_idx[0] = 1 + encoding._assemble_objects(
-                assign, defi, rep, val, dic, d,
-                null, null_val, max_defi, row_idx[0]
+    max_rep = schema_helper.max_repetition_level(cmd.path_in_schema)
+    max_def = schema_helper.max_definition_level(cmd.path_in_schema)
+    
+    # Set optimisation conditions, so that we can avoid unnecessary reads
+    if all(_ is DUMMY for _ in offsets):
+        # no deps/defs needed
+        assign.pop(name, None)
+        if read_data is False:
+            return
+        OPT = 4
+    elif rep_flags.max() == 0:
+        OPT = 1
+    elif all(_ is DUMMY for _ in offsets[:-1]) and rep_flags[i - 1] == 1:
+        OPT = 2
+    elif (rep_flags[:max_def] == 1).all():
+        OPT = 3
+    else:
+        OPT = 0
+
+    # process raw pages
+    rep_width = encoding.width_from_max_int(max_rep)
+    def_width = encoding.width_from_max_int(max_def)
+    off = 0  # counts number of rep/defs across pages
+    for i, (raw, ph) in enumerate(zip(raws, headers)):
+        # CONDITIONS:
+        #  - (1) need all reps/defs
+        #  - (2) need data
+        #  - (3) only need last defs (optional, but offsets known)
+        # if (1) or (2) or (3)  and v1, must decompress and read sequentially
+        # if (1) and v2, need to read reps and defs
+        # if (2) and v2, need to decompress and read data
+        # if (3) and v2, need to read defs (not reps)
+        if ph.type == parquet_thrift.PageType.DATA_PAGE:
+            dph = ph.data_page_header
+            reps, defs = _run(
+                raw, ph, dph, off, cmd, rep_width,
+                def_width, assign, colname, se
             )
-        elif defi is not None:
-            part = assign[num:num+len(defi)]
-            if isinstance(part.dtype, pd.core.arrays.masked.BaseMaskedDtype):
-                # TODO: could have read directly into array
-                part._mask[:] = defi != max_defi
-                part = part._data
-            elif part.dtype.kind != "O":
-                part[defi != max_defi] = my_nan
-            if d and not use_cat:
-                part[defi == max_defi] = dic[val]
-            elif not use_cat:
-                part[defi == max_defi] = convert(val, se, dtype=assign.dtype)
-            else:
-                part[defi == max_defi] = val
-        else:
-            piece = assign[num:num+len(val)]
-            if isinstance(piece.dtype, pd.core.arrays.masked.BaseMaskedDtype):
-                piece = piece._data
-            if use_cat and not d:
-                # only possible for multi-index
-                val = convert(val, se, dtype=assign.dtype)
-                try:
-                    i = pd.Categorical(val)
-                except:
-                    i = pd.Categorical(val.tolist())
-                catdef._set_categories(pd.Index(i.categories), fastpath=True)
-                piece[:] = i.codes
-            elif d and not use_cat:
-                piece[:] = dic[val]
-            elif not use_cat:
-                piece[:] = convert(val, se, dtype=assign.dtype)
-            else:
-                piece[:] = val
+            off += getattr(dph, "num_values", 0)
+        elif ph.type == parquet_thrift.PageType.DATA_PAGE_V2:
+            dph = ph.data_page_header_v2
+            reps, defs = _run(
+                raw, ph, dph, off, cmd, rep_width,
+                def_width, assign, colname, se
+            )
+            off += getattr(dph, "num_values", 0)
+        elif ph.type == parquet_thrift.PageType.DICTIONARY_PAGE:
+            dph = ph.dictionary_page_header
+            _run(
+                raw, ph, dph, off, cmd, 0,
+                0, assign, colname, se
+            )
 
-        num += len(defi) if defi is not None else len(val)
+    # Optimization conditions
+    if OPT == 4:
+        return
+    ocounts = np.zeros(len(offsets) + 1, dtype="uint64")
+    if OPT == 1:
+        encoding.make_offsets_and_masks_no_nulls(reps, defs, offsets, ocounts)
+    elif OPT == 2:
+
+        count = encoding.one_level_optional(defs, offsets[-1], 0, max_def)
+    elif OPT == 3:
+        encoding.make_offsets_and_masks_no_reps(defs, offsets, ocounts)
+    else:
+        encoding.make_offsets_and_masks(reps, defs, offsets, rep_map, rep_flags, ocounts)
+
+    # TODO: from [o]counts, we know if an index/offsets array is redundant and
+    #  can be removed
+
+    for o, count, flag in zip(offsets, ocounts, rep_flags):
+        if o is not DUMMY:
+            o.resize(count + flag, refcheck=False)
+
+
+def batcher(batch):
+    for func, args, kwargs in batch:
+        func(*args, **kwargs)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
-                          selfmade=False, assign=None, row_filter=False):
+                          selfmade=False, assign=None, row_filter=False, ex=None):
     """
     Read a row group and return as a dict of arrays
 
@@ -597,57 +678,36 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     will be pandas Categorical objects: the codes and the category labels
     are arrays.
     """
-    out = assign
-    remains = set(_ for _ in out if not _.endswith("-catdef") and not _ + "-catdef" in out)
-    maps = {}
-
-    for column in rg.columns:
-
-        if (_is_list_like(schema_helper, column) or
-                _is_map_like(schema_helper, column)):
-            name = ".".join(column.meta_data.path_in_schema[:-2])
+    # TODO: batch reads and submit groups of tasks instead of one task per column
+    #  - where there are many columns, the current causes a lot of thread waiting overhead
+    #  - reads will currently happen haphazardly in the input and not make use of caching
+    for column in encoding.filter_rg_cols(rg, columns):
+        if ex is None:
+            read_col(column, schema_helper, file, use_cat=False,
+                     assign=assign)
         else:
-            name = ".".join(column.meta_data.path_in_schema)
-        if name not in columns or name in cats:
-            continue
-        remains.discard(name)
-
-        read_col(column, schema_helper, file, use_cat=name+'-catdef' in out,
-                 selfmade=selfmade, assign=out[name],
-                 catdef=out.get(name+'-catdef', None),
-                 row_filter=row_filter)
-
-        if _is_map_like(schema_helper, column):
-            # TODO: could be done in fast loop in _assemble_objects?
-            if name not in maps:
-                maps[name] = out[name].copy()
-            else:
-                if column.meta_data.path_in_schema[0] == 'key':
-                    key, value = out[name], maps[name]
-                else:
-                    value, key = out[name], maps[name]
-                out[name][:] = [dict(zip(k, v)) if k is not None else None
-                                for k, v in zip(key, value)]
-                del maps[name]
-    for k in remains:
-        out[k][:] = None
+            ex.submit(
+                read_col, column, schema_helper, file,
+                use_cat=False, assign=assign
+            )
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
                    selfmade=False, index=None, assign=None,
-                   scheme='hive', partition_meta=None, row_filter=False):
+                   scheme='hive', partition_meta=None, row_filter=False,
+                   ex=None):
     """
     Access row-group in a file and read some columns into a data-frame.
     """
     partition_meta = partition_meta or {}
-    if assign is None:
-        raise RuntimeError('Going with pre-allocation!')
+    # TODO: pass through rg.num_rows, which is the number of top-most offsets/index
+    #  whereas the cmd.num_values (also in page headers) gives the number of leaf items
     read_row_group_arrays(file, rg, columns, categories, schema_helper,
-                          cats, selfmade, assign=assign, row_filter=row_filter)
+                          cats, selfmade, assign=assign, row_filter=row_filter, ex=ex)
 
     for cat in cats:
         if cat not in assign:
-            # do no need to have partition columns in output
+            # do not need to have partition columns in output
             continue
         if scheme == 'hive':
             partitions = [s.split("=") for s in rg.columns[0].file_path.split("/")]

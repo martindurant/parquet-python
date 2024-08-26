@@ -1,25 +1,26 @@
 """parquet - read parquet files."""
-import ast
 from collections import OrderedDict, defaultdict
+import concurrent.futures
 import re
-import struct
 
+import os
 import numpy as np
 import fsspec
-import pandas as pd
 
-from fastparquet import core, schema, converted_types, encoding, dataframe, writer
+from fastparquet import core, schema, converted_types, encoding, writer
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, get_fs, PANDAS_VERSION, join_path)
+                   ex_from_sep, _strip_path_tail, join_path, ThreadPool, Task)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
 # as 'i'.
 PART_ID = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
+MAX_WORKERS = min(32, (os.cpu_count() or 1))  # from ThreadPoolExecutor
+ex_stash = [None]
 
 
 class ParquetFile(object):
@@ -42,24 +43,12 @@ class ParquetFile(object):
         that they make up a single parquet data set. This parameter can also
         be any file-like object, in which case this must be a single-file
         dataset.
-    verify: bool [False]
-        test file start/end byte markers
-    open_with: function
-        With the signature `func(path, mode)`, returns a context which
-        evaluated to a file open for reading. Defaults to the built-in `open`.
     root: str
         If passing a list of files, the top directory of the data-set may
         be ambiguous for partitioning where the upmost field has only one
         value. Use this to specify the dataset root directory, if required.
     fs: fsspec-compatible filesystem
         You can use this instead of open_with (otherwise, it will be inferred)
-    pandas_nulls: bool (True)
-        If True, columns that are int or bool in parquet, but have nulls, will become
-        pandas nullale types (Uint, Int, boolean). If False (the only behaviour
-        prior to v0.7.0), both kinds will be cast to float, and nulls will be NaN
-        unless pandas metadata indicates that the original datatypes were nullable.
-        Pandas nullable types were introduces in v1.0.0, but were still marked as
-        experimental in v1.3.0.
 
     Attributes
     ----------
@@ -77,8 +66,6 @@ class ParquetFile(object):
         The data columns available
     count: int
         Total number of rows
-    dtypes: dict
-        Expected output types for each column
     file_scheme: str
         'simple': all row groups are within the same file; 'hive': all row
         groups are in other files; 'mixed': row groups in this file and others
@@ -102,46 +89,24 @@ class ParquetFile(object):
     _pdm = None
     _kvm = None
     _categories = None
+    _statistics = None
 
-    def __init__(self, fn, verify=False, open_with=default_open, root=False,
-                 sep=None, fs=None, pandas_nulls=True, dtypes=None):
-        self.pandas_nulls = pandas_nulls
-        self._base_dtype = dtypes
-        self.tz = None
-        self._columns_dtype = None
-        if open_with is default_open and fs is None:
-            fs = fsspec.filesystem("file")
-        elif fs is not None:
-            open_with = fs.open
-        else:
-            fs = getattr(open_with, "__self__", None)
-        if fs is None:
-            fs, fn, open_with, mkdirs = get_fs(fn, open_with, None)
-
+    def __init__(self, fn: str, fs=fsspec.filesystem("file"), root=False):
+        self.fs = fs
         if isinstance(fn, (tuple, list)):
             if root and fs is not None:
                 root = fs._strip_protocol(root)
-            basepath, fmd = metadata_from_many(fn, verify_schema=verify,
-                                               open_with=open_with, root=root,
-                                               fs=fs)
+            basepath, fmd = metadata_from_many(fn, root=root, fs=fs)
             writer.consolidate_categories(fmd)
             self.fn = join_path(
                 basepath, '_metadata') if basepath else '_metadata'
             self.fmd = fmd
             self._set_attrs()
-        elif hasattr(fn, 'read'):
-            # file-like
-            self.fn = None
-            self._parse_header(fn, verify)
-            if self.file_scheme not in ['simple', 'empty']:
-                raise ValueError('Cannot use file-like input '
-                                 'with multi-file data')
-            open_with = lambda *args, **kwargs: fn
         elif isinstance(fs, fsspec.AbstractFileSystem):
             if fs.isfile(fn):
                 self.fn = join_path(fn)
-                with open_with(fn, 'rb') as f:
-                    self._parse_header(f, verify)
+                with fs.open(fn, 'rb') as f:
+                    self._parse_header(f)
                 if root:
                     paths = [fn.replace(root, "")]
                     self.file_scheme, self.cats = paths_to_cats(paths, None)
@@ -149,8 +114,8 @@ class ParquetFile(object):
                 fn2 = join_path(fn, '_metadata')
                 if fs.exists(fn2):
                     self.fn = fn2
-                    with open_with(fn2, 'rb') as f:
-                        self._parse_header(f, verify)
+                    with fs.open(fn2, 'rb') as f:
+                        self._parse_header(f)
                     fn = fn2
                 else:
                     # TODO: get details from fs here, rather than do suffix cat in
@@ -165,9 +130,7 @@ class ParquetFile(object):
                         raise ValueError("No files in dir")
                     if root:
                         root = fs._strip_protocol(root)
-                    basepath, fmd = metadata_from_many(allfiles, verify_schema=verify,
-                                                       open_with=open_with, root=root,
-                                                       fs=fs)
+                    basepath, fmd = metadata_from_many(allfiles, root=root, fs=fs)
                     writer.consolidate_categories(fmd)
                     self.fn = join_path(basepath, '_metadata') if basepath \
                               else '_metadata'
@@ -177,45 +140,34 @@ class ParquetFile(object):
             else:
                 raise FileNotFoundError(fn)
         else:
-            done = False
-            try:
-                self.fn = fn
-                f = open_with(fn)
-                self._parse_header(f, verify)
-                done = True
-            except IOError:
-                pass
-            if not done:
-                # allow this to error with FileNotFound or whatever
-                try:
-                    self.fn = join_path(fn, "_metadata")
-                    f = open_with(self.fn)
-                    self._parse_header(f, verify)
-                except IOError as e:
-                    raise ValueError("Opening directories without a _metadata requires"
-                                     "a filesystem compatible with fsspec") from e
-        self.open = open_with
-        self._statistics = None
+            raise TypeError
 
-    def _parse_header(self, f, verify=True):
+    def _parse_header(self, f):
         if self.fn and self.fn.endswith("_metadata"):
             #  no point attempting to read footer only for pure metadata
-            data = f.read()[4:-8]
+            data = f.read()
+            assert data[-4:] == b"PAR1"
+            data = data[4:-8]
             self._head_size = len(data)
         else:
             try:
-                f.seek(0)
-                if verify:
-                    assert f.read(4) == b'PAR1'
-                f.seek(-8, 2)
-                head_size = struct.unpack('<I', f.read(4))[0]
-                if verify:
-                    assert f.read() == b'PAR1'
+                guess_size = 1000000
+                try:
+                    f.seek(-(guess_size + 8), 2)
+                except OSError:
+                    # guess_size is too big for file
+                    f.seek(0)
+                data = f.read()
+                assert data[-4:] == b"PAR1"
+                head_size = int.from_bytes(data[-8:-4], "little")
                 self._head_size = head_size
-                f.seek(-(head_size + 8), 2)
-                data = f.read(head_size)
-            except (AssertionError, struct.error):
-                raise ParquetException('File parse failed: %s' % self.fn)
+                if head_size < guess_size:
+                    data = data[-(head_size +8): -8]
+                else:
+                    f.seek(-(head_size + 8), 2)
+                    data = f.read(head_size)
+            except (AssertionError, ValueError, TypeError) as e:
+                raise ParquetException('File parse failed: %s' % self.fn) from e
 
         try:
             fmd = from_buffer(data, "FileMetaData")
@@ -247,7 +199,6 @@ class ParquetFile(object):
             else False
         )
         self._read_partitions()
-        self._dtypes()
 
     @property
     def helper(self):
@@ -256,7 +207,7 @@ class ParquetFile(object):
     @property
     def columns(self):
         """ Column names """
-        return [_ for _ in self.dtypes if _ not in self.cats]
+        return list(self.schema.tree)
 
     @property
     def statistics(self):
@@ -268,13 +219,16 @@ class ParquetFile(object):
     def key_value_metadata(self):
         if self._kvm is None:
             self._kvm = {
-                ensure_str(k.key, ignore_error=True): ensure_str(k.value, ignore_error=True)
-                for k in self.fmd.key_value_metadata or []}
+                ensure_str(k[1], ignore_error=True): ensure_str(k[2], ignore_error=True)
+                for k in self.fmd[5] or []}
         return self._kvm
 
     @property
     def partition_meta(self):
-        return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
+        if self.pandas_metadata:
+            return {col['field_name']: col for col in self.pandas_metadata.get('partition_columns', [])}
+        else:
+            return {}
 
     @property
     def basepath(self):
@@ -285,27 +239,6 @@ class ParquetFile(object):
         paths = [rg[1][0].get(1, "") for rg in self.row_groups if rg[1]]
         self.file_scheme, self.cats = paths_to_cats(paths, self.partition_meta)
 
-    def head(self, nrows, **kwargs):
-        """Get the first nrows of data
-
-        This will load the whole of the first valid row-group for the given
-        columns.
-
-        kwargs can include things like columns, filters, etc., with the same
-        semantics as to_pandas(). If filters are applied, it may happen that
-        data is so reduced that 'nrows' is not ensured (fewer rows). 
-
-        returns: dataframe
-        """
-        # TODO: implement with truncated assign and early exit
-        #  from reading
-        total_rows = 0
-        for i, rg in enumerate(self.row_groups):
-            total_rows += rg.num_rows
-            if total_rows >= nrows:
-                break
-        return self[:i+1].to_pandas(**kwargs).head(nrows)
-
     def __getitem__(self, item):
         """Select among the row-groups using integer/slicing"""
         import copy
@@ -313,14 +246,11 @@ class ParquetFile(object):
         if not isinstance(new_rgs, list):
             new_rgs = [new_rgs]
         new_pf = object.__new__(ParquetFile)
+        new_pf.__dict__.update(self.__dict__)
         fmd = copy.copy(self.fmd)
         fmd.row_groups = new_rgs
-        new_pf.__setstate__(
-            {"fn": self.fn, "open": self.open, "fmd": fmd,
-             "pandas_nulls": self.pandas_nulls, "_base_dtype": self._base_dtype,
-             "tz": self.tz, "_columns_dtype": self._columns_dtype}
-        )
-        new_pf._set_attrs()
+        new_pf.row_groups = new_rgs
+        self._read_partitions()
         return new_pf
 
     def __len__(self):
@@ -335,18 +265,21 @@ class ParquetFile(object):
         return True
 
     def row_group_filename(self, rg):
-        if rg.columns and rg.columns[0].file_path:
+        if self.file_scheme == "simple":
+            return self.fn
+        cs = rg.columns
+        if cs and cs[0].file_path:
             base = self.basepath
             if base:
-                return join_path(base, rg.columns[0].file_path)
+                return join_path(base, cs[0].file_path)
             else:
-                return rg.columns[0].file_path
+                return cs[0].file_path
         else:
             return self.fn
 
     def read_row_group_file(self, rg, columns, categories, index=None,
                             assign=None, partition_meta=None, row_filter=False,
-                            infile=None):
+                            infile=None, ex=None):
         """ Open file for reading, and process it as a row-group
 
         assign is None if this method is called directly (not from to_pandas),
@@ -364,35 +297,14 @@ class ParquetFile(object):
         """
         categories = self.check_categories(categories)
         fn = self.row_group_filename(rg)
-        ret = False
-        if assign is None:
-            if row_filter and isinstance(row_filter, list):
-                cs = self._columns_from_filters(row_filter)
-                df = self.read_row_group_file(
-                    rg, cs, categories, index=False,
-                    infile=infile, row_filter=False)
-                row_filter = self._column_filter(df, filters=row_filter)
-                size = row_filter.sum()
-                if size == rg.num_rows:
-                    row_filter = False
-            else:
-                size = rg.num_rows
-            df, assign = self.pre_allocate(
-                    size, columns, categories, index)
-            if "PANDAS_ATTRS" in self.key_value_metadata:
-                import json
-                df.attrs = json.loads(self.key_value_metadata["PANDAS_ATTRS"])
-            ret = True
         f = infile or self.open(fn, mode='rb')
 
         core.read_row_group(
             f, rg, columns, categories, self.schema, self.cats,
             selfmade=self.selfmade, index=index,
             assign=assign, scheme=self.file_scheme, partition_meta=partition_meta,
-            row_filter=row_filter
+            row_filter=row_filter, ex=ex
         )
-        if ret:
-            return df
 
     def iter_row_groups(self, filters=None, **kwargs):
         """
@@ -540,15 +452,6 @@ class ParquetFile(object):
         """
         from .writer import write_simple, write_multi
         partition_on = list(self.cats)
-        if isinstance(data, pd.DataFrame):
-            self_cols = sorted(self.columns + partition_on)
-            if self_cols != sorted(data.columns):
-                diff_cols = set(data.columns) ^ set(self_cols)
-                raise ValueError(
-                    f'Column names of new data are {sorted(data.columns)}. '
-                    f'But column names in existing file are {self_cols}. '
-                    f'{diff_cols} are columns being either only in existing '
-                     'file or only in new data. This is not possible.')
         if (self.file_scheme == 'simple'
             or (self.file_scheme == 'empty' and self.fn[-9:] != '_metadata')):
             # Case 'simple'.
@@ -688,155 +591,56 @@ scheme is 'simple'.")
                 out |= and_part
         return out
 
-    def to_pandas(self, columns=None, categories=None, filters=[],
-                  index=None, row_filter=False, dtypes=None):
+    def to_numpy(self, columns=None, filters=None, worker_threads=MAX_WORKERS):
         """
-        Read data from parquet into a Pandas dataframe.
-
-        Parameters
-        ----------
-        columns: list of names or `None`
-            Column to load (see `ParquetFile.columns`). Any columns in the
-            data not in this list will be ignored. If `None`, read all columns.
-        categories: list, dict or `None`
-            If a column is encoded using dictionary encoding in every row-group
-            and its name is also in this list, it will generate a Pandas
-            Category-type column, potentially saving memory and time. If a
-            dict {col: int}, the value indicates the number of categories,
-            so that the optimal data-dtype can be allocated. If ``None``,
-            will automatically set *if* the data was written from pandas.
-        filters: list of list of tuples or list of tuples
-            To filter out data.
-            Filter syntax: [[(column, op, val), ...],...]
-            where op is [==, =, >, >=, <, <=, !=, in, not in]
-            The innermost tuples are transposed into a set of filters applied
-            through an `AND` operation.
-            The outer list combines these sets of filters through an `OR`
-            operation.
-            A single list of tuples can also be used, meaning that no `OR`
-            operation between set of filters is to be conducted.
-        index: string or list of strings or False or None
-            Column(s) to assign to the (multi-)index. If None, index is
-            inferred from the metadata (if this was originally pandas data); if
-            the metadata does not exist or index is False, index is simple
-            sequential integers.
-        row_filter: bool or boolean ndarray
-            Whether filters are applied to whole row-groups (False, default)
-            or row-wise (True, experimental). The latter requires two passes of
-            any row group that may contain valid rows, but can be much more
-            memory-efficient, especially if the filter columns are not required
-            in the output.
-            If boolean array, it is applied as custom row filter. In this case,
-            'filter' parameter is ignored, and length of the array has to be
-            equal to the total number of rows.
-
-        Returns
-        -------
-        Pandas data-frame
+        worker_threads: 0 means no threads.
         """
         rgs = filter_row_groups(self, filters) if filters else self.row_groups
-        index = self._get_index(index)
         if columns is not None:
-            columns = columns[:]
+            check_column_names(self.columns, columns, ())
+            cnum = len(columns)
         else:
-            columns = self.columns + list(self.cats)
-        if index:
-            columns += [i for i in index if i not in columns]
-        check_column_names(self.columns + list(self.cats), columns, categories)
-        if row_filter is not False:
-            if filters and row_filter is True:
-                # Rows are selected as per filters.
-                # TODO: special case when filter columns are also in output
-                cs = self._columns_from_filters(filters)
-                df = self.to_pandas(columns=cs, filters=filters, row_filter=False,
-                                    index=False)
-                sel = self._column_filter(df, filters=filters)
-            else:
-                # Row are selected as per custom 'sel'.
-                if sum(rg.num_rows for rg in rgs) != len(row_filter):
-                    raise ValueError('Provided boolean array for custom row \
-selection does not match number of rows in DataFrame.')
-                sel = row_filter
-            size = sel.sum()
-            selected = []
-            start = 0
-            for rg in rgs[:]:
-                selected.append(sel[start:start+rg.num_rows])
-                start += rg.num_rows
-        else:
-            size = sum(rg.num_rows for rg in rgs)
-            selected = [None] * len(rgs)  # just to fill zip, below
-        df, views = self.pre_allocate(size, columns, categories, index, dtypes=dtypes)
-        if "PANDAS_ATTRS" in self.key_value_metadata:
-            import json
-            df.attrs = json.loads(self.key_value_metadata["PANDAS_ATTRS"])
-
-        start = 0
+            cnum = self.schema.root.num_children
+        views = {}
         if self.file_scheme == 'simple':
-            infile = self.open(self.fn, 'rb')
+            infile = self.fs.open(self.fn, 'rb')
         else:
             infile = None
-        for rg, sel in zip(rgs, selected):
-            thislen = sel.sum() if sel is not None else rg.num_rows
-            if thislen == rg.num_rows:
-                # all good; noop if no row filtering
-                sel = None
-            elif thislen == 0:
-                # no valid rows
-                continue
-            parts = {name: (v if name.endswith('-catdef')
-                            else v[start:start + thislen])
-                     for (name, v) in views.items()}
-            self.read_row_group_file(rg, columns, categories, index,
-                                     assign=parts, partition_meta=self.partition_meta,
-                                     row_filter=sel, infile=infile)
-            start += thislen
-        return df
-
-    def pre_allocate(self, size, columns, categories, index, dtypes=None):
-        if dtypes is not None:
-            columns = list(dtypes)
+        if worker_threads:
+            ex = ThreadPool(num_workers=worker_threads)
         else:
-            dtypes = self._dtypes(categories)
-        categories = self.check_categories(categories)
-        cats = {k: v for k, v in self.cats.items() if k in columns}
-        df, arrs = _pre_allocate(size, columns, categories, index, cats,
-                                 dtypes, self.tz, columns_dtype=self._columns_dtype)
-        i_no_name = re.compile(r"__index_level_\d+__")
-        if self.has_pandas_metadata:
-            md = self.pandas_metadata
-            if categories:
-                for c in md['columns']:
-                    if c['name'] in categories and c['name'] in df and c['metadata']:
-                        df[c['name']].dtype._ordered = c['metadata']['ordered']
-            if md.get('index_columns', False) and not (index or index is False):
-                if len(md['index_columns']) == 1:
-                    ic = md['index_columns'][0]
-                    if isinstance(ic, dict) and ic.get('kind') == 'range':
-                        from pandas import RangeIndex
-                        df.index = RangeIndex(
-                            start=ic['start'],
-                            stop=ic['start'] + size * ic['step'] + 1,
-                            step=ic['step']
-                        )[:size]
-                names = [(c['name'] if isinstance(c, dict) else c)
-                         for c in md['index_columns']]
-                names = [None if n is None or i_no_name.match(n) else n
-                         for n in names]
-                df.index.names = names
-            if md.get('column_indexes', False):
-                names = [(c['name'] if isinstance(c, dict) else c)
-                         for c in md['column_indexes']]
-                names = [None if n is None or i_no_name.match(n) else n
-                         for n in names]
-                if len(names) > 1:
-                    df.columns = pd.MultiIndex.from_tuples(
-                        [ast.literal_eval(c) for c in df.columns if c not in df.index.names],
-                        names=names
-                    )
-                else:
-                    df.columns.names = names
-        return df, arrs
+            ex = None
+        # TODO: this condition is too simple, should also depend on
+        #  number of selected/available columns
+        if ex is not None and (len(rgs) > worker_threads * 2 or cnum < len(rgs)):
+            # parallel over row-groups
+            for i, rg in enumerate(rgs):
+                # This is the same as per rg iteration
+                ass = views.setdefault(i, {})
+                ex.submit(self.read_row_group_file, rg=rg, columns=columns, index=None, categories=None,
+                          assign=ass, partition_meta=self.partition_meta,
+                          infile=infile, ex=None)
+            ex.go()
+        else:
+            # no parallel or parallel over columns
+            for i, rg in enumerate(rgs):
+                # This is the same as per rg iteration
+                ass = views.setdefault(i, {})
+                self.read_row_group_file(rg, columns, None, None,
+                                         assign=ass, partition_meta=self.partition_meta,
+                                         infile=infile, ex=ex)
+            if ex is not None:
+                ex.go()
+        # out = {}
+        # # simple concat, no evolution for now
+        # for k in views[0]:
+        #     if k.endswith("-offsets"):
+        #         out[k] = concat_and_add([views[_][k] for _ in range(len(views))])
+        #     elif k.endswith("-index"):
+        #         out[k] = concat_and_add([views[_][k] for _ in range(len(views))], offset=False)
+        #     else:
+        #         out[k] = simple_concat([views[_][k] for _ in range(len(views))])
+        return views
 
     def count(self, filters=None, row_filter=False):
         """ Total number of rows
@@ -861,6 +665,8 @@ selection does not match number of rows in DataFrame.')
                 "row_groups": len(self.row_groups)}
 
     def check_categories(self, cats):
+        if cats in [None, [], ()]:
+            return {}
         categ = self.categories
         if not self.has_pandas_metadata:
             return cats or {}
@@ -872,22 +678,20 @@ selection does not match number of rows in DataFrame.')
         if isinstance(cats, dict):
             return cats
         out = {k: v for k, v in categ.items() if k in cats}
-        out.update({c: pd.RangeIndex(0, 2**14) for c in cats if c not in categ})
+        out.update({c: None for c in cats if c not in categ})
         return out
 
     @property
     def has_pandas_metadata(self):
-        if self._pdm:
-            return True
-        if self.fmd.key_value_metadata is None:
-            return False
-        return bool(self.key_value_metadata.get('pandas', False))
+        return bool(self.pandas_metadata)
 
     @property
     def pandas_metadata(self):
         if self._pdm is None:
-            if self.has_pandas_metadata:
-                self._pdm = json_decoder()(self.key_value_metadata['pandas'])
+            b = [kv.value for kv in self.fmd.key_value_metadata or []
+                 if kv.key in (b"pandas", "pandas")]
+            if b:
+                self._pdm = json_decoder()(b)
             else:
                 self._pdm = {}
         return self._pdm
@@ -938,74 +742,6 @@ selection does not match number of rows in DataFrame.')
         else:
             return {}
 
-    def _dtypes(self, categories=None):
-        """ Implied types of the columns in the schema """
-        import pandas as pd
-        if self._base_dtype is None:
-            if self.has_pandas_metadata:
-                md = self.pandas_metadata['columns']
-                md = {c['name']: c for c in md}
-                tz = {k: v["metadata"]['timezone'] for k, v in md.items()
-                      if v.get('metadata', {}) and v.get('metadata', {}).get('timezone', None)}
-            else:
-                tz = None
-                md = None
-            self.tz = tz
-
-            dtype = OrderedDict((name, (converted_types.typemap(f, md=md)
-                                if f.num_children in [None, 0] else np.dtype("O")))
-                                for name, f in self.schema.root["children"].items()
-                                if getattr(f, 'isflat', False) is False)
-            for i, (col, dt) in enumerate(dtype.copy().items()):
-                # int and bool columns produce masked pandas types, no need to
-                # promote types here
-                if dt.kind == "M":
-                    if self.pandas_metadata and PANDAS_VERSION.major >= 2:
-                        # get original resolution when pandas supports non-ns
-                        dt = md[col]["numpy_type"]
-                    if tz is not None and tz.get(col, False):
-                        z = dataframe.tz_to_dt_tz(tz[col])
-                        dt_series = pd.Series([], dtype=dt)
-                        if PANDAS_VERSION.major >= 2 and dt_series.dt.tz is not None:
-                            dt = dt_series.dt.tz_convert(z).dtype
-                        else:
-                            dt = dt_series.dt.tz_localize(z).dtype
-                    dtype[col] = dt
-                elif dt in converted_types.nullable:
-                    if self.pandas_metadata:
-                        tt = md.get(col, {}).get("numpy_type")
-                        if tt and ("int" in tt or "bool" in tt):
-                            continue
-                    # uint/int/bool columns that may have nulls become nullable
-                    # skip is pandas_metadata gives original types
-                    num_nulls = 0
-                    for rg in self.row_groups:
-                        if rg[3] == 0:
-                            continue
-                        st = rg[1][i][3].get(12)
-                        if st is None:
-                            num_nulls = True
-                            break
-                        if st.get(3):
-                            num_nulls = True
-                            break
-                    if num_nulls:
-                        if self.pandas_nulls:
-                            dtype[col] = converted_types.nullable[dt]
-                        else:
-                            dtype[col] = np.float64()
-                elif dt == 'S12':
-                    dtype[col] = 'M8[ns]'
-            self._base_dtype = dtype
-        dtype = self._base_dtype.copy()
-        categories = self.check_categories(categories)
-        for field in categories:
-            dtype[field] = 'category'
-        for cat in self.cats:
-            dtype[cat] = "category"
-        self.dtypes = dtype
-        return dtype
-
     def __getstate__(self):
         if self.fmd.row_groups is None:
             self.fmd.row_groups = []
@@ -1033,32 +769,6 @@ selection does not match number of rows in DataFrame.')
         return "<Parquet File: %s>" % self.info
 
     __repr__ = __str__
-
-
-def _pre_allocate(size, columns, categories, index, cs, dt, tz=None, columns_dtype=None):
-    index = [index] if isinstance(index, str) else (index or [])
-    cols = [c for c in columns if c not in index]
-    categories = categories or {}
-    cats = cs.copy()
-    if isinstance(categories, dict):
-        cats.update(categories)
-
-    def get_type(name, index=False):
-        if name in categories:
-            return 'category'
-        t = dt[name]
-        if index and isinstance(t, pd.core.arrays.masked.BaseMaskedDtype):
-            return "int64"
-        return t
-
-    dtypes = [get_type(c) for c in cols]
-    index_types = [get_type(i, index=True) for i in index]
-    cols.extend(cs)
-    dtypes.extend(['category'] * len(cs))
-    df, views = dataframe.empty(dtypes, size, cols=cols, index_names=index,
-                                index_types=index_types, cats=cats, timezones=tz,
-                                columns_dtype=columns_dtype)
-    return df, views
 
 
 def paths_to_cats(paths, partition_meta=None):

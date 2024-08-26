@@ -25,7 +25,7 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ['fastparquet.speedups', 'fastparquet.cencoding']
+MOCK_MODULES = ['fastparquet.cencoding']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 APP_DIR = os.path.normpath(os.path.join(os.getcwd(), '../..'))
