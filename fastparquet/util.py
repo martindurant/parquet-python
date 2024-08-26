@@ -469,6 +469,7 @@ def concat_and_add(*arrs, offset=True):
 
 
 class Task:
+    """Just holds a function and arguments for later call"""
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -479,9 +480,9 @@ class Task:
 
 
 class ThreadPool:
+    """Simplistic fire&forget pool of X threads"""
 
     def __init__(self, num_workers, poll_time=0.0003):
-        import queue
         self.num_workers = num_workers
         self.tasks = []
         self.ntask = 0
@@ -503,6 +504,9 @@ class ThreadPool:
         while len(self.done) < self.ntask:
             time.sleep(self.poll)
         self.th.clear()
+        self.done.clear()
+        self.tasks.clear()
+        self.ntask = 0
 
     def submit(self, func, *args, **kwargs):
         self.tasks.append(Task(func, *args, **kwargs))
@@ -516,5 +520,5 @@ class ThreadPool:
             self.wait()
 
     def run_tasks(self, tasks: list[callable], wait=True):
-        self.tasks = tasks
+        self.tasks.extend(tasks)
         self.go(wait)
