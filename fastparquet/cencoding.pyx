@@ -538,7 +538,9 @@ cdef dict read_thrift(NumpyIO data):
             break
         id += (byte & 0b11110000) >> 4
         bit = byte & 0b00001111
-        if 4 <= bit <= 6:
+        if bit == 6:
+            out[id] = zigzag_long(read_unsigned_var_int(data))
+        elif bit == 5:
             out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 7:
             out[id] = <double>(data.ptr + data.loc)[0]
@@ -551,6 +553,8 @@ cdef dict read_thrift(NumpyIO data):
             out[id] = read_list(data)
         elif bit == 12:
             out[id] = read_thrift(data)
+        elif bit == 4:
+            out[id] = zigzag_long(read_unsigned_var_int(data))
         elif bit == 1:
             out[id] = True
         elif bit == 2:

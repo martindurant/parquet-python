@@ -595,7 +595,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     # Set optimisation conditions, so that we can avoid unnecessary reads
     if all(_ is DUMMY for _ in offsets):
         # no deps/defs needed
-        assign.pop(name)
+        assign.pop(name, None)
         if read_data is False:
             return
         OPT = 4
@@ -681,20 +681,15 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     # TODO: batch reads and submit groups of tasks instead of one task per column
     #  - where there are many columns, the current causes a lot of thread waiting overhead
     #  - reads will currently happen haphazardly in the input and not make use of caching
-    futs = []
     for column in encoding.filter_rg_cols(rg, columns):
         if ex is None:
             read_col(column, schema_helper, file, use_cat=False,
                      assign=assign)
         else:
-            futs.append(
-                ex.submit(
-                    read_col, column, schema_helper, file,
-                    use_cat=False, assign=assign
-                )
+            ex.submit(
+                read_col, column, schema_helper, file,
+                use_cat=False, assign=assign
             )
-    if futs:
-        concurrent.futures.wait(futs)
 
 
 def read_row_group(file, rg, columns, categories, schema_helper, cats,

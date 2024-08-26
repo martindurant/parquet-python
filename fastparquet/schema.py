@@ -73,8 +73,8 @@ class SchemaHelper(object):
             except AttributeError:
                 pass  # already a str
         self.root = schema_elements[0]
-        self.schema_elements_by_name = dict(
-            [(se[4], se) for se in schema_elements])
+        self.schema_elements_by_name = {
+            se[4]: se for se in schema_elements}
         self.tree = {}
         schema_tree(schema_elements, paths = self.tree)
         self._text = None

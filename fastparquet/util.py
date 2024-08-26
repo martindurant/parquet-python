@@ -467,3 +467,54 @@ def concat_and_add(*arrs, offset=True):
         off += len(arr) - offset
     return out
 
+
+class Task:
+    def __init__(self, func, *args, **kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self):
+        self.func(*self.args, **self.kwargs)
+
+
+class ThreadPool:
+
+    def __init__(self, num_workers, poll_time=0.0003):
+        import queue
+        self.num_workers = num_workers
+        self.tasks = []
+        self.ntask = 0
+        self.th = set()
+        self.done = []
+        self.poll = poll_time
+        
+    def run_worker(self):
+        while True:
+            try:
+                self.tasks.pop(0)()
+            except IndexError:
+                raise SystemExit
+            finally:
+                self.done.append(None)
+
+    def wait(self):
+        import time
+        while len(self.done) < self.ntask:
+            time.sleep(self.poll)
+        self.th.clear()
+
+    def submit(self, func, *args, **kwargs):
+        self.tasks.append(Task(func, *args, **kwargs))
+
+    def go(self, wait=True):
+        import _thread
+        self.th = {_thread.start_new_thread(self.run_worker, ())
+                   for _ in range(self.num_workers)}
+        self.ntask = len(self.tasks)
+        if wait:
+            self.wait()
+
+    def run_tasks(self, tasks: list[callable], wait=True):
+        self.tasks = tasks
+        self.go(wait)

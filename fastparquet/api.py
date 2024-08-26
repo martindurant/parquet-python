@@ -13,13 +13,13 @@ from fastparquet.cencoding import ThriftObject, from_buffer
 from fastparquet.json import json_decoder
 from fastparquet.util import (default_open, default_remove, ParquetException, val_to_num,
                    ops, ensure_bytes, ensure_str, check_column_names, metadata_from_many,
-                   ex_from_sep, _strip_path_tail, join_path)
+                   ex_from_sep, _strip_path_tail, join_path, ThreadPool, Task)
 
 
 # Find in names of partition files the integer matching "**part.*.parquet",
 # as 'i'.
 PART_ID = re.compile(r'.*part.(?P<i>[\d]+).parquet$')
-MAX_WORKERS = min(32, (os.cpu_count() or 1) + 4)  # from ThreadPoolExecutor
+MAX_WORKERS = min(32, (os.cpu_count() or 1))  # from ThreadPoolExecutor
 ex_stash = [None]
 
 
@@ -607,26 +607,20 @@ scheme is 'simple'.")
         else:
             infile = None
         if worker_threads:
-            if ex_stash[0] is None:
-                ex_stash[0] =  concurrent.futures.ThreadPoolExecutor(max_workers=worker_threads,
-                                                       thread_name_prefix="fastparquet")
-            ex = ex_stash[0]
+            ex = ThreadPool(num_workers=worker_threads)
         else:
             ex = None
         # TODO: this condition is too simple, should also depend on
         #  number of selected/available columns
         if ex is not None and (len(rgs) > worker_threads * 2 or cnum < len(rgs)):
-            futs = []
             # parallel over row-groups
             for i, rg in enumerate(rgs):
                 # This is the same as per rg iteration
                 ass = views.setdefault(i, {})
-                futs.append(ex.submit(
-                    self.read_row_group_file, rg, columns, None, None,
-                                         assign=ass, partition_meta=self.partition_meta,
-                                         infile=infile, ex=None
-                ))
-            concurrent.futures.wait(futs)
+                ex.submit(self.read_row_group_file, rg=rg, columns=columns, index=None, categories=None,
+                          assign=ass, partition_meta=self.partition_meta,
+                          infile=infile, ex=None)
+            ex.go()
         else:
             # no parallel or parallel over columns
             for i, rg in enumerate(rgs):
@@ -635,6 +629,8 @@ scheme is 'simple'.")
                 self.read_row_group_file(rg, columns, None, None,
                                          assign=ass, partition_meta=self.partition_meta,
                                          infile=infile, ex=ex)
+            if ex is not None:
+                ex.go()
         # out = {}
         # # simple concat, no evolution for now
         # for k in views[0]:
