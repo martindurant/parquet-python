@@ -957,11 +957,8 @@ def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
     if isinstance(data, pd.DataFrame):
         data = iter_dataframe(data, row_group_offsets)
     mode = 'rb+' if append else 'wb'
-    if hasattr(fn, "write"):
-        of = fn
-    else:
-        of = open_with(fn, mode)
-    with of as f:
+
+    def write_to_file(f):
         if append:
             f.seek(-8, 2)
             head_size = struct.unpack('<I', f.read(4))[0]
@@ -980,6 +977,13 @@ def write_simple(fn, data, fmd, row_group_offsets=None, compression=None,
         foot_size = write_thrift(f, fmd)
         f.write(struct.pack(b"<I", foot_size))
         f.write(MARKER)
+
+    if hasattr(fn, "write"):
+        write_to_file(fn)
+    else:
+        of = open_with(fn, mode)
+        with of as f:
+            write_to_file(f)
 
 
 def write_multi(dn, data, fmd, row_group_offsets=None, compression=None,
