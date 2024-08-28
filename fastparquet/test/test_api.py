@@ -1546,3 +1546,12 @@ def test_read_a_non_pandas_parquet_file(tempdir):
 
     assert parquet_file.count() == 2
     assert parquet_file.head(1).equals(pd.DataFrame({"foo": [0], "bar": ["a"]}))
+
+
+def test_writing_to_buffer_does_not_close():
+    df = pd.DataFrame({"val": [1, 2]})
+    buffer = io.BytesIO()
+    write(buffer, df, file_scheme="simple")
+    assert not buffer.closed
+    parquet_file = ParquetFile(buffer)
+    assert parquet_file.count() == 2
