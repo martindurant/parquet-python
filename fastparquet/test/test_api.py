@@ -1555,3 +1555,12 @@ def test_gh929(tempdir):
     df.to_parquet(f"{tempdir}/test_datetimetz_index.parquet", engine="fastparquet")
     result = pd.read_parquet(f"{tempdir}/test_datetimetz_index.parquet", engine="fastparquet")
     assert result.index.equals(df.index)
+
+
+def test_writing_to_buffer_does_not_close():
+    df = pd.DataFrame({"val": [1, 2]})
+    buffer = io.BytesIO()
+    write(buffer, df, file_scheme="simple")
+    assert not buffer.closed
+    parquet_file = ParquetFile(buffer)
+    assert parquet_file.count() == 2
