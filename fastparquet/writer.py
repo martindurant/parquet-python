@@ -214,7 +214,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64',
     elif dtype.kind == "m":
         type, converted_type, width = (parquet_thrift.Type.INT64,
                                        parquet_thrift.ConvertedType.TIME_MICROS, None)
-    elif "string" in str(dtype):
+    elif "str" in str(dtype):
         type, converted_type, width = (parquet_thrift.Type.BYTE_ARRAY,
                                        parquet_thrift.ConvertedType.UTF8,
                                        None)
@@ -283,7 +283,7 @@ def convert(data, se):
             raise ValueError('Error converting column "%s" to bytes using '
                              'encoding %s. Original error: '
                              '%s' % (data.name, ct, e))
-    elif str(dtype) == "string":
+    elif "str" in str(dtype):
         try:
             if converted_type == parquet_thrift.ConvertedType.UTF8:
                 # TODO: into bytes in one step
@@ -467,7 +467,7 @@ def _rows_per_page(data, selement, has_nulls=True, page_size=None):
         bytes_per_element = 4
     elif isinstance(data.dtype, BaseMaskedDtype) and data.dtype in pdoptional_to_numpy_typemap:
         bytes_per_element = np.dtype(pdoptional_to_numpy_typemap[data.dtype]).itemsize
-    elif data.dtype == "object" or str(data.dtype) == "string":
+    elif data.dtype == "object" or "str" in str(data.dtype):
         dd = data.iloc[:1000]
         d2 = dd[dd.notnull()]
         try:

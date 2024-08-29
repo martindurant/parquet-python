@@ -1564,3 +1564,21 @@ def test_writing_to_buffer_does_not_close():
     assert not buffer.closed
     parquet_file = ParquetFile(buffer)
     assert parquet_file.count() == 2
+
+
+@pytest.fixture()
+def pandas_string():
+    if pd.__version__.split(".") < ["3"]:
+        pytest.skip("'string' type coming in pandas 3.0.0")
+    original = pd.options.future.infer_string
+    pd.options.future.infer_string = True
+    yield
+    pd.options.future.infer_string = original
+
+
+def test_auto_string(tempdir, pandas_string):
+    fn = f"{tempdir}/test.parquet"
+    df = pd.DataFrame({"a": ["some", "strings"]})
+    df.to_parquet(fn, engine="fastparquet")
+
+
