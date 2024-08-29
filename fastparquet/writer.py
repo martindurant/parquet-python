@@ -181,7 +181,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64',
                     "LogicalType",
                     TIMESTAMP=ThriftObject.from_fields(
                         "TimestampType",
-                        isAdjustedToUTC=True,
+                        isAdjustedToUTC=tz,
                         unit=ThriftObject.from_fields("TimeUnit", MICROS={})
                     )
                 )
@@ -195,7 +195,7 @@ def find_type(data, fixed_text=None, object_encoding=None, times='int64',
                     "LogicalType",
                     TIMESTAMP=ThriftObject.from_fields(
                         "TimestampType",
-                        isAdjustedToUTC=True,
+                        isAdjustedToUTC=tz,
                         unit=ThriftObject.from_fields("TimeUnit", MILLIS={})
                     )
                 )
@@ -315,10 +315,28 @@ def convert(data, se):
         out['ns'] = ns
         out['day'] = day
     elif dtype.kind == "M":
-        out = data.values.view("int64")
+        part = str(dtype).split("[")[1][:-1].split(",")[0]
+        if converted_type:
+            factor = time_factors[(converted_type, part)]
+        else:
+            unit = [k for k, v in se.logicalType.TIMESTAMP.unit._asdict().items() if v is not None][0]
+            factor = time_factors[(unit, part)]
+        try:
+            out = data.values.view("int64") * factor
+        except KeyError:
+            breakpoint()
     else:
         raise ValueError("Don't know how to convert data type: %s" % dtype)
     return out
+
+
+time_factors = {
+    ("NANOS", "ns"): 1,
+    (parquet_thrift.ConvertedType.TIMESTAMP_MICROS, "us"): 1,
+    (parquet_thrift.ConvertedType.TIMESTAMP_MICROS, "ns"): 1000,
+    (parquet_thrift.ConvertedType.TIMESTAMP_MILLIS, "ms"): 1,
+    (parquet_thrift.ConvertedType.TIMESTAMP_MILLIS, "s"): 1000,
+}
 
 
 def infer_object_encoding(data):

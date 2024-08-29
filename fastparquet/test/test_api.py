@@ -1546,3 +1546,12 @@ def test_read_a_non_pandas_parquet_file(tempdir):
 
     assert parquet_file.count() == 2
     assert parquet_file.head(1).equals(pd.DataFrame({"foo": [0], "bar": ["a"]}))
+
+
+def test_gh929(tempdir):
+    idx = pd.date_range("2024-01-01", periods=4, freq="h", tz="Europe/Brussels")
+    df = pd.DataFrame(index=idx, data={"index_as_col": idx})
+
+    df.to_parquet(f"{tempdir}/test_datetimetz_index.parquet", engine="fastparquet")
+    result = pd.read_parquet(f"{tempdir}/test_datetimetz_index.parquet", engine="fastparquet")
+    assert result.index.equals(df.index)
