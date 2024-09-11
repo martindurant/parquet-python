@@ -1203,18 +1203,17 @@ def one_level_optional(
     ):
     # nullable simple type; equivalent:
     # inds[defs == 1] = np.arange(count0, len(values) + count0)
-    # inds[defs == 0] = 0
+    # inds[defs == 0] = -1
     # this can be parallel, by passing count0 (values so far), which we always can know
-    cdef uint64_t i, count
+    cdef uint64_t i
     with nogil:
         for i in range(defs.shape[0]):
             if defs[i] == max_def:
-                inds[count] = count0
+                inds[i] = count0
                 count0 += 1
             else:
-                inds[count] = -1
-            count += 1
-    return count
+                inds[i] = -1
+    return count0
 
 
 def make_offsets_and_masks(
@@ -1222,7 +1221,7 @@ def make_offsets_and_masks(
         uint8_t[::1] defs, # definition levels
         list offsets,  # contains uint64 np arrays
         uint8_t[::1] rep_map, # rep value -> offset index mapping
-        uint8_t[::1] rep_flags,  # is index (not offset) for each item of offsets list 
+        uint8_t[::1] rep_flags,  # of offsets list, 0: offset, 1: is index, 2: not used 
         uint64_t[::1] ocounts,  # offsets counter of length offsets, len(offsets) + 1
     ):
     # general case
@@ -1273,6 +1272,23 @@ def parse_plain_strings(uint8_t[::1] data, uint64_t[::1] offsets, uint64_t nvalu
             offset += size
         offsets[i + 1] = tot
     return out
+
+
+def check_arange(int64_t[::1] arr):
+    """Is this like a range (with NULLs)"""
+    cdef int64_t val
+    cdef int64_t last = -1
+    cdef uint8_t out = 1
+
+    with nogil:
+        for val in arr:
+            if val < 0:
+                continue
+            if val - last != 1:
+                out = 0
+                break
+            last = val
+    return bool(out)
 
 
 def filter_rg_cols(ThriftObject rg, list cols):

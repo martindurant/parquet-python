@@ -59,12 +59,6 @@ compressions['LZ4_RAW'] = lz4_compress
 decompressions['LZ4_RAW'] = lz4_decomp
 compressions['ZSTD'] = cramjam.zstd.compress
 decompressions['ZSTD'] = cramjam.zstd.decompress
-decom_into = {
-    "GZIP": cramjam.gzip.decompress_into,
-    "SNAPPY": cramjam.snappy.decompress_raw_into,
-    "ZSTD": cramjam.zstd.decompress_into,
-    "BROTLI": cramjam.brotli.decompress_into
-}
 
 compressions = {k.upper(): v for k, v in compressions.items()}
 decompressions = {k.upper(): v for k, v in decompressions.items()}
@@ -106,9 +100,4 @@ def decompress_data(data, uncompressed_size, algorithm='gzip'):
             "Decompression '%s' not available.  Options: %s" %
             (algorithm.upper(), sorted(decompressions))
         )
-    if algorithm.upper() in decom_into:
-        # ensures writable buffer from cramjam
-        x = np.empty(uncompressed_size, dtype='uint8')
-        decom_into[algorithm.upper()](np.frombuffer(data, dtype=np.uint8), x)
-        return x
     return decompressions[algorithm.upper()](data, uncompressed_size)

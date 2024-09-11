@@ -1,11 +1,11 @@
-import concurrent.futures
 import io
 import logging
 import numpy as np
+import threading
 
 from fastparquet.encoding import read_plain, byte_stream_unsplit4, byte_stream_unsplit8, DECODE_TYPEMAP
 import fastparquet.cencoding as encoding
-from fastparquet.compression import decompress_data, rev_map, decom_into
+from fastparquet.compression import decompress_data
 from fastparquet.converted_types import convert, simple, converts_inplace
 from fastparquet import parquet_thrift
 from fastparquet.cencoding import ThriftObject
@@ -255,35 +255,17 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     # input and output element sizes match
     see = se.type_length == assign.dtype.itemsize * 8 or simple.get(se.type).itemsize == assign.dtype.itemsize
     # can read-into
-    into0 = ((use_cat or converts_inplace(se) and see)
-             and data_header2.num_nulls == 0
-             and max_rep == 0 and assign.dtype.kind != "O" and row_filter is None
-             and assign.dtype.kind not in "Mm")  # TODO: this can be done in place but is complex
     if row_filter is None:
         row_filter = Ellipsis
     # can decompress-into
     if data_header2.is_compressed is None:
         data_header2.is_compressed = True
-    into = (data_header2.is_compressed and rev_map[cmd.codec] in decom_into
-            and into0)
     if nullable:
         assign = assign._data
 
     uncompressed_page_size = (ph.uncompressed_page_size - data_header2.definition_levels_byte_length -
                               data_header2.repetition_levels_byte_length)
-    if into0 and data_header2.encoding == parquet_thrift.Encoding.PLAIN and (
-            not data_header2.is_compressed or cmd.codec == parquet_thrift.CompressionCodec.UNCOMPRESSED
-    ):
-        # PLAIN read directly into output (a copy for remote files)
-        assign[num:num+n_values].view('uint8')[:] = infile.read(size)
-        convert(assign[num:num+n_values], se)
-    elif into and data_header2.encoding == parquet_thrift.Encoding.PLAIN:
-        # PLAIN decompress directly into output
-        decomp = decom_into[rev_map[cmd.codec]]
-        decomp(np.frombuffer(infile.read(size), dtype="uint8"),
-               assign[num:num+data_header2.num_values].view('uint8'))
-        convert(assign[num:num+n_values], se)
-    elif data_header2.encoding == parquet_thrift.Encoding.PLAIN:
+    if data_header2.encoding == parquet_thrift.Encoding.PLAIN:
         # PLAIN, but with nulls or not in-place conversion
         codec = cmd.codec if data_header2.is_compressed else "UNCOMPRESSED"
         raw_bytes = decompress_data(np.frombuffer(infile.read(size), "uint8"),
@@ -409,14 +391,14 @@ def read_data_page_v2(infile, schema_helper, se, data_header2, cmd,
     return data_header2.num_values
 
 
-# TODO: this executor should not persist between runs to free up threads.
-import threading
 lock = threading.Lock()
 
 
 def _run(raw: bytes, ph: ThriftObject, dph: ThriftObject, o: int,
          cmd, rep_width, def_width, assign, colname, se,
          with_data=True):
+    # TODO: pass filters to here for specific column, page might
+    #  be skipped.
     # V1 or dict page, decompress immediately
     io = encoding.NumpyIO(decompress_data(raw, ph.uncompressed_page_size, cmd.codec))
     reps = defs = None
@@ -531,15 +513,14 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
                 assign.setdefault(name, []).append(o)
                 offsets.append(o)
                 rep_flags[i] = 1
-            else:
+            else:  # or stats say there are no NULLs?
                 offsets.append(DUMMY)
                 rep_flags[i] = 2
             i += 1
         elif schema_helper.schema_element(parts).repetition_type == REP:
-            # offset has one extra element for closing last list
             name = f'{".".join(parts)}-offsets'
             if name not in assign:
-                o = np.empty(rows + 1, dtype="int64")
+                o = np.empty(rows, dtype="int64")
                 assign.setdefault(name, []).append(o)
                 offsets.append(o)
             else:
@@ -553,6 +534,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     off = min((cmd.dictionary_page_offset or cmd.data_page_offset,
                cmd.data_page_offset))
     with lock:
+        # If we have pre-fetched data, we don't need a lock
         infile.seek(off)
         column_binary = infile.read(cmd.total_compressed_size)
     infile = encoding.NumpyIO(column_binary)
@@ -649,8 +631,7 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
     if OPT == 1:
         encoding.make_offsets_and_masks_no_nulls(reps, defs, offsets, ocounts)
     elif OPT == 2:
-
-        count = encoding.one_level_optional(defs, offsets[-1], 0, max_def)
+        ocounts[-2:] = len(defs), encoding.one_level_optional(defs, offsets[-1], 0, max_def)
     elif OPT == 3:
         encoding.make_offsets_and_masks_no_reps(defs, offsets, ocounts)
     else:
@@ -658,15 +639,10 @@ def read_col(column: ThriftObject, schema_helper: SchemaHelper, infile: io.IOBas
 
     # TODO: from [o]counts, we know if an index/offsets array is redundant and
     #  can be removed
-
     for o, count, flag in zip(offsets, ocounts, rep_flags):
-        if o is not DUMMY:
-            o.resize(count + flag, refcheck=False)
-
-
-def batcher(batch):
-    for func, args, kwargs in batch:
-        func(*args, **kwargs)
+        cnt = int(count + (flag == 2) + 1)
+        if o is not DUMMY and cnt > 0:
+            o.resize(cnt, refcheck=False)
 
 
 def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
@@ -678,9 +654,9 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     will be pandas Categorical objects: the codes and the category labels
     are arrays.
     """
-    # TODO: batch reads and submit groups of tasks instead of one task per column
-    #  - where there are many columns, the current causes a lot of thread waiting overhead
-    #  - reads will currently happen haphazardly in the input and not make use of caching
+    # TODO: batch reads, since we know all the offsets, and that this is a single file
+    #       maybe could extend to supra-group too.
+    # see fsspec.parquet
     for column in encoding.filter_rg_cols(rg, columns):
         if ex is None:
             read_col(column, schema_helper, file, use_cat=False,
@@ -700,8 +676,6 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
     Access row-group in a file and read some columns into a data-frame.
     """
     partition_meta = partition_meta or {}
-    # TODO: pass through rg.num_rows, which is the number of top-most offsets/index
-    #  whereas the cmd.num_values (also in page headers) gives the number of leaf items
     read_row_group_arrays(file, rg, columns, categories, schema_helper,
                           cats, selfmade, assign=assign, row_filter=row_filter, ex=ex)
 
@@ -716,4 +690,5 @@ def read_row_group(file, rg, columns, categories, schema_helper, cats,
                 rg.columns[0].file_path.split('/')[:-1])]
         key, val = [p for p in partitions if p[0] == cat][0]
         val = val_to_num(val, meta=partition_meta.get(key))
+        # TODO: this is a perfect IndexedArray
         assign[cat][:] = cats[cat].index(val)

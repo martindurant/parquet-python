@@ -55,12 +55,13 @@ class MaskedNullable:
 
 class String:
     def __init__(self, offsets, data) -> None:
+        # TODO: make this start/stop so we can take from length-data encoding?
         self.offsets = offsets
         self.data = data
 
     def __getitem__(self, item):
         if isinstance(item, int):
-            return self.data[self.offsets[item]: self.offsets[item + 1]].decode()
+            return self.data[self.offsets[item]: self.offsets[item + 1]].tobytes().decode()
         elif isinstance(item, slice):
             assert item.step is None
             if item.stop is None or item.stop == -1:

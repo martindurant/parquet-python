@@ -607,6 +607,7 @@ scheme is 'simple'.")
         else:
             infile = None
         if worker_threads:
+            # TODO: consider the case (tiny data) where it's just not worthwhile
             ex = ThreadPool(num_workers=worker_threads)
         else:
             ex = None
