@@ -1548,6 +1548,15 @@ def test_read_a_non_pandas_parquet_file(tempdir):
     assert parquet_file.head(1).equals(pd.DataFrame({"foo": [0], "bar": ["a"]}))
 
 
+def test_gh929(tempdir):
+    idx = pd.date_range("2024-01-01", periods=4, freq="h", tz="Europe/Brussels")
+    df = pd.DataFrame(index=idx, data={"index_as_col": idx})
+
+    df.to_parquet(f"{tempdir}/test_datetimetz_index.parquet", engine="fastparquet")
+    result = pd.read_parquet(f"{tempdir}/test_datetimetz_index.parquet", engine="fastparquet")
+    assert result.index.equals(df.index)
+
+
 def test_writing_to_buffer_does_not_close():
     df = pd.DataFrame({"val": [1, 2]})
     buffer = io.BytesIO()
@@ -1555,3 +1564,21 @@ def test_writing_to_buffer_does_not_close():
     assert not buffer.closed
     parquet_file = ParquetFile(buffer)
     assert parquet_file.count() == 2
+
+
+@pytest.fixture()
+def pandas_string():
+    if pd.__version__.split(".") < ["3"]:
+        pytest.skip("'string' type coming in pandas 3.0.0")
+    original = pd.options.future.infer_string
+    pd.options.future.infer_string = True
+    yield
+    pd.options.future.infer_string = original
+
+
+def test_auto_string(tempdir, pandas_string):
+    fn = f"{tempdir}/test.parquet"
+    df = pd.DataFrame({"a": ["some", "strings"]})
+    df.to_parquet(fn, engine="fastparquet")
+
+

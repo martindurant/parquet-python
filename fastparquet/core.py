@@ -632,7 +632,6 @@ def read_row_group_arrays(file, rg, columns, categories, schema_helper, cats,
     for k in remains:
         out[k][:] = None
 
-
 def read_row_group(file, rg, columns, categories, schema_helper, cats,
                    selfmade=False, index=None, assign=None,
                    scheme='hive', partition_meta=None, row_filter=False):

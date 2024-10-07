@@ -174,15 +174,15 @@ def test_roundtrip_complex(tempdir, scheme,):
 @pytest.mark.parametrize('df', [
     makeMixedDataFrame(),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
-                  periods=10, freq='H', tz='Europe/London')}),
+                  periods=10, freq='h', tz='Europe/London')}),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
-                  periods=10, freq='H', tz='Europe/Berlin')}),
+                  periods=10, freq='h', tz='Europe/Berlin')}),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
-                  periods=10, freq='H', tz='UTC')}),
+                  periods=10, freq='h', tz='UTC')}),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
-                                     periods=10, freq='H', tz=datetime.timezone.min)}),
+                                     periods=10, freq='h', tz=datetime.timezone.min)}),
     pd.DataFrame({'x': pd.date_range('3/6/2012 00:00',
-                                     periods=10, freq='H', tz=datetime.timezone.max)})
+                                     periods=10, freq='h', tz=datetime.timezone.max)})
     ])
 def test_datetime_roundtrip(tempdir, df, capsys):
     fname = os.path.join(tempdir, 'test.parquet')
