@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup conda
-        uses: mamba-org/provision-with-micromamba@main
+        uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: ci/environment-${{ matrix.CONDA_ENV }}.yml
 
@@ -54,7 +54,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup conda
-        uses: mamba-org/provision-with-micromamba@main
+        uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: ci/environment-${{ matrix.CONDA_ENV }}.yml
 
@@ -83,7 +83,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup conda
-        uses: mamba-org/provision-with-micromamba@main
+        uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: ci/environment-py310.yml
 
@@ -118,7 +118,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup conda
-        uses: mamba-org/provision-with-micromamba@main
+        uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: ci/environment-py310win.yml
 
