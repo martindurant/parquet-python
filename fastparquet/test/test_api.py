@@ -44,14 +44,23 @@ def test_statistics(tempdir):
     p = ParquetFile(fn)
 
     s = statistics(p)
-    expected = {'distinct_count': {'x': [None, None],
+    expected1 = {'distinct_count': {'x': [None, None],
                                    'y': [None, None],
                                    'z': [None, None]},
                 'max': {'x': [2, 3], 'y': [2.0, 1.0], 'z': ['b', 'c']},
                 'min': {'x': [1, 3], 'y': [1.0, 1.0], 'z': ['a', 'c']},
                 'null_count': {'x': [0, 0], 'y': [0, 0], 'z': [0, 0]}}
 
-    assert s == expected
+    assert s == expected1
+
+    expected2 = {'distinct_count': {'x': [None],
+                                   'y': [None],
+                                   'z': [None]},
+                'max': {'x': [3], 'y': [1.0], 'z': ['c']},
+                'min': {'x': [3], 'y': [1.0], 'z': ['c']},
+                'null_count': {'x': [0], 'y': [0], 'z': [0]}}
+
+    assert p[-1].statistics == expected2
 
 
 def test_logical_types(tempdir):

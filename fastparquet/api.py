@@ -260,7 +260,7 @@ class ParquetFile(object):
 
     @property
     def statistics(self):
-        if self._statistics is None:
+        if not hasattr(self, '_statistics') or self._statistics is None:
             self._statistics = statistics(self)
         return self._statistics
 
