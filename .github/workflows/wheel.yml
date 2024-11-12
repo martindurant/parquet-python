@@ -32,7 +32,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
@@ -87,7 +87,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
@@ -142,7 +142,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
@@ -197,7 +197,7 @@ jobs:
         - name: Setup Python
           uses: actions/setup-python@v5
           with:
-            python-version: "3.12"
+            python-version: "3.13"
 
         - name: Set up QEMU
           if: runner.os == 'Linux'
@@ -233,7 +233,7 @@ jobs:
 
     name: ${{ matrix.os }} ${{ matrix.architecture}}
     env:
-      CIBW_BEFORE_ALL: "pip install numpy==2.0.0rc1 cython"
+      CIBW_BEFORE_ALL: "pip install numpy cython"
       CIBW_SKIP: "pp* *37* *38*"
       CIBW_ARCHS_MACOS: ${{ matrix.architecture }}
       CIBW_TEST_SKIP: "*"
